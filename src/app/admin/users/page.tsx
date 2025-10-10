@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useUser } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -87,6 +87,25 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleReject = async (userToReject: UserProfile) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', userToReject.uid);
+    try {
+        await deleteDoc(userRef);
+        toast({
+            title: '요청 거절 완료',
+            description: `${userToReject.displayName} 님의 가입 요청이 삭제되었습니다.`
+        });
+    } catch (error) {
+        console.error('Error rejecting user:', error);
+        toast({
+            variant: 'destructive',
+            title: '오류 발생',
+            description: '사용자 요청 거절 중 오류가 발생했습니다.'
+        });
+    }
+  };
+
   const getStatusVariant = (
     status?: 'pending' | 'approved'
   ): 'default' | 'secondary' | 'destructive' | 'outline' => {
@@ -147,11 +166,16 @@ export default function AdminUsersPage() {
                         {u.status === 'pending' ? '승인 대기' : '승인됨'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="space-x-2">
                       {u.role === 'club-admin' && u.status === 'pending' && (
-                        <Button size="sm" onClick={() => handleApprove(u)}>
-                          승인
-                        </Button>
+                        <>
+                          <Button size="sm" onClick={() => handleApprove(u)}>
+                            승인
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleReject(u)}>
+                            거절
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
