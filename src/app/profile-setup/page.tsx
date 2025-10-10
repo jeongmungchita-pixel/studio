@@ -128,7 +128,7 @@ export default function ProfileSetupPage() {
       });
       return;
     }
-    
+
     try {
       const batch = writeBatch(firestore);
       const guardianUids: string[] = [user.uid];
@@ -229,10 +229,10 @@ export default function ProfileSetupPage() {
 
   return (
     <main className="flex-1 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="mx-auto max-w-6xl space-y-8">
         <div>
           <h1 className="text-3xl font-bold">프로필 설정</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="mt-2 text-muted-foreground">
             선수 또는 학부모 정보를 입력하여 KGF 넥서스 활동을 시작하세요.
           </p>
         </div>
@@ -248,111 +248,155 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {adultFields.map((field, index) => (
-                      <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-card shadow-sm">
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name={`adultsInfo.${index}.name`}
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>이름</FormLabel>
-                                        <FormControl>
-                                        <Input {...field} placeholder="예: 홍길동" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name={`adultsInfo.${index}.dateOfBirth`}
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>생년월일</FormLabel>
-                                        <FormControl>
-                                        <Input type="date" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                            </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {adultFields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="relative space-y-4 rounded-lg border bg-card p-4 shadow-sm"
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2"
+                        onClick={() => removeAdult(index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <FormField
                             control={form.control}
-                            name={`adultsInfo.${index}.gender`}
+                            name={`adultsInfo.${index}.name`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>성별</FormLabel>
+                                <FormLabel>이름</FormLabel>
                                 <FormControl>
-                                  <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex gap-4 pt-2"
-                                  >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                      <FormControl>
-                                        <RadioGroupItem value="male" />
-                                      </FormControl>
-                                      <FormLabel className="font-normal">남자</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                      <FormControl>
-                                        <RadioGroupItem value="female" />
-                                      </FormControl>
-                                      <FormLabel className="font-normal">여자</FormLabel>
-                                    </FormItem>
-                                  </RadioGroup>
+                                  <Input {...field} placeholder="예: 홍길동" />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                           <FormItem>
-                              <FormLabel>프로필 사진</FormLabel>
-                              <div className="flex items-center gap-4">
-                                  {form.watch(`adultsInfo.${index}.photoPreview`) ? (
-                                    <Image
-                                      src={form.watch(`adultsInfo.${index}.photoPreview`)!}
-                                      alt="프로필 사진 미리보기" width={40} height={40}
-                                      className="rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                                      <Upload className="w-5 h-5" />
-                                    </div>
-                                  )}
-                                  <Button type="button" variant="outline" onClick={() => adultFileInputRefs.current[index]?.click()}>
-                                    사진 업로드
-                                  </Button>
-                                  <FormField
-                                    control={form.control}
-                                    name={`adultsInfo.${index}.photo`}
-                                    render={({ field }) => (
-                                      <FormItem className="hidden">
-                                        <FormControl>
-                                          <Input type="file" accept="image/*"
-                                            ref={(el) => (adultFileInputRefs.current[index] = el)}
-                                            onChange={(e) => handleFileChange(e, `adultsInfo.${index}.photo`, `adultsInfo.${index}.photoPreview`)}
-                                          />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                              </div>
-                           </FormItem>
+                          <FormField
+                            control={form.control}
+                            name={`adultsInfo.${index}.dateOfBirth`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>생년월일</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
+                        <FormField
+                          control={form.control}
+                          name={`adultsInfo.${index}.gender`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>성별</FormLabel>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  className="flex gap-4 pt-2"
+                                >
+                                  <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="male" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                      남자
+                                    </FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="female" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                      여자
+                                    </FormLabel>
+                                  </FormItem>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormItem>
+                          <FormLabel>프로필 사진</FormLabel>
+                          <div className="flex items-center gap-4">
+                            {form.watch(
+                              `adultsInfo.${index}.photoPreview`
+                            ) ? (
+                              <Image
+                                src={form.watch(
+                                  `adultsInfo.${index}.photoPreview`
+                                )!}
+                                alt="프로필 사진 미리보기"
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                                <Upload className="h-5 w-5" />
+                              </div>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() =>
+                                adultFileInputRefs.current[index]?.click()
+                              }
+                            >
+                              사진 업로드
+                            </Button>
+                            <FormField
+                              control={form.control}
+                              name={`adultsInfo.${index}.photo`}
+                              render={({ field }) => (
+                                <FormItem className="hidden">
+                                  <FormControl>
+                                    <Input
+                                      type="file"
+                                      accept="image/*"
+                                      ref={(el) =>
+                                        (adultFileInputRefs.current[
+                                          index
+                                        ] = el)
+                                      }
+                                      onChange={(e) =>
+                                        handleFileChange(
+                                          e,
+                                          `adultsInfo.${index}.photo`,
+                                          `adultsInfo.${index}.photoPreview`
+                                        )
+                                      }
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </FormItem>
                       </div>
-                    ))}
-                 </div>
+                    </div>
+                  ))}
+                </div>
 
-                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ name: '', dateOfBirth: '', gender: 'male' })}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    appendAdult({ name: '', dateOfBirth: '', gender: 'male' })
+                  }
+                >
                   <PlusCircle className="mr-2 h-4 w-4" /> 성인 추가
                 </Button>
               </CardContent>
@@ -366,110 +410,154 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {childFields.map((field, index) => (
-                      <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-card shadow-sm">
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeChild(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        <div className="space-y-4">
-                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name={`childrenInfo.${index}.name`}
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>이름</FormLabel>
-                                    <FormControl>
-                                    <Input {...field} placeholder="예: 홍자녀" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name={`childrenInfo.${index}.dateOfBirth`}
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>생년월일</FormLabel>
-                                    <FormControl>
-                                    <Input type="date" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                           </div>
-                           <FormField
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {childFields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="relative space-y-4 rounded-lg border bg-card p-4 shadow-sm"
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2"
+                        onClick={() => removeChild(index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <FormField
                             control={form.control}
-                            name={`childrenInfo.${index}.gender`}
+                            name={`childrenInfo.${index}.name`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>성별</FormLabel>
+                                <FormLabel>이름</FormLabel>
                                 <FormControl>
-                                  <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex gap-4 pt-2"
-                                  >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                      <FormControl>
-                                        <RadioGroupItem value="male" />
-                                      </FormControl>
-                                      <FormLabel className="font-normal">남자</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                      <FormControl>
-                                        <RadioGroupItem value="female" />
-                                      </FormControl>
-                                      <FormLabel className="font-normal">여자</FormLabel>
-                                    </FormItem>
-                                  </RadioGroup>
+                                  <Input {...field} placeholder="예: 홍자녀" />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                           <FormItem>
-                              <FormLabel>프로필 사진</FormLabel>
-                              <div className="flex items-center gap-4">
-                                  {form.watch(`childrenInfo.${index}.photoPreview`) ? (
-                                    <Image
-                                      src={form.watch(`childrenInfo.${index}.photoPreview`)!}
-                                      alt="프로필 사진 미리보기" width={40} height={40}
-                                      className="rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                                      <Upload className="w-5 h-5" />
-                                    </div>
-                                  )}
-                                  <Button type="button" variant="outline" onClick={() => childFileInputRefs.current[index]?.click()}>
-                                    사진 업로드
-                                  </Button>
-                                  <FormField
-                                    control={form.control}
-                                    name={`childrenInfo.${index}.photo`}
-                                    render={({ field }) => (
-                                      <FormItem className="hidden">
-                                        <FormControl>
-                                          <Input type="file" accept="image/*"
-                                            ref={(el) => (childFileInputRefs.current[index] = el)}
-                                            onChange={(e) => handleFileChange(e, `childrenInfo.${index}.photo`, `childrenInfo.${index}.photoPreview`)}
-                                          />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                              </div>
-                           </FormItem>
+                          <FormField
+                            control={form.control}
+                            name={`childrenInfo.${index}.dateOfBirth`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>생년월일</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
+                        <FormField
+                          control={form.control}
+                          name={`childrenInfo.${index}.gender`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>성별</FormLabel>
+                              <FormControl>
+                                <RadioGroup
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                  className="flex gap-4 pt-2"
+                                >
+                                  <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="male" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                      남자
+                                    </FormLabel>
+                                  </FormItem>
+                                  <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value="female" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">
+                                      여자
+                                    </FormLabel>
+                                  </FormItem>
+                                </RadioGroup>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormItem>
+                          <FormLabel>프로필 사진</FormLabel>
+                          <div className="flex items-center gap-4">
+                            {form.watch(
+                              `childrenInfo.${index}.photoPreview`
+                            ) ? (
+                              <Image
+                                src={form.watch(
+                                  `childrenInfo.${index}.photoPreview`
+                                )!}
+                                alt="프로필 사진 미리보기"
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                                <Upload className="h-5 w-5" />
+                              </div>
+                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() =>
+                                childFileInputRefs.current[index]?.click()
+                              }
+                            >
+                              사진 업로드
+                            </Button>
+                            <FormField
+                              control={form.control}
+                              name={`childrenInfo.${index}.photo`}
+                              render={({ field }) => (
+                                <FormItem className="hidden">
+                                  <FormControl>
+                                    <Input
+                                      type="file"
+                                      accept="image/*"
+                                      ref={(el) =>
+                                        (childFileInputRefs.current[
+                                          index
+                                        ] = el)
+                                      }
+                                      onChange={(e) =>
+                                        handleFileChange(
+                                          e,
+                                          `childrenInfo.${index}.photo`,
+                                          `childrenInfo.${index}.photoPreview`
+                                        )
+                                      }
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </FormItem>
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => appendChild({ name: '', dateOfBirth: '', gender: 'male' })}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    appendChild({ name: '', dateOfBirth: '', gender: 'male' })
+                  }
+                >
                   <PlusCircle className="mr-2 h-4 w-4" /> 자녀 추가
                 </Button>
               </CardContent>
