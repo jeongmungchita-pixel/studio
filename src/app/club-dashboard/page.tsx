@@ -2,12 +2,12 @@
 
 import { useUser, useCollection } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users2, Clock } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useMemo } from 'react';
-import type { Member, MemberPass } from '@/types';
+import type { Member, GymClass } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,8 +25,15 @@ export default function ClubDashboardPage() {
         if (!firestore || !user?.clubId) return null;
         return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
     }, [firestore, user?.clubId]);
-
     const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
+    
+    // Query for all classes in the club
+    const classesQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.clubId) return null;
+        return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
+    }, [firestore, user?.clubId]);
+    const { data: gymClasses, isLoading: areClassesLoading } = useCollection<GymClass>(classesQuery);
+
     
     // Filter members based on their status
     const pendingMembers = useMemo(() => members?.filter(m => m.status === 'pending') || [], [members]);
@@ -95,7 +102,7 @@ export default function ClubDashboardPage() {
         }
     };
 
-    if (isUserLoading || areMembersLoading) {
+    if (isUserLoading || areMembersLoading || areClassesLoading) {
         return (
           <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -199,6 +206,7 @@ export default function ClubDashboardPage() {
                         가입/갱신 요청
                         {pendingMembers.length > 0 && <Badge className="ml-2">{pendingMembers.length}</Badge>}
                     </TabsTrigger>
+                    <TabsTrigger value="classes">클래스 현황</TabsTrigger>
                 </TabsList>
                 <TabsContent value="members">
                     <Card>
@@ -221,6 +229,52 @@ export default function ClubDashboardPage() {
                             <MemberTable memberList={pendingMembers} listType="pending" />
                         </CardContent>
                     </Card>
+                </TabsContent>
+                <TabsContent value="classes">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {gymClasses?.map((gymClass) => {
+                            const enrolledMembers = members?.filter(m => m.classId === gymClass.id);
+                            return (
+                                <Card key={gymClass.id}>
+                                    <CardHeader>
+                                        <CardTitle>{gymClass.name}</CardTitle>
+                                        <CardDescription className="flex items-center gap-4">
+                                            <span>{gymClass.dayOfWeek}요일</span>
+                                            <span className="flex items-center gap-1"><Clock className="w-4 h-4"/>{gymClass.time}</span>
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                                            <span className="flex items-center gap-1"><Users2 className="w-4 h-4"/>정원</span>
+                                            <span>{enrolledMembers?.length || 0} / {gymClass.capacity}</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {enrolledMembers && enrolledMembers.length > 0 ? (
+                                                enrolledMembers.map(member => (
+                                                    <div key={member.id} className="flex items-center gap-2 text-sm p-1 rounded-md bg-secondary/50">
+                                                        <Image src={member.photoURL || `https://picsum.photos/seed/${member.id}/24/24`} alt={member.name} width={24} height={24} className="rounded-full" />
+                                                        <span>{member.name}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground text-center py-4">등록된 회원이 없습니다.</p>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                         {(!gymClasses || gymClasses.length === 0) && (
+                            <Card className="md:col-span-2 lg:col-span-3">
+                                <CardContent className="flex flex-col items-center justify-center h-64">
+                                    <p className="text-muted-foreground">생성된 클래스가 없습니다.</p>
+                                    <Button variant="link" asChild>
+                                        <a href="/club-dashboard/classes">클래스 관리 페이지로 이동</a>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 </TabsContent>
             </Tabs>
         </main>

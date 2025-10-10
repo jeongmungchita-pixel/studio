@@ -13,6 +13,7 @@ export type Member = {
   guardianIds?: string[];
   photoURL?: string;
   activePassId?: string; // ID of the current MemberPass
+  classId?: string; // ID of the class the member is enrolled in
 };
 
 export type Club = {
@@ -90,3 +91,13 @@ export type PassTemplate = {
     price?: number;
     description?: string;
 }
+
+export type GymClass = {
+  id: string;
+  clubId: string;
+  name: string;
+  dayOfWeek: '월' | '화' | '수' | '목' | '금' | '토' | '일';
+  time: string; // e.g., "14:00"
+  capacity: number;
+  memberIds: string[];
+};

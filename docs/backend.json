@@ -56,6 +56,10 @@
         "activePassId": {
           "type": "string",
           "description": "The ID of the member's currently active pass."
+        },
+        "classId": {
+          "type": "string",
+          "description": "The ID of the class the member is enrolled in."
         }
       },
       "required": [
@@ -483,6 +487,53 @@
         "clubId",
         "name"
       ]
+    },
+    "GymClass": {
+      "title": "GymClass",
+      "type": "object",
+      "description": "Represents a class or session in a gymnastics club.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the class. Same as document ID."
+        },
+        "clubId": {
+          "type": "string",
+          "description": "The ID of the club this class belongs to."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the class, e.g., 'Beginner's Mat'"
+        },
+        "dayOfWeek": {
+          "type": "string",
+          "enum": ["월", "화", "수", "목", "금", "토", "일"],
+          "description": "The day of the week the class is held."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time the class starts, e.g., '14:00'."
+        },
+        "capacity": {
+          "type": "number",
+          "description": "Maximum number of members allowed in the class."
+        },
+        "memberIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of Member IDs enrolled in this class."
+        }
+      },
+      "required": [
+        "id",
+        "clubId",
+        "name",
+        "dayOfWeek",
+        "time",
+        "capacity"
+      ]
     }
   },
   "auth": {
@@ -534,6 +585,12 @@
         "$ref": "#/entities/Attendance"
       },
       "description": "Stores attendance records."
+    },
+    "/classes/{classId}": {
+      "schema": {
+        "$ref": "#/entities/GymClass"
+      },
+      "description": "Stores information about gymnastics classes."
     }
   }
 }
