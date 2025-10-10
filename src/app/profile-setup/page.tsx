@@ -23,7 +23,6 @@ const adultSchema = z.object({
   dateOfBirth: z.string().min(1, '생년월일을 입력하세요.'),
   gender: z.enum(['male', 'female'], { required_error: '성별을 선택하세요.' }),
   email: z.string().email('올바른 이메일 주소를 입력하세요.'),
-  phoneNumber: z.string().optional(),
 });
 
 const childSchema = z.object({
@@ -36,6 +35,7 @@ const childSchema = z.object({
 const formSchema = z.object({
   adultsInfo: z.array(adultSchema).min(1, '최소 한 명의 성인 정보를 등록해야 합니다.'),
   childrenInfo: z.array(childSchema).optional(),
+  phoneNumber: z.string().min(1, '전화번호를 입력하세요.'),
   clubId: z.string().min(1, '클럽을 선택하세요.'),
 });
 
@@ -58,6 +58,7 @@ export default function ProfileSetupPage() {
     defaultValues: {
       adultsInfo: [],
       childrenInfo: [],
+      phoneNumber: '',
       clubId: '',
     },
   });
@@ -83,13 +84,13 @@ export default function ProfileSetupPage() {
       // Register adults
       values.adultsInfo.forEach((adult, index) => {
         const memberRef = doc(collection(firestore, 'members'));
-        // The first registered adult is associated with the logged-in user's UID.
         const guardianId = index === 0 ? user.uid : doc(collection(firestore, 'users')).id;
         adultUids.push(guardianId);
         
         const memberPayload: Member = {
             id: memberRef.id,
             ...adult,
+            ...(index === 0 && { phoneNumber: values.phoneNumber }), // Add phone number only to the first adult
             dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
             clubId: values.clubId,
             status: 'pending',
@@ -183,9 +184,6 @@ export default function ProfileSetupPage() {
                             <FormField control={form.control} name={`adultsInfo.${index}.email`} render={({ field }) => (
                                 <FormItem><FormLabel>이메일</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
-                            <FormField control={form.control} name={`adultsInfo.${index}.phoneNumber`} render={({ field }) => (
-                                <FormItem><FormLabel>전화번호</FormLabel><FormControl><Input type="tel" {...field} placeholder="선택사항" /></FormControl><FormMessage /></FormItem>
-                            )}/>
                         </div>
                         {adultFields.length > 0 && (
                           <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
@@ -194,7 +192,7 @@ export default function ProfileSetupPage() {
                         )}
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined, email: (adultFields.length === 0 ? user?.email : '') || '', phoneNumber: '' })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ firstName: '', lastName: '', dateOfBirth: '', gender: 'male', email: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 성인 추가
                 </Button>
               </div>
@@ -235,10 +233,27 @@ export default function ProfileSetupPage() {
                         </Button>
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => appendChild({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendChild({ firstName: '', lastName: '', dateOfBirth: '', gender: 'male' })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 자녀 추가
                 </Button>
               </div>
+              
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>대표 전화번호</FormLabel>
+                    <FormControl>
+                      <Input type="tel" {...field} placeholder="연락 가능한 대표 전화번호를 입력하세요" />
+                    </FormControl>
+                    <FormDescription>
+                      계정의 대표 연락처로 사용됩니다.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
