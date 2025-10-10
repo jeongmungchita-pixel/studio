@@ -19,7 +19,8 @@ export function useUser(): UserHookResult {
   useEffect(() => {
     if (!auth || !firestore) {
       // Firebase services are not available yet.
-      setIsUserLoading(false); // Set loading to false as we can't proceed.
+      // We will wait for them to be available, so we keep loading true.
+      setIsUserLoading(true);
       return;
     }
 
