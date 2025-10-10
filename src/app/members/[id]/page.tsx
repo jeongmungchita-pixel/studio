@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon } from 'lucide-react';
+import Link from 'next/link';
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
@@ -65,6 +66,18 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
     return differenceInYears(new Date(), new Date(member.dateOfBirth));
   }, [member]);
 
+  const hasAccess = useMemo(() => {
+    if (!user || !member) return false;
+    // Guardian access
+    if (member.guardianIds?.includes(user.uid)) return true;
+    // Club admin access
+    if (user.role === 'club-admin' && user.clubId === member.clubId) return true;
+    // Super admin access
+    if (user.role === 'admin') return true;
+    return false;
+  }, [user, member]);
+
+
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!storage || !member || !event.target.files || event.target.files.length === 0) return;
     const file = event.target.files[0];
@@ -107,10 +120,11 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
     );
   }
 
-  // Security: Check if the logged-in user is a guardian for this member
-  if (!member || !user || !member.guardianIds?.includes(user.uid)) {
+  // Security: Check if the logged-in user is a guardian for this member OR the correct club admin
+  if (!member || !user || !hasAccess) {
      toast({ variant: 'destructive', title: '접근 권한 없음', description: '이 페이지를 볼 수 있는 권한이 없습니다.' });
-     router.push('/my-profile');
+     const redirectUrl = user?.role === 'club-admin' ? '/club-dashboard' : '/my-profile';
+     router.push(redirectUrl);
      return null; // or notFound();
   }
   

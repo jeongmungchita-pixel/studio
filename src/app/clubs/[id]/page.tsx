@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { format, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
@@ -277,7 +278,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                   {clubMembers?.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
+                        <Link href={`/members/${member.id}`} className="flex items-center gap-3 hover:underline">
                             <Image
                                 src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
                                 alt={member.name}
@@ -287,7 +288,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                                 data-ai-hint="person gymnastics"
                             />
                             <div>{member.name}</div>
-                        </div>
+                        </Link>
                       </TableCell>
                       <TableCell>{member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
@@ -332,7 +333,11 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
 
                                 return (
                                   <TableRow key={member.id} className={isPassInvalid ? 'bg-muted/50' : ''}>
-                                      <TableCell>{member.name}</TableCell>
+                                      <TableCell>
+                                        <Link href={`/members/${member.id}`} className="hover:underline">
+                                          {member.name}
+                                        </Link>
+                                      </TableCell>
                                       <TableCell>
                                         {getPassBadge(pass)}
                                       </TableCell>

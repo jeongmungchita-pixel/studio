@@ -6,7 +6,6 @@ import { Loader2, Users2, Clock } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { useMemo } from 'react';
 import type { Member, GymClass } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useMemo } from 'react';
 
 export default function ClubDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -147,7 +148,7 @@ export default function ClubDashboardPage() {
               {memberList.length > 0 ? memberList.map(member => (
                    <TableRow key={member.id}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
+                        <Link href={`/members/${member.id}`} className="flex items-center gap-3 hover:underline">
                             <Image
                                 src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
                                 alt={member.name}
@@ -162,7 +163,7 @@ export default function ClubDashboardPage() {
                                     {new Date(member.dateOfBirth || '').toLocaleDateString()}
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                       </TableCell>
                       <TableCell>
                           <Badge variant={getStatusVariant(member.status)}>{statusTranslations[member.status]}</Badge>
@@ -251,10 +252,10 @@ export default function ClubDashboardPage() {
                                         <div className="space-y-2">
                                             {enrolledMembers && enrolledMembers.length > 0 ? (
                                                 enrolledMembers.map(member => (
-                                                    <div key={member.id} className="flex items-center gap-2 text-sm p-1 rounded-md bg-secondary/50">
+                                                    <Link href={`/members/${member.id}`} key={member.id} className="flex items-center gap-2 text-sm p-1 rounded-md bg-secondary/50 hover:bg-secondary">
                                                         <Image src={member.photoURL || `https://picsum.photos/seed/${member.id}/24/24`} alt={member.name} width={24} height={24} className="rounded-full" />
                                                         <span>{member.name}</span>
-                                                    </div>
+                                                    </Link>
                                                 ))
                                             ) : (
                                                 <p className="text-sm text-muted-foreground text-center py-4">등록된 회원이 없습니다.</p>
