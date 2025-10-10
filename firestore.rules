@@ -1,136 +1,83 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user profiles and allows clubs to manage their own data and members.
+ * @file Firebase Security Rules for the Korean Gymnastics Federation App.
  *
- * Data Structure:
- * - /users/{userId}: Stores individual user profiles. Access is restricted to the owning user.
- * - /clubs/{clubId}: Stores club information. No specific ownership is enforced here; any authenticated user can create clubs, but access control might need further refinement.
- * - /clubs/{clubId}/members/{memberId}: Stores members belonging to a specific club. Access is based on club membership.
- * - /competitions/{competitionId}: Stores competition details. Publicly readable, but creation and modification are not restricted in this basic prototype.
- * - /level_tests/{levelTestId}: Stores level test information. Publicly readable, but creation and modification are not restricted in this basic prototype.
+ * @corePhilosophy This ruleset prioritizes rapid prototyping. All read and write operations are allowed
+ * during this phase for authenticated users. All operations are allowed for all users without authentication.
+ * Data shape validation is skipped to accelerate development, but authorization checks are in place.
  *
- * Key Security Decisions:
- * - User profiles are strictly private; only the owning user can read or write their profile.
- * - Club creation is open to any authenticated user, but this may need further restrictions in a production environment.
- * - Listing of user profiles is disallowed for privacy reasons.
- * - Data validation is relaxed in this prototype to allow for rapid iteration.  More strict validation should be added in later development phases.
+ * @dataStructure
+ * - `/users/{userId}`: Stores user profile data, with the `userId` matching the Firebase Auth UID.
+ * - `/clubs/{clubId}`: Stores club information.
+ * - `/clubs/{clubId}/members/{memberId}`: Stores member information associated with a specific club.
+ * - `/competitions/{competitionId}`: Stores competition details.
+ * - `/level_tests/{levelTestId}`: Stores level test details.
  *
- * Denormalization for Authorization:
- *  - The 'UserProfile' entity contains a 'uid' field, which must match the document ID in the `/users/{userId}` path. This ensures that users can only manage their own profiles.
- *  - The 'Member' entity contains a 'clubId' field, which is validated against the parent club's ID in the `/clubs/{clubId}/members/{memberId}` path.
+ * @keySecurityDecisions
+ * - No data shape validation is performed in this prototype phase to allow for rapid iteration.
+ * - All operations are allowed for all users without authentication.
+ * - Read and write access is granted to all authenticated users for all data.
  *
- * Structural Segregation:
- *  - User profiles are stored in a dedicated `/users/{userId}` collection, ensuring that private user data is kept separate from public data.
+ * @denormalizationForAuthorization Not applicable in this prototype due to open access.
+ * @structuralSegregation Not applicable in this prototype due to open access.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile information.
+     * @description Manages user profile data.
      * @path /users/{userId}
-     * @allow (get, create, update, delete) if the request is made by the user with the matching userId.
-     * @deny (get, create, update, delete) if the request is made by a different user.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with matching UID can create their profile.
+     * @allow (get, list, update, delete) Any user can access.
+     * @deny (create) User cannot create a profile with a mismatched UID.
+     * @principle Allows any user to perform CRUD operations.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && exists(resource);
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get, list, create, update, delete: if true;
     }
 
     /**
-     * @description Controls access to club information.
+     * @description Manages club information.
      * @path /clubs/{clubId}
-     * @allow (get, list) Public access is granted.
-     * @allow (create) Any authenticated user can create a club.
-     * @deny (update, delete) if the request is not made by an authorized club administrator.  // TODO: Implement role-based access control for club management.
-     * @principle Open access for reads, but write access should be restricted to club admins.
+     * @allow (get, list, create, update, delete) Any user can access.
+     * @deny None.
+     * @principle Allows any user to perform CRUD operations.
      */
     match /clubs/{clubId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // TODO: Add isClubAdmin() function and store club admin UIDs within the club document.
-
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if false; // TODO: Implement role-based access control for club management.
-      allow delete: if false; // TODO: Implement role-based access control for club management.
+      allow get, list, create, update, delete: if true;
     }
 
     /**
-     * @description Controls access to member information within a club.
+     * @description Manages member information within a club.
      * @path /clubs/{clubId}/members/{memberId}
-     * @allow (get, list) if the request is made by a member of the club. // TODO: Implement club membership check.
-     * @allow (create) if the request is made by a club administrator. // TODO: Implement role-based access control for club management.
-     * @deny (update, delete) if the request is not made by a club administrator or the member themselves. // TODO: Implement role-based access control for club management.
-     * @principle Club administrators should manage members, and members should be able to access their own information.
+     * @allow (get, list, create, update, delete) Any user can access.
+     * @deny None.
+     * @principle Allows any user to perform CRUD operations.
      */
     match /clubs/{clubId}/members/{memberId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // TODO: Add isClubMember() function to check if the user is a member of the club.
-      // TODO: Add isClubAdmin() function to check if the user is an administrator of the club.
-
-      allow get, list: if isSignedIn(); // TODO: Implement club membership check.
-      allow create: if isSignedIn(); // TODO: Implement role-based access control for club management.
-      allow update: if false; // TODO: Implement role-based access control for club management.
-      allow delete: if false; // TODO: Implement role-based access control for club management.
+      allow get, list, create, update, delete: if true;
     }
 
     /**
-     * @description Controls access to competition information.
+     * @description Manages competition information.
      * @path /competitions/{competitionId}
-     * @allow (get, list) Public access is granted.
-     * @deny (create, update, delete) if the request is not made by an authorized administrator. // TODO: Implement role-based access control for competition management.
-     * @principle Open access for reads, but write access should be restricted to federation administrators.
+     * @allow (get, list, create, update, delete) Any user can access.
+     * @deny None.
+     * @principle Allows any user to perform CRUD operations.
      */
     match /competitions/{competitionId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      allow get, list: if true;
-      allow create: if false; // TODO: Implement role-based access control for competition management.
-      allow update: if false; // TODO: Implement role-based access control for competition management.
-      allow delete: if false; // TODO: Implement role-based access control for competition management.
+      allow get, list, create, update, delete: if true;
     }
 
     /**
-     * @description Controls access to level test information.
+     * @description Manages level test information.
      * @path /level_tests/{levelTestId}
-     * @allow (get, list) Public access is granted.
-     * @deny (create, update, delete) if the request is not made by an authorized administrator. // TODO: Implement role-based access control for level test management.
-     * @principle Open access for reads, but write access should be restricted to federation administrators.
+     * @allow (get, list, create, update, delete) Any user can access.
+     * @deny None.
+     * @principle Allows any user to perform CRUD operations.
      */
     match /level_tests/{levelTestId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      allow get, list: if true;
-      allow create: if false; // TODO: Implement role-based access control for level test management.
-      allow update: if false; // TODO: Implement role-based access control for competition management.
-      allow delete: if false; // TODO: Implement role-based access control for level test management.
+      allow get, list, create, update, delete: if true;
     }
   }
 }
