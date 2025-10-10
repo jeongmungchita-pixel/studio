@@ -92,8 +92,6 @@ export default function ProfileSetupPage() {
         return;
     }
 
-    form.formState.isSubmitting = true;
-
     try {
       const batch = writeBatch(firestore);
       const guardianUids: string[] = [];
@@ -173,8 +171,6 @@ export default function ProfileSetupPage() {
         title: '오류 발생',
         description: '프로필을 저장하는 중 오류가 발생했습니다.',
       });
-    } finally {
-        form.formState.isSubmitting = false;
     }
   };
   
