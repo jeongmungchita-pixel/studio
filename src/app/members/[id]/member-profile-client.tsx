@@ -42,7 +42,7 @@ const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   excused: '사유',
 };
 
-export default function MemberProfileClient({ id: memberId }: { id:string }) {
+export default function MemberProfileClient({ id }: { id:string }) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
@@ -58,28 +58,28 @@ export default function MemberProfileClient({ id: memberId }: { id:string }) {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
   // 1. Fetch member data
-  const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', memberId) : null), [firestore, memberId]);
+  const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', id) : null), [firestore, id]);
   const { data: member, isLoading: isMemberLoading } = useDoc<Member>(memberRef);
 
   // 2. Fetch all passes for this member
   const passesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'member_passes'), where('memberId', '==', memberId), orderBy('startDate', 'desc'));
-  }, [firestore, memberId]);
+    return query(collection(firestore, 'member_passes'), where('memberId', '==', id), orderBy('startDate', 'desc'));
+  }, [firestore, id]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
   
   // 3. Fetch all attendance records for this member
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'attendance'), where('memberId', '==', memberId), orderBy('date', 'desc'));
-  }, [firestore, memberId]);
+    return query(collection(firestore, 'attendance'), where('memberId', '==', id), orderBy('date', 'desc'));
+  }, [firestore, id]);
   const { data: allAttendance, isLoading: areAttendanceLoading } = useCollection<Attendance>(attendanceQuery);
 
   // 4. Fetch all media items for this member
   const mediaQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'media_items'), where('memberId', '==', memberId), orderBy('uploadDate', 'desc'));
-  }, [firestore, memberId]);
+    return query(collection(firestore, 'media_items'), where('memberId', '==', id), orderBy('uploadDate', 'desc'));
+  }, [firestore, id]);
   const { data: mediaItems, isLoading: areMediaLoading } = useCollection<MediaItem>(mediaQuery);
 
   const isLoading = isUserLoading || isMemberLoading || arePassesLoading || areAttendanceLoading || areMediaLoading;
