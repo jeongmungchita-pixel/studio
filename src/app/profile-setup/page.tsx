@@ -229,7 +229,7 @@ export default function ProfileSetupPage() {
 
   return (
     <main className="flex-1 p-4 md:p-6">
-      <div className="mx-auto max-w-6xl space-y-8">
+      <div className="mx-auto max-w-4xl space-y-8">
         <div>
           <h1 className="text-3xl font-bold">프로필 설정</h1>
           <p className="mt-2 text-muted-foreground">
@@ -248,7 +248,7 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {adultFields.map((field, index) => (
                     <div
                       key={field.id}
@@ -258,7 +258,7 @@ export default function ProfileSetupPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-2"
+                        className="absolute right-2 top-2 h-7 w-7"
                         onClick={() => removeAdult(index)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -349,6 +349,7 @@ export default function ProfileSetupPage() {
                             <Button
                               type="button"
                               variant="outline"
+                              size="sm"
                               onClick={() =>
                                 adultFileInputRefs.current[index]?.click()
                               }
@@ -388,7 +389,11 @@ export default function ProfileSetupPage() {
                     </div>
                   ))}
                 </div>
-
+                 {adultFields.length === 0 && (
+                   <p className="text-sm text-center text-muted-foreground py-4">
+                     본인 또는 다른 성인 선수를 등록하려면 아래 버튼을 클릭하세요.
+                   </p>
+                 )}
                 <Button
                   type="button"
                   variant="outline"
@@ -410,7 +415,7 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {childFields.map((field, index) => (
                     <div
                       key={field.id}
@@ -420,7 +425,7 @@ export default function ProfileSetupPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-2"
+                        className="absolute right-2 top-2 h-7 w-7"
                         onClick={() => removeChild(index)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -511,6 +516,7 @@ export default function ProfileSetupPage() {
                             <Button
                               type="button"
                               variant="outline"
+                              size="sm"
                               onClick={() =>
                                 childFileInputRefs.current[index]?.click()
                               }
@@ -550,6 +556,11 @@ export default function ProfileSetupPage() {
                     </div>
                   ))}
                 </div>
+                 {childFields.length === 0 && (
+                   <p className="text-sm text-center text-muted-foreground py-4">
+                     자녀 선수를 등록하려면 아래 버튼을 클릭하세요.
+                   </p>
+                 )}
                 <Button
                   type="button"
                   variant="outline"
@@ -571,64 +582,66 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>대표 전화번호</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="tel"
-                          {...field}
-                          placeholder="연락 가능한 대표 전화번호를 입력하세요"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="clubId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>소속 클럽</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>대표 전화번호</FormLabel>
                         <FormControl>
-                          <SelectTrigger disabled={areClubsLoading}>
-                            <SelectValue placeholder="등록할 클럽을 선택하세요" />
-                          </SelectTrigger>
+                          <Input
+                            type="tel"
+                            {...field}
+                            placeholder="연락 가능한 대표 전화번호"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {areClubsLoading ? (
-                            <div className="flex items-center justify-center p-4">
-                              <Loader2 className="h-5 w-5 animate-spin" />
-                            </div>
-                          ) : clubs && clubs.length > 0 ? (
-                            clubs.map((club) => (
-                              <SelectItem key={club.id} value={club.id}>
-                                {club.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="p-4 text-center text-sm text-muted-foreground">
-                              등록된 클럽이 없습니다. 관리자에게 문의하세요.
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="clubId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>소속 클럽</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger disabled={areClubsLoading}>
+                              <SelectValue placeholder="등록할 클럽을 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {areClubsLoading ? (
+                              <div className="flex items-center justify-center p-4">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              </div>
+                            ) : clubs && clubs.length > 0 ? (
+                              clubs.map((club) => (
+                                <SelectItem key={club.id} value={club.id}>
+                                  {club.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                등록된 클럽이 없습니다.
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center pt-4">
               <Button
                 type="submit"
                 size="lg"
