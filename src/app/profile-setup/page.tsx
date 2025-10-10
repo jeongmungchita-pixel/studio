@@ -84,10 +84,11 @@ export default function ProfileSetupPage() {
       // Register adults
       values.adultsInfo.forEach((adult, index) => {
         const memberRef = doc(collection(firestore, 'members'));
+        // The first adult registered gets linked to the currently logged in user account.
         const guardianId = index === 0 ? user.uid : doc(collection(firestore, 'users')).id;
         adultUids.push(guardianId);
         
-        const memberPayload: Member = {
+        const memberPayload: Omit<Member, 'guardianIds'> & { guardianIds: string[] } = {
             id: memberRef.id,
             ...adult,
             ...(index === 0 && { phoneNumber: values.phoneNumber }), // Add phone number only to the first adult
@@ -261,18 +262,28 @@ export default function ProfileSetupPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>소속 클럽</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClubsLoading}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="등록할 클럽을 선택하세요" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {clubs?.map((club) => (
-                          <SelectItem key={club.id} value={club.id}>
-                            {club.name}
-                          </SelectItem>
-                        ))}
+                        {areClubsLoading ? (
+                            <div className="flex items-center justify-center p-4">
+                                <Loader2 className="h-5 w-5 animate-spin"/>
+                            </div>
+                        ) : clubs && clubs.length > 0 ? (
+                          clubs.map((club) => (
+                            <SelectItem key={club.id} value={club.id}>
+                              {club.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            불러올 클럽이 없습니다.
+                          </div>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
