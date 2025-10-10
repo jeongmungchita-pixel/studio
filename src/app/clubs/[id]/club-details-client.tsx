@@ -68,7 +68,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
   const memberIds = useMemo(() => clubMembers?.map(m => m.id) || [], [clubMembers]);
   const memberPassesQuery = useMemoFirebase(() => {
     if (!firestore || memberIds.length === 0) return null;
-    return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds), where('status', '==', 'active'));
+    return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
   }, [firestore, memberIds]);
   const { data: memberPasses, isLoading: arePassesLoading } = useCollection<MemberPass>(memberPassesQuery);
   
