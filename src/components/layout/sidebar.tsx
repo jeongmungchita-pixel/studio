@@ -123,13 +123,7 @@ export function AppSidebar() {
                     <span className="text-xs text-muted-foreground capitalize">{currentUser?.role}</span>
                 </div>
             </div>
-            ) : (
-               <div className="flex items-center gap-3 w-full">
-                 <Link href="/login" className="w-full">
-                    <Button variant="outline" className="w-full">Log In</Button>
-                 </Link>
-               </div>
-            )}
+            ) : null}
             {!isUserLoading && user && <ChevronDown className="w-4 h-4" />}
         </div>
       </SidebarFooter>

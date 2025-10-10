@@ -37,12 +37,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import {
-  initiateAnonymousSignIn,
   initiateEmailSignIn,
   initiateEmailSignUp,
 } from '@/firebase/non-blocking-login';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z
   .object({
@@ -94,38 +93,31 @@ export default function LoginPage() {
   }, [user]);
 
   const onSubmit = async (values: FormValues) => {
+    if (!auth) return;
     setIsSubmitting(true);
     try {
-      let userCredential;
       if (formType === 'signup') {
         if (values.password !== values.confirmPassword) {
-          toast({
-            variant: 'destructive',
-            title: 'Sign-up failed',
-            description: "Passwords don't match.",
+          form.setError('confirmPassword', {
+            type: 'manual',
+            message: "Passwords don't match.",
           });
           setIsSubmitting(false);
           return;
         }
-        initiateEmailSignUp(auth, values.email, values.password);
-        // userCredential = await createUserWithEmailAndPassword(
-        //   auth,
-        //   values.email,
-        //   values.password
-        // );
-        // const newUser = userCredential.user;
-        // await createUserProfile(newUser, values.role, 'email');
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          values.email,
+          values.password
+        );
+        const newUser = userCredential.user;
+        await createUserProfile(newUser, values.role, 'email');
         toast({
           title: 'Sign-up successful!',
           description: 'Please check your email for verification.',
         });
       } else {
-        initiateEmailSignIn(auth, values.email, values.password);
-        // userCredential = await signInWithEmailAndPassword(
-        //   auth,
-        //   values.email,
-        //   values.password
-        // );
+        await signInWithEmailAndPassword(auth, values.email, values.password);
       }
     } catch (error: any) {
       console.error(error);
@@ -140,19 +132,21 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     setIsSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // const result = await signInWithPopup(auth, provider);
-      // await createUserProfile(result.user, 'member', 'google');
+      const result = await signInWithPopup(auth, provider);
+      await createUserProfile(result.user, 'member', 'google');
     } catch (error: any) {
       console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Google Sign-In failed',
-        description: error.message || 'Could not sign in with Google.',
-      });
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({
+          variant: 'destructive',
+          title: 'Google Sign-In failed',
+          description: error.message || 'Could not sign in with Google.',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -177,8 +171,8 @@ export default function LoginPage() {
           : (role as 'admin' | 'member'),
       provider,
     };
-    setDocumentNonBlocking(userRef, userProfile);
-    // await setDoc(userRef, userProfile, { merge: true });
+    // Use non-blocking write
+    setDocumentNonBlocking(userRef, userProfile, { merge: true });
   };
 
   if (isUserLoading || user) {
