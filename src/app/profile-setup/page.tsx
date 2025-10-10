@@ -16,22 +16,19 @@ import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Club, Member } from '@/types';
 import { useMemoFirebase } from '@/firebase/provider';
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useRef } from 'react';
 import Image from 'next/image';
 
 const personSchema = z.object({
   name: z.string().min(1, '이름을 입력하세요.'),
   dateOfBirth: z.string().min(1, '생년월일을 입력하세요.'),
   gender: z.enum(['male', 'female'], { required_error: '성별을 선택하세요.' }),
-  email: z.string().email('올바른 이메일 주소를 입력하세요.').optional(),
   photo: z.instanceof(File).optional(),
   photoPreview: z.string().optional(),
 });
 
 const formSchema = z.object({
-  adultsInfo: z.array(personSchema.extend({
-    email: z.string().email('올바른 이메일 주소를 입력하세요.'),
-  })).min(1, '최소 한 명의 성인 정보를 등록해야 합니다.'),
+  adultsInfo: z.array(personSchema).min(1, '최소 한 명의 성인 정보를 등록해야 합니다.'),
   childrenInfo: z.array(personSchema).optional(),
   phoneNumber: z.string().min(1, '전화번호를 입력하세요.'),
   clubId: z.string().min(1, '클럽을 선택하세요.'),
@@ -101,13 +98,13 @@ export default function ProfileSetupPage() {
         if (adult.photo) {
           photoURL = await uploadImage(storage, `profile_pictures/${memberRef.id}`, adult.photo);
         }
-
+        
         const memberPayload: Omit<Member, 'guardianIds'> & { guardianIds: string[] } = {
           id: memberRef.id,
           name: adult.name,
           dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
           gender: adult.gender,
-          email: adult.email,
+          ...(i === 0 && { email: user.email }), // Only set email for the primary user
           ...(i === 0 && { phoneNumber: values.phoneNumber }),
           clubId: values.clubId,
           status: 'pending',
@@ -233,9 +230,6 @@ export default function ProfileSetupPage() {
                                   </FormControl>
                               <FormMessage /></FormItem>
                            )}/>
-                            <FormField control={form.control} name={`adultsInfo.${index}.email`} render={({ field }) => (
-                                <FormItem><FormLabel>이메일</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
                         </div>
                         {adultFields.length > 0 && (
                           <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
@@ -244,7 +238,7 @@ export default function ProfileSetupPage() {
                         )}
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ name: '', dateOfBirth: '', gender: 'male', email: '' })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ name: '', dateOfBirth: '', gender: 'male' })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 성인 추가
                 </Button>
               </div>
