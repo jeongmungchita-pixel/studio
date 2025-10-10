@@ -106,8 +106,12 @@ export default function MyProfilePage() {
     }
   };
   
-  const getPassStatusBadge = (pass: MemberPass | undefined) => {
+  const getPassStatusBadge = (pass: MemberPass | undefined, member: Member) => {
+    if (member.status === 'pending') {
+      return <Badge variant="destructive">갱신/가입 승인 대기</Badge>;
+    }
     if (!pass) return <Badge variant="secondary">이용권 없음</Badge>;
+    
     switch (pass.status) {
       case 'active':
         if (pass.totalSessions !== undefined) {
@@ -118,6 +122,8 @@ export default function MyProfilePage() {
         return <Badge variant="destructive">승인 대기중</Badge>;
       case 'expired':
         return <Badge variant="secondary">만료됨</Badge>;
+      default:
+        return <Badge variant="secondary">이용권 없음</Badge>;
     }
   };
 
@@ -162,7 +168,7 @@ export default function MyProfilePage() {
         {members && members.length > 0 ? members.map(member => {
            const memberPasses = passes?.filter(p => p.memberId === member.id) || [];
            const currentPass = memberPasses.find(p => p.status === 'active' || p.status === 'pending');
-           const canRequestNewPass = !currentPass;
+           const canRequestNewPass = !currentPass && member.status !== 'pending';
 
           return (
             <Card key={member.id}>
@@ -181,7 +187,7 @@ export default function MyProfilePage() {
                                 <p className="text-sm text-muted-foreground">{new Date(member.dateOfBirth || '').toLocaleDateString()}</p>
                             </div>
                         </div>
-                        {getPassStatusBadge(currentPass)}
+                        {getPassStatusBadge(currentPass, member)}
                     </div>
                 </CardHeader>
               <CardContent>
