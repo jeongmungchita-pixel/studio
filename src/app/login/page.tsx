@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirebase, useUser } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy, PlusCircle, Trash2 } from 'lucide-react';
 import type { UserProfile, Club } from '@/types';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -62,7 +62,7 @@ const formSchema = z.object({
   role: z.enum(['member', 'club-admin'], {
     required_error: '역할을 선택해야 합니다.',
   }),
-  clubId: z.string().min(1, '소속 클럽을 선택하세요.'),
+  clubId: z.string().optional(),
   clubName: z.string().optional(), // For club admins
   phoneNumber: z.string().optional(), // For club admins and general users
   signupType: z.enum(['self', 'children', 'both']).optional(),
@@ -71,8 +71,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-let formType: 'login' | 'member-signup' | 'admin-signup' = 'login';
 
 export default function LoginPage() {
   const { auth, firestore } = useFirebase();
@@ -89,7 +87,29 @@ export default function LoginPage() {
   const { data: clubs, isLoading: areClubsLoading } = useCollection<Club>(clubsCollection);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema.refine(
+        (data) => {
+            if (currentFormType !== 'login' && data.password !== data.confirmPassword) {
+                return false;
+            }
+            return true;
+        },
+        {
+            message: '비밀번호가 일치하지 않습니다.',
+            path: ['confirmPassword'],
+        }
+    ).refine(
+        (data) => {
+             if (currentFormType === 'member-signup' && !data.clubId) {
+                return false;
+            }
+            return true;
+        },
+        {
+            message: '소속 클럽을 선택하세요.',
+            path: ['clubId'],
+        }
+    )),
     defaultValues: {
       email: '',
       password: '',
@@ -109,12 +129,12 @@ export default function LoginPage() {
   const signupType = form.watch('signupType');
 
   useEffect(() => {
-    formType = currentFormType;
-  }, [currentFormType]);
-
-  useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/dashboard');
+        if (user.role === 'club-admin' && user.status === 'approved') {
+            router.push('/club-dashboard');
+        } else {
+            router.push('/dashboard');
+        }
     }
   }, [user, isUserLoading, router]);
 
@@ -144,11 +164,6 @@ export default function LoginPage() {
 
   const onSubmit = async (values: FormValues) => {
     if (!auth || !firestore) return;
-    
-    if (currentFormType !== 'login' && values.password !== values.confirmPassword) {
-      form.setError('confirmPassword', { type: 'manual', message: '비밀번호가 일치하지 않습니다.' });
-      return;
-    }
     
     setIsSubmitting(true);
     try {
