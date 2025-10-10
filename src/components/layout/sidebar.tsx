@@ -18,13 +18,15 @@ import {
   UserCog,
   LogOut,
   Ticket,
+  User as UserIcon,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import type { UserProfile } from '@/types';
 
 const menuItems = [
-  { href: '/dashboard', label: '대시보드', icon: LayoutDashboard, roles: ['admin', 'member'] },
+  { href: '/dashboard', label: '대시보드', icon: LayoutDashboard, roles: ['admin'] },
+  { href: '/my-profile', label: '내 정보/이용권', icon: UserIcon, roles: ['member'] },
   { href: '/club-dashboard', label: '클럽 대시보드', icon: LayoutDashboard, roles: ['club-admin'] },
   { href: '/club-dashboard/passes', label: '이용권 관리', icon: Ticket, roles: ['club-admin'] },
   { href: '/admin/users', label: '사용자 관리', icon: UserCog, roles: ['admin']},
@@ -41,9 +43,9 @@ export function AppSidebar() {
   const router = useRouter();
 
   const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/club-dashboard') return pathname === href;
-    // For nested routes like /club-dashboard/passes
-    if (href.startsWith('/club-dashboard/')) return pathname === href;
+    // Exact match for dashboard routes
+    if (href === '/dashboard' || href === '/club-dashboard' || href === '/my-profile') return pathname === href;
+    // StartsWith for nested routes
     return pathname.startsWith(href);
   };
   

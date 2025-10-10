@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2 } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { useMemo } from 'react';
-import type { Member } from '@/types';
+import type { Member, MemberPass } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ export default function ClubDashboardPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
+    // Query for all members (regular and pending) in the club
     const membersQuery = useMemoFirebase(() => {
         if (!firestore || !user?.clubId) return null;
         return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
@@ -27,22 +28,68 @@ export default function ClubDashboardPage() {
 
     const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
     
+    // Filter members based on their status
     const pendingMembers = useMemo(() => members?.filter(m => m.status === 'pending') || [], [members]);
     const regularMembers = useMemo(() => members?.filter(m => m.status === 'active' || m.status === 'inactive') || [], [members]);
 
 
-    const handleStatusChange = async (memberId: string, newStatus: 'active' | 'inactive' | 'delete') => {
+    const handleApproval = async (memberId: string, approve: boolean) => {
+        if (!firestore) return;
+
+        const memberRef = doc(firestore, 'members', memberId);
+
+        if (!approve) {
+            try {
+                await deleteDoc(memberRef);
+                toast({ title: '요청 거절', description: '가입/갱신 요청이 거절되었습니다.' });
+            } catch (error) {
+                toast({ variant: 'destructive', title: '오류', description: '요청 거절 중 오류가 발생했습니다.' });
+            }
+            return;
+        }
+
+        // Approve logic
+        try {
+            const batch = writeBatch(firestore);
+
+            // 1. Update member status to 'active'
+            batch.update(memberRef, { status: 'active' });
+
+            // 2. Find the pending pass for this member and activate it
+            const passesRef = collection(firestore, 'member_passes');
+            const pendingPassQuery = query(passesRef, where('memberId', '==', memberId), where('status', '==', 'pending'));
+            
+            // Because we don't have getDocs in a batch, we do it before. This is not perfectly transactional.
+            const { getDocs } = await import('firebase/firestore');
+            const pendingPassSnap = await getDocs(pendingPassQuery);
+
+            if (!pendingPassSnap.empty) {
+                const passDoc = pendingPassSnap.docs[0];
+                const passRef = doc(firestore, 'member_passes', passDoc.id);
+                batch.update(passRef, { 
+                    status: 'active',
+                    startDate: new Date().toISOString() 
+                });
+                // 3. Update the member's activePassId
+                batch.update(memberRef, { activePassId: passDoc.id });
+            }
+
+            await batch.commit();
+            toast({ title: '승인 완료', description: '요청이 승인되었습니다.' });
+
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: '오류', description: '승인 처리 중 오류가 발생했습니다.' });
+        }
+    };
+    
+     const handleStatusChange = async (memberId: string, newStatus: 'active' | 'inactive') => {
         if (!firestore) return;
         const memberRef = doc(firestore, 'members', memberId);
         try {
-            if (newStatus === 'delete') {
-                await deleteDoc(memberRef);
-                toast({ title: '요청 거절', description: '선수 가입 요청이 거절되었습니다.' });
-            } else {
-                await updateDoc(memberRef, { status: newStatus });
-                const message = newStatus === 'active' ? '선수 상태가 활성화되었습니다.' : '선수 상태가 비활성화되었습니다.';
-                toast({ title: '상태 업데이트 완료', description: message });
-            }
+            await updateDoc(memberRef, { status: newStatus });
+            const message = newStatus === 'active' ? '선수 상태가 활성화되었습니다.' : '선수 상태가 비활성화되었습니다.';
+            toast({ title: '상태 업데이트 완료', description: message });
         } catch (error) {
             toast({ variant: 'destructive', title: '오류', description: '상태 업데이트 중 오류가 발생했습니다.' });
         }
@@ -119,12 +166,12 @@ export default function ClubDashboardPage() {
                               <Button size="sm" variant="outline" onClick={() => handleStatusChange(member.id, 'inactive')}>비활성화</Button>
                           )}
                           {listType === 'regular' && member.status === 'inactive' && (
-                               <Button size="sm" onClick={() => handleStatusChange(member.id, 'active')}>갱신 요청</Button>
+                               <Button size="sm" onClick={() => handleStatusChange(member.id, 'active')}>활성화</Button>
                           )}
                            {listType === 'pending' && (
                             <>
-                                <Button size="sm" onClick={() => handleStatusChange(member.id, 'active')}>승인</Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleStatusChange(member.id, 'delete')}>거절</Button>
+                                <Button size="sm" onClick={() => handleApproval(member.id, true)}>승인</Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleApproval(member.id, false)}>거절</Button>
                             </>
                           )}
                       </TableCell>
@@ -168,7 +215,7 @@ export default function ClubDashboardPage() {
                      <Card>
                         <CardHeader>
                             <CardTitle>가입/갱신 요청 관리</CardTitle>
-                            <CardDescription>새로운 가입 요청 또는 이용권 갱신을 요청한 선수 목록입니다.</CardDescription>
+                            <CardDescription>신규 가입 또는 이용권 갱신을 요청한 선수 목록입니다.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <MemberTable memberList={pendingMembers} listType="pending" />

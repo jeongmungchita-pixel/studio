@@ -32,15 +32,15 @@ export default function ClubPassesPage() {
   // 1. Fetch active members for the current club admin
   const membersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId), where('status', '==', 'active'));
+    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
   }, [firestore, user?.clubId]);
   const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
 
-  // 2. Fetch all active passes for the members of this club
+  // 2. Fetch all passes for the members of this club (active, pending, and expired)
   const memberIds = members?.map(m => m.id) || [];
   const passesQuery = useMemoFirebase(() => {
     if (!firestore || memberIds.length === 0) return null;
-    return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds), where('status', '==', 'active'));
+    return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
   }, [firestore, memberIds]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
 
@@ -51,7 +51,7 @@ export default function ClubPassesPage() {
     try {
       const batch = writeBatch(firestore);
 
-      // New pass document
+      // New pass document with 'active' status
       const newPassRef = doc(collection(firestore, 'member_passes'));
       const newPass: MemberPass = {
         id: newPassRef.id,
@@ -63,19 +63,19 @@ export default function ClubPassesPage() {
         attendableSessions: 4,
         remainingSessions: 5,
         attendanceCount: 0,
-        status: 'active',
+        status: 'active', // Manually issued pass is active immediately
       };
       batch.set(newPassRef, newPass);
 
-      // Update member's activePassId
+      // Update member's activePassId and status
       const memberRef = doc(firestore, 'members', selectedMember.id);
-      batch.update(memberRef, { activePassId: newPass.id });
+      batch.update(memberRef, { activePassId: newPass.id, status: 'active' });
 
       await batch.commit();
       
       toast({
-        title: '이용권 발급 완료',
-        description: `${selectedMember.name} 님에게 새로운 이용권이 발급되었습니다.`
+        title: '이용권 수동 발급 완료',
+        description: `${selectedMember.name} 님에게 새로운 이용권이 수동으로 발급되었습니다.`
       });
       setSelectedMember(null);
     } catch (error) {
@@ -90,6 +90,24 @@ export default function ClubPassesPage() {
     }
   };
   
+  const getPassStatusBadge = (pass: MemberPass | undefined, member: Member) => {
+      if(member.status === 'pending') {
+         return <Badge variant="destructive">가입/갱신 대기</Badge>
+      }
+      if (pass) {
+          if (pass.status === 'active') {
+             return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
+          }
+          if (pass.status === 'pending') {
+             return <Badge variant="destructive">갱신 승인 대기</Badge>;
+          }
+           if (pass.status === 'expired') {
+             return <Badge variant="secondary">만료됨</Badge>;
+          }
+      }
+      return <Badge variant="secondary">이용권 없음</Badge>;
+  }
+
   const isLoading = areMembersLoading || arePassesLoading;
 
   return (
@@ -97,7 +115,7 @@ export default function ClubPassesPage() {
       <Card>
         <CardHeader>
           <CardTitle>이용권 관리</CardTitle>
-          <CardDescription>클럽 소속 선수의 이용권을 발급하고 상태를 확인합니다.</CardDescription>
+          <CardDescription>클럽 소속 선수의 이용권 현황을 보고, 필요시 수동으로 발급합니다.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -115,7 +133,10 @@ export default function ClubPassesPage() {
               </TableHeader>
               <TableBody>
                 {members?.map(member => {
-                  const activePass = passes?.find(p => p.memberId === member.id);
+                  const currentPass = passes?.find(p => p.id === member.activePassId);
+                  const hasPendingPass = passes?.some(p => p.memberId === member.id && p.status === 'pending');
+                  const canIssueNewPass = !currentPass || currentPass.status === 'expired';
+                  
                   return (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
@@ -132,20 +153,17 @@ export default function ClubPassesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {activePass ? (
-                          <Badge>{`${activePass.attendanceCount} / ${activePass.attendableSessions} (남은 기회: ${activePass.remainingSessions})`}</Badge>
-                        ) : (
-                          <Badge variant="secondary">이용권 없음</Badge>
-                        )}
+                        {getPassStatusBadge(currentPass, member)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
                           size="sm"
                           onClick={() => setSelectedMember(member)}
-                          disabled={!!activePass}
+                          disabled={!canIssueNewPass || hasPendingPass}
+                          title={!canIssueNewPass ? "활성 또는 대기중인 이용권이 이미 있습니다." : ""}
                         >
                           <Ticket className="mr-2 h-4 w-4" />
-                          이용권 발급
+                          수동 발급
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -154,7 +172,7 @@ export default function ClubPassesPage() {
                  {(!members || members.length === 0) &&
                     <TableRow><TableCell colSpan={3} className="text-center">활동중인 선수가 없습니다.</TableCell></TableRow>
                   }
-              </TableBdy>
+              </TableBody>
             </Table>
           )}
         </CardContent>
@@ -163,16 +181,16 @@ export default function ClubPassesPage() {
       <Dialog open={!!selectedMember} onOpenChange={(isOpen) => !isOpen && setSelectedMember(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>이용권 발급 확인</DialogTitle>
+            <DialogTitle>이용권 수동 발급 확인</DialogTitle>
             <DialogDescription>
-              {selectedMember?.name} 선수에게 새로운 이용권을 발급하시겠습니까?
+              {selectedMember?.name} 선수에게 새로운 이용권을 수동으로 발급하시겠습니까? 이 기능은 선결제 등 예외적인 상황에만 사용해주세요.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
               <p><strong>발급 대상:</strong> {selectedMember?.name}</p>
               <p><strong>이용권 유형:</strong> 표준 이용권 (총 5회, 출석 4회 필요)</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                발급 시 기존에 만료된 이용권 정보는 유지되며, 새로운 이용권으로 출석이 기록됩니다.
+                발급 즉시 이용권이 활성화되며, 선수의 상태도 '활동중'으로 변경됩니다.
               </p>
           </div>
           <DialogFooter>

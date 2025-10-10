@@ -164,6 +164,11 @@
           "type": "string",
           "description": "The type of pass, e.g., 'standard', 'premium'."
         },
+         "paymentMethod": {
+          "type": "string",
+          "enum": ["bank-transfer", "card"],
+          "description": "The chosen payment method."
+        },
         "startDate": {
           "type": "string",
           "format": "date-time",
@@ -192,7 +197,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["active", "expired"],
+          "enum": ["active", "expired", "pending"],
           "description": "The status of the pass."
         }
       },
@@ -201,7 +206,6 @@
         "memberId",
         "clubId",
         "passType",
-        "startDate",
         "totalSessions",
         "attendableSessions",
         "remainingSessions",

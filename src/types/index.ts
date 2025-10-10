@@ -54,13 +54,14 @@ export type MemberPass = {
   memberId: string;
   clubId: string;
   passType: string; // e.g., 'standard', 'premium'
-  startDate: string; // ISO 8601 date string
+  paymentMethod?: 'bank-transfer' | 'card';
+  startDate?: string; // ISO 8601 date string
   endDate?: string; // ISO 8601 date string, optional
   totalSessions: number; // e.g. 5
   attendableSessions: number; // e.g. 4
   remainingSessions: number;
   attendanceCount: number;
-  status: 'active' | 'expired';
+  status: 'active' | 'expired' | 'pending';
 };
 
 
