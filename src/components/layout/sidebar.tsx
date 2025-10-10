@@ -7,6 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -15,6 +16,7 @@ import {
   Trophy,
   ClipboardList,
   UserCog,
+  LogOut,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -33,6 +35,7 @@ const menuItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
 
   const isActive = (href: string) => {
     if (href === '/dashboard' || href === '/club-dashboard') return pathname === href;
@@ -44,6 +47,12 @@ export function AppSidebar() {
   const filteredMenuItems = menuItems.filter(item => 
     currentUser?.role && item.roles.includes(currentUser.role)
   );
+  
+  const handleLogout = () => {
+    if(auth) {
+        signOut(auth);
+    }
+  }
 
   return (
     <>
@@ -72,6 +81,16 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+       <SidebarFooter className="p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout} tooltip={{ children: '로그아웃', side: 'right' }}>
+              <LogOut />
+              <span>로그아웃</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </>
   );
 }
