@@ -12,6 +12,7 @@ export type Member = {
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[];
   photoURL?: string;
+  activePassId?: string; // ID of the current MemberPass
 };
 
 export type Club = {
@@ -47,6 +48,21 @@ export type Attendance = {
   date: string; // ISO 8601 date string
   status: 'present' | 'absent' | 'excused';
 };
+
+export type MemberPass = {
+  id: string;
+  memberId: string;
+  clubId: string;
+  passType: string; // e.g., 'standard', 'premium'
+  startDate: string; // ISO 8601 date string
+  endDate?: string; // ISO 8601 date string, optional
+  totalSessions: number; // e.g. 5
+  attendableSessions: number; // e.g. 4
+  remainingSessions: number;
+  attendanceCount: number;
+  status: 'active' | 'expired';
+};
+
 
 export type UserProfile = {
   uid: string;

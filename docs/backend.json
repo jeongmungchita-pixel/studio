@@ -52,6 +52,10 @@
         "photoURL": {
           "type": "string",
           "description": "URL of the member's profile picture."
+        },
+        "activePassId": {
+          "type": "string",
+          "description": "The ID of the member's currently active pass."
         }
       },
       "required": [
@@ -136,6 +140,72 @@
         "memberId",
         "clubId",
         "date",
+        "status"
+      ]
+    },
+    "MemberPass": {
+      "title": "MemberPass",
+      "type": "object",
+      "description": "Represents a member's usage pass or ticket.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the pass. Same as document ID."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to the Member this pass belongs to."
+        },
+        "clubId": {
+          "type": "string",
+          "description": "Reference to the Club this pass is associated with."
+        },
+        "passType": {
+          "type": "string",
+          "description": "The type of pass, e.g., 'standard', 'premium'."
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The start date of the pass validity."
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The end date of the pass validity, if applicable."
+        },
+        "totalSessions": {
+          "type": "number",
+          "description": "Total number of sessions allowed by this pass (e.g., 5)."
+        },
+        "attendableSessions": {
+          "type": "number",
+          "description": "Number of sessions that must be 'present' (e.g., 4)."
+        },
+        "remainingSessions": {
+          "type": "number",
+          "description": "Number of sessions left on this pass."
+        },
+        "attendanceCount": {
+          "type": "number",
+          "description": "Number of 'present' sessions recorded."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "expired"],
+          "description": "The status of the pass."
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "clubId",
+        "passType",
+        "startDate",
+        "totalSessions",
+        "attendableSessions",
+        "remainingSessions",
+        "attendanceCount",
         "status"
       ]
     },
@@ -387,6 +457,12 @@
         "$ref": "#/entities/Member"
       },
       "description": "Stores all member information."
+    },
+    "/member_passes/{passId}": {
+      "schema": {
+        "$ref": "#/entities/MemberPass"
+      },
+      "description": "Stores member's usage passes or tickets."
     },
     "/competitions/{competitionId}": {
       "schema": {

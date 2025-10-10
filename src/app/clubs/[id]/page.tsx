@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useCollection, useDoc, useFirestore } from '@/firebase';
-import type { Member, Club, Attendance } from '@/types';
-import { collection, doc, query, where, addDoc, updateDoc } from 'firebase/firestore';
+import type { Member, Club, Attendance, MemberPass } from '@/types';
+import { collection, doc, query, where, writeBatch, runTransaction } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -53,6 +53,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
 
   const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', params.id) : null), [firestore, params.id]);
   const { data: club, isLoading: isClubLoading } = useDoc<Club>(clubRef);
@@ -75,36 +76,98 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
   }, [firestore, params.id, selectedDate]);
 
   const { data: attendanceRecords, isLoading: areAttendanceRecordsLoading } = useCollection<Attendance>(attendanceQuery);
+  
+  const memberIds = useMemo(() => clubMembers?.map(m => m.id) || [], [clubMembers]);
+  const memberPassesQuery = useMemoFirebase(() => {
+    if (!firestore || memberIds.length === 0) return null;
+    return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds), where('status', '==', 'active'));
+  }, [firestore, memberIds]);
+  const { data: memberPasses, isLoading: arePassesLoading } = useCollection<MemberPass>(memberPassesQuery);
 
-  const handleStatusChange = (memberId: string, newStatus: Attendance['status']) => {
-    if (!firestore || !selectedDate) return;
 
-    const record = attendanceRecords?.find(r => r.memberId === memberId);
-    const date = startOfDay(selectedDate).toISOString();
+ const handleStatusChange = async (member: Member, newStatus: Attendance['status']) => {
+    if (!firestore || !selectedDate || !member.activePassId) return;
+    
+    setIsSubmitting(prevState => ({ ...prevState, [member.id]: true }));
 
-    if (record) {
-      // Update existing record
-      const recordRef = doc(firestore, 'attendance', record.id);
-      upsertDocumentNonBlocking(recordRef, { status: newStatus }, {merge: true});
-    } else {
-      // Create new record
-      const newRecord: Omit<Attendance, 'id'> = {
-        memberId,
-        clubId: params.id,
-        date,
-        status: newStatus,
-      };
-      const collectionRef = collection(firestore, 'attendance');
-      upsertDocumentNonBlocking(collectionRef, newRecord);
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const dateKey = startOfDay(selectedDate).toISOString();
+        const attendanceCollectionRef = collection(firestore, 'attendance');
+        const passRef = doc(firestore, 'member_passes', member.activePassId!);
+        
+        // 1. Get current pass and attendance record within transaction
+        const passSnap = await transaction.get(passRef);
+        if (!passSnap.exists()) throw new Error("이용권을 찾을 수 없습니다.");
+        
+        const passData = passSnap.data() as MemberPass;
+
+        const q = query(attendanceCollectionRef, where('memberId', '==', member.id), where('date', '==', dateKey));
+        const attendanceSnap = await getDocs(q);
+        const existingAttendance = attendanceSnap.docs.length > 0 ? { ...attendanceSnap.docs[0].data(), id: attendanceSnap.docs[0].id } as Attendance : null;
+        
+        const oldStatus = existingAttendance?.status;
+        
+        // No change, no-op
+        if (oldStatus === newStatus) return;
+
+        let { attendanceCount, remainingSessions } = passData;
+
+        // Revert old status effect
+        if (oldStatus) {
+            if (oldStatus === 'present') attendanceCount--;
+            if (oldStatus === 'present' || oldStatus === 'absent') remainingSessions++;
+        }
+
+        // Apply new status effect
+        if (newStatus) {
+            if (newStatus === 'present') attendanceCount++;
+            if (newStatus === 'present' || newStatus === 'absent') remainingSessions--;
+        }
+
+        // Determine if pass should be expired
+        const shouldExpire = remainingSessions <= 0 || attendanceCount >= passData.attendableSessions;
+        const passUpdate: Partial<MemberPass> = {
+            attendanceCount,
+            remainingSessions: Math.max(0, remainingSessions),
+            status: shouldExpire ? 'expired' : 'active'
+        };
+
+        // Update pass
+        transaction.update(passRef, passUpdate);
+        
+        // Upsert attendance record
+        if (existingAttendance) {
+            transaction.update(doc(firestore, 'attendance', existingAttendance.id), { status: newStatus });
+        } else {
+            const newAttendanceRef = doc(attendanceCollectionRef);
+            transaction.set(newAttendanceRef, {
+                memberId: member.id,
+                clubId: params.id,
+                date: dateKey,
+                status: newStatus
+            });
+        }
+      });
+
+      toast({
+        title: '출석 상태 변경',
+        description: `${member.name}님의 상태가 ${attendanceStatusTranslations[newStatus]}(으)로 업데이트되었습니다.`
+      });
+    } catch (error: any) {
+        console.error("Transaction failed: ", error);
+        toast({
+            variant: "destructive",
+            title: "오류 발생",
+            description: error.message || "출석 상태 변경 중 오류가 발생했습니다."
+        });
+    } finally {
+        setIsSubmitting(prevState => ({ ...prevState, [member.id]: false }));
     }
+ };
 
-    toast({
-      title: '출석 상태 변경',
-      description: `${attendanceStatusTranslations[newStatus]}(으)로 업데이트되었습니다.`
-    });
-  };
 
-  if (isClubLoading || areMembersLoading) {
+  if (isClubLoading || areMembersLoading || arePassesLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -217,19 +280,35 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                           <TableHeader>
                               <TableRow>
                                   <TableHead>선수 이름</TableHead>
-                                  <TableHead className="w-[150px]">상태</TableHead>
+                                  <TableHead>이용권 상태</TableHead>
+                                  <TableHead className="w-[150px]">출석 상태</TableHead>
                               </TableRow>
                           </TableHeader>
                           <TableBody>
                               {clubMembers?.map(member => {
                                 const attendanceRecord = attendanceRecords?.find(rec => rec.memberId === member.id);
+                                const pass = memberPasses?.find(p => p.id === member.activePassId);
+                                const isPassExpired = !pass || pass.status === 'expired';
+
                                 return (
-                                  <TableRow key={member.id}>
+                                  <TableRow key={member.id} className={isPassExpired ? 'bg-muted/50' : ''}>
                                       <TableCell>{member.name}</TableCell>
+                                      <TableCell>
+                                        {pass ? (
+                                           isPassExpired ? (
+                                             <Badge variant="destructive">만료</Badge>
+                                           ) : (
+                                            <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>
+                                           )
+                                        ) : (
+                                          <Badge variant="secondary">이용권 없음</Badge>
+                                        )}
+                                      </TableCell>
                                       <TableCell>
                                           <Select 
                                             value={attendanceRecord?.status}
-                                            onValueChange={(newStatus: Attendance['status']) => handleStatusChange(member.id, newStatus)}
+                                            onValueChange={(newStatus: Attendance['status']) => handleStatusChange(member, newStatus)}
+                                            disabled={isPassExpired || isSubmitting[member.id]}
                                           >
                                               <SelectTrigger>
                                                   <SelectValue placeholder="상태 선택" />
@@ -245,7 +324,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                                 )
                               })}
                               {(!clubMembers || clubMembers.length === 0) &&
-                                <TableRow><TableCell colSpan={2} className="text-center">활동중인 선수가 없습니다.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={3} className="text-center">활동중인 선수가 없습니다.</TableCell></TableRow>
                               }
                           </TableBody>
                        </Table>
