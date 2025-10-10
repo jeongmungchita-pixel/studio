@@ -251,6 +251,9 @@ export default function ProfileSetupPage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {adultFields.map((field, index) => (
                       <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-card shadow-sm">
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <FormField
@@ -345,9 +348,6 @@ export default function ProfileSetupPage() {
                               </div>
                            </FormItem>
                         </div>
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
                       </div>
                     ))}
                  </div>
@@ -369,6 +369,9 @@ export default function ProfileSetupPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {childFields.map((field, index) => (
                       <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-card shadow-sm">
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeChild(index)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                         <div className="space-y-4">
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
@@ -463,9 +466,6 @@ export default function ProfileSetupPage() {
                               </div>
                            </FormItem>
                         </div>
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeChild(index)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
                       </div>
                     ))}
                 </div>
