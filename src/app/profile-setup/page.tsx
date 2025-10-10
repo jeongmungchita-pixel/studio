@@ -540,7 +540,7 @@ export default function ProfileSetupPage() {
               </CardContent>
             </Card>
 
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <Button
                 type="submit"
                 size="lg"
