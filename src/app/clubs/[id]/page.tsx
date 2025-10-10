@@ -173,8 +173,20 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                 <TableBody>
                   {clubMembers?.map((member) => (
                     <TableRow key={member.id}>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                            <Image
+                                src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
+                                alt={member.name}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                                data-ai-hint="person gymnastics"
+                            />
+                            <div>{member.name}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
                         <Badge variant={member.status === 'active' ? 'default' : 'secondary'}>
                           {statusTranslations[member.status]}

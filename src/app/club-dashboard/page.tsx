@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Image from 'next/image';
 
 export default function ClubDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -91,7 +92,24 @@ export default function ClubDashboardPage() {
           <TableBody>
               {memberList.length > 0 ? memberList.map(member => (
                    <TableRow key={member.id}>
-                      <TableCell>{member.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                            <Image
+                                src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
+                                alt={member.name}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                                data-ai-hint="person gymnastics"
+                            />
+                            <div>
+                                <div>{member.name}</div>
+                                <div className="text-sm text-muted-foreground hidden sm:block">
+                                    {new Date(member.dateOfBirth || '').toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                      </TableCell>
                       <TableCell>
                           <Badge variant={getStatusVariant(member.status)}>{statusTranslations[member.status]}</Badge>
                       </TableCell>
