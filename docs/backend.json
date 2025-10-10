@@ -123,6 +123,10 @@
           "type": "string",
           "description": "Reference to Member. (Relationship: Member 1:N Attendance)"
         },
+        "clubId": {
+          "type": "string",
+          "description": "Reference to Club. (Relationship: Club 1:N Attendance)"
+        },
         "date": {
           "type": "string",
           "description": "Date of the attendance record.",
@@ -137,6 +141,7 @@
       "required": [
         "id",
         "memberId",
+        "clubId",
         "date",
         "status"
       ]
@@ -401,6 +406,12 @@
         "$ref": "#/entities/LevelTest"
       },
       "description": "Stores level test information."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": {
+        "$ref": "#/entities/Attendance"
+      },
+      "description": "Stores attendance records."
     }
   }
 }

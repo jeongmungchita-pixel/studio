@@ -295,7 +295,7 @@ export default function ProfileSetupPage() {
                             </Button>
                         </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined, guardianPhoneNumber: '' })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> 자녀 추가
                     </Button>
                  </div>

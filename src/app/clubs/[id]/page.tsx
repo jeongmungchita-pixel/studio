@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useCollection, useDoc, useFirestore } from '@/firebase';
 import type { Member, Club, Attendance } from '@/types';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { collection, doc, query, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,6 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { format, startOfDay, endOfDay } from 'date-fns';
+import { upsertDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
@@ -48,6 +51,7 @@ const getAttendanceStatusVariant = (status: Attendance['status']) => {
 
 export default function ClubDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', params.id) : null), [firestore, params.id]);
@@ -58,8 +62,47 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
   ), [firestore, params.id]);
   const { data: clubMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
   
-  // TODO: Fetch real attendance data
-  const attendanceRecords: Attendance[] = [];
+  const attendanceQuery = useMemoFirebase(() => {
+    if (!firestore || !selectedDate) return null;
+    const dayStart = startOfDay(selectedDate);
+    const dayEnd = endOfDay(selectedDate);
+    return query(
+      collection(firestore, 'attendance'), 
+      where('clubId', '==', params.id),
+      where('date', '>=', dayStart.toISOString()),
+      where('date', '<=', dayEnd.toISOString())
+    );
+  }, [firestore, params.id, selectedDate]);
+
+  const { data: attendanceRecords, isLoading: areAttendanceRecordsLoading } = useCollection<Attendance>(attendanceQuery);
+
+  const handleStatusChange = (memberId: string, newStatus: Attendance['status']) => {
+    if (!firestore || !selectedDate) return;
+
+    const record = attendanceRecords?.find(r => r.memberId === memberId);
+    const date = startOfDay(selectedDate).toISOString();
+
+    if (record) {
+      // Update existing record
+      const recordRef = doc(firestore, 'attendance', record.id);
+      upsertDocumentNonBlocking(recordRef, { status: newStatus }, {merge: true});
+    } else {
+      // Create new record
+      const newRecord: Omit<Attendance, 'id'> = {
+        memberId,
+        clubId: params.id,
+        date,
+        status: newStatus,
+      };
+      const collectionRef = collection(firestore, 'attendance');
+      upsertDocumentNonBlocking(collectionRef, newRecord);
+    }
+
+    toast({
+      title: '출석 상태 변경',
+      description: `${attendanceStatusTranslations[newStatus]}(으)로 업데이트되었습니다.`
+    });
+  };
 
   if (isClubLoading || areMembersLoading) {
     return (
@@ -150,9 +193,14 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
               <Card className="lg:col-span-2">
                   <CardHeader>
                       <CardTitle>일일 출석부</CardTitle>
-                      <CardDescription>{selectedDate?.toLocaleDateString()} 출석 현황</CardDescription>
+                      <CardDescription>{selectedDate ? format(selectedDate, 'yyyy년 M월 d일') : ''} 출석 현황</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {areAttendanceRecordsLoading ? (
+                       <div className="flex justify-center items-center h-40">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                       </div>
+                    ) : (
                        <Table>
                           <TableHeader>
                               <TableRow>
@@ -162,14 +210,14 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                           </TableHeader>
                           <TableBody>
                               {clubMembers?.map(member => {
-                                const attendanceRecord = attendanceRecords.find(rec => rec.memberId === member.id);
+                                const attendanceRecord = attendanceRecords?.find(rec => rec.memberId === member.id);
                                 return (
                                   <TableRow key={member.id}>
                                       <TableCell>{member.firstName} {member.lastName}</TableCell>
                                       <TableCell>
                                           <Select 
-                                            defaultValue={attendanceRecord?.status || 'present'}
-                                            // onValueChange={(newStatus) => handleStatusChange(member.id, newStatus)}
+                                            value={attendanceRecord?.status}
+                                            onValueChange={(newStatus: Attendance['status']) => handleStatusChange(member.id, newStatus)}
                                           >
                                               <SelectTrigger>
                                                   <SelectValue placeholder="상태 선택" />
@@ -189,6 +237,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                               }
                           </TableBody>
                        </Table>
+                    )}
                   </CardContent>
               </Card>
               <Card>

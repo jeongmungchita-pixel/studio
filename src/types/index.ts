@@ -45,7 +45,7 @@ export type LevelTest = {
 export type Attendance = {
   id:string;
   memberId: string;
-  memberName?: string; // For convenience
+  clubId: string;
   date: string; // ISO 8601 date string
   status: 'present' | 'absent' | 'excused';
 };
