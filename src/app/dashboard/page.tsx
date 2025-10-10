@@ -65,7 +65,12 @@ export default function DashboardPage() {
 
   const isProfileComplete = useMemo(() => {
     if (!user || !userAssociatedMembers) return false;
-    return userAssociatedMembers.length > 0;
+    // For members, check if they are associated with any member profiles.
+    if (user.role === 'member') {
+      return userAssociatedMembers.length > 0;
+    }
+    // For admins and club-admins, profile is always considered complete in this context.
+    return true;
   }, [user, userAssociatedMembers]);
 
   if (isUserLoading || isMembersLoading || isClubsLoading || isCompetitionsLoading || areAllMembersLoading) {
@@ -76,8 +81,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Admin and Club Admin see the main dashboard, Members see a profile completion prompt if needed
-  if (user && (user.role === 'member' || user.role === 'club-admin') && !isProfileComplete) {
+  // Only redirect 'member' role if their profile is incomplete.
+  if (user && user.role === 'member' && !isProfileComplete) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card className="w-full max-w-lg text-center">
