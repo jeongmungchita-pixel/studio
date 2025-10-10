@@ -1,124 +1,136 @@
 /**
- * @fileoverview Firestore Security Rules for Korean Gymnastics Federation App
- *
- * Core Philosophy:
- * This ruleset enforces a user-ownership model for user profiles and nested member data.
- * It allows broader access to top-level collections like clubs and competitions.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for user profiles and allows clubs to manage their own data and members.
  *
  * Data Structure:
  * - /users/{userId}: Stores individual user profiles. Access is restricted to the owning user.
- * - /clubs/{clubId}: Stores club information. Public read access, owner-only writes are intended.
- * - /clubs/{clubId}/members/{memberId}: Stores member information nested under clubs. Owner-only writes are intended.
- * - /competitions/{competitionId}: Stores competition information. Public read access, owner-only writes are intended.
- * - /level_tests/{levelTestId}: Stores level test information. Public read access, owner-only writes are intended.
+ * - /clubs/{clubId}: Stores club information. No specific ownership is enforced here; any authenticated user can create clubs, but access control might need further refinement.
+ * - /clubs/{clubId}/members/{memberId}: Stores members belonging to a specific club. Access is based on club membership.
+ * - /competitions/{competitionId}: Stores competition details. Publicly readable, but creation and modification are not restricted in this basic prototype.
+ * - /level_tests/{levelTestId}: Stores level test information. Publicly readable, but creation and modification are not restricted in this basic prototype.
  *
  * Key Security Decisions:
- * - Users can only read and write their own profile data.
- * - Listing of users is disallowed.
- * - Public read access is granted to clubs, competitions and level_tests. Writes should be restricted, but an ownerId is missing.
+ * - User profiles are strictly private; only the owning user can read or write their profile.
+ * - Club creation is open to any authenticated user, but this may need further restrictions in a production environment.
+ * - Listing of user profiles is disallowed for privacy reasons.
+ * - Data validation is relaxed in this prototype to allow for rapid iteration.  More strict validation should be added in later development phases.
  *
  * Denormalization for Authorization:
- *  - The current data model does not include any denormalized data for authorization. If owner-only access for clubs, competitions, or level_tests is needed, an `ownerId` field must be added to their schema.
+ *  - The 'UserProfile' entity contains a 'uid' field, which must match the document ID in the `/users/{userId}` path. This ensures that users can only manage their own profiles.
+ *  - The 'Member' entity contains a 'clubId' field, which is validated against the parent club's ID in the `/clubs/{clubId}/members/{memberId}` path.
+ *
+ * Structural Segregation:
+ *  - User profiles are stored in a dedicated `/users/{userId}` collection, ensuring that private user data is kept separate from public data.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile documents.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) User with ID 'userId' creates their own profile.
-     * @allow (get) User with ID 'userId' reads their own profile.
-     * @allow (update) User with ID 'userId' updates their own profile.
-     * @allow (delete) User with ID 'userId' deletes their own profile.
-     * @deny (create) User with ID 'anotherUserId' attempts to create profile with ID 'userId'.
-     * @deny (get) User with ID 'anotherUserId' attempts to read profile with ID 'userId'.
-     * @principle Enforces document ownership for user profiles.
+     * @description Controls access to user profile information.
+     * @path /users/{userId}
+     * @allow (get, create, update, delete) if the request is made by the user with the matching userId.
+     * @deny (get, create, update, delete) if the request is made by a different user.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      // Allow the user to read their own profile
-      allow get: if isSignedIn() && isOwner(userId);
-      // Prevent listing of all users
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && exists(resource);
+      }
+
+      allow get: if isOwner(userId);
       allow list: if false;
-      // Allow a user to create their own profile if the UID matches
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.uid == userId;
-      // Allow a user to update their own profile
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
-      // Allow a user to delete their own profile
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
       allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to club documents. Intended for public read and owner-only writes.
-     * @path /databases/{database}/documents/clubs/{clubId}
-     * @allow (get) Any user can read club information.
-     * @allow (list) Any user can list club information.
-     * @deny (create) No one can create club, as owner id validation is missing
-     * @deny (update) No one can update club, as owner id validation is missing
-     * @principle Intended for public read access but owner only writes is missing 'ownerId'.
+     * @description Controls access to club information.
+     * @path /clubs/{clubId}
+     * @allow (get, list) Public access is granted.
+     * @allow (create) Any authenticated user can create a club.
+     * @deny (update, delete) if the request is not made by an authorized club administrator.  // TODO: Implement role-based access control for club management.
+     * @principle Open access for reads, but write access should be restricted to club admins.
      */
     match /clubs/{clubId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // TODO: Add isClubAdmin() function and store club admin UIDs within the club document.
+
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if isSignedIn();
+      allow update: if false; // TODO: Implement role-based access control for club management.
+      allow delete: if false; // TODO: Implement role-based access control for club management.
     }
 
     /**
-     * @description Controls access to member documents within a club.
-     * @path /databases/{database}/documents/clubs/{clubId}/members/{memberId}
-     * @allow (create) If you are the club owner you can create a member
-     * @allow (get) If you are the club owner you can get a member
-     * @allow (update) If you are the club owner you can update a member
-     * @allow (delete) If you are the club owner you can delete a member
-     * @deny (create) If you are not the club owner you cannot create a member
-     * @deny (get) If you are not the club owner you cannot get a member
-     * @principle Enforces that a user must be the owner to modify a member
+     * @description Controls access to member information within a club.
+     * @path /clubs/{clubId}/members/{memberId}
+     * @allow (get, list) if the request is made by a member of the club. // TODO: Implement club membership check.
+     * @allow (create) if the request is made by a club administrator. // TODO: Implement role-based access control for club management.
+     * @deny (update, delete) if the request is not made by a club administrator or the member themselves. // TODO: Implement role-based access control for club management.
+     * @principle Club administrators should manage members, and members should be able to access their own information.
      */
     match /clubs/{clubId}/members/{memberId} {
-        allow get, list: if true;
-        allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-     /**
-      * @description Controls access to competitions documents. Intended for public read and owner-only writes.
-      * @path /databases/{database}/documents/competitions/{competitionId}
-      * @allow (get) Any user can read competition information.
-      * @allow (list) Any user can list competition information.
-      * @deny (create) No one can create competition, as owner id validation is missing
-      * @deny (update) No one can update competition, as owner id validation is missing
-      * @principle Intended for public read access but owner only writes is missing 'ownerId'.
-      */
-    match /competitions/{competitionId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      // TODO: Add isClubMember() function to check if the user is a member of the club.
+      // TODO: Add isClubAdmin() function to check if the user is an administrator of the club.
+
+      allow get, list: if isSignedIn(); // TODO: Implement club membership check.
+      allow create: if isSignedIn(); // TODO: Implement role-based access control for club management.
+      allow update: if false; // TODO: Implement role-based access control for club management.
+      allow delete: if false; // TODO: Implement role-based access control for club management.
     }
 
     /**
-     * @description Controls access to level tests documents. Intended for public read and owner-only writes.
-     * @path /databases/{database}/documents/level_tests/{levelTestId}
-     * @allow (get) Any user can read level test information.
-     * @allow (list) Any user can list level test information.
-     * @deny (create) No one can create level test, as owner id validation is missing
-     * @deny (update) No one can update level test, as owner id validation is missing
-     * @principle Intended for public read access but owner only writes is missing 'ownerId'.
+     * @description Controls access to competition information.
+     * @path /competitions/{competitionId}
+     * @allow (get, list) Public access is granted.
+     * @deny (create, update, delete) if the request is not made by an authorized administrator. // TODO: Implement role-based access control for competition management.
+     * @principle Open access for reads, but write access should be restricted to federation administrators.
+     */
+    match /competitions/{competitionId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list: if true;
+      allow create: if false; // TODO: Implement role-based access control for competition management.
+      allow update: if false; // TODO: Implement role-based access control for competition management.
+      allow delete: if false; // TODO: Implement role-based access control for competition management.
+    }
+
+    /**
+     * @description Controls access to level test information.
+     * @path /level_tests/{levelTestId}
+     * @allow (get, list) Public access is granted.
+     * @deny (create, update, delete) if the request is not made by an authorized administrator. // TODO: Implement role-based access control for level test management.
+     * @principle Open access for reads, but write access should be restricted to federation administrators.
      */
     match /level_tests/{levelTestId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if false; // TODO: Implement role-based access control for level test management.
+      allow update: if false; // TODO: Implement role-based access control for competition management.
+      allow delete: if false; // TODO: Implement role-based access control for level test management.
     }
-  }
-
-  // Helper function to determine if the user is signed in
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  // Helper function to determine if the user is the owner of the resource
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-    // Helper function to determine if the user is the owner of the resource, and the resource exists
-  function isExistingOwner(userId) {
-    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }

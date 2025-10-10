@@ -14,41 +14,36 @@ import {
   Building,
   Trophy,
   ClipboardList,
+  UserCog,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import type { UserProfile } from '@/types';
 
 const menuItems = [
-  { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
-  { href: '/members', label: '회원', icon: Users },
-  { href: '/clubs', label: '클럽', icon: Building },
-  { href: '/competitions', label: '대회', icon: Trophy },
-  { href: '/level-tests', label: '레벨 테스트', icon: ClipboardList },
+  { href: '/dashboard', label: '대시보드', icon: LayoutDashboard, roles: ['admin', 'member'] },
+  { href: '/club-dashboard', label: '클럽 대시보드', icon: LayoutDashboard, roles: ['club-admin'] },
+  { href: '/admin/users', label: '사용자 관리', icon: UserCog, roles: ['admin']},
+  { href: '/members', label: '회원', icon: Users, roles: ['admin'] },
+  { href: '/clubs', label: '클럽', icon: Building, roles: ['admin'] },
+  { href: '/competitions', label: '대회', icon: Trophy, roles: ['admin', 'club-admin'] },
+  { href: '/level-tests', label: '레벨 테스트', icon: ClipboardList, roles: ['admin', 'club-admin'] },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
-  const auth = useAuth();
-
-  const handleLogout = async () => {
-    try {
-      if (auth) {
-        await signOut(auth);
-        redirect('/login');
-      }
-    } catch (error) {
-      console.error('로그아웃 실패', error);
-    }
-  };
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === href;
+    if (href === '/dashboard' || href === '/club-dashboard') return pathname === href;
     return pathname.startsWith(href);
   };
   
   const currentUser = user as UserProfile | null;
+
+  const filteredMenuItems = menuItems.filter(item => 
+    currentUser?.role && item.roles.includes(currentUser.role)
+  );
 
   return (
     <>
@@ -62,7 +57,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton

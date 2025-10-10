@@ -12,7 +12,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { redirect } from 'next/navigation';
 import {
   Card,
@@ -96,7 +96,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      redirect('/dashboard');
+      if (user.role === 'club-admin' && user.status === 'approved') {
+        redirect('/club-dashboard');
+      } else if (user.role !== 'club-admin') {
+        redirect('/dashboard');
+      }
     }
   }, [user]);
 
@@ -129,10 +133,11 @@ export default function LoginPage() {
 
 
   const onSubmit = async (values: FormValues) => {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     setIsSubmitting(true);
     try {
       if (formType !== 'login') {
+        // --- 회원가입 로직 ---
         if (values.password !== values.confirmPassword) {
           form.setError('confirmPassword', {
             type: 'manual',
@@ -152,13 +157,35 @@ export default function LoginPage() {
           title: '회원가입 성공!',
           description: values.role === 'club-admin' ? '관리자 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
+        
+        // 클럽 관리자는 승인 대기 상태이므로 로그인 화면으로, 일반 회원은 바로 대시보드로
         if(values.role !== 'club-admin') {
             redirect('/dashboard');
         } else {
             setFormType('login');
         }
       } else {
-        await signInWithEmailAndPassword(auth, values.email, values.password);
+        // --- 로그인 로직 ---
+        const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+        const loggedInUser = userCredential.user;
+        
+        // Firestore에서 사용자 프로필 가져오기
+        const userRef = doc(firestore, 'users', loggedInUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userProfile = userSnap.data() as UserProfile;
+          if (userProfile.role === 'club-admin' && userProfile.status === 'pending') {
+            toast({
+              variant: 'destructive',
+              title: '승인 대기 중',
+              description: '관리자 승인이 필요한 계정입니다. 승인 후 다시 시도해주세요.',
+            });
+            await auth.signOut(); // 승인 대기중인 사용자는 로그아웃 처리
+          } else {
+            // 리디렉션은 useEffect에서 처리
+          }
+        }
       }
     } catch (error: any) {
       console.error(error);
@@ -178,8 +205,8 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      // For simplicity, Google Sign-In users are members by default.
       await createUserProfile(result.user, { role: 'member', email: result.user.email!, password: '' });
+      // 리디렉션은 useEffect에서 처리
     } catch (error: any) {
       console.error(error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -200,6 +227,12 @@ export default function LoginPage() {
   ) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', user.uid);
+
+    // 중복 생성 방지
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) {
+      return; // 이미 프로필이 있으면 생성하지 않음
+    }
     
     let role: UserProfile['role'] = values.role || 'member';
     if (user.uid === 'J4I2IkDZsxSiU9bNeu9qZyxzSkk1') {
@@ -396,7 +429,7 @@ export default function LoginPage() {
                     일반/학부모 회원가입
                   </Button>
                   <span className="text-muted-foreground">|</span>
-                  <Button variant="link" onClick={() => setFormType('admin-signup')}>
+                  <Button variant="link" onClick={()- => setFormType('admin-signup')}>
                     관리자이신가요?
                   </Button>
               </div>
@@ -407,5 +440,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
