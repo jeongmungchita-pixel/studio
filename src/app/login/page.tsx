@@ -36,7 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z
   .object({
@@ -253,7 +252,7 @@ export default function LoginPage() {
       ...(role === 'club-admin' && { clubName: values.clubName, phoneNumber: values.phoneNumber }),
     };
 
-    setDocumentNonBlocking(userRef, userProfile, { merge: true });
+    await setDoc(userRef, userProfile, { merge: true });
   };
 
   if (isUserLoading || user) {
@@ -442,3 +441,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
