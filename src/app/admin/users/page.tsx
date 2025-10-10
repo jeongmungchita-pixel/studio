@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useUser } from '@/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -14,14 +14,16 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { UserProfile } from '@/types';
+import type { UserProfile, Club } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminUsersPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
 
   const usersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
@@ -44,10 +46,45 @@ export default function AdminUsersPage() {
     return null;
   }
 
-  const handleApprove = async (userId: string) => {
-    if (!firestore) return;
-    const userRef = doc(firestore, 'users', userId);
-    await updateDoc(userRef, { status: 'approved' });
+  const handleApprove = async (userToApprove: UserProfile) => {
+    if (!firestore || !userToApprove.clubName) return;
+  
+    try {
+      const batch = writeBatch(firestore);
+  
+      // 1. Update user status to 'approved'
+      const userRef = doc(firestore, 'users', userToApprove.uid);
+      batch.update(userRef, { status: 'approved' });
+  
+      // 2. Create a new club document
+      const clubRef = doc(collection(firestore, 'clubs'));
+      const newClub: Club = {
+        id: clubRef.id,
+        name: userToApprove.clubName,
+        contactName: userToApprove.displayName,
+        contactEmail: userToApprove.email,
+        contactPhoneNumber: userToApprove.phoneNumber || '',
+        location: '미정', // Default location
+      };
+      batch.set(clubRef, newClub);
+
+      // 3. (Optional) Update the club-admin's profile with the new clubId
+      batch.update(userRef, { clubId: clubRef.id });
+  
+      await batch.commit();
+  
+      toast({
+        title: '승인 완료',
+        description: `${userToApprove.clubName} 클럽이 생성되고 ${userToApprove.displayName} 님의 계정이 승인되었습니다.`,
+      });
+    } catch (error) {
+      console.error('Error approving user and creating club:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '사용자 승인 및 클럽 생성 중 오류가 발생했습니다.',
+      });
+    }
   };
 
   const getStatusVariant = (
@@ -112,7 +149,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       {u.role === 'club-admin' && u.status === 'pending' && (
-                        <Button size="sm" onClick={() => handleApprove(u.uid)}>
+                        <Button size="sm" onClick={() => handleApprove(u)}>
                           승인
                         </Button>
                       )}
