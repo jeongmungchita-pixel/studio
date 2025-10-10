@@ -1,7 +1,7 @@
+
 {
   "entities": {
     "Member": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Member",
       "type": "object",
       "description": "Represents a member of the Korean Gymnastics Federation.",
@@ -53,7 +53,6 @@
       ]
     },
     "Club": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Club",
       "type": "object",
       "description": "Represents a gymnastics club affiliated with the Korean Gymnastics Federation.",
@@ -94,7 +93,6 @@
       ]
     },
     "Attendance": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Attendance",
       "type": "object",
       "description": "Represents a member's attendance record.",
@@ -125,7 +123,6 @@
       ]
     },
     "Payment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Payment",
       "type": "object",
       "description": "Represents a payment made by a member or club.",
@@ -164,7 +161,6 @@
       ]
     },
     "Competition": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Competition",
       "type": "object",
       "description": "Represents a gymnastics competition.",
@@ -201,7 +197,6 @@
       ]
     },
     "LevelTest": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "LevelTest",
       "type": "object",
       "description": "Represents a gymnastics level test.",
@@ -232,7 +227,6 @@
       ]
     },
     "TestResult": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TestResult",
       "type": "object",
       "description": "Represents the result of a member's level test.",
@@ -267,7 +261,6 @@
       ]
     },
     "CompetitionRegistration": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CompetitionRegistration",
       "type": "object",
       "description": "Represents a member's registration for a competition.",
@@ -297,232 +290,75 @@
         "registrationDate"
       ]
     },
-    "SuperAdmin": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SuperAdmin",
+    "UserProfile": {
+      "title": "UserProfile",
       "type": "object",
-      "description": "Represents a super administrator account for development use only.",
+      "description": "Represents a user's profile information.",
       "properties": {
-        "id": {
+        "uid": {
           "type": "string",
-          "description": "Unique identifier for the super admin."
+          "description": "The user's unique ID."
         },
-        "username": {
+        "email": {
           "type": "string",
-          "description": "Username for the super admin account."
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The URL of the user's profile picture."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "member"],
+          "description": "The user's role."
+        },
+        "provider": {
+            "type": "string",
+            "enum": ["email", "google"],
+            "description": "The authentication provider."
         }
       },
-      "required": [
-        "id",
-        "username"
-      ]
+      "required": ["uid", "email", "displayName", "photoURL", "role", "provider"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "clubs/{clubId}",
-        "definition": {
-          "entityName": "Club",
-          "schema": {
-            "$ref": "#/backend/entities/Club"
-          },
-          "description": "Stores club information.  All documents in this collection share the same security requirements.",
-          "params": [
-            {
-              "name": "clubId",
-              "description": "Unique identifier for the club."
-            }
-          ]
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
       },
-      {
-        "path": "clubs/{clubId}/members/{memberId}",
-        "definition": {
-          "entityName": "Member",
-          "schema": {
-            "$ref": "#/backend/entities/Member"
-          },
-          "description": "Stores member information. Includes denormalized 'clubId' for authorization independence.",
-          "params": [
-            {
-              "name": "clubId",
-              "description": "Unique identifier for the club."
-            },
-            {
-              "name": "memberId",
-              "description": "Unique identifier for the member."
-            }
-          ]
-        }
+      "description": "Stores user profile information."
+    },
+    "/clubs/{clubId}": {
+      "schema": {
+        "$ref": "#/entities/Club"
       },
-      {
-        "path": "clubs/{clubId}/members/{memberId}/attendance/{attendanceId}",
-        "definition": {
-          "entityName": "Attendance",
-          "schema": {
-            "$ref": "#/backend/entities/Attendance"
-          },
-          "description": "Stores attendance records for members. Includes denormalized 'clubId' and 'memberId' for authorization independence.",
-          "params": [
-            {
-              "name": "clubId",
-              "description": "Unique identifier for the club."
-            },
-            {
-              "name": "memberId",
-              "description": "Unique identifier for the member."
-            },
-            {
-              "name": "attendanceId",
-              "description": "Unique identifier for the attendance record."
-            }
-          ]
-        }
+      "description": "Stores club information."
+    },
+    "/clubs/{clubId}/members/{memberId}": {
+      "schema": {
+        "$ref": "#/entities/Member"
       },
-      {
-        "path": "clubs/{clubId}/payments/{paymentId}",
-        "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Stores payment records for clubs. Includes denormalized 'clubId' for authorization independence.",
-          "params": [
-            {
-              "name": "clubId",
-              "description": "Unique identifier for the club."
-            },
-            {
-              "name": "paymentId",
-              "description": "Unique identifier for the payment."
-            }
-          ]
-        }
+      "description": "Stores member information within a club."
+    },
+    "/competitions/{competitionId}": {
+      "schema": {
+        "$ref": "#/entities/Competition"
       },
-      {
-        "path": "competitions/{competitionId}",
-        "definition": {
-          "entityName": "Competition",
-          "schema": {
-            "$ref": "#/backend/entities/Competition"
-          },
-          "description": "Stores competition information.",
-          "params": [
-            {
-              "name": "competitionId",
-              "description": "Unique identifier for the competition."
-            }
-          ]
-        }
+      "description": "Stores competition information."
+    },
+    "/level_tests/{levelTestId}": {
+      "schema": {
+        "$ref": "#/entities/LevelTest"
       },
-      {
-        "path": "level_tests/{levelTestId}",
-        "definition": {
-          "entityName": "LevelTest",
-          "schema": {
-            "$ref": "#/backend/entities/LevelTest"
-          },
-          "description": "Stores level test information.",
-          "params": [
-            {
-              "name": "levelTestId",
-              "description": "Unique identifier for the level test."
-            }
-          ]
-        }
-      },
-      {
-        "path": "clubs/{clubId}/members/{memberId}/test_results/{testResultId}",
-        "definition": {
-          "entityName": "TestResult",
-          "schema": {
-            "$ref": "#/backend/entities/TestResult"
-          },
-          "description": "Stores test results for members. Includes denormalized 'clubId' and 'memberId' for authorization independence.",
-          "params": [
-            {
-              "name": "clubId",
-              "description": "Unique identifier for the club."
-            },
-            {
-              "name": "memberId",
-              "description": "Unique identifier for the member."
-            },
-            {
-              "name": "testResultId",
-              "description": "Unique identifier for the test result."
-            }
-          ]
-        }
-      },
-      {
-        "path": "clubs/{clubId}/members/{memberId}/competition_registrations/{competitionRegistrationId}",
-        "definition": {
-          "entityName": "CompetitionRegistration",
-          "schema": {
-            "$ref": "#/backend/entities/CompetitionRegistration"
-          },
-          "description": "Stores competition registrations for members. Includes denormalized 'clubId' and 'memberId' for authorization independence.",
-          "params": [
-            {
-              "name": "clubId",
-              "description": "Unique identifier for the club."
-            },
-            {
-              "name": "memberId",
-              "description": "Unique identifier for the member."
-            },
-            {
-              "name": "competitionRegistrationId",
-              "description": "Unique identifier for the competition registration."
-            }
-          ]
-        }
-      },
-      {
-        "path": "super_admins/{userId}",
-        "definition": {
-          "entityName": "SuperAdmin",
-          "schema": {
-            "$ref": "#/backend/entities/SuperAdmin"
-          },
-          "description": "Stores super admin user IDs. Existence of a document grants super admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase Auth UID of the super admin user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "users/{userId}/payments/{paymentId}",
-        "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Stores payment records for individual users.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase Auth UID of the user."
-            },
-            {
-              "name": "paymentId",
-              "description": "Unique identifier for the payment."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to support the KGF Nexus application, focusing on secure and scalable data management for members, clubs, attendance, payments, competitions, and level tests. It emphasizes authorization independence through denormalization and structural segregation to simplify security rules and ensure efficient data access.  \n\n*   **Authorization Independence:** The structure denormalizes access control data to avoid `get()` calls in security rules. For example, access to `members` is controlled by their `clubId`, which is also present in the `Member` document itself. This allows direct access control without needing to fetch the `Club` document.\n*   **Structural Segregation:** The structure separates data with different access requirements into different collections.  For instance, `super_admins` are stored in a separate collection to grant them elevated privileges without affecting the security of other collections. The `users/{userId}/payments/{paymentId}` structure enables secure management of user-specific payments, independent of club-level payments.\n*   **Access Modeling:** Uses path-based ownership for user-owned data (e.g., `/users/{userId}/payments/{paymentId}`) and membership maps where applicable (though not explicitly defined in the current data model, this is the recommended pattern for collaborative entities). Global roles are managed via dedicated collections like `/super_admins/{uid}`.\n*   **QAPs (Rules are not Filters):** The separation of data into distinct collections based on access control requirements ensures that list operations are secure and do not require filtering based on user roles or permissions.\n\nThis structure enables simple and robust security rules, enhances debuggability, and supports the core features of the KGF Nexus application, including member and club management, attendance tracking, payment processing, competition management, and level test management."
+      "description": "Stores level test information."
+    }
   }
 }

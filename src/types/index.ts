@@ -41,3 +41,12 @@ export type Attendance = {
   date: string;
   status: 'present' | 'absent' | 'excused';
 };
+
+export type UserProfile = {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL: string;
+  role: 'admin' | 'member';
+  provider: 'email' | 'google';
+};

@@ -1,5 +1,5 @@
 'use client';
-import { usePathname } from 'next/navigation';
+import { usePathname, redirect } from 'next/navigation';
 import Link from 'next/link';
 import {
   SidebarContent,
@@ -20,7 +20,11 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import type { UserProfile } from '@/types';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,11 +36,24 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      redirect('/login');
+    } catch (error) {
+      console.error('Failed to log out', error);
+    }
+  };
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === href;
     return pathname.startsWith(href);
   };
+  
+  const currentUser = user as UserProfile | null;
 
   return (
     <>
@@ -77,7 +94,7 @@ export function AppSidebar() {
                 </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                 <SidebarMenuButton tooltip={{ children: 'Log Out', side: 'right' }}>
+                 <SidebarMenuButton onClick={handleLogout} tooltip={{ children: 'Log Out', side: 'right' }}>
                      <LogOut />
                      <span>Log Out</span>
                  </SidebarMenuButton>
@@ -85,17 +102,32 @@ export function AppSidebar() {
          </SidebarMenu>
         <Separator className="my-2"/>
         <div className="flex items-center justify-between p-2 rounded-lg hover:bg-sidebar-accent cursor-pointer">
+            {isUserLoading ? (
+                <div className="flex items-center gap-3 w-full">
+                    <Loader2 className="w-4 h-4 animate-spin"/>
+                    <span className="text-sm">Loading...</span>
+                </div>
+            ) : user ? (
             <div className="flex items-center gap-3">
                 <Avatar>
-                    <AvatarImage src="https://picsum.photos/seed/user-avatar/40/40" data-ai-hint="person portrait" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarImage src={currentUser?.photoURL} data-ai-hint="person portrait" />
+                    <AvatarFallback>
+                      {currentUser?.displayName?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                    <span className="font-semibold text-sm">Jane Doe</span>
-                    <span className="text-xs text-muted-foreground">Admin</span>
+                    <span className="font-semibold text-sm">{currentUser?.displayName}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{currentUser?.role}</span>
                 </div>
             </div>
-            <ChevronDown className="w-4 h-4" />
+            ) : (
+               <div className="flex items-center gap-3 w-full">
+                 <Link href="/login" className="w-full">
+                    <Button variant="outline" className="w-full">Log In</Button>
+                 </Link>
+               </div>
+            )}
+            {!isUserLoading && user && <ChevronDown className="w-4 h-4" />}
         </div>
       </SidebarFooter>
     </>
