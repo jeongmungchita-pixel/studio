@@ -134,84 +134,58 @@ export default function ProfileSetupPage() {
 
     try {
       const batch = writeBatch(firestore);
-
-      // 1. Update the guardian's user profile
       const userRef = doc(firestore, 'users', user.uid);
+
+      // 1. Update the guardian's user profile, regardless of who is being added
       const userProfileUpdate: Partial<UserProfile> = {
         phoneNumber: values.phoneNumber,
         isGuardian: true,
       };
       batch.update(userRef, userProfileUpdate);
-      
-      // 2. Upload images first and get URLs
-      const adultsWithPhotoUrls = await Promise.all(
-        (values.adultsInfo || []).map(async (adult, index) => {
-          let photoURL: string | undefined =
-            form.getValues(`adultsInfo.${index}.photoPreview`);
-          if (adult.photo) {
-            const memberIdForPhoto = doc(collection(firestore, 'members')).id;
+
+      // 2. Prepare member data with consistent IDs
+      const allMembersToCreate = [
+        ...(values.adultsInfo || []).map(person => ({ ...person, isChild: false })),
+        ...(values.childrenInfo || []).map(person => ({ ...person, isChild: true })),
+      ];
+
+      const processedMembers = await Promise.all(
+        allMembersToCreate.map(async (person) => {
+          const memberRef = doc(collection(firestore, 'members'));
+          const memberId = memberRef.id;
+          let photoURL: string | undefined = person.photoPreview;
+
+          if (person.photo) {
             photoURL = await uploadImage(
               storage,
-              `profile_pictures/${memberIdForPhoto}`,
-              adult.photo
+              `profile_pictures/${memberId}`,
+              person.photo
             );
           }
-          return { ...adult, photoURL };
+          
+          const memberPayload: Member = {
+            id: memberId,
+            name: person.name,
+            dateOfBirth: new Date(person.dateOfBirth).toISOString(),
+            gender: person.gender,
+            email: user.email, // Guardian's email
+            phoneNumber: person.isChild ? values.phoneNumber : undefined, // Only for child
+            clubId: values.clubId,
+            status: 'active',
+            guardianIds: [user.uid],
+            photoURL: photoURL,
+          };
+          
+          return { ref: memberRef, payload: memberPayload };
         })
       );
 
-      const childrenWithPhotoUrls = await Promise.all(
-        (values.childrenInfo || []).map(async (child, index) => {
-          let photoURL: string | undefined = form.getValues(
-            `childrenInfo.${index}.photoPreview`
-          );
-          if (child.photo) {
-            const memberIdForPhoto = doc(collection(firestore, 'members')).id;
-            photoURL = await uploadImage(
-              storage,
-              `profile_pictures/${memberIdForPhoto}`,
-              child.photo
-            );
-          }
-          return { ...child, photoURL };
-        })
-      );
-
-      // 3. Prepare member documents with photo URLs
-      adultsWithPhotoUrls.forEach((adult) => {
-        const memberRef = doc(collection(firestore, 'members'));
-        const memberPayload: Member = {
-          id: memberRef.id,
-          name: adult.name,
-          dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
-          gender: adult.gender,
-          email: user.email,
-          phoneNumber: values.phoneNumber,
-          clubId: values.clubId,
-          status: 'active', // Changed from 'pending' to 'active'
-          guardianIds: [user.uid],
-          photoURL: adult.photoURL,
-        };
-        batch.set(memberRef, memberPayload);
+      // 3. Add all member documents to the batch
+      processedMembers.forEach(({ ref, payload }) => {
+        batch.set(ref, payload);
       });
 
-      childrenWithPhotoUrls.forEach((child) => {
-        const memberRef = doc(collection(firestore, 'members'));
-        const memberPayload: Member = {
-          id: memberRef.id,
-          name: child.name,
-          dateOfBirth: new Date(child.dateOfBirth).toISOString(),
-          gender: child.gender,
-          email: user.email, // Guardian's email
-          clubId: values.clubId,
-          status: 'active', // Changed from 'pending' to 'active'
-          guardianIds: [user.uid],
-          photoURL: child.photoURL,
-        };
-        batch.set(memberRef, memberPayload);
-      });
-
-      // 4. Commit all changes
+      // 4. Commit all changes at once
       await batch.commit();
 
       // 5. Provide feedback and redirect
@@ -220,6 +194,7 @@ export default function ProfileSetupPage() {
         description: '정보가 성공적으로 저장되었습니다.',
       });
       router.push('/dashboard');
+
     } catch (error) {
       console.error('Error setting up profile:', error);
       toast({
