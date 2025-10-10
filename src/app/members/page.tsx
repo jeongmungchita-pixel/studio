@@ -20,27 +20,33 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { members } from '@/lib/data';
+import { Member } from '@/types';
+
+const statusTranslations: Record<Member['status'], string> = {
+  active: '활동중',
+  inactive: '비활동',
+}
 
 export default function MembersPage() {
   return (
     <div className="flex flex-col h-full">
-      <AppHeader showAddButton={true} addButtonLabel="Add Member" />
+      <AppHeader showAddButton={true} addButtonLabel="회원 추가" />
       <main className="flex-1 p-6">
         <Card>
           <CardHeader>
-            <CardTitle>All Members</CardTitle>
+            <CardTitle>전체 회원</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Club</TableHead>
-                  <TableHead className="hidden md:table-cell">Level</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Registered</TableHead>
+                  <TableHead>이름</TableHead>
+                  <TableHead className="hidden md:table-cell">클럽</TableHead>
+                  <TableHead className="hidden md:table-cell">레벨</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead className="hidden lg:table-cell">등록일</TableHead>
                   <TableHead>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">메뉴</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -67,7 +73,7 @@ export default function MembersPage() {
                     <TableCell className="hidden md:table-cell">{member.level}</TableCell>
                     <TableCell>
                       <Badge variant={member.status === 'active' ? 'default' : 'secondary'} className={member.status === 'active' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}>
-                        {member.status}
+                        {statusTranslations[member.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">{member.registrationDate}</TableCell>
@@ -76,14 +82,14 @@ export default function MembersPage() {
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
+                            <span className="sr-only">메뉴 열기</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">Delete</DropdownMenuItem>
+                          <DropdownMenuLabel>기능</DropdownMenuLabel>
+                          <DropdownMenuItem>수정</DropdownMenuItem>
+                          <DropdownMenuItem>프로필 보기</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">삭제</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

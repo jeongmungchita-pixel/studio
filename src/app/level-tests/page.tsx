@@ -19,26 +19,32 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { levelTests } from '@/lib/data';
+import type { LevelTest } from '@/types';
+
+const statusTranslations: Record<LevelTest['status'], string> = {
+  scheduled: '예정',
+  completed: '완료',
+}
 
 export default function LevelTestsPage() {
   return (
     <div className="flex flex-col h-full">
-      <AppHeader showAddButton={true} addButtonLabel="Schedule Test" />
+      <AppHeader showAddButton={true} addButtonLabel="테스트 일정 추가" />
       <main className="flex-1 p-6">
         <Card>
           <CardHeader>
-            <CardTitle>Level Tests</CardTitle>
+            <CardTitle>레벨 테스트</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Test Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Candidates</TableHead>
+                  <TableHead>테스트명</TableHead>
+                  <TableHead>날짜</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead>응시자</TableHead>
                   <TableHead>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">기능</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -49,7 +55,7 @@ export default function LevelTestsPage() {
                     <TableCell>{test.date}</TableCell>
                     <TableCell>
                       <Badge variant={test.status === 'scheduled' ? 'default' : 'secondary'}>
-                        {test.status}
+                        {statusTranslations[test.status]}
                       </Badge>
                     </TableCell>
                     <TableCell>{test.candidates}</TableCell>
@@ -58,14 +64,14 @@ export default function LevelTestsPage() {
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
+                            <span className="sr-only">메뉴 열기</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Manage</DropdownMenuItem>
-                          <DropdownMenuItem>Enter Results</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">Cancel</DropdownMenuItem>
+                          <DropdownMenuLabel>기능</DropdownMenuLabel>
+                          <DropdownMenuItem>관리</DropdownMenuItem>
+                          <DropdownMenuItem>결과 입력</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">취소</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

@@ -45,13 +45,13 @@ import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z
   .object({
-    email: z.string().email({ message: 'Invalid email address.' }),
+    email: z.string().email({ message: '유효하지 않은 이메일 주소입니다.' }),
     password: z
       .string()
-      .min(6, { message: 'Password must be at least 6 characters.' }),
+      .min(6, { message: '비밀번호는 6자 이상이어야 합니다.' }),
     confirmPassword: z.string().optional(),
     role: z.enum(['member', 'admin'], {
-      required_error: 'You need to select a role.',
+      required_error: '역할을 선택해야 합니다.',
     }),
   })
   .refine(
@@ -62,7 +62,7 @@ const formSchema = z
       return true;
     },
     {
-      message: "Passwords don't match.",
+      message: "비밀번호가 일치하지 않습니다.",
       path: ['confirmPassword'],
     }
   );
@@ -100,7 +100,7 @@ export default function LoginPage() {
         if (values.password !== values.confirmPassword) {
           form.setError('confirmPassword', {
             type: 'manual',
-            message: "Passwords don't match.",
+            message: "비밀번호가 일치하지 않습니다.",
           });
           setIsSubmitting(false);
           return;
@@ -113,8 +113,8 @@ export default function LoginPage() {
         const newUser = userCredential.user;
         await createUserProfile(newUser, values.role, 'email');
         toast({
-          title: 'Sign-up successful!',
-          description: 'Please check your email for verification.',
+          title: '회원가입 성공!',
+          description: '이메일 인증을 확인해주세요.',
         });
       } else {
         await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -123,8 +123,8 @@ export default function LoginPage() {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Authentication failed',
-        description: error.message || 'An unexpected error occurred.',
+        title: '인증 실패',
+        description: error.message || '예상치 못한 오류가 발생했습니다.',
       });
     } finally {
       setIsSubmitting(false);
@@ -143,8 +143,8 @@ export default function LoginPage() {
       if (error.code !== 'auth/popup-closed-by-user') {
         toast({
           variant: 'destructive',
-          title: 'Google Sign-In failed',
-          description: error.message || 'Could not sign in with Google.',
+          title: 'Google 로그인 실패',
+          description: error.message || 'Google로 로그인할 수 없습니다.',
         });
       }
     } finally {
@@ -171,7 +171,7 @@ export default function LoginPage() {
           : (role as 'admin' | 'member'),
       provider,
     };
-    // Use non-blocking write
+    // 비차단 쓰기 사용
     setDocumentNonBlocking(userRef, userProfile, { merge: true });
   };
 
@@ -191,12 +191,12 @@ export default function LoginPage() {
              <div className="rounded-lg bg-primary p-3">
                <Trophy className="h-8 w-8 text-primary-foreground" />
              </div>
-             <CardTitle className="text-3xl">KGF Nexus</CardTitle>
+             <CardTitle className="text-3xl">KGF 넥서스</CardTitle>
            </div>
           <CardDescription>
             {formType === 'login'
-              ? 'Enter your credentials to access your account'
-              : 'Create an account to get started'}
+              ? '계정에 액세스하려면 정보를 입력하세요'
+              : '시작하려면 계정을 만드세요'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -207,7 +207,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>이메일</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="name@example.com"
@@ -224,7 +224,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>비밀번호</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -244,7 +244,7 @@ export default function LoginPage() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>비밀번호 확인</FormLabel>
                         <FormControl>
                           <Input
                             type="password"
@@ -261,7 +261,7 @@ export default function LoginPage() {
                     name="role"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>Select your role</FormLabel>
+                        <FormLabel>역할 선택</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -273,7 +273,7 @@ export default function LoginPage() {
                                 <RadioGroupItem value="member" />
                               </FormControl>
                               <FormLabel className="font-normal">
-                                Member
+                                회원
                               </FormLabel>
                             </FormItem>
                             <FormItem className="flex items-center space-x-3 space-y-0">
@@ -281,7 +281,7 @@ export default function LoginPage() {
                                 <RadioGroupItem value="admin" />
                               </FormControl>
                               <FormLabel className="font-normal">
-                                Admin
+                                관리자
                               </FormLabel>
                             </FormItem>
                           </RadioGroup>
@@ -296,7 +296,7 @@ export default function LoginPage() {
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {formType === 'login' ? 'Log In' : 'Sign Up'}
+                {formType === 'login' ? '로그인' : '회원가입'}
               </Button>
             </form>
           </Form>
@@ -306,7 +306,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+                또는
               </span>
             </div>
           </div>
@@ -348,8 +348,8 @@ export default function LoginPage() {
             }}
           >
             {formType === 'login'
-              ? "Don't have an account? Sign up"
-              : 'Already have an account? Log in'}
+              ? '계정이 없으신가요? 회원가입'
+              : '이미 계정이 있으신가요? 로그인'}
           </Button>
         </CardFooter>
       </Card>

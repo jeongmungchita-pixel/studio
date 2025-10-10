@@ -21,17 +21,17 @@ import { Users, Building, Trophy, CalendarCheck } from 'lucide-react';
 import { members, clubs, competitions } from '@/lib/data';
 
 const chartData = [
-  { month: 'Jan', members: 40 },
-  { month: 'Feb', members: 60 },
-  { month: 'Mar', members: 75 },
-  { month: 'Apr', members: 90 },
-  { month: 'May', members: 110 },
-  { month: 'Jun', members: 125 },
+  { month: '1월', members: 40 },
+  { month: '2월', members: 60 },
+  { month: '3월', members: 75 },
+  { month: '4월', members: 90 },
+  { month: '5월', members: 110 },
+  { month: '6월', members: 125 },
 ];
 
 const chartConfig = {
   members: {
-    label: "New Members",
+    label: "신규 회원",
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig
@@ -49,33 +49,33 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Members
+                총 회원 수
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{members.length}</div>
               <p className="text-xs text-muted-foreground">
-                +10% from last month
+                지난 달 대비 +10%
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Clubs</CardTitle>
+              <CardTitle className="text-sm font-medium">활동 중인 클럽</CardTitle>
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{clubs.length}</div>
               <p className="text-xs text-muted-foreground">
-                +2 new clubs this year
+                올해 +2개의 신규 클럽
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Upcoming Competitions
+                예정된 대회
               </CardTitle>
               <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -84,21 +84,21 @@ export default function DashboardPage() {
                 {upcomingCompetitions.length}
               </div>
               <p className="text-xs text-muted-foreground">
-                in the next 3 months
+                향후 3개월 내
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Payments Due
+                납부 예정 회비
               </CardTitle>
               <CalendarCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">12</div>
               <p className="text-xs text-muted-foreground">
-                members have pending fees
+                회비 납부 대기중인 회원
               </p>
             </CardContent>
           </Card>
@@ -106,8 +106,8 @@ export default function DashboardPage() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>New Member Growth</CardTitle>
-              <CardDescription>Last 6 months</CardDescription>
+              <CardTitle>신규 회원 증가 추이</CardTitle>
+              <CardDescription>지난 6개월</CardDescription>
             </CardHeader>
             <CardContent>
                <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
@@ -132,15 +132,15 @@ export default function DashboardPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Competitions</CardTitle>
+              <CardTitle>예정된 대회</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Location</TableHead>
+                    <TableHead>대회명</TableHead>
+                    <TableHead>날짜</TableHead>
+                    <TableHead>장소</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

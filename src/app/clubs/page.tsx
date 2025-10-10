@@ -9,7 +9,7 @@ import { clubs } from '@/lib/data';
 export default function ClubsPage() {
   return (
     <div className="flex flex-col h-full">
-      <AppHeader showAddButton={true} addButtonLabel="Add Club" />
+      <AppHeader showAddButton={true} addButtonLabel="클럽 추가" />
       <main className="flex-1 p-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {clubs.map((club) => (
@@ -17,7 +17,7 @@ export default function ClubsPage() {
               <CardHeader className="flex-row items-center gap-4">
                 <Image
                   src={club.logo}
-                  alt={`${club.name} logo`}
+                  alt={`${club.name} 로고`}
                   width={64}
                   height={64}
                   className="rounded-lg border"
@@ -32,16 +32,16 @@ export default function ClubsPage() {
               </CardHeader>
               <CardContent className="flex-grow">
                  <div className="text-sm text-muted-foreground">
-                   <p>Coach: {club.coach}</p>
+                   <p>코치: {club.coach}</p>
                  </div>
               </CardContent>
               <CardFooter className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="w-4 h-4" />
-                  <span>{club.members} members</span>
+                  <span>회원 {club.members}명</span>
                 </div>
                 <Link href={`/clubs/${club.id}`} passHref>
-                  <Button variant="outline" size="sm">View</Button>
+                  <Button variant="outline" size="sm">상세보기</Button>
                 </Link>
               </CardFooter>
             </Card>

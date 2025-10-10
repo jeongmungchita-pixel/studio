@@ -15,6 +15,16 @@ import { PlusCircle, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 function toTitleCase(str: string) {
+  const koreanMap: { [key: string]: string } = {
+    'dashboard': '대시보드',
+    'members': '회원',
+    'clubs': '클럽',
+    'competitions': '대회',
+    'level-tests': '레벨 테스트',
+  }
+  if (koreanMap[str]) {
+    return koreanMap[str];
+  }
   return str.replace(/-/g, ' ').replace(
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()
@@ -23,7 +33,7 @@ function toTitleCase(str: string) {
 
 export function AppHeader({
   showAddButton = false,
-  addButtonLabel = "Add New",
+  addButtonLabel = "새로 추가",
   onAddClick,
 }: {
   showAddButton?: boolean;
@@ -40,7 +50,7 @@ export function AppHeader({
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              <BreadcrumbLink href="/dashboard">대시보드</BreadcrumbLink>
             </BreadcrumbItem>
             {segments.length > 1 && segments.map((segment, index) => (
               <React.Fragment key={segment}>
@@ -65,7 +75,7 @@ export function AppHeader({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
                 type="search"
-                placeholder="Search..."
+                placeholder="검색..."
                 className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
             />
         </div>

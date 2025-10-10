@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Users,
@@ -28,11 +27,11 @@ import { signOut } from 'firebase/auth';
 import type { UserProfile } from '@/types';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/members', label: 'Members', icon: Users },
-  { href: '/clubs', label: 'Clubs', icon: Building },
-  { href: '/competitions', label: 'Competitions', icon: Trophy },
-  { href: '/level-tests', label: 'Level Tests', icon: ClipboardList },
+  { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
+  { href: '/members', label: '회원', icon: Users },
+  { href: '/clubs', label: '클럽', icon: Building },
+  { href: '/competitions', label: '대회', icon: Trophy },
+  { href: '/level-tests', label: '레벨 테스트', icon: ClipboardList },
 ];
 
 export function AppSidebar() {
@@ -47,7 +46,7 @@ export function AppSidebar() {
         redirect('/login');
       }
     } catch (error) {
-      console.error('Failed to log out', error);
+      console.error('로그아웃 실패', error);
     }
   };
 
@@ -65,7 +64,7 @@ export function AppSidebar() {
           <div className="p-2 bg-primary rounded-lg">
             <Trophy className="text-primary-foreground" />
           </div>
-          <span className="text-lg font-semibold">KGF Nexus</span>
+          <span className="text-lg font-semibold">KGF 넥서스</span>
         </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
@@ -90,16 +89,16 @@ export function AppSidebar() {
          <SidebarMenu>
             <SidebarMenuItem>
                 <Link href="/settings">
-                    <SidebarMenuButton isActive={isActive('/settings')} tooltip={{ children: 'Settings', side: 'right' }}>
+                    <SidebarMenuButton isActive={isActive('/settings')} tooltip={{ children: '설정', side: 'right' }}>
                         <Settings />
-                        <span>Settings</span>
+                        <span>설정</span>
                     </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                 <SidebarMenuButton onClick={handleLogout} tooltip={{ children: 'Log Out', side: 'right' }}>
+                 <SidebarMenuButton onClick={handleLogout} tooltip={{ children: '로그아웃', side: 'right' }}>
                      <LogOut />
-                     <span>Log Out</span>
+                     <span>로그아웃</span>
                  </SidebarMenuButton>
              </SidebarMenuItem>
          </SidebarMenu>
@@ -108,7 +107,7 @@ export function AppSidebar() {
             {isUserLoading ? (
                 <div className="flex items-center gap-3 w-full">
                     <Loader2 className="w-4 h-4 animate-spin"/>
-                    <span className="text-sm">Loading...</span>
+                    <span className="text-sm">로딩 중...</span>
                 </div>
             ) : user ? (
             <div className="flex items-center gap-3">
@@ -120,7 +119,7 @@ export function AppSidebar() {
                 </Avatar>
                 <div className="flex flex-col">
                     <span className="font-semibold text-sm">{currentUser?.displayName}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{currentUser?.role}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{currentUser?.role === 'admin' ? '관리자' : '회원'}</span>
                 </div>
             </div>
             ) : null}

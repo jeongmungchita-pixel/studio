@@ -19,9 +19,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { competitions } from '@/lib/data';
+import type { Competition } from '@/types';
+
+const statusTranslations: Record<Competition['status'], string> = {
+  upcoming: '예정',
+  ongoing: '진행중',
+  completed: '완료',
+}
 
 export default function CompetitionsPage() {
-  const getBadgeVariant = (status: 'upcoming' | 'ongoing' | 'completed'): 'default' | 'outline' | 'secondary' | 'destructive' => {
+  const getBadgeVariant = (status: Competition['status']): 'default' | 'outline' | 'secondary' | 'destructive' => {
     switch (status) {
       case 'upcoming': return 'default';
       case 'ongoing': return 'outline';
@@ -32,23 +39,23 @@ export default function CompetitionsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <AppHeader showAddButton={true} addButtonLabel="Create Competition" />
+      <AppHeader showAddButton={true} addButtonLabel="대회 생성" />
       <main className="flex-1 p-6">
         <Card>
           <CardHeader>
-            <CardTitle>All Competitions</CardTitle>
+            <CardTitle>전체 대회</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Competition Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="hidden md:table-cell">Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Participants</TableHead>
+                  <TableHead>대회명</TableHead>
+                  <TableHead>날짜</TableHead>
+                  <TableHead className="hidden md:table-cell">장소</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead className="hidden md:table-cell">참가자</TableHead>
                   <TableHead>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">기능</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -59,7 +66,7 @@ export default function CompetitionsPage() {
                     <TableCell>{comp.date}</TableCell>
                     <TableCell className="hidden md:table-cell">{comp.location}</TableCell>
                     <TableCell>
-                      <Badge variant={getBadgeVariant(comp.status)}>{comp.status}</Badge>
+                      <Badge variant={getBadgeVariant(comp.status)}>{statusTranslations[comp.status]}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{comp.participants}</TableCell>
                     <TableCell>
@@ -67,14 +74,14 @@ export default function CompetitionsPage() {
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
+                            <span className="sr-only">메뉴 열기</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Manage</DropdownMenuItem>
-                          <DropdownMenuItem>View Results</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">Cancel</DropdownMenuItem>
+                          <DropdownMenuLabel>기능</DropdownMenuLabel>
+                          <DropdownMenuItem>관리</DropdownMenuItem>
+                          <DropdownMenuItem>결과 보기</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">취소</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
