@@ -144,7 +144,7 @@ export default function ProfileSetupPage() {
             name: child.name,
             dateOfBirth: new Date(child.dateOfBirth).toISOString(),
             gender: child.gender,
-            email: user.email,
+            email: user.email, // Guardian's email
             clubId: values.clubId,
             status: 'pending',
             guardianIds: guardianUids,
@@ -370,7 +370,7 @@ export default function ProfileSetupPage() {
                           ))
                         ) : (
                           <div className="p-4 text-center text-sm text-muted-foreground">
-                            등록된 클럽이 없습니다. 관리자에게 문의하세요.
+                            불러올 클럽이 없습니다.
                           </div>
                         )}
                       </SelectContent>
