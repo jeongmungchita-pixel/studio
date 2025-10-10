@@ -184,95 +184,101 @@ export default function ProfileSetupPage() {
 
   return (
     <main className="flex-1 p-6">
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>프로필 설정</CardTitle>
-          <CardDescription>
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">프로필 설정</h1>
+          <p className="text-muted-foreground mt-2">
             선수 또는 학부모 정보를 입력하여 KGF 넥서스 활동을 시작하세요.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              
-              <div className="space-y-4">
-                <div className="space-y-1">
-                    <h3 className="font-medium">성인 정보</h3>
-                    <p className="text-sm text-muted-foreground">보호자 본인 또는 다른 성인 가족을 '선수'로 등록할 경우에만 추가해주세요.</p>
-                </div>
+          </p>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>성인 선수 정보</CardTitle>
+                <CardDescription>보호자 본인 또는 다른 성인 가족을 '선수'로 등록할 경우에만 추가해주세요.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {adultFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-md relative space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                           <FormField control={form.control} name={`adultsInfo.${index}.name`} render={({ field }) => (
-                              <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} placeholder="예: 홍길동" /></FormControl><FormMessage /></FormItem>
-                           )}/>
-                           <div className="flex items-center gap-4 pt-6">
-                            {form.watch(`adultsInfo.${index}.photoPreview`) ? (
-                                <Image src={form.watch(`adultsInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full object-cover" />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                                  <Upload className="w-5 h-5"/>
-                                </div>
-                            )}
-                            <Button type="button" variant="outline" onClick={() => adultFileInputRefs.current[index]?.click()}>
-                                사진 업로드
-                            </Button>
-                            <FormField control={form.control} name={`adultsInfo.${index}.photo`} render={({ field }) => (
-                                <FormItem className="hidden">
-                                <FormControl>
-                                    <Input
-                                    type="file"
-                                    accept="image/*"
-                                    ref={(el) => (adultFileInputRefs.current[index] = el)}
-                                    onChange={(e) => handleFileChange(e, `adultsInfo.${index}.photo`, `adultsInfo.${index}.photoPreview`)}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                           </div>
-                           <FormField control={form.control} name={`adultsInfo.${index}.dateOfBirth`} render={({ field }) => (
-                              <FormItem><FormLabel>생년월일</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
-                           )}/>
-                           <FormField control={form.control} name={`adultsInfo.${index}.gender`} render={({ field }) => (
-                              <FormItem><FormLabel>성별</FormLabel>
-                                  <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
-                                      <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="male" /></FormControl>
-                                        <FormLabel className="font-normal">남자</FormLabel>
-                                      </FormItem>
-                                      <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="female" /></FormControl>
-                                        <FormLabel className="font-normal">여자</FormLabel>
-                                      </FormItem>
-                                    </RadioGroup>
-                                  </FormControl>
-                              <FormMessage /></FormItem>
-                           )}/>
-                        </div>
-                        {adultFields.length > 0 && (
-                          <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
-                              <Trash2 className="h-4 w-4 text-destructive"/>
+                  <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-background/50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 items-start">
+                         <FormField control={form.control} name={`adultsInfo.${index}.name`} render={({ field }) => (
+                            <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} placeholder="예: 홍길동" /></FormControl><FormMessage /></FormItem>
+                         )}/>
+                         <div className="flex items-center gap-4 pt-8">
+                          {form.watch(`adultsInfo.${index}.photoPreview`) ? (
+                              <Image src={form.watch(`adultsInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full object-cover" />
+                          ) : (
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                                <Upload className="w-5 h-5"/>
+                              </div>
+                          )}
+                          <Button type="button" variant="outline" onClick={() => adultFileInputRefs.current[index]?.click()}>
+                              사진 업로드
                           </Button>
-                        )}
-                    </div>
+                          <FormField control={form.control} name={`adultsInfo.${index}.photo`} render={({ field }) => (
+                              <FormItem className="hidden">
+                              <FormControl>
+                                  <Input
+                                  type="file"
+                                  accept="image/*"
+                                  ref={(el) => (adultFileInputRefs.current[index] = el)}
+                                  onChange={(e) => handleFileChange(e, `adultsInfo.${index}.photo`, `adultsInfo.${index}.photoPreview`)}
+                                  />
+                              </FormControl>
+                              <FormMessage />
+                              </FormItem>
+                          )}
+                          />
+                         </div>
+                         <FormField control={form.control} name={`adultsInfo.${index}.dateOfBirth`} render={({ field }) => (
+                            <FormItem><FormLabel>생년월일</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                         )}/>
+                         <FormField control={form.control} name={`adultsInfo.${index}.gender`} render={({ field }) => (
+                            <FormItem><FormLabel>성별</FormLabel>
+                                <FormControl>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                      <FormControl><RadioGroupItem value="male" /></FormControl>
+                                      <FormLabel className="font-normal">남자</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                      <FormControl><RadioGroupItem value="female" /></FormControl>
+                                      <FormLabel className="font-normal">여자</FormLabel>
+                                    </FormItem>
+                                  </RadioGroup>
+                                </FormControl>
+                            <FormMessage /></FormItem>
+                         )}/>
+                      </div>
+                      {adultFields.length > 0 && (
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive"/>
+                        </Button>
+                      )}
+                  </div>
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ name: '', dateOfBirth: '', gender: 'male' })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 성인 추가
                 </Button>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="space-y-4">
-                 <h3 className="font-medium">자녀 정보</h3>
+            <Card>
+              <CardHeader>
+                <CardTitle>자녀 선수 정보</CardTitle>
+                <CardDescription>선수로 등록할 자녀의 정보를 입력해주세요.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {childFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-md relative space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                    <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-background/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 items-start">
                             <FormField control={form.control} name={`childrenInfo.${index}.name`} render={({ field }) => (
                                 <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} placeholder="예: 홍자녀"/></FormControl><FormMessage /></FormItem>
                             )}/>
-                            <div className="flex items-center gap-4 pt-6">
+                            <div className="flex items-center gap-4 pt-8">
                             {form.watch(`childrenInfo.${index}.photoPreview`) ? (
                                 <Image src={form.watch(`childrenInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full object-cover" />
                             ) : (
@@ -326,68 +332,75 @@ export default function ProfileSetupPage() {
                 <Button type="button" variant="outline" size="sm" onClick={() => appendChild({ name: '', dateOfBirth: '', gender: 'male' })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 자녀 추가
                 </Button>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>대표 전화번호</FormLabel>
-                    <FormControl>
-                      <Input type="tel" {...field} placeholder="연락 가능한 대표 전화번호를 입력하세요" />
-                    </FormControl>
-                    <FormDescription>
-                      가족/선수 그룹의 대표 연락처입니다.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="clubId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>소속 클럽</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>연락처 및 소속</CardTitle>
+                <CardDescription>가족/선수 그룹의 대표 연락처와 소속될 클럽을 선택해주세요.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>대표 전화번호</FormLabel>
                       <FormControl>
-                        <SelectTrigger disabled={areClubsLoading}>
-                          <SelectValue placeholder="등록할 클럽을 선택하세요" />
-                        </SelectTrigger>
+                        <Input type="tel" {...field} placeholder="연락 가능한 대표 전화번호를 입력하세요" />
                       </FormControl>
-                      <SelectContent>
-                        {areClubsLoading ? (
-                            <div className="flex items-center justify-center p-4">
-                                <Loader2 className="h-5 w-5 animate-spin"/>
-                            </div>
-                        ) : clubs && clubs.length > 0 ? (
-                          clubs.map((club) => (
-                            <SelectItem key={club.id} value={club.id}>
-                              {club.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-4 text-center text-sm text-muted-foreground">
-                            불러올 클럽이 없습니다.
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+                <FormField
+                  control={form.control}
+                  name="clubId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>소속 클럽</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger disabled={areClubsLoading}>
+                            <SelectValue placeholder="등록할 클럽을 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {areClubsLoading ? (
+                              <div className="flex items-center justify-center p-4">
+                                  <Loader2 className="h-5 w-5 animate-spin"/>
+                              </div>
+                          ) : clubs && clubs.length > 0 ? (
+                            clubs.map((club) => (
+                              <SelectItem key={club.id} value={club.id}>
+                                {club.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              불러올 클럽이 없습니다.
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 저장 및 승인 요청
               </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            </div>
+          </form>
+        </Form>
+      </div>
     </main>
   );
 }
