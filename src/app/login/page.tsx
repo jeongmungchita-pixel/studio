@@ -128,7 +128,6 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, values.email, values.password);
       }
     } catch (error: any) {
-      console.error('Authentication Error:', error);
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
