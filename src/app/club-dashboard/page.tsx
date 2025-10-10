@@ -78,7 +78,7 @@ export default function ClubDashboardPage() {
       pending: '승인 대기',
     };
 
-    const MemberTable = ({ memberList }: { memberList: Member[] }) => (
+    const MemberTable = ({ memberList, listType }: { memberList: Member[], listType: 'regular' | 'pending' }) => (
       <Table>
           <TableHeader>
               <TableRow>
@@ -97,13 +97,13 @@ export default function ClubDashboardPage() {
                       </TableCell>
                       <TableCell>{member.email}</TableCell>
                       <TableCell className="space-x-2">
-                          {member.status === 'active' && (
+                          {listType === 'regular' && member.status === 'active' && (
                               <Button size="sm" variant="outline" onClick={() => handleStatusChange(member.id, 'inactive')}>비활성화</Button>
                           )}
-                          {member.status === 'inactive' && (
+                          {listType === 'regular' && member.status === 'inactive' && (
                                <Button size="sm" onClick={() => handleStatusChange(member.id, 'active')}>갱신 요청</Button>
                           )}
-                           {member.status === 'pending' && (
+                           {listType === 'pending' && (
                             <>
                                 <Button size="sm" onClick={() => handleStatusChange(member.id, 'active')}>승인</Button>
                                 <Button size="sm" variant="destructive" onClick={() => handleStatusChange(member.id, 'delete')}>거절</Button>
@@ -142,7 +142,7 @@ export default function ClubDashboardPage() {
                             <CardDescription>현재 클럽에 소속된 활동중 또는 비활동 상태의 선수 목록입니다.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                           <MemberTable memberList={regularMembers} />
+                           <MemberTable memberList={regularMembers} listType="regular" />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -153,7 +153,7 @@ export default function ClubDashboardPage() {
                             <CardDescription>새로운 가입 요청 또는 이용권 갱신을 요청한 선수 목록입니다.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <MemberTable memberList={pendingMembers} />
+                            <MemberTable memberList={pendingMembers} listType="pending" />
                         </CardContent>
                     </Card>
                 </TabsContent>
