@@ -14,42 +14,53 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Wait until user loading is complete before doing anything.
     if (isUserLoading) {
-      return;
+      return; 
     }
 
-    // If user is not logged in, redirect to login page.
     if (!user) {
       router.push('/login');
       return;
     }
-    
-    // User is logged in, handle role-based redirection.
-    if (user.role === 'club-admin' && user.status === 'approved') {
-        // If approved club-admin is not on their dashboard, redirect them.
-        if(pathname !== '/club-dashboard') {
+
+    // Role-based redirection logic
+    if (pathname.startsWith('/login')) {
+        if(user.role === 'club-admin' && user.status === 'approved') {
             router.push('/club-dashboard');
-        }
-    } else if (user.role === 'club-admin' && user.status === 'pending') {
-        // If a pending club-admin somehow gets here, send them back to login.
-        router.push('/login');
-    } else if ((user.role === 'admin' || user.role === 'member')) {
-        // If an admin or member lands on the club-dashboard, redirect them.
-        if (pathname === '/club-dashboard') {
+        } else {
             router.push('/dashboard');
         }
+    } else if (user.role === 'club-admin') {
+      if (user.status === 'approved' && !pathname.startsWith('/club-dashboard')) {
+        router.push('/club-dashboard');
+      } else if (user.status === 'pending') {
+        // If pending admin tries to access any protected page, send to login
+        router.push('/login');
+      }
+    } else if ((user.role === 'admin' || user.role === 'member') && pathname.startsWith('/club-dashboard')) {
+        router.push('/dashboard');
     }
 
   }, [user, isUserLoading, pathname, router]);
 
   if (isUserLoading || !user) {
+    // Show a global loader while user is being authenticated or if they are being redirected.
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+  
+  // Prevent flashing of content for users who will be redirected
+  if (user.role === 'club-admin' && user.status === 'pending') {
+    return (
+       <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
 
   return (
     <SidebarProvider>
@@ -63,5 +74,3 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

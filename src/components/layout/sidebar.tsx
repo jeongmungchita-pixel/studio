@@ -1,5 +1,5 @@
 'use client';
-import { usePathname, redirect } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   SidebarContent,
@@ -34,8 +34,9 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
+  const router = useRouter();
 
   const isActive = (href: string) => {
     if (href === '/dashboard' || href === '/club-dashboard') return pathname === href;
@@ -48,9 +49,10 @@ export function AppSidebar() {
     currentUser?.role && item.roles.includes(currentUser.role)
   );
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if(auth) {
-        signOut(auth);
+        await signOut(auth);
+        router.push('/login');
     }
   }
 

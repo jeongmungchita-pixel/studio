@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signOut,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -103,14 +104,10 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
-    // If user data is loaded and a user exists, redirect them.
+   useEffect(() => {
+    // If user data is loaded and a user exists, redirect them based on their role.
     if (!isUserLoading && user) {
-        if (user.role === 'club-admin' && user.status === 'approved') {
-            router.push('/club-dashboard');
-        } else {
-            router.push('/dashboard');
-        }
+        router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
 
@@ -161,7 +158,7 @@ export default function LoginPage() {
         });
         
         if(values.role === 'club-admin') {
-            await auth.signOut();
+            await signOut(auth);
             setCurrentFormType('login');
         }
       } else {

@@ -16,11 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { UserProfile } from '@/types';
 import { Loader2 } from 'lucide-react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function AdminUsersPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const usersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
@@ -39,7 +40,8 @@ export default function AdminUsersPage() {
 
   // This page is for admins only
   if (user.role !== 'admin') {
-    redirect('/dashboard');
+    router.push('/dashboard');
+    return null;
   }
 
   const handleApprove = async (userId: string) => {
