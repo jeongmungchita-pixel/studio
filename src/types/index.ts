@@ -12,7 +12,6 @@ export type Member = {
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[];
   photoURL?: string;
-  isGuardianOnly?: boolean;
 };
 
 export type Club = {

@@ -142,11 +142,12 @@ export default function ProfileSetupPage() {
         isGuardian: true,
       };
       batch.update(userRef, userProfileUpdate);
-
+      
       // 2. Upload images first and get URLs
       const adultsWithPhotoUrls = await Promise.all(
-        (values.adultsInfo || []).map(async (adult) => {
-          let photoURL: string | undefined = undefined;
+        (values.adultsInfo || []).map(async (adult, index) => {
+          let photoURL: string | undefined =
+            form.getValues(`adultsInfo.${index}.photoPreview`);
           if (adult.photo) {
             const memberIdForPhoto = doc(collection(firestore, 'members')).id;
             photoURL = await uploadImage(
@@ -160,11 +161,13 @@ export default function ProfileSetupPage() {
       );
 
       const childrenWithPhotoUrls = await Promise.all(
-        (values.childrenInfo || []).map(async (child) => {
-          let photoURL: string | undefined = undefined;
+        (values.childrenInfo || []).map(async (child, index) => {
+          let photoURL: string | undefined = form.getValues(
+            `childrenInfo.${index}.photoPreview`
+          );
           if (child.photo) {
-             const memberIdForPhoto = doc(collection(firestore, 'members')).id;
-             photoURL = await uploadImage(
+            const memberIdForPhoto = doc(collection(firestore, 'members')).id;
+            photoURL = await uploadImage(
               storage,
               `profile_pictures/${memberIdForPhoto}`,
               child.photo
@@ -173,9 +176,9 @@ export default function ProfileSetupPage() {
           return { ...child, photoURL };
         })
       );
-      
+
       // 3. Prepare member documents with photo URLs
-      adultsWithPhotoUrls.forEach(adult => {
+      adultsWithPhotoUrls.forEach((adult) => {
         const memberRef = doc(collection(firestore, 'members'));
         const memberPayload: Member = {
           id: memberRef.id,
@@ -185,14 +188,14 @@ export default function ProfileSetupPage() {
           email: user.email,
           phoneNumber: values.phoneNumber,
           clubId: values.clubId,
-          status: 'pending',
+          status: 'active', // Changed from 'pending' to 'active'
           guardianIds: [user.uid],
           photoURL: adult.photoURL,
         };
         batch.set(memberRef, memberPayload);
       });
 
-      childrenWithPhotoUrls.forEach(child => {
+      childrenWithPhotoUrls.forEach((child) => {
         const memberRef = doc(collection(firestore, 'members'));
         const memberPayload: Member = {
           id: memberRef.id,
@@ -201,40 +204,22 @@ export default function ProfileSetupPage() {
           gender: child.gender,
           email: user.email, // Guardian's email
           clubId: values.clubId,
-          status: 'pending',
+          status: 'active', // Changed from 'pending' to 'active'
           guardianIds: [user.uid],
           photoURL: child.photoURL,
         };
         batch.set(memberRef, memberPayload);
       });
 
-      // 4. If only children are registered, create a non-playing guardian member record
-      if (adultsWithPhotoUrls.length === 0 && childrenWithPhotoUrls.length > 0) {
-        const guardianMemberRef = doc(firestore, 'members', user.uid);
-        const guardianMemberPayload: Partial<Member> = {
-           id: user.uid,
-           name: user.displayName,
-           email: user.email,
-           phoneNumber: values.phoneNumber,
-           clubId: values.clubId,
-           status: 'active', // Guardians are active by default
-           guardianIds: [],
-           isGuardianOnly: true,
-        };
-        batch.set(guardianMemberRef, guardianMemberPayload, { merge: true });
-      }
-      
-      // 5. Commit all changes
+      // 4. Commit all changes
       await batch.commit();
 
-      // 6. Provide feedback and redirect
+      // 5. Provide feedback and redirect
       toast({
         title: '프로필 저장 완료',
-        description:
-          '정보가 성공적으로 저장되었습니다. 클럽 승인을 기다려주세요.',
+        description: '정보가 성공적으로 저장되었습니다.',
       });
       router.push('/dashboard');
-
     } catch (error) {
       console.error('Error setting up profile:', error);
       toast({
@@ -243,7 +228,7 @@ export default function ProfileSetupPage() {
         description: '프로필을 저장하는 중 오류가 발생했습니다.',
       });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -672,15 +657,11 @@ export default function ProfileSetupPage() {
             </Card>
 
             <div className="flex justify-center pt-4">
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSubmitting}
-              >
+              <Button type="submit" size="lg" disabled={isSubmitting}>
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                저장 및 승인 요청
+                저장 및 클럽 가입
               </Button>
             </div>
           </form>
