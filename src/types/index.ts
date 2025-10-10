@@ -47,6 +47,9 @@ export type UserProfile = {
   email: string;
   displayName: string;
   photoURL: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'member' | 'club-admin';
   provider: 'email' | 'google';
+  status: 'pending' | 'approved';
+  clubName?: string;
+  phoneNumber?: string;
 };

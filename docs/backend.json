@@ -314,16 +314,29 @@
         },
         "role": {
           "type": "string",
-          "enum": ["admin", "member"],
+          "enum": ["admin", "member", "club-admin"],
           "description": "The user's role."
         },
         "provider": {
             "type": "string",
             "enum": ["email", "google"],
             "description": "The authentication provider."
+        },
+        "status": {
+            "type": "string",
+            "enum": ["pending", "approved"],
+            "description": "The approval status of the user."
+        },
+        "clubName": {
+            "type": "string",
+            "description": "The name of the club the user manages."
+        },
+        "phoneNumber": {
+            "type": "string",
+            "description": "The phone number of the club."
         }
       },
-      "required": ["uid", "email", "displayName", "photoURL", "role", "provider"]
+      "required": ["uid", "email", "displayName", "photoURL", "role", "provider", "status"]
     }
   },
   "auth": {

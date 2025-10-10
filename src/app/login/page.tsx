@@ -37,10 +37,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
 import type { UserProfile } from '@/types';
-import {
-  initiateEmailSignIn,
-  initiateEmailSignUp,
-} from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z
@@ -50,9 +46,11 @@ const formSchema = z
       .string()
       .min(6, { message: '비밀번호는 6자 이상이어야 합니다.' }),
     confirmPassword: z.string().optional(),
-    role: z.enum(['member', 'admin'], {
+    role: z.enum(['member', 'admin', 'club-admin'], {
       required_error: '역할을 선택해야 합니다.',
     }),
+    clubName: z.string().optional(),
+    phoneNumber: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -65,7 +63,15 @@ const formSchema = z
       message: "비밀번호가 일치하지 않습니다.",
       path: ['confirmPassword'],
     }
-  );
+  ).refine(data => {
+    if (data.role === 'club-admin') {
+      return !!data.clubName && !!data.phoneNumber;
+    }
+    return true;
+  }, {
+    message: '클럽 이름과 전화번호는 필수입니다.',
+    path: ['clubName'],
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -83,8 +89,12 @@ export default function LoginPage() {
       password: '',
       confirmPassword: '',
       role: 'member',
+      clubName: '',
+      phoneNumber: '',
     },
   });
+
+  const role = form.watch('role');
 
   useEffect(() => {
     if (user) {
@@ -111,10 +121,10 @@ export default function LoginPage() {
           values.password
         );
         const newUser = userCredential.user;
-        await createUserProfile(newUser, values.role, 'email');
+        await createUserProfile(newUser, values);
         toast({
           title: '회원가입 성공!',
-          description: '이메일 인증을 확인해주세요.',
+          description: values.role === 'club-admin' ? '관리자 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
       } else {
         await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -137,7 +147,8 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      await createUserProfile(result.user, 'member', 'google');
+      // For simplicity, Google Sign-In users are members by default.
+      await createUserProfile(result.user, { role: 'member', email: result.user.email!, password: '' });
     } catch (error: any) {
       console.error(error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -154,24 +165,28 @@ export default function LoginPage() {
 
   const createUserProfile = async (
     user: User,
-    role: 'admin' | 'member',
-    provider: 'email' | 'google'
+    values: FormValues
   ) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', user.uid);
+    
+    let role: UserProfile['role'] = values.role;
+    if (user.uid === 'J4I2IkDZsxSiU9bNeu9qZyxzSkk1') {
+      role = 'admin';
+    }
+    
     const userProfile: UserProfile = {
       uid: user.uid,
       email: user.email!,
       displayName: user.displayName || user.email!.split('@')[0],
       photoURL:
         user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
-      role:
-        user.uid === 'J4I2IkDZsxSiU9bNeu9qZyxzSkk1'
-          ? 'admin'
-          : (role as 'admin' | 'member'),
-      provider,
+      role: role,
+      provider: (user.providerData[0]?.providerId as 'google' | 'email') || 'email',
+      status: values.role === 'club-admin' ? 'pending' : 'approved',
+      ...(values.role === 'club-admin' && { clubName: values.clubName, phoneNumber: values.phoneNumber }),
     };
-    // 비차단 쓰기 사용
+
     setDocumentNonBlocking(userRef, userProfile, { merge: true });
   };
 
@@ -230,7 +245,7 @@ export default function LoginPage() {
                         type="password"
                         placeholder="••••••••"
                         {...field}
-                        autoComplete="current-password"
+                        autoComplete={formType === 'login' ? 'current-password' : 'new-password'}
                       />
                     </FormControl>
                     <FormMessage />
@@ -250,6 +265,7 @@ export default function LoginPage() {
                             type="password"
                             placeholder="••••••••"
                             {...field}
+                            autoComplete="new-password"
                           />
                         </FormControl>
                         <FormMessage />
@@ -261,27 +277,27 @@ export default function LoginPage() {
                     name="role"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>역할 선택</FormLabel>
+                        <FormLabel>가입 유형</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
                             defaultValue={field.value}
-                            className="flex flex-col space-y-1"
+                            className="flex space-x-4"
                           >
-                            <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormItem className="flex items-center space-x-2 space-y-0">
                               <FormControl>
                                 <RadioGroupItem value="member" />
                               </FormControl>
                               <FormLabel className="font-normal">
-                                회원
+                                일반 회원
                               </FormLabel>
                             </FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormItem className="flex items-center space-x-2 space-y-0">
                               <FormControl>
-                                <RadioGroupItem value="admin" />
+                                <RadioGroupItem value="club-admin" />
                               </FormControl>
                               <FormLabel className="font-normal">
-                                관리자
+                                클럽 관리자
                               </FormLabel>
                             </FormItem>
                           </RadioGroup>
@@ -290,6 +306,37 @@ export default function LoginPage() {
                       </FormItem>
                     )}
                   />
+
+                  {role === 'club-admin' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="clubName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>클럽 이름</FormLabel>
+                            <FormControl>
+                              <Input placeholder="소속 클럽의 이름을 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>클럽 전화번호</FormLabel>
+                            <FormControl>
+                              <Input placeholder="연락 가능한 클럽 전화번호를 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
                 </>
               )}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -336,7 +383,7 @@ export default function LoginPage() {
                 ></path>
               </svg>
             )}
-            Google
+            Google 계정으로 로그인
           </Button>
         </CardContent>
         <CardFooter className="flex justify-center">
