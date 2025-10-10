@@ -48,14 +48,14 @@ export default function AdminUsersPage() {
 
   const handleApprove = async (userToApprove: UserProfile) => {
     if (!firestore || !userToApprove.clubName) return;
-  
+
     try {
       const batch = writeBatch(firestore);
-  
+
       // 1. Update user status to 'approved'
       const userRef = doc(firestore, 'users', userToApprove.uid);
       batch.update(userRef, { status: 'approved' });
-  
+
       // 2. Create a new club document
       const clubRef = doc(collection(firestore, 'clubs'));
       const newClub: Club = {
@@ -70,9 +70,9 @@ export default function AdminUsersPage() {
 
       // 3. Update the club-admin's profile with the new clubId
       batch.update(userRef, { clubId: clubRef.id });
-  
+
       await batch.commit();
-  
+
       toast({
         title: '승인 완료',
         description: `${userToApprove.clubName} 클럽이 생성되고 ${userToApprove.displayName} 님의 계정이 승인되었습니다.`,
@@ -87,22 +87,30 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleReject = async (userToReject: UserProfile) => {
+  const handleDelete = async (userToDelete: UserProfile) => {
     if (!firestore) return;
-    const userRef = doc(firestore, 'users', userToReject.uid);
+    if (userToDelete.uid === user.uid) {
+      toast({
+        variant: 'destructive',
+        title: '삭제 불가',
+        description: '자신의 계정은 삭제할 수 없습니다.',
+      });
+      return;
+    }
+    const userRef = doc(firestore, 'users', userToDelete.uid);
     try {
-        await deleteDoc(userRef);
-        toast({
-            title: '요청 거절 완료',
-            description: `${userToReject.displayName} 님의 가입 요청이 삭제되었습니다.`
-        });
+      await deleteDoc(userRef);
+      toast({
+        title: '사용자 삭제 완료',
+        description: `${userToDelete.displayName} 님의 계정이 삭제되었습니다.`,
+      });
     } catch (error) {
-        console.error('Error rejecting user:', error);
-        toast({
-            variant: 'destructive',
-            title: '오류 발생',
-            description: '사용자 요청 거절 중 오류가 발생했습니다.'
-        });
+      console.error('Error deleting user:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '사용자 삭제 중 오류가 발생했습니다.',
+      });
     }
   };
 
@@ -119,7 +127,7 @@ export default function AdminUsersPage() {
         return 'secondary';
     }
   };
-  
+
   const getRoleDisplayName = (role: UserProfile['role']) => {
     switch (role) {
       case 'admin':
@@ -131,7 +139,7 @@ export default function AdminUsersPage() {
       default:
         return role;
     }
-  }
+  };
 
   return (
     <main className="flex-1 p-6">
@@ -142,7 +150,7 @@ export default function AdminUsersPage() {
         <CardContent>
           {isUsersLoading ? (
             <div className="flex justify-center items-center h-40">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             <Table>
@@ -167,16 +175,28 @@ export default function AdminUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="space-x-2">
-                      {u.role === 'club-admin' && u.status === 'pending' && (
+                      {u.role === 'club-admin' && u.status === 'pending' ? (
                         <>
                           <Button size="sm" onClick={() => handleApprove(u)}>
                             승인
                           </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleReject(u)}>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(u)}
+                          >
                             거절
                           </Button>
                         </>
-                      )}
+                      ) : u.uid !== user.uid ? ( // Do not show delete button for the current admin's own account
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(u)}
+                        >
+                          삭제
+                        </Button>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
