@@ -163,7 +163,7 @@ export default function LoginPage() {
             redirect('/dashboard');
         } else {
             await auth.signOut();
-            setFormType('login');
+            redirect('/login');
         }
       } else {
         // --- 로그인 로직 ---
@@ -441,3 +441,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
