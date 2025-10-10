@@ -53,7 +53,7 @@ const formSchema = z
   .refine(
     (data) => {
       // 회원가입 시에만 비밀번호 확인
-      if (data.role && data.password !== data.confirmPassword) {
+      if (formType !== 'login' && data.password !== data.confirmPassword) {
         return false;
       }
       return true;
@@ -74,14 +74,23 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>;
 
+// This needs to be a global or module-level variable to be accessed by the refinement function.
+let formType: 'login' | 'member-signup' | 'admin-signup' = 'login';
+
+
 export default function LoginPage() {
   const { auth, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
-  const [formType, setFormType] = useState<'login' | 'member-signup' | 'admin-signup'>('login');
+  const [currentFormType, setCurrentFormType] = useState<'login' | 'member-signup' | 'admin-signup'>('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Update the global formType when the state changes
+  useEffect(() => {
+    formType = currentFormType;
+  }, [currentFormType]);
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,17 +104,13 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (user) {
-      if (user.role === 'club-admin' && user.status === 'approved') {
-        router.push('/club-dashboard');
-      } else if (user.role !== 'club-admin') {
+    if (!isUserLoading && user) {
         router.push('/dashboard');
-      }
     }
-  }, [user, router]);
+  }, [user, isUserLoading, router]);
 
   const getFormTitle = () => {
-    switch (formType) {
+    switch (currentFormType) {
       case 'login':
         return '로그인';
       case 'member-signup':
@@ -116,7 +121,7 @@ export default function LoginPage() {
   };
 
   const getFormDescription = () => {
-    switch (formType) {
+    switch (currentFormType) {
         case 'login':
             return '계정에 액세스하려면 정보를 입력하세요';
         case 'member-signup':
@@ -128,24 +133,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     form.reset();
-    form.setValue('role', formType === 'admin-signup' ? 'club-admin' : 'member');
-  }, [formType, form]);
+    form.setValue('role', currentFormType === 'admin-signup' ? 'club-admin' : 'member');
+  }, [currentFormType, form]);
 
 
   const onSubmit = async (values: FormValues) => {
     if (!auth || !firestore) return;
     setIsSubmitting(true);
     try {
-      if (formType !== 'login') {
+      if (currentFormType !== 'login') {
         // --- 회원가입 로직 ---
-        if (values.password !== values.confirmPassword) {
-          form.setError('confirmPassword', {
-            type: 'manual',
-            message: "비밀번호가 일치하지 않습니다.",
-          });
-          setIsSubmitting(false);
-          return;
-        }
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           values.email,
@@ -158,11 +155,9 @@ export default function LoginPage() {
           description: values.role === 'club-admin' ? '관리자 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
         
-        if(values.role !== 'club-admin') {
-            router.push('/dashboard');
-        } else {
+        if(values.role === 'club-admin') {
             await auth.signOut();
-            router.push('/login');
+            setCurrentFormType('login');
         }
       } else {
         // --- 로그인 로직 ---
@@ -203,7 +198,7 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       await createUserProfile(result.user, { role: 'member', email: result.user.email!, password: '' });
-      router.push('/dashboard');
+      // The main layout will handle redirection
     } catch (error: any) {
       console.error(error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -230,6 +225,7 @@ export default function LoginPage() {
     }
     
     let role: UserProfile['role'] = values.role || 'member';
+    // Hardcoded admin user for initial setup
     if (user.uid === 'J4I2IkDZsxSiU9bNeu9qZyxzSkk1') {
       role = 'admin';
     }
@@ -241,7 +237,7 @@ export default function LoginPage() {
       photoURL:
         user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
       role: role,
-      provider: (user.providerData[0]?.providerId as 'google' | 'email') || 'email',
+      provider: (user.providerData[0]?.providerId as 'google' | 'password') || 'password',
       status: role === 'club-admin' ? 'pending' : 'approved',
       ...(role === 'club-admin' && { clubName: values.clubName, phoneNumber: values.phoneNumber }),
     };
@@ -303,14 +299,14 @@ export default function LoginPage() {
                         type="password"
                         placeholder="••••••••"
                         {...field}
-                        autoComplete={formType === 'login' ? 'current-password' : 'new-password'}
+                        autoComplete={currentFormType === 'login' ? 'current-password' : 'new-password'}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              {formType !== 'login' && (
+              {currentFormType !== 'login' && (
                 <>
                   <FormField
                     control={form.control}
@@ -331,7 +327,7 @@ export default function LoginPage() {
                     )}
                   />
 
-                  {formType === 'admin-signup' && (
+                  {currentFormType === 'admin-signup' && (
                     <>
                       <FormField
                         control={form.control}
@@ -367,11 +363,11 @@ export default function LoginPage() {
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {formType === 'login' ? '로그인' : '회원가입'}
+                {currentFormType === 'login' ? '로그인' : '회원가입'}
               </Button>
             </form>
           </Form>
-          {formType === 'login' && (
+          {currentFormType === 'login' && (
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
@@ -414,17 +410,17 @@ export default function LoginPage() {
           )}
         </CardContent>
         <CardFooter className="flex-col gap-4">
-          {formType !== 'login' ? (
-              <Button variant="link" onClick={() => setFormType('login')}>
+          {currentFormType !== 'login' ? (
+              <Button variant="link" onClick={() => setCurrentFormType('login')}>
                 이미 계정이 있으신가요? 로그인
               </Button>
             ) : (
               <div className="flex justify-center items-center w-full space-x-4">
-                  <Button variant="link" onClick={() => setFormType('member-signup')}>
+                  <Button variant="link" onClick={() => setCurrentFormType('member-signup')}>
                     일반/학부모 회원가입
                   </Button>
                   <span className="text-muted-foreground">|</span>
-                  <Button variant="link" onClick={() => setFormType('admin-signup')}>
+                  <Button variant="link" onClick={() => setCurrentFormType('admin-signup')}>
                     관리자이신가요?
                   </Button>
               </div>
@@ -435,3 +431,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

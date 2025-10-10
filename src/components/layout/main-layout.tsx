@@ -14,19 +14,33 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    // Wait until user loading is complete before doing anything.
+    if (isUserLoading) {
+      return;
+    }
+
+    // If user is not logged in, redirect to login page.
+    if (!user) {
       router.push('/login');
+      return;
     }
-    if (!isUserLoading && user) {
-      if (user.role === 'club-admin' && user.status === 'approved' && pathname !== '/club-dashboard') {
-        router.push('/club-dashboard');
-      } else if ((user.role === 'admin' || user.role === 'member') && pathname === '/club-dashboard') {
-        router.push('/dashboard');
-      } else if (user.role === 'club-admin' && user.status === 'pending') {
-        // If they somehow get here, redirect to login to be safe.
+    
+    // User is logged in, handle role-based redirection.
+    if (user.role === 'club-admin' && user.status === 'approved') {
+        // If approved club-admin is not on their dashboard, redirect them.
+        if(pathname !== '/club-dashboard') {
+            router.push('/club-dashboard');
+        }
+    } else if (user.role === 'club-admin' && user.status === 'pending') {
+        // If a pending club-admin somehow gets here, send them back to login.
         router.push('/login');
-      }
+    } else if ((user.role === 'admin' || user.role === 'member')) {
+        // If an admin or member lands on the club-dashboard, redirect them.
+        if (pathname === '/club-dashboard') {
+            router.push('/dashboard');
+        }
     }
+
   }, [user, isUserLoading, pathname, router]);
 
   if (isUserLoading || !user) {
@@ -49,3 +63,5 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
