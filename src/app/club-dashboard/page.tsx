@@ -4,7 +4,7 @@ import { useUser, useCollection } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { useFirestore } from '@/firebase/provider';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useMemo } from 'react';
 import type { Member } from '@/types';
@@ -20,7 +20,7 @@ export default function ClubDashboardPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const membersQuery = useMemo(() => {
+    const membersQuery = useMemoFirebase(() => {
         if (!firestore || !user?.clubId) return null;
         return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
     }, [firestore, user?.clubId]);
