@@ -173,7 +173,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                 <TableBody>
                   {clubMembers?.map((member) => (
                     <TableRow key={member.id}>
-                      <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
+                      <TableCell className="font-medium">{member.name}</TableCell>
                       <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Badge variant={member.status === 'active' ? 'default' : 'secondary'}>
@@ -213,7 +213,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                                 const attendanceRecord = attendanceRecords?.find(rec => rec.memberId === member.id);
                                 return (
                                   <TableRow key={member.id}>
-                                      <TableCell>{member.firstName} {member.lastName}</TableCell>
+                                      <TableCell>{member.name}</TableCell>
                                       <TableCell>
                                           <Select 
                                             value={attendanceRecord?.status}

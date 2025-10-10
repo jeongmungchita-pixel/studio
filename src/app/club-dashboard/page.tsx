@@ -116,7 +116,7 @@ export default function ClubDashboardPage() {
                                 <TableBody>
                                     {pendingMembers.length > 0 ? pendingMembers.map(member => (
                                         <TableRow key={member.id}>
-                                            <TableCell>{member.firstName} {member.lastName}</TableCell>
+                                            <TableCell>{member.name}</TableCell>
                                             <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
                                             <TableCell className="space-x-2">
                                                 <Button size="sm" onClick={() => handleApproval(member.id, 'active')}>승인</Button>
@@ -148,7 +148,7 @@ export default function ClubDashboardPage() {
                                 <TableBody>
                                     {activeMembers.length > 0 ? activeMembers.map(member => (
                                          <TableRow key={member.id}>
-                                            <TableCell>{member.firstName} {member.lastName}</TableCell>
+                                            <TableCell>{member.name}</TableCell>
                                             <TableCell>
                                                 <Badge variant={getStatusVariant(member.status)}>{statusTranslations[member.status]}</Badge>
                                             </TableCell>

@@ -81,15 +81,15 @@ export default function MembersPage() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Image
-                        src={`https://picsum.photos/seed/${member.id}/40/40`}
-                        alt={`${member.firstName} ${member.lastName}`}
+                        src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
+                        alt={member.name}
                         width={40}
                         height={40}
-                        className="rounded-full"
+                        className="rounded-full object-cover"
                         data-ai-hint="person gymnastics"
                       />
                       <div>
-                        <div>{member.firstName} {member.lastName}</div>
+                        <div>{member.name}</div>
                         <div className="text-sm text-muted-foreground hidden sm:block">{member.email}</div>
                       </div>
                     </div>

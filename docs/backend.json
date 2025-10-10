@@ -10,13 +10,9 @@
           "type": "string",
           "description": "Unique identifier for the member. Same as the document ID."
         },
-        "firstName": {
+        "name": {
           "type": "string",
-          "description": "First name of the member."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "Last name of the member."
+          "description": "Full name of the member."
         },
         "dateOfBirth": {
           "type": "string",
@@ -52,12 +48,15 @@
             "type": "string"
           },
           "description": "An array of UIDs for the guardian UserProfiles, if applicable."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the member's profile picture."
         }
       },
       "required": [
         "id",
-        "firstName",
-        "lastName",
+        "name",
         "dateOfBirth",
         "gender",
         "clubId",

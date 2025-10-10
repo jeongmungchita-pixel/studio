@@ -3,8 +3,7 @@
 
 export type Member = {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   dateOfBirth: string; // ISO 8601 date string
   gender: 'male' | 'female';
   email?: string;
@@ -12,6 +11,7 @@ export type Member = {
   clubId: string;
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[];
+  photoURL?: string;
 };
 
 export type Club = {
