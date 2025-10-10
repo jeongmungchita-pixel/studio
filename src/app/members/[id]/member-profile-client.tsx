@@ -147,7 +147,9 @@ export default function MemberProfileClient({ id: memberId }: { id:string }) {
         uploadDate: new Date().toISOString(),
       };
       
-      await writeBatch(firestore).set(mediaRef, newMediaItem).commit();
+      const batch = writeBatch(firestore);
+      batch.set(mediaRef, newMediaItem);
+      await batch.commit();
       
       toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
     } catch (error) {
@@ -193,7 +195,9 @@ export default function MemberProfileClient({ id: memberId }: { id:string }) {
         uploadDate: new Date().toISOString(),
       };
       
-      await writeBatch(firestore).set(mediaRef, newMediaItem).commit();
+      const batch = writeBatch(firestore);
+      batch.set(mediaRef, newMediaItem);
+      await batch.commit();
 
       toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
     } catch (error) {
@@ -279,7 +283,7 @@ export default function MemberProfileClient({ id: memberId }: { id:string }) {
                             <AccordionItem key={pass.id} value={pass.id}>
                                 <AccordionTrigger>
                                 <div className="flex justify-between w-full pr-4">
-                                    <span>{pass.passName} ({format(new Date(pass.startDate!), 'yy/MM/dd')} 시작)</span>
+                                    <span>{pass.passName} ({format(new Date(pass.startDate || new Date()), 'yy/MM/dd')} 시작)</span>
                                     <Badge variant="secondary">만료</Badge>
                                 </div>
                                 </AccordionTrigger>
