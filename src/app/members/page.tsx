@@ -1,4 +1,9 @@
+'use client';
+
 import Image from 'next/image';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -10,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,15 +23,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { members } from '@/lib/data';
-import { Member } from '@/types';
+import type { Member } from '@/types';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
-}
+};
 
 export default function MembersPage() {
+  const firestore = useFirestore();
+  const membersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
+  const { data: members, isLoading } = useCollection<Member>(membersCollection);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <main className="flex-1 p-6">
       <Card>
@@ -38,42 +54,42 @@ export default function MembersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>이름</TableHead>
-                <TableHead className="hidden md:table-cell">클럽</TableHead>
+                <TableHead className="hidden md:table-cell">클럽 ID</TableHead>
                 <TableHead className="hidden md:table-cell">레벨</TableHead>
                 <TableHead>상태</TableHead>
-                <TableHead className="hidden lg:table-cell">등록일</TableHead>
+                <TableHead className="hidden lg:table-cell">생년월일</TableHead>
                 <TableHead>
                   <span className="sr-only">메뉴</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {members.map((member) => (
+              {members?.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Image
-                        src={member.avatar}
-                        alt={member.name}
+                        src={`https://picsum.photos/seed/${member.id}/40/40`}
+                        alt={`${member.firstName} ${member.lastName}`}
                         width={40}
                         height={40}
                         className="rounded-full"
                         data-ai-hint="person gymnastics"
                       />
                       <div>
-                        <div>{member.name}</div>
+                        <div>{member.firstName} {member.lastName}</div>
                         <div className="text-sm text-muted-foreground hidden sm:block">{member.email}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{member.club}</TableCell>
-                  <TableCell className="hidden md:table-cell">{member.level}</TableCell>
+                  <TableCell className="hidden md:table-cell">{member.clubId}</TableCell>
+                  <TableCell className="hidden md:table-cell">{member.gymnasticsLevel}</TableCell>
                   <TableCell>
                     <Badge variant={member.status === 'active' ? 'default' : 'secondary'} className={member.status === 'active' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}>
                       {statusTranslations[member.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{member.registrationDate}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

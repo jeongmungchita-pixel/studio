@@ -1,5 +1,8 @@
 'use client';
 
+import { useCollection, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
@@ -16,16 +19,16 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Users, Building, Trophy, CalendarCheck } from 'lucide-react';
-import { members, clubs, competitions } from '@/lib/data';
+import { Users, Building, Trophy, CalendarCheck, Loader2 } from 'lucide-react';
+import type { Member, Club, Competition } from '@/types';
 
 const chartData = [
-  { month: '1월', members: 40 },
-  { month: '2월', members: 60 },
-  { month: '3월', members: 75 },
-  { month: '4월', members: 90 },
-  { month: '5월', members: 110 },
-  { month: '6월', members: 125 },
+  { month: '1월', members: 0 },
+  { month: '2월', members: 0 },
+  { month: '3월', members: 0 },
+  { month: '4월', members: 0 },
+  { month: '5월', members: 0 },
+  { month: '6월', members: 0 },
 ];
 
 const chartConfig = {
@@ -36,9 +39,28 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export default function DashboardPage() {
-  const upcomingCompetitions = competitions.filter(
-    (c) => c.status === 'upcoming'
-  );
+  const firestore = useFirestore();
+  
+  const membersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
+  const { data: members, isLoading: isMembersLoading } = useCollection<Member>(membersCollection);
+
+  const clubsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'clubs') : null), [firestore]);
+  const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
+
+  const competitionsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'competitions') : null), [firestore]);
+  const { data: competitions, isLoading: isCompetitionsLoading } = useCollection<Competition>(competitionsCollection);
+
+  if (isMembersLoading || isClubsLoading || isCompetitionsLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const upcomingCompetitions = competitions?.filter(
+    (c) => new Date(c.startDate) > new Date()
+  ) || [];
 
   return (
     <main className="flex-1 p-6 space-y-6">
@@ -51,9 +73,9 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{members.length}</div>
+            <div className="text-2xl font-bold">{members?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              지난 달 대비 +10%
+              -
             </p>
           </CardContent>
         </Card>
@@ -63,9 +85,9 @@ export default function DashboardPage() {
             <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{clubs.length}</div>
+            <div className="text-2xl font-bold">{clubs?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              올해 +2개의 신규 클럽
+              -
             </p>
           </CardContent>
         </Card>
@@ -81,7 +103,7 @@ export default function DashboardPage() {
               {upcomingCompetitions.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              향후 3개월 내
+              -
             </p>
           </CardContent>
         </Card>
@@ -93,9 +115,9 @@ export default function DashboardPage() {
             <CalendarCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
-              회비 납부 대기중인 회원
+              -
             </p>
           </CardContent>
         </Card>
@@ -141,13 +163,13 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {upcomingCompetitions.map((comp) => (
+                {upcomingCompetitions.length > 0 ? upcomingCompetitions.map((comp) => (
                   <TableRow key={comp.id}>
                     <TableCell className="font-medium">{comp.name}</TableCell>
-                    <TableCell>{comp.date}</TableCell>
+                    <TableCell>{new Date(comp.startDate).toLocaleDateString()}</TableCell>
                     <TableCell>{comp.location}</TableCell>
                   </TableRow>
-                ))}
+                )) : <TableRow><TableCell colSpan={3} className="text-center">예정된 대회가 없습니다.</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent>

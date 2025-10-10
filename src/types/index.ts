@@ -1,44 +1,48 @@
+// This file is aligned with docs/backend.json
+
 export type Member = {
   id: string;
-  name: string;
-  avatar: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string; // ISO 8601 date string
   email: string;
-  club: string;
-  level: string;
-  status: 'active' | 'inactive';
-  registrationDate: string;
+  phoneNumber: string;
+  gymnasticsLevel: string;
+  clubId: string;
+  status: 'active' | 'inactive'; // Not in backend.json, but useful for UI
 };
 
 export type Club = {
   id: string;
   name: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhoneNumber: string;
   location: string;
-  coach: string;
-  members: number;
-  logo: string;
 };
 
 export type Competition = {
   id: string;
   name: string;
-  date: string;
+  startDate: string; // ISO 8601 date string
+  endDate: string; // ISO 8601 date string
   location: string;
-  status: 'upcoming' | 'ongoing' | 'completed';
-  participants: number;
+  status: 'upcoming' | 'ongoing' | 'completed'; // Not in backend.json, but can be derived
 };
 
 export type LevelTest = {
   id: string;
   name: string;
-  date: string;
-  status: 'scheduled' | 'completed';
-  candidates: number;
+  date: string; // ISO 8601 date string
+  location: string;
+  status: 'scheduled' | 'completed'; // Not in backend.json, but can be derived
 };
 
 export type Attendance = {
+  id: string;
   memberId: string;
-  memberName: string;
-  date: string;
+  memberName: string; // For convenience
+  date: string; // ISO 8601 date string
   status: 'present' | 'absent' | 'excused';
 };
 

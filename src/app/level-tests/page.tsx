@@ -1,3 +1,9 @@
+'use client';
+
+import { useCollection, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { LevelTest } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -9,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,15 +23,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { levelTests } from '@/lib/data';
-import type { LevelTest } from '@/types';
+
 
 const statusTranslations: Record<LevelTest['status'], string> = {
   scheduled: '예정',
   completed: '완료',
-}
+};
 
 export default function LevelTestsPage() {
+  const firestore = useFirestore();
+  const levelTestsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'level_tests') : null), [firestore]);
+  const { data: levelTests, isLoading } = useCollection<LevelTest>(levelTestsCollection);
+  
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <main className="flex-1 p-6">
       <Card>
@@ -46,16 +63,16 @@ export default function LevelTestsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {levelTests.map((test) => (
+              {levelTests?.map((test) => (
                 <TableRow key={test.id}>
                   <TableCell className="font-medium">{test.name}</TableCell>
-                  <TableCell>{test.date}</TableCell>
+                  <TableCell>{new Date(test.date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant={test.status === 'scheduled' ? 'default' : 'secondary'}>
                       {statusTranslations[test.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell>{test.candidates}</TableCell>
+                  <TableCell>{/* Candidates need to be counted */ 0}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

@@ -1,19 +1,36 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { Club } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, MapPin } from 'lucide-react';
-import { clubs } from '@/lib/data';
+import { Users, MapPin, Loader2 } from 'lucide-react';
 
 export default function ClubsPage() {
+  const firestore = useFirestore();
+  const clubsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'clubs') : null), [firestore]);
+  const { data: clubs, isLoading } = useCollection<Club>(clubsCollection);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <main className="flex-1 p-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {clubs.map((club) => (
+        {clubs?.map((club) => (
           <Card key={club.id} className="flex flex-col hover:shadow-lg transition-shadow">
             <CardHeader className="flex-row items-center gap-4">
               <Image
-                src={club.logo}
+                src={`https://picsum.photos/seed/${club.id}/64/64`}
                 alt={`${club.name} 로고`}
                 width={64}
                 height={64}
@@ -29,13 +46,14 @@ export default function ClubsPage() {
             </CardHeader>
             <CardContent className="flex-grow">
                <div className="text-sm text-muted-foreground">
-                 <p>코치: {club.coach}</p>
+                 <p>담당자: {club.contactName}</p>
                </div>
             </CardContent>
             <CardFooter className="flex justify-between items-center">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="w-4 h-4" />
-                <span>회원 {club.members}명</span>
+                {/* Member count can be fetched separately if needed */}
+                <span>{club.name}</span>
               </div>
               <Link href={`/clubs/${club.id}`} passHref>
                 <Button variant="outline" size="sm">상세보기</Button>

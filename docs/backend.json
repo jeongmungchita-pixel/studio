@@ -8,7 +8,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the member."
+          "description": "Unique identifier for the member. Same as the document ID."
         },
         "firstName": {
           "type": "string",
@@ -38,7 +38,12 @@
         },
         "clubId": {
           "type": "string",
-          "description": "Reference to Club. (Relationship: Club 1:N Member)"
+          "description": "Reference to Club ID."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "inactive"],
+          "description": "The status of the member."
         }
       },
       "required": [
@@ -49,7 +54,8 @@
         "email",
         "phoneNumber",
         "gymnasticsLevel",
-        "clubId"
+        "clubId",
+        "status"
       ]
     },
     "Club": {
@@ -59,7 +65,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the club."
+          "description": "Unique identifier for the club. Same as the document ID."
         },
         "name": {
           "type": "string",
@@ -217,13 +223,19 @@
         "location": {
           "type": "string",
           "description": "Location of the level test."
+        },
+         "status": {
+          "type": "string",
+          "enum": ["scheduled", "completed"],
+          "description": "The status of the level test."
         }
       },
       "required": [
         "id",
         "name",
         "date",
-        "location"
+        "location",
+        "status"
       ]
     },
     "TestResult": {
@@ -355,11 +367,11 @@
       },
       "description": "Stores club information."
     },
-    "/clubs/{clubId}/members/{memberId}": {
+    "/members/{memberId}": {
       "schema": {
         "$ref": "#/entities/Member"
       },
-      "description": "Stores member information within a club."
+      "description": "Stores all member information."
     },
     "/competitions/{competitionId}": {
       "schema": {

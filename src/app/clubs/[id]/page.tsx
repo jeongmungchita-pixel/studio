@@ -1,41 +1,56 @@
+'use client';
+
+import { useMemo } from 'react';
 import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { useCollection, useDoc, useFirestore } from '@/firebase';
+import type { Member, Club, Attendance } from '@/types';
+import { collection, doc, query, where } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { clubs, members, attendanceRecords } from '@/lib/data';
-import { notFound } from 'next/navigation';
-import { MapPin, Users, Phone, Mail, Edit } from 'lucide-react';
-import type { Attendance, Member } from '@/types';
+import { MapPin, Users, Phone, Mail, Edit, Loader2 } from 'lucide-react';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
-}
+};
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
   absent: '결석',
   excused: '사유',
-}
+};
 
 export default function ClubDetailsPage({ params }: { params: { id: string } }) {
-  const club = clubs.find((c) => c.id === params.id);
+  const firestore = useFirestore();
+
+  const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', params.id) : null), [firestore, params.id]);
+  const { data: club, isLoading: isClubLoading } = useDoc<Club>(clubRef);
+
+  const membersQuery = useMemoFirebase(() => (
+    firestore ? query(collection(firestore, 'members'), where('clubId', '==', params.id)) : null
+  ), [firestore, params.id]);
+  const { data: clubMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
   
+  // Mock data for attendance, as it's not in Firestore yet
+  const attendanceRecords: Attendance[] = [];
+
+  if (isClubLoading || areMembersLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (!club) {
     notFound();
   }
-
-  const clubMembers = members.filter(m => m.club === club.name);
 
   return (
     <main className="flex-1 p-6 space-y-6">
@@ -43,7 +58,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
         <CardHeader className="relative">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <Image
-              src={club.logo}
+              src={`https://picsum.photos/seed/${club.id}/96/96`}
               alt={`${club.name} 로고`}
               width={96}
               height={96}
@@ -53,13 +68,13 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
             <div className="flex-grow">
               <CardTitle className="text-3xl">{club.name}</CardTitle>
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-muted-foreground">
-                  <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location}</span>
-                  <span className="flex items-center gap-2"><Users className="w-4 h-4"/>회원 {club.members}명</span>
-                  <span className="flex items-center gap-2"><Phone className="w-4 h-4"/>+82 2-1234-5678</span>
-                  <span className="flex items-center gap-2"><Mail className="w-4 h-4"/>contact@{club.id.toLowerCase()}.com</span>
+                <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location}</span>
+                <span className="flex items-center gap-2"><Users className="w-4 h-4"/>회원 {clubMembers?.length || 0}명</span>
+                <span className="flex items-center gap-2"><Phone className="w-4 h-4"/>{club.contactPhoneNumber}</span>
+                <span className="flex items-center gap-2"><Mail className="w-4 h-4"/>{club.contactEmail}</span>
               </div>
               <CardDescription className="mt-2">
-                헤드 코치: {club.coach}
+                담당자: {club.contactName}
               </CardDescription>
             </div>
           </div>
@@ -92,16 +107,16 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clubMembers.map((member) => (
+                  {clubMembers?.map((member) => (
                     <TableRow key={member.id}>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>{member.level}</TableCell>
+                      <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
+                      <TableCell>{member.gymnasticsLevel}</TableCell>
                       <TableCell>
                         <Badge variant={member.status === 'active' ? 'default' : 'secondary'}>
                           {statusTranslations[member.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell>{member.registrationDate}</TableCell>
+                      <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -125,7 +140,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                               </TableRow>
                           </TableHeader>
                           <TableBody>
-                              {attendanceRecords.map(rec => (
+                              {attendanceRecords.length > 0 ? attendanceRecords.map(rec => (
                                   <TableRow key={rec.memberId}>
                                       <TableCell>{rec.memberName}</TableCell>
                                       <TableCell>
@@ -134,7 +149,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                                           </Badge>
                                       </TableCell>
                                   </TableRow>
-                              ))}
+                              )) : <TableRow><TableCell colSpan={2} className="text-center">출석 기록이 없습니다.</TableCell></TableRow>}
                           </TableBody>
                        </Table>
                   </CardContent>
