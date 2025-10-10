@@ -217,7 +217,7 @@ export default function LoginPage() {
     
     let role: UserProfile['role'] = values.role || 'member';
     // Hardcoded admin user for initial setup
-    if (user.email === 'admin@kgf-nexus.com') {
+    if (user.email === 'wo1109ok@me.com') {
       role = 'admin';
     }
     
