@@ -429,7 +429,7 @@ export default function LoginPage() {
                     일반/학부모 회원가입
                   </Button>
                   <span className="text-muted-foreground">|</span>
-                  <Button variant="link" onClick={()- => setFormType('admin-signup')}>
+                  <Button variant="link" onClick={() => setFormType('admin-signup')}>
                     관리자이신가요?
                   </Button>
               </div>
