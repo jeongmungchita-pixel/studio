@@ -110,7 +110,6 @@ export default function ProfileSetupPage() {
             phoneNumber: user.phoneNumber,
             clubId: values.clubId,
             status: 'pending',
-            // When registering self AND children, the user becomes a guardian to themselves technically which is fine
             guardianId: (values.registrationType === 'both' || values.registrationType === 'self') ? user.uid : undefined,
             guardianName: (values.registrationType === 'both' || values.registrationType === 'self') ? user.displayName : undefined,
             guardianPhoneNumber: selfData.guardianPhoneNumber,
