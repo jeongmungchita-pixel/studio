@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Users,
@@ -41,8 +42,10 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      redirect('/login');
+      if (auth) {
+        await signOut(auth);
+        redirect('/login');
+      }
     } catch (error) {
       console.error('Failed to log out', error);
     }
