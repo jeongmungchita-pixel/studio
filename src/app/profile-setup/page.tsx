@@ -96,11 +96,10 @@ export default function ProfileSetupPage() {
 
     try {
       const batch = writeBatch(firestore);
-      const now = new Date().toISOString();
 
       // Case 1 & 3: Register self
-      if (values.registrationType === 'self' || values.registrationType === 'both') {
-        const selfData = values.selfInfo!;
+      if ((values.registrationType === 'self' || values.registrationType === 'both') && values.selfInfo) {
+        const selfData = values.selfInfo;
         const memberRef = doc(collection(firestore, 'members'));
         const memberPayload: Member = {
             id: memberRef.id,
@@ -109,14 +108,15 @@ export default function ProfileSetupPage() {
             clubId: values.clubId,
             status: 'active', // Or 'pending'
             dateOfBirth: new Date(selfData.dateOfBirth).toISOString(),
-            guardianId: values.registrationType === 'both' ? user.uid : undefined,
-            guardianName: values.registrationType === 'both' ? user.displayName : undefined,
+            // When registering self AND children, the user becomes a guardian to themselves technically which is fine
+            guardianId: (values.registrationType === 'both' || values.registrationType === 'self') ? user.uid : undefined,
+            guardianName: (values.registrationType === 'both' || values.registrationType === 'self') ? user.displayName : undefined,
         };
         batch.set(memberRef, memberPayload);
       }
 
       // Case 2 & 3: Register children
-      if (values.registrationType === 'children' || values.registrationType === 'both') {
+      if ((values.registrationType === 'children' || values.registrationType === 'both') && values.childrenInfo) {
         values.childrenInfo?.forEach(child => {
             const memberRef = doc(collection(firestore, 'members'));
             const memberPayload: Member = {
@@ -230,7 +230,7 @@ export default function ProfileSetupPage() {
                             <FormItem>
                                 <FormLabel>급수</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="급수를 선택하세요" /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         {levelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
                                     </SelectContent>
@@ -261,7 +261,7 @@ export default function ProfileSetupPage() {
                                     <FormItem>
                                         <FormLabel>급수</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="급수를 선택하세요"/></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 {levelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
                                             </SelectContent>
@@ -292,7 +292,7 @@ export default function ProfileSetupPage() {
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="등록할 클럽을 선택하세요" />
-                          </SelectTrigger>
+                          </Trigger>
                         </FormControl>
                         <SelectContent>
                           {clubs?.map((club) => (
@@ -322,5 +322,3 @@ export default function ProfileSetupPage() {
     </main>
   );
 }
-
-    
