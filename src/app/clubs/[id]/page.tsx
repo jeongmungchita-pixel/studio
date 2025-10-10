@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useCollection, useDoc, useFirestore } from '@/firebase';
@@ -14,10 +14,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { MapPin, Users, Phone, Mail, Edit, Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
+  pending: '승인 대기',
 };
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
@@ -26,18 +34,31 @@ const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   excused: '사유',
 };
 
+const getAttendanceStatusVariant = (status: Attendance['status']) => {
+  switch (status) {
+    case 'present':
+      return 'default';
+    case 'absent':
+      return 'destructive';
+    case 'excused':
+      return 'secondary';
+  }
+};
+
+
 export default function ClubDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', params.id) : null), [firestore, params.id]);
   const { data: club, isLoading: isClubLoading } = useDoc<Club>(clubRef);
 
   const membersQuery = useMemoFirebase(() => (
-    firestore ? query(collection(firestore, 'members'), where('clubId', '==', params.id)) : null
+    firestore ? query(collection(firestore, 'members'), where('clubId', '==', params.id), where('status', '==', 'active')) : null
   ), [firestore, params.id]);
   const { data: clubMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
   
-  // Mock data for attendance, as it's not in Firestore yet
+  // TODO: Fetch real attendance data
   const attendanceRecords: Attendance[] = [];
 
   if (isClubLoading || areMembersLoading) {
@@ -69,7 +90,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
               <CardTitle className="text-3xl">{club.name}</CardTitle>
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-muted-foreground">
                 <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location}</span>
-                <span className="flex items-center gap-2"><Users className="w-4 h-4"/>회원 {clubMembers?.length || 0}명</span>
+                <span className="flex items-center gap-2"><Users className="w-4 h-4"/>활동 선수 {clubMembers?.length || 0}명</span>
                 <span className="flex items-center gap-2"><Phone className="w-4 h-4"/>{club.contactPhoneNumber}</span>
                 <span className="flex items-center gap-2"><Mail className="w-4 h-4"/>{club.contactEmail}</span>
               </div>
@@ -101,22 +122,22 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                 <TableHeader>
                   <TableRow>
                     <TableHead>이름</TableHead>
-                    <TableHead>레벨</TableHead>
+                    <TableHead>생년월일</TableHead>
                     <TableHead>상태</TableHead>
-                    <TableHead>등록일</TableHead>
+                    <TableHead>이메일</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {clubMembers?.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">{member.firstName} {member.lastName}</TableCell>
-                      <TableCell>{member.gymnasticsLevel}</TableCell>
+                      <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Badge variant={member.status === 'active' ? 'default' : 'secondary'}>
                           {statusTranslations[member.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
+                       <TableCell>{member.email}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -128,28 +149,44 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
            <div className="grid lg:grid-cols-3 gap-6">
               <Card className="lg:col-span-2">
                   <CardHeader>
-                      <CardTitle>일일 출석</CardTitle>
-                      <CardDescription>오늘 기록, {new Date().toLocaleDateString()}</CardDescription>
+                      <CardTitle>일일 출석부</CardTitle>
+                      <CardDescription>{selectedDate?.toLocaleDateString()} 출석 현황</CardDescription>
                   </CardHeader>
                   <CardContent>
                        <Table>
                           <TableHeader>
                               <TableRow>
-                                  <TableHead>회원</TableHead>
-                                  <TableHead>상태</TableHead>
+                                  <TableHead>선수 이름</TableHead>
+                                  <TableHead className="w-[150px]">상태</TableHead>
                               </TableRow>
                           </TableHeader>
                           <TableBody>
-                              {attendanceRecords.length > 0 ? attendanceRecords.map(rec => (
-                                  <TableRow key={rec.memberId}>
-                                      <TableCell>{rec.memberName}</TableCell>
+                              {clubMembers?.map(member => {
+                                const attendanceRecord = attendanceRecords.find(rec => rec.memberId === member.id);
+                                return (
+                                  <TableRow key={member.id}>
+                                      <TableCell>{member.firstName} {member.lastName}</TableCell>
                                       <TableCell>
-                                          <Badge variant={rec.status === 'present' ? 'default' : (rec.status === 'absent' ? 'destructive' : 'secondary')}>
-                                              {attendanceStatusTranslations[rec.status]}
-                                          </Badge>
+                                          <Select 
+                                            defaultValue={attendanceRecord?.status || 'present'}
+                                            // onValueChange={(newStatus) => handleStatusChange(member.id, newStatus)}
+                                          >
+                                              <SelectTrigger>
+                                                  <SelectValue placeholder="상태 선택" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                  <SelectItem value="present">출석</SelectItem>
+                                                  <SelectItem value="absent">결석</SelectItem>
+                                                  <SelectItem value="excused">사유</SelectItem>
+                                              </SelectContent>
+                                          </Select>
                                       </TableCell>
                                   </TableRow>
-                              )) : <TableRow><TableCell colSpan={2} className="text-center">출석 기록이 없습니다.</TableCell></TableRow>}
+                                )
+                              })}
+                              {(!clubMembers || clubMembers.length === 0) &&
+                                <TableRow><TableCell colSpan={2} className="text-center">활동중인 선수가 없습니다.</TableCell></TableRow>
+                              }
                           </TableBody>
                        </Table>
                   </CardContent>
@@ -161,7 +198,8 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                   <CardContent className="flex justify-center">
                       <Calendar
                           mode="single"
-                          selected={new Date()}
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
                           className="rounded-md border"
                       />
                   </CardContent>

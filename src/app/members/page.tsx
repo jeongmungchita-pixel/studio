@@ -28,6 +28,7 @@ import type { Member } from '@/types';
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
+  pending: '승인대기',
 };
 
 export default function MembersPage() {
@@ -42,6 +43,18 @@ export default function MembersPage() {
       </div>
     );
   }
+  
+  const getStatusVariant = (status: Member['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'pending':
+        return 'destructive';
+      case 'inactive':
+      default:
+        return 'secondary';
+    }
+  };
 
   return (
     <main className="flex-1 p-6">
@@ -55,7 +68,6 @@ export default function MembersPage() {
               <TableRow>
                 <TableHead>이름</TableHead>
                 <TableHead className="hidden md:table-cell">클럽 ID</TableHead>
-                <TableHead className="hidden md:table-cell">레벨</TableHead>
                 <TableHead>상태</TableHead>
                 <TableHead className="hidden lg:table-cell">생년월일</TableHead>
                 <TableHead>
@@ -83,9 +95,8 @@ export default function MembersPage() {
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{member.clubId}</TableCell>
-                  <TableCell className="hidden md:table-cell">{member.gymnasticsLevel}</TableCell>
                   <TableCell>
-                    <Badge variant={member.status === 'active' ? 'default' : 'secondary'} className={member.status === 'active' ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}>
+                    <Badge variant={getStatusVariant(member.status)}>
                       {statusTranslations[member.status]}
                     </Badge>
                   </TableCell>

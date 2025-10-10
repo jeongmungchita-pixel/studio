@@ -1,3 +1,4 @@
+'use client';
 // This file is aligned with docs/backend.json
 
 export type Member = {
@@ -19,7 +20,7 @@ export type Club = {
   id: string;
   name: string;
   contactName: string;
-  contactEmail: string;
+  contactEmail:string;
   contactPhoneNumber: string;
   location: string;
 };
@@ -38,13 +39,13 @@ export type LevelTest = {
   name: string;
   date: string; // ISO 8601 date string
   location: string;
-  status: 'scheduled' | 'completed'; // Not in backend.json, but can be derived
+  status: 'scheduled' | 'completed';
 };
 
 export type Attendance = {
   id:string;
   memberId: string;
-  memberName: string; // For convenience
+  memberName?: string; // For convenience
   date: string; // ISO 8601 date string
   status: 'present' | 'absent' | 'excused';
 };

@@ -128,16 +128,17 @@
           "description": "Date of the attendance record.",
           "format": "date-time"
         },
-        "isPresent": {
-          "type": "boolean",
-          "description": "Indicates whether the member was present."
+        "status": {
+          "type": "string",
+          "enum": ["present", "absent", "excused"],
+          "description": "The attendance status."
         }
       },
       "required": [
         "id",
         "memberId",
         "date",
-        "isPresent"
+        "status"
       ]
     },
     "Payment": {
