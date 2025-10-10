@@ -43,6 +43,7 @@ const attendanceStatusTranslations: Record<Attendance['status'], string> = {
 };
 
 export default function MemberProfilePage({ params }: { params: { id:string } }) {
+  const { id: memberId } = params;
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
@@ -56,8 +57,6 @@ export default function MemberProfilePage({ params }: { params: { id:string } })
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-
-  const memberId = useMemo(() => params.id, [params.id]);
 
   // 1. Fetch member data
   const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', memberId) : null), [firestore, memberId]);
