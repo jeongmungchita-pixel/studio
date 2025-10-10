@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, ChangeEvent, useRef } from 'react';
+import { useMemo, useState, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound, useRouter } from 'next/navigation';
 import { useUser, useDoc, useCollection, useFirestore, useStorage, uploadImage } from '@/firebase';
@@ -16,8 +16,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon } from 'lucide-react';
+import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon, Camera, File, Video } from 'lucide-react';
 import Link from 'next/link';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
@@ -25,14 +42,20 @@ const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   excused: '사유',
 };
 
-export default function MemberProfilePage({ params }: { params: { id: string } }) {
+export default function MemberProfilePage({ params }: { params: { id:string } }) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
   const router = useRouter();
   const { toast } = useToast();
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [isUploading, setIsUploading] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
   // 1. Fetch member data
   const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', params.id) : null), [firestore, params.id]);
@@ -68,15 +91,87 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
 
   const hasAccess = useMemo(() => {
     if (!user || !member) return false;
-    // Guardian access
     if (member.guardianIds?.includes(user.uid)) return true;
-    // Club admin access
     if (user.role === 'club-admin' && user.clubId === member.clubId) return true;
-    // Super admin access
     if (user.role === 'admin') return true;
     return false;
   }, [user, member]);
+  
+  // Effect for handling camera permission and stream
+  useEffect(() => {
+    let stream: MediaStream;
+    const getCameraPermission = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
+    };
 
+    if (isCameraOpen) {
+      getCameraPermission();
+    }
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraOpen]);
+
+
+  const uploadBlob = async (blob: Blob, type: 'image' | 'video') => {
+    if (!storage || !member) return;
+    setIsUploading(true);
+
+    try {
+      const mediaRef = doc(collection(firestore, 'media_items'));
+      const mediaId = mediaRef.id;
+      const fileExtension = type === 'image' ? 'jpg' : 'webm';
+      const mimeType = type === 'image' ? 'image/jpeg' : 'video/webm';
+      const file = new File([blob], `capture.${fileExtension}`, { type: mimeType });
+
+      const mediaURL = await uploadImage(storage, `media/${member.id}/${mediaId}`, file);
+
+      const newMediaItem: MediaItem = {
+        id: mediaId,
+        memberId: member.id,
+        clubId: member.clubId,
+        mediaURL,
+        mediaType: type,
+        uploadDate: new Date().toISOString(),
+      };
+      
+      await writeBatch(firestore).set(mediaRef, newMediaItem).commit();
+      
+      toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
+    } catch (error) {
+      console.error("Media upload failed: ", error);
+      toast({ variant: 'destructive', title: '업로드 실패', description: '미디어 업로드 중 오류가 발생했습니다.' });
+    } finally {
+      setIsUploading(false);
+      setIsCameraOpen(false); // Close camera dialog on finish
+    }
+  };
+
+  const handleCapturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+    canvas.toBlob((blob) => {
+      if (blob) {
+        uploadBlob(blob, 'image');
+      }
+    }, 'image/jpeg');
+  };
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     if (!storage || !member || !event.target.files || event.target.files.length === 0) return;
@@ -100,10 +195,7 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
       
       await writeBatch(firestore).set(mediaRef, newMediaItem).commit();
 
-      toast({
-        title: '업로드 성공',
-        description: '미디어가 성공적으로 업로드되었습니다.',
-      });
+      toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
     } catch (error) {
       console.error("Media upload failed: ", error);
       toast({ variant: 'destructive', title: '업로드 실패', description: '미디어 업로드 중 오류가 발생했습니다.' });
@@ -112,20 +204,16 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
     }
   };
 
+
   if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
-  // Security: Check if the logged-in user is a guardian for this member OR the correct club admin
   if (!member || !user || !hasAccess) {
      toast({ variant: 'destructive', title: '접근 권한 없음', description: '이 페이지를 볼 수 있는 권한이 없습니다.' });
      const redirectUrl = user?.role === 'club-admin' ? '/club-dashboard' : '/my-profile';
      router.push(redirectUrl);
-     return null; // or notFound();
+     return null;
   }
   
   const currentPass = passes?.find(p => p.status === 'active' || p.status === 'pending');
@@ -136,13 +224,7 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
       <Card>
         <CardHeader>
           <div className="flex items-start gap-6">
-            <Image
-              src={member.photoURL || `https://picsum.photos/seed/${member.id}/96/96`}
-              alt={member.name}
-              width={96}
-              height={96}
-              className="rounded-full border-4 border-background shadow-md"
-            />
+            <Image src={member.photoURL || `https://picsum.photos/seed/${member.id}/96/96`} alt={member.name} width={96} height={96} className="rounded-full border-4 border-background shadow-md" />
             <div className="flex-grow">
               <CardTitle className="text-3xl">{member.name}</CardTitle>
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-muted-foreground">
@@ -241,29 +323,36 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
                         <CardTitle>미디어 갤러리</CardTitle>
                         <CardDescription>선수의 활동 사진이나 영상을 업로드하고 관리하세요.</CardDescription>
                     </div>
-                     <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                        미디어 업로드
-                    </Button>
-                    <Input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        className="hidden" 
-                        onChange={handleFileUpload}
-                        accept="image/*,video/*"
-                    />
+                     <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button disabled={isUploading}>
+                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                          미디어 업로드
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => setIsCameraOpen(true)}>
+                          <Camera className="mr-2 h-4 w-4" />
+                          <span>카메라로 촬영</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
+                          <File className="mr-2 h-4 w-4" />
+                          <span>파일에서 선택</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept="image/*,video/*"/>
                 </CardHeader>
                 <CardContent>
                     {mediaItems && mediaItems.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {mediaItems.map(item => (
                                 <div key={item.id} className="relative aspect-square group">
-                                    <Image
-                                        src={item.mediaURL}
-                                        alt={item.caption || "Member media"}
-                                        layout="fill"
-                                        className="object-cover rounded-md"
-                                    />
+                                  {item.mediaType === 'image' ? (
+                                    <Image src={item.mediaURL} alt={item.caption || "Member media"} layout="fill" className="object-cover rounded-md" />
+                                  ) : (
+                                    <video src={item.mediaURL} className="object-cover rounded-md w-full h-full" controls />
+                                  )}
                                     <div className="absolute inset-0 bg-black/50 flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <p className="text-white text-xs">{format(new Date(item.uploadDate), 'yyyy-MM-dd')}</p>
                                     </div>
@@ -280,6 +369,46 @@ export default function MemberProfilePage({ params }: { params: { id: string } }
             </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>카메라 촬영</DialogTitle>
+            <DialogDescription>
+              사진을 촬영하여 바로 업로드합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+             {hasCameraPermission === null && (
+                 <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <p className="ml-2">카메라 권한 확인 중...</p>
+                 </div>
+             )}
+             {hasCameraPermission === false && (
+                <Alert variant="destructive">
+                  <AlertTitle>카메라 접근 권한 필요</AlertTitle>
+                  <AlertDescription>
+                    브라우저 설정에서 카메라 접근을 허용해주세요.
+                  </AlertDescription>
+                </Alert>
+             )}
+             {hasCameraPermission && (
+                <div className="relative">
+                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+                    <canvas ref={canvasRef} className="hidden" />
+                </div>
+             )}
+          </div>
+          <DialogFooter>
+             <DialogClose asChild><Button variant="outline">취소</Button></DialogClose>
+             <Button onClick={handleCapturePhoto} disabled={!hasCameraPermission || isUploading}>
+                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Camera className="mr-2 h-4 w-4"/>}
+                사진 촬영
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
