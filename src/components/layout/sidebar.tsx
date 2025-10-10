@@ -19,6 +19,7 @@ import {
   LogOut,
   Ticket,
   User as UserIcon,
+  Archive,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -28,7 +29,8 @@ const menuItems = [
   { href: '/dashboard', label: '대시보드', icon: LayoutDashboard, roles: ['admin'] },
   { href: '/my-profile', label: '내 정보/이용권', icon: UserIcon, roles: ['member'] },
   { href: '/club-dashboard', label: '클럽 대시보드', icon: LayoutDashboard, roles: ['club-admin'] },
-  { href: '/club-dashboard/passes', label: '이용권 관리', icon: Ticket, roles: ['club-admin'] },
+  { href: '/club-dashboard/passes', label: '이용권 현황', icon: Ticket, roles: ['club-admin'] },
+  { href: '/club-dashboard/pass-templates', label: '이용권 종류 관리', icon: Archive, roles: ['club-admin'] },
   { href: '/admin/users', label: '사용자 관리', icon: UserCog, roles: ['admin']},
   { href: '/members', label: '회원', icon: Users, roles: ['admin'] },
   { href: '/clubs', label: '클럽', icon: Building, roles: ['admin'] },

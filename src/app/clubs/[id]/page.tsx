@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useCollection, useDoc, useFirestore } from '@/firebase';
 import type { Member, Club, Attendance, MemberPass } from '@/types';
-import { collection, doc, query, where, writeBatch, runTransaction } from 'firebase/firestore';
+import { collection, doc, query, where, writeBatch, runTransaction, getDocs } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { format, startOfDay, endOfDay } from 'date-fns';
-import { upsertDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { format, startOfDay, endOfDay, addDays } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 const statusTranslations: Record<Member['status'], string> = {
@@ -36,18 +35,6 @@ const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   absent: '결석',
   excused: '사유',
 };
-
-const getAttendanceStatusVariant = (status: Attendance['status']) => {
-  switch (status) {
-    case 'present':
-      return 'default';
-    case 'absent':
-      return 'destructive';
-    case 'excused':
-      return 'secondary';
-  }
-};
-
 
 export default function ClubDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
@@ -83,6 +70,39 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds), where('status', '==', 'active'));
   }, [firestore, memberIds]);
   const { data: memberPasses, isLoading: arePassesLoading } = useCollection<MemberPass>(memberPassesQuery);
+  
+  // Check for expired duration-based passes on page load
+  useEffect(() => {
+    if (!firestore || !memberPasses || memberPasses.length === 0) return;
+    
+    const checkAndExpirePasses = async () => {
+        const batch = writeBatch(firestore);
+        let passesToExpire = 0;
+        const now = new Date();
+
+        memberPasses.forEach(pass => {
+            if (pass.status === 'active' && pass.endDate) {
+                if (now > new Date(pass.endDate)) {
+                    const passRef = doc(firestore, 'member_passes', pass.id);
+                    batch.update(passRef, { status: 'expired' });
+                    passesToExpire++;
+                }
+            }
+        });
+
+        if (passesToExpire > 0) {
+            try {
+                await batch.commit();
+                toast({ title: '이용권 만료 처리', description: `${passesToExpire}개의 기간 만료 이용권이 업데이트되었습니다.` });
+            } catch (error) {
+                console.error("Error expiring passes:", error);
+            }
+        }
+    };
+    
+    checkAndExpirePasses();
+
+  }, [firestore, memberPasses, toast]);
 
 
  const handleStatusChange = async (member: Member, newStatus: Attendance['status']) => {
@@ -96,22 +116,26 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
         const attendanceCollectionRef = collection(firestore, 'attendance');
         const passRef = doc(firestore, 'member_passes', member.activePassId!);
         
-        // 1. Get current pass and attendance record within transaction
         const passSnap = await transaction.get(passRef);
         if (!passSnap.exists()) throw new Error("이용권을 찾을 수 없습니다.");
         
         const passData = passSnap.data() as MemberPass;
+        
+        // Prevent updates if pass is not session-based
+        if (passData.totalSessions === undefined || passData.attendableSessions === undefined || passData.remainingSessions === undefined) {
+             toast({ variant: "destructive", title: "업데이트 불가", description: "기간제 또는 무제한 이용권은 출석으로 차감되지 않습니다." });
+             return;
+        }
 
         const q = query(attendanceCollectionRef, where('memberId', '==', member.id), where('date', '==', dateKey));
-        const attendanceSnap = await getDocs(q);
-        const existingAttendance = attendanceSnap.docs.length > 0 ? { ...attendanceSnap.docs[0].data(), id: attendanceSnap.docs[0].id } as Attendance : null;
+        const attendanceSnap = await getDocs(q); // getDocs is not available in transaction, must be called before
+        const existingAttendanceSnap = attendanceSnap.docs[0];
+        const existingAttendance = existingAttendanceSnap ? { ...existingAttendanceSnap.data(), id: existingAttendanceSnap.id } as Attendance : null;
         
         const oldStatus = existingAttendance?.status;
-        
-        // No change, no-op
         if (oldStatus === newStatus) return;
 
-        let { attendanceCount, remainingSessions } = passData;
+        let { attendanceCount = 0, remainingSessions = 0 } = passData;
 
         // Revert old status effect
         if (oldStatus) {
@@ -125,23 +149,21 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
             if (newStatus === 'present' || newStatus === 'absent') remainingSessions--;
         }
 
-        // Determine if pass should be expired
-        const shouldExpire = remainingSessions <= 0 || attendanceCount >= passData.attendableSessions;
+        const shouldExpire = (remainingSessions <= 0) || (attendanceCount >= passData.attendableSessions!);
         const passUpdate: Partial<MemberPass> = {
             attendanceCount,
             remainingSessions: Math.max(0, remainingSessions),
             status: shouldExpire ? 'expired' : 'active'
         };
 
-        // Update pass
         transaction.update(passRef, passUpdate);
         
-        // Upsert attendance record
         if (existingAttendance) {
             transaction.update(doc(firestore, 'attendance', existingAttendance.id), { status: newStatus });
         } else {
             const newAttendanceRef = doc(attendanceCollectionRef);
             transaction.set(newAttendanceRef, {
+                id: newAttendanceRef.id,
                 memberId: member.id,
                 clubId: params.id,
                 date: dateKey,
@@ -179,6 +201,23 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
     notFound();
   }
 
+ const getPassBadge = (pass: MemberPass | undefined) => {
+    if (!pass) return <Badge variant="secondary">이용권 없음</Badge>;
+
+    if (pass.status === 'expired') return <Badge variant="destructive">만료</Badge>;
+
+    if (pass.totalSessions !== undefined && pass.attendableSessions !== undefined) {
+      return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
+    }
+    
+    if (pass.endDate) {
+      const remainingDays = Math.ceil((new Date(pass.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      return <Badge>{`기간권 (${remainingDays > 0 ? `${remainingDays}일 남음` : '만료'})`}</Badge>;
+    }
+
+    return <Badge>무제한 이용권</Badge>;
+  };
+
   return (
     <main className="flex-1 p-6 space-y-6">
       <Card>
@@ -212,10 +251,10 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="members" className="w-full">
+      <Tabs defaultValue="attendance" className="w-full">
         <TabsList>
-          <TabsTrigger value="members">회원</TabsTrigger>
           <TabsTrigger value="attendance">출석</TabsTrigger>
+          <TabsTrigger value="members">회원</TabsTrigger>
           <TabsTrigger value="payments">결제</TabsTrigger>
         </TabsList>
         <TabsContent value="members">
@@ -288,27 +327,19 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                               {clubMembers?.map(member => {
                                 const attendanceRecord = attendanceRecords?.find(rec => rec.memberId === member.id);
                                 const pass = memberPasses?.find(p => p.id === member.activePassId);
-                                const isPassExpired = !pass || pass.status === 'expired';
+                                const isPassInvalid = !pass || pass.status === 'expired';
 
                                 return (
-                                  <TableRow key={member.id} className={isPassExpired ? 'bg-muted/50' : ''}>
+                                  <TableRow key={member.id} className={isPassInvalid ? 'bg-muted/50' : ''}>
                                       <TableCell>{member.name}</TableCell>
                                       <TableCell>
-                                        {pass ? (
-                                           isPassExpired ? (
-                                             <Badge variant="destructive">만료</Badge>
-                                           ) : (
-                                            <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>
-                                           )
-                                        ) : (
-                                          <Badge variant="secondary">이용권 없음</Badge>
-                                        )}
+                                        {getPassBadge(pass)}
                                       </TableCell>
                                       <TableCell>
                                           <Select 
                                             value={attendanceRecord?.status}
                                             onValueChange={(newStatus: Attendance['status']) => handleStatusChange(member, newStatus)}
-                                            disabled={isPassExpired || isSubmitting[member.id]}
+                                            disabled={isPassInvalid || isSubmitting[member.id]}
                                           >
                                               <SelectTrigger>
                                                   <SelectValue placeholder="상태 선택" />

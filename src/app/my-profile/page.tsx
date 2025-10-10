@@ -3,10 +3,10 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import type { Member, MemberPass, Club } from '@/types';
-import { collection, query, where, doc, writeBatch, getDocs, orderBy, limit } from 'firebase/firestore';
+import type { Member, MemberPass, PassTemplate } from '@/types';
+import { collection, query, where, doc, writeBatch, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Ticket, History, CreditCard, Landmark, ChevronRight } from 'lucide-react';
@@ -29,6 +29,7 @@ export default function MyProfilePage() {
   const { toast } = useToast();
 
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<PassTemplate | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'bank-transfer' | 'card'>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,30 +49,39 @@ export default function MyProfilePage() {
   }, [firestore, memberIds]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
 
+  // 3. Fetch available pass templates for the club
+  const clubId = useMemo(() => members?.[0]?.clubId, [members]);
+  const passTemplatesQuery = useMemoFirebase(() => {
+    if (!firestore || !clubId) return null;
+    return query(collection(firestore, 'pass_templates'), where('clubId', '==', clubId));
+  }, [firestore, clubId]);
+  const { data: passTemplates, isLoading: areTemplatesLoading } = useCollection<PassTemplate>(passTemplatesQuery);
+
   const handleRequestPass = async () => {
-    if (!firestore || !selectedMember || !paymentMethod) return;
+    if (!firestore || !selectedMember || !paymentMethod || !selectedTemplate) return;
     setIsSubmitting(true);
 
     try {
       const batch = writeBatch(firestore);
-
-      // 1. Create a new pending pass document
       const newPassRef = doc(collection(firestore, 'member_passes'));
+      
       const newPass: MemberPass = {
         id: newPassRef.id,
         memberId: selectedMember.id,
         clubId: selectedMember.clubId,
-        passType: 'standard-5-4',
+        passType: selectedTemplate.id, // Storing template id as passType for reference
+        passName: selectedTemplate.name,
         paymentMethod: paymentMethod,
-        totalSessions: 5,
-        attendableSessions: 4,
-        remainingSessions: 5,
+        totalSessions: selectedTemplate.totalSessions,
+        attendableSessions: selectedTemplate.attendableSessions,
+        remainingSessions: selectedTemplate.totalSessions,
         attendanceCount: 0,
         status: 'pending',
+        ...(selectedTemplate.durationDays && { endDate: new Date(new Date().setDate(new Date().getDate() + selectedTemplate.durationDays)).toISOString() })
       };
+      
       batch.set(newPassRef, newPass);
 
-      // 2. Update the member's status to 'pending' to trigger admin approval
       const memberRef = doc(firestore, 'members', selectedMember.id);
       batch.update(memberRef, { status: 'pending' });
 
@@ -82,6 +92,7 @@ export default function MyProfilePage() {
         description: `${selectedMember.name} 님의 이용권이 신청되었습니다. 클럽 관리자의 승인을 기다려주세요.`
       });
       setSelectedMember(null);
+      setSelectedTemplate(null);
     } catch (error) {
       console.error("Error requesting pass: ", error);
       toast({
@@ -98,7 +109,10 @@ export default function MyProfilePage() {
     if (!pass) return <Badge variant="secondary">이용권 없음</Badge>;
     switch (pass.status) {
       case 'active':
-        return <Badge>{`활성: ${pass.attendanceCount}/${pass.attendableSessions} (남은 기회 ${pass.remainingSessions})`}</Badge>;
+        if (pass.totalSessions !== undefined) {
+             return <Badge>{`활성: ${pass.attendanceCount}/${pass.attendableSessions} (남은 기회 ${pass.remainingSessions})`}</Badge>;
+        }
+        return <Badge>활성 (무제한)</Badge>
       case 'pending':
         return <Badge variant="destructive">승인 대기중</Badge>;
       case 'expired':
@@ -106,7 +120,13 @@ export default function MyProfilePage() {
     }
   };
 
-  const isLoading = isUserLoading || areMembersLoading || arePassesLoading;
+  const openModal = (member: Member) => {
+      setSelectedMember(member);
+      setSelectedTemplate(null);
+      setPaymentMethod(undefined);
+  }
+
+  const isLoading = isUserLoading || areMembersLoading || arePassesLoading || areTemplatesLoading;
 
   if (isLoading) {
     return (
@@ -167,14 +187,14 @@ export default function MyProfilePage() {
                         <h4 className="font-semibold flex items-center"><History className="mr-2 h-4 w-4"/>이용권 내역</h4>
                         <ul className="list-disc list-inside text-sm text-muted-foreground pl-2">
                            {memberPasses.map(p => (
-                            <li key={p.id}>{new Date(p.startDate || '').toLocaleDateString()} 시작 - {p.status === 'expired' ? '만료' : p.status === 'active' ? '활성' : '대기' }</li>
+                            <li key={p.id}>{new Date(p.startDate || '').toLocaleDateString()} 시작 ({p.passName}) - {p.status === 'expired' ? '만료' : p.status === 'active' ? '활성' : '대기' }</li>
                            ))}
                         </ul>
                    </div>
                 )}
               </CardContent>
               <CardFooter>
-                 <Button onClick={() => setSelectedMember(member)} disabled={!canRequestNewPass}>
+                 <Button onClick={() => openModal(member)} disabled={!canRequestNewPass}>
                   <Ticket className="mr-2 h-4 w-4"/>
                   {canRequestNewPass ? '신규 이용권 신청' : '활성/대기중인 이용권 있음'}
                 </Button>
@@ -191,34 +211,61 @@ export default function MyProfilePage() {
       </div>
 
        <Dialog open={!!selectedMember} onOpenChange={(isOpen) => !isOpen && setSelectedMember(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>신규 이용권 신청</DialogTitle>
+            <DialogTitle>신규 이용권 신청: {selectedMember?.name}</DialogTitle>
             <DialogDescription>
-              {selectedMember?.name} 선수의 새로운 이용권을 신청합니다. 결제 방법을 선택해주세요.
+              아래 목록에서 원하는 이용권을 선택하고 결제 방법을 정해주세요.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-              <p><strong>신청 대상:</strong> {selectedMember?.name}</p>
-              <p><strong>이용권 유형:</strong> 표준 이용권 (총 5회, 출석 4회 필요)</p>
+          <div className="py-4 space-y-6">
               <div>
-                <Label className="font-semibold">결제 방법</Label>
-                <RadioGroup 
-                    className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4"
-                    onValueChange={(value: 'bank-transfer' | 'card') => setPaymentMethod(value)}
-                >
-                    <Label htmlFor="bank-transfer" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                        <RadioGroupItem value="bank-transfer" id="bank-transfer" className="sr-only" />
-                        <Landmark className="mb-3 h-6 w-6" />
-                        계좌 이체
-                    </Label>
-                    <Label htmlFor="card" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                        <RadioGroupItem value="card" id="card" className="sr-only" />
-                        <CreditCard className="mb-3 h-6 w-6" />
-                        현장 카드 결제
-                    </Label>
-                </RadioGroup>
+                <Label className="font-semibold">이용권 종류 선택</Label>
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-1">
+                    {passTemplates?.map(template => (
+                        <div key={template.id} 
+                            onClick={() => setSelectedTemplate(template)}
+                            className={
+                                `flex flex-col justify-between rounded-lg border-2 p-4 cursor-pointer transition-all
+                                ${selectedTemplate?.id === template.id ? 'border-primary' : 'border-muted'}`
+                            }>
+                            <div>
+                                <h4 className="font-bold">{template.name}</h4>
+                                <p className="text-sm text-muted-foreground mt-1">{template.description || "상세 설명 없음"}</p>
+                            </div>
+                            <div className="text-xs mt-2 space-y-1">
+                                {template.durationDays && <p>• 유효기간: {template.durationDays}일</p>}
+                                {template.totalSessions !== undefined && <p>• 총 {template.totalSessions}회 사용 가능</p>}
+                                {template.attendableSessions !== undefined && <p>• {template.attendableSessions}회 출석 필요</p>}
+                                {template.price && <p className="font-semibold mt-2">{template.price.toLocaleString()}원</p>}
+                            </div>
+                        </div>
+                    ))}
+                    {(!passTemplates || passTemplates.length === 0) && <p className="text-sm text-muted-foreground col-span-full text-center">신청 가능한 이용권이 없습니다.</p>}
+                </div>
               </div>
+
+              {selectedTemplate && (
+                <div>
+                    <Label className="font-semibold">결제 방법 선택</Label>
+                    <RadioGroup 
+                        className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4"
+                        onValueChange={(value: 'bank-transfer' | 'card') => setPaymentMethod(value)}
+                        value={paymentMethod}
+                    >
+                        <Label htmlFor="bank-transfer" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                            <RadioGroupItem value="bank-transfer" id="bank-transfer" className="sr-only" />
+                            <Landmark className="mb-3 h-6 w-6" />
+                            계좌 이체
+                        </Label>
+                        <Label htmlFor="card" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                            <RadioGroupItem value="card" id="card" className="sr-only" />
+                            <CreditCard className="mb-3 h-6 w-6" />
+                            현장 카드 결제
+                        </Label>
+                    </RadioGroup>
+                </div>
+              )}
               <p className="mt-2 text-sm text-muted-foreground">
                 신청 후 클럽 관리자의 승인이 필요합니다. '계좌 이체'를 선택한 경우, 클럽 계좌로 입금 후 승인 요청이 처리됩니다.
               </p>
@@ -227,7 +274,7 @@ export default function MyProfilePage() {
             <DialogClose asChild>
               <Button variant="outline">취소</Button>
             </DialogClose>
-            <Button onClick={handleRequestPass} disabled={isSubmitting || !paymentMethod}>
+            <Button onClick={handleRequestPass} disabled={isSubmitting || !paymentMethod || !selectedTemplate}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               신청하기
             </Button>

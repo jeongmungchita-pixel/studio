@@ -57,7 +57,8 @@ export default function ClubPassesPage() {
         id: newPassRef.id,
         memberId: selectedMember.id,
         clubId: selectedMember.clubId,
-        passType: 'standard-5-4',
+        passType: 'manual-issue',
+        passName: '수동 발급 이용권',
         startDate: new Date().toISOString(),
         totalSessions: 5,
         attendableSessions: 4,
@@ -96,7 +97,10 @@ export default function ClubPassesPage() {
       }
       if (pass) {
           if (pass.status === 'active') {
-             return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
+             if (pass.totalSessions !== undefined) {
+                return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
+             }
+             return <Badge>활성 (무제한)</Badge>;
           }
           if (pass.status === 'pending') {
              return <Badge variant="destructive">갱신 승인 대기</Badge>;
@@ -114,8 +118,8 @@ export default function ClubPassesPage() {
     <main className="flex-1 p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>이용권 관리</CardTitle>
-          <CardDescription>클럽 소속 선수의 이용권 현황을 보고, 필요시 수동으로 발급합니다.</CardDescription>
+          <CardTitle>이용권 현황</CardTitle>
+          <CardDescription>클럽 소속 선수의 이용권 현황을 보고, 필요시 예외적인 상황에만 수동으로 발급합니다.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -128,7 +132,7 @@ export default function ClubPassesPage() {
                 <TableRow>
                   <TableHead>선수 이름</TableHead>
                   <TableHead>이용권 상태</TableHead>
-                  <TableHead className="text-right">기능</TableHead>
+                  <TableHead className="text-right">수동 발급 (예외용)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -188,7 +192,7 @@ export default function ClubPassesPage() {
           </DialogHeader>
           <div className="py-4">
               <p><strong>발급 대상:</strong> {selectedMember?.name}</p>
-              <p><strong>이용권 유형:</strong> 표준 이용권 (총 5회, 출석 4회 필요)</p>
+              <p><strong>이용권 유형:</strong> 수동 발급 표준 이용권 (총 5회, 출석 4회 필요)</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 발급 즉시 이용권이 활성화되며, 선수의 상태도 '활동중'으로 변경됩니다.
               </p>

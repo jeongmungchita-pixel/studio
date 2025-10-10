@@ -164,6 +164,10 @@
           "type": "string",
           "description": "The type of pass, e.g., 'standard', 'premium'."
         },
+        "passName": {
+            "type": "string",
+            "description": "The name of the pass from the template."
+        },
          "paymentMethod": {
           "type": "string",
           "enum": ["bank-transfer", "card"],
@@ -181,19 +185,19 @@
         },
         "totalSessions": {
           "type": "number",
-          "description": "Total number of sessions allowed by this pass (e.g., 5)."
+          "description": "Total number of sessions allowed by this pass (e.g., 5). Optional."
         },
         "attendableSessions": {
           "type": "number",
-          "description": "Number of sessions that must be 'present' (e.g., 4)."
+          "description": "Number of sessions that must be 'present' (e.g., 4). Optional."
         },
         "remainingSessions": {
           "type": "number",
-          "description": "Number of sessions left on this pass."
+          "description": "Number of sessions left on this pass. Optional."
         },
         "attendanceCount": {
           "type": "number",
-          "description": "Number of 'present' sessions recorded."
+          "description": "Number of 'present' sessions recorded. Optional."
         },
         "status": {
           "type": "string",
@@ -206,10 +210,7 @@
         "memberId",
         "clubId",
         "passType",
-        "totalSessions",
-        "attendableSessions",
-        "remainingSessions",
-        "attendanceCount",
+        "passName",
         "status"
       ]
     },
@@ -438,6 +439,50 @@
         }
       },
       "required": ["uid", "email", "displayName", "photoURL", "role", "provider", "status"]
+    },
+    "PassTemplate": {
+      "title": "PassTemplate",
+      "type": "object",
+      "description": "Represents a template for creating member passes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the pass template."
+        },
+        "clubId": {
+          "type": "string",
+          "description": "The ID of the club this template belongs to."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the pass template, e.g., 'Standard 5-session pass'."
+        },
+        "totalSessions": {
+          "type": "number",
+          "description": "Total number of sessions allowed (허용일수). Optional."
+        },
+        "attendableSessions": {
+          "type": "number",
+          "description": "Number of sessions that must be 'present' (출석일수). Optional."
+        },
+        "durationDays": {
+          "type": "number",
+          "description": "Validity period of the pass in days. Optional."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the pass. Optional."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the pass template. Optional."
+        }
+      },
+      "required": [
+        "id",
+        "clubId",
+        "name"
+      ]
     }
   },
   "auth": {
@@ -467,6 +512,10 @@
         "$ref": "#/entities/MemberPass"
       },
       "description": "Stores member's usage passes or tickets."
+    },
+    "/pass_templates/{templateId}": {
+        "schema": { "$ref": "#/entities/PassTemplate" },
+        "description": "Stores templates for creating different kinds of member passes."
     },
     "/competitions/{competitionId}": {
       "schema": {
