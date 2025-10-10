@@ -23,6 +23,11 @@
           "description": "Date of birth of the member.",
           "format": "date-time"
         },
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female"],
+          "description": "Gender of the member."
+        },
         "email": {
           "type": "string",
           "description": "Email address of the member. Can be guardian's email.",
@@ -31,10 +36,6 @@
         "phoneNumber": {
           "type": "string",
           "description": "Phone number of the member. Can be guardian's phone number."
-        },
-        "gymnasticsLevel": {
-          "type": "string",
-          "description": "Gymnastics level of the member."
         },
         "clubId": {
           "type": "string",
@@ -52,6 +53,10 @@
         "guardianName": {
           "type": "string",
           "description": "The name of the guardian, if applicable."
+        },
+        "guardianPhoneNumber": {
+          "type": "string",
+          "description": "The phone number of the guardian, if applicable."
         }
       },
       "required": [
@@ -59,8 +64,8 @@
         "firstName",
         "lastName",
         "dateOfBirth",
+        "gender",
         "email",
-        "gymnasticsLevel",
         "clubId",
         "status"
       ]

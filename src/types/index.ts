@@ -5,13 +5,14 @@ export type Member = {
   firstName: string;
   lastName: string;
   dateOfBirth: string; // ISO 8601 date string
+  gender: 'male' | 'female';
   email: string;
   phoneNumber?: string;
-  gymnasticsLevel: string;
   clubId: string;
   status: 'active' | 'inactive';
   guardianId?: string;
   guardianName?: string;
+  guardianPhoneNumber?: string;
 };
 
 export type Club = {
@@ -41,7 +42,7 @@ export type LevelTest = {
 };
 
 export type Attendance = {
-  id: string;
+  id:string;
   memberId: string;
   memberName: string; // For convenience
   date: string; // ISO 8601 date string

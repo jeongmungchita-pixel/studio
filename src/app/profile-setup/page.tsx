@@ -46,7 +46,8 @@ const childSchema = z.object({
   firstName: z.string().min(1, '성을 입력하세요.'),
   lastName: z.string().min(1, '이름을 입력하세요.'),
   dateOfBirth: z.string().min(1, '생년월일을 입력하세요.'),
-  gymnasticsLevel: z.string().min(1, '급수를 선택하세요.'),
+  gender: z.enum(['male', 'female'], { required_error: '성별을 선택하세요.' }),
+  guardianPhoneNumber: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -59,8 +60,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const levelOptions = ['1급', '2급', '3급', '4급', '5급', '6급', '7급', '8급', '9급', '10급'];
 
 export default function ProfileSetupPage() {
   const { firestore, auth } = useFirebase();
@@ -78,7 +77,7 @@ export default function ProfileSetupPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       registrationType: undefined,
-      selfInfo: { firstName: '', lastName: '', dateOfBirth: '', gymnasticsLevel: '' },
+      selfInfo: { firstName: '', lastName: '', dateOfBirth: '', gender: undefined },
       childrenInfo: [],
       clubId: '',
     },
@@ -103,14 +102,18 @@ export default function ProfileSetupPage() {
         const memberRef = doc(collection(firestore, 'members'));
         const memberPayload: Member = {
             id: memberRef.id,
-            ...selfData,
+            firstName: selfData.firstName,
+            lastName: selfData.lastName,
+            dateOfBirth: new Date(selfData.dateOfBirth).toISOString(),
+            gender: selfData.gender,
             email: user.email!,
+            phoneNumber: user.phoneNumber,
             clubId: values.clubId,
             status: 'active', // Or 'pending'
-            dateOfBirth: new Date(selfData.dateOfBirth).toISOString(),
             // When registering self AND children, the user becomes a guardian to themselves technically which is fine
             guardianId: (values.registrationType === 'both' || values.registrationType === 'self') ? user.uid : undefined,
             guardianName: (values.registrationType === 'both' || values.registrationType === 'self') ? user.displayName : undefined,
+            guardianPhoneNumber: selfData.guardianPhoneNumber,
         };
         batch.set(memberRef, memberPayload);
       }
@@ -121,13 +124,16 @@ export default function ProfileSetupPage() {
             const memberRef = doc(collection(firestore, 'members'));
             const memberPayload: Member = {
                 id: memberRef.id,
-                ...child,
+                firstName: child.firstName,
+                lastName: child.lastName,
+                dateOfBirth: new Date(child.dateOfBirth).toISOString(),
+                gender: child.gender,
                 email: user.email!, // Guardian's email
                 clubId: values.clubId,
                 status: 'active',
-                dateOfBirth: new Date(child.dateOfBirth).toISOString(),
                 guardianId: user.uid,
                 guardianName: user.displayName || '',
+                guardianPhoneNumber: child.guardianPhoneNumber,
             };
             batch.set(memberRef, memberPayload);
         });
@@ -226,17 +232,24 @@ export default function ProfileSetupPage() {
                          <FormField control={form.control} name="selfInfo.dateOfBirth" render={({ field }) => (
                             <FormItem><FormLabel>생년월일</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                          )}/>
-                         <FormField control={form.control} name="selfInfo.gymnasticsLevel" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>급수</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="급수를 선택하세요" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {levelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
+                         <FormField control={form.control} name="selfInfo.gender" render={({ field }) => (
+                            <FormItem><FormLabel>성별</FormLabel>
+                                <FormControl>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                      <FormControl><RadioGroupItem value="male" /></FormControl>
+                                      <FormLabel className="font-normal">남자</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                      <FormControl><RadioGroupItem value="female" /></FormControl>
+                                      <FormLabel className="font-normal">여자</FormLabel>
+                                    </FormItem>
+                                  </RadioGroup>
+                                </FormControl>
+                            <FormMessage /></FormItem>
+                         )}/>
+                         <FormField control={form.control} name="selfInfo.guardianPhoneNumber" render={({ field }) => (
+                            <FormItem><FormLabel>부모님 전화번호</FormLabel><FormControl><Input type="tel" {...field} placeholder="선택사항" /></FormControl><FormMessage /></FormItem>
                          )}/>
                     </div>
                  </div>
@@ -257,17 +270,24 @@ export default function ProfileSetupPage() {
                                  <FormField control={form.control} name={`childrenInfo.${index}.dateOfBirth`} render={({ field }) => (
                                     <FormItem><FormLabel>생년월일</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                                 )}/>
-                                <FormField control={form.control} name={`childrenInfo.${index}.gymnasticsLevel`} render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>급수</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="급수를 선택하세요"/></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                {levelOptions.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
+                                <FormField control={form.control} name={`childrenInfo.${index}.gender`} render={({ field }) => (
+                                    <FormItem><FormLabel>성별</FormLabel>
+                                        <FormControl>
+                                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                              <FormControl><RadioGroupItem value="male" /></FormControl>
+                                              <FormLabel className="font-normal">남자</FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                              <FormControl><RadioGroupItem value="female" /></FormControl>
+                                              <FormLabel className="font-normal">여자</FormLabel>
+                                            </FormItem>
+                                          </RadioGroup>
+                                        </FormControl>
+                                    <FormMessage /></FormItem>
+                                 )}/>
+                                 <FormField control={form.control} name={`childrenInfo.${index}.guardianPhoneNumber`} render={({ field }) => (
+                                    <FormItem><FormLabel>부모님 전화번호</FormLabel><FormControl><Input type="tel" {...field} placeholder="선택사항" /></FormControl><FormMessage /></FormItem>
                                 )}/>
                             </div>
                             <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
@@ -275,7 +295,7 @@ export default function ProfileSetupPage() {
                             </Button>
                         </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ firstName: '', lastName: '', dateOfBirth: '', gymnasticsLevel: '' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> 자녀 추가
                     </Button>
                  </div>
