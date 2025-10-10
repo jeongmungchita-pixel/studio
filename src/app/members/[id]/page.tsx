@@ -57,7 +57,7 @@ export default function MemberProfilePage({ params }: { params: { id:string } })
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
-  const memberId = params.id;
+  const memberId = useMemo(() => params.id, [params.id]);
 
   // 1. Fetch member data
   const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', memberId) : null), [firestore, memberId]);
