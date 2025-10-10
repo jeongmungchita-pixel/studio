@@ -28,7 +28,7 @@ const personSchema = z.object({
 });
 
 const formSchema = z.object({
-  adultsInfo: z.array(personSchema).optional(), // 성인 정보는 선택사항
+  adultsInfo: z.array(personSchema).optional(),
   childrenInfo: z.array(personSchema).optional(),
   phoneNumber: z.string().min(1, '전화번호를 입력하세요.'),
   clubId: z.string().min(1, '클럽을 선택하세요.'),
@@ -83,18 +83,20 @@ export default function ProfileSetupPage() {
   const onSubmit = async (values: FormValues) => {
     if (!firestore || !user || !storage) return;
 
-    if (!values.adultsInfo?.length && !values.childrenInfo?.length) {
-      toast({
-        variant: 'destructive',
-        title: '선수 정보 없음',
-        description: '최소 한 명의 성인 또는 자녀 선수를 등록해야 합니다.',
-      });
-      return;
+    if ((!values.adultsInfo || values.adultsInfo.length === 0) && (!values.childrenInfo || values.childrenInfo.length === 0)) {
+        toast({
+            variant: "destructive",
+            title: "선수 정보 없음",
+            description: "최소 한 명의 선수(성인 또는 자녀)를 등록해야 합니다.",
+        });
+        return;
     }
+
+    form.formState.isSubmitting = true;
 
     try {
       const batch = writeBatch(firestore);
-      let guardianUids: string[] = [];
+      const guardianUids: string[] = [];
 
       // Process adults if they exist
       if (values.adultsInfo && values.adultsInfo.length > 0) {
@@ -102,9 +104,7 @@ export default function ProfileSetupPage() {
           const adult = values.adultsInfo[i];
           const memberRef = doc(collection(firestore, 'members'));
           
-          // The first adult registered is associated with the logged-in user's account
-          const guardianId = i === 0 ? user.uid : doc(collection(firestore, 'users')).id; 
-          guardianUids.push(guardianId);
+          guardianUids.push(user.uid);
 
           let photoURL: string | undefined = undefined;
           if (adult.photo) {
@@ -116,11 +116,11 @@ export default function ProfileSetupPage() {
             name: adult.name,
             dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
             gender: adult.gender,
-            email: i === 0 ? user.email : undefined,
-            phoneNumber: i === 0 ? values.phoneNumber : undefined,
+            email: user.email,
+            phoneNumber: values.phoneNumber,
             clubId: values.clubId,
             status: 'pending',
-            guardianIds: [guardianId],
+            guardianIds: [user.uid],
             photoURL: photoURL,
           };
           batch.set(memberRef, memberPayload);
@@ -131,7 +131,7 @@ export default function ProfileSetupPage() {
       }
 
       // Process children
-      if (values.childrenInfo) {
+      if (values.childrenInfo && values.childrenInfo.length > 0) {
         for (let i = 0; i < values.childrenInfo.length; i++) {
           const child = values.childrenInfo[i];
           const memberRef = doc(collection(firestore, 'members'));
@@ -146,6 +146,7 @@ export default function ProfileSetupPage() {
             name: child.name,
             dateOfBirth: new Date(child.dateOfBirth).toISOString(),
             gender: child.gender,
+            email: user.email,
             clubId: values.clubId,
             status: 'pending',
             guardianIds: guardianUids,
@@ -155,12 +156,8 @@ export default function ProfileSetupPage() {
         }
       }
       
-      // Update the user's main profile with phone number if they are the primary guardian
-      // and not registered as a member themselves.
-      if (values.adultsInfo?.length === 0) {
-        const userRef = doc(firestore, 'users', user.uid);
-        batch.update(userRef, { phoneNumber: values.phoneNumber });
-      }
+      const userRef = doc(firestore, 'users', user.uid);
+      batch.update(userRef, { phoneNumber: values.phoneNumber, isGuardian: true });
 
       await batch.commit();
 
@@ -176,6 +173,8 @@ export default function ProfileSetupPage() {
         title: '오류 발생',
         description: '프로필을 저장하는 중 오류가 발생했습니다.',
       });
+    } finally {
+        form.formState.isSubmitting = false;
     }
   };
   
