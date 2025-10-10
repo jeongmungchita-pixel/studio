@@ -54,13 +54,14 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type SubmissionStatus = 'idle' | 'uploading' | 'submitting';
 
 export default function ProfileSetupPage() {
   const { firestore, storage } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>('idle');
 
   const adultFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const childFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -130,13 +131,13 @@ export default function ProfileSetupPage() {
       return;
     }
 
-    setIsSubmitting(true);
+    setSubmissionStatus('uploading');
 
     try {
       const batch = writeBatch(firestore);
       const userRef = doc(firestore, 'users', user.uid);
 
-      // 1. Update the guardian's user profile
+      // 1. Update the guardian's user profile, regardless of what's being added
       const userProfileUpdate: Partial<UserProfile> = {
         phoneNumber: values.phoneNumber,
         isGuardian: true,
@@ -181,6 +182,7 @@ export default function ProfileSetupPage() {
         batch.set(memberRef, memberPayload);
       }
       
+      setSubmissionStatus('submitting');
       // 3. Commit all changes at once
       await batch.commit();
 
@@ -198,7 +200,7 @@ export default function ProfileSetupPage() {
         description: '프로필을 저장하는 중 오류가 발생했습니다. 다시 시도해 주세요.',
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmissionStatus('idle');
     }
   };
 
@@ -210,6 +212,16 @@ export default function ProfileSetupPage() {
       </div>
     );
   }
+  
+  const getButtonText = () => {
+    if (submissionStatus === 'uploading') {
+      return '사진 업로드 중...';
+    }
+    if (submissionStatus === 'submitting') {
+      return '클럽 가입 신청 중...';
+    }
+    return '저장 및 클럽 가입';
+  };
 
   return (
     <main className="flex-1 p-4 md:p-6">
@@ -627,11 +639,11 @@ export default function ProfileSetupPage() {
             </Card>
 
             <div className="flex justify-center pt-4">
-              <Button type="submit" size="lg" disabled={isSubmitting}>
-                {isSubmitting && (
+              <Button type="submit" size="lg" disabled={submissionStatus !== 'idle'}>
+                {submissionStatus !== 'idle' && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                저장 및 클럽 가입
+                {getButtonText()}
               </Button>
             </div>
           </form>
