@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "user-avatar",
+      "description": "User avatar in header",
+      "imageUrl": "https://picsum.photos/seed/user-avatar/40/40",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "m1",
+      "description": "Member avatar 1",
+      "imageUrl": "https://picsum.photos/seed/m1/40/40",
+      "imageHint": "person gymnastics"
+    },
+    {
+      "id": "m2",
+      "description": "Member avatar 2",
+      "imageUrl": "https://picsum.photos/seed/m2/40/40",
+      "imageHint": "person gymnastics"
+    },
+    {
+      "id": "m3",
+      "description": "Member avatar 3",
+      "imageUrl": "https://picsum.photos/seed/m3/40/40",
+      "imageHint": "person gymnastics"
+    },
+    {
+      "id": "m4",
+      "description": "Member avatar 4",
+      "imageUrl": "https://picsum.photos/seed/m4/40/40",
+      "imageHint": "person gymnastics"
+    },
+    {
+      "id": "m5",
+      "description": "Member avatar 5",
+      "imageUrl": "https://picsum.photos/seed/m5/40/40",
+      "imageHint": "person gymnastics"
+    },
+    {
+      "id": "c1",
+      "description": "Club logo 1",
+      "imageUrl": "https://picsum.photos/seed/c1/80/80",
+      "imageHint": "logo abstract"
+    },
+    {
+      "id": "c2",
+      "description": "Club logo 2",
+      "imageUrl": "https://picsum.photos/seed/c2/80/80",
+      "imageHint": "logo abstract"
+    },
+    {
+      "id": "c3",
+      "description": "Club logo 3",
+      "imageUrl": "https://picsum.photos/seed/c3/80/80",
+      "imageHint": "logo abstract"
+    },
+    {
+      "id": "c4",
+      "description": "Club logo 4",
+      "imageUrl": "https://picsum.photos/seed/c4/80/80",
+      "imageHint": "logo abstract"
+    }
+  ]
 }
