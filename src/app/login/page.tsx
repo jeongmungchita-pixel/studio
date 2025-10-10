@@ -166,7 +166,7 @@ export default function LoginPage() {
       photoURL:
         user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
       role:
-        user.email === 'superadmin@kgf-nexus.com'
+        user.uid === 'J4I2IkDZsxSiU9bNeu9qZyxzSkk1'
           ? 'admin'
           : (role as 'admin' | 'member'),
       provider,
