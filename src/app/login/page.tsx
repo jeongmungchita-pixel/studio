@@ -161,30 +161,21 @@ export default function LoginPage() {
         }
       } else {
         // --- 로그인 로직 ---
-        const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-        const loggedInUser = userCredential.user;
-        
-        const userRef = doc(firestore, 'users', loggedInUser.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          const userProfile = userSnap.data() as UserProfile;
-          if (userProfile.role === 'club-admin' && userProfile.status === 'pending') {
-            toast({
-              variant: 'destructive',
-              title: '승인 대기 중',
-              description: '관리자 승인이 필요한 계정입니다. 승인 후 다시 시도해주세요.',
-            });
-            await auth.signOut(); 
-          }
-        }
+        await signInWithEmailAndPassword(auth, values.email, values.password);
+        // onAuthStateChanged in useUser will handle profile fetching and redirection
       }
     } catch (error: any) {
       console.error(error);
+      let errorMessage = '예상치 못한 오류가 발생했습니다.';
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = '이미 사용 중인 이메일입니다.';
+      }
       toast({
         variant: 'destructive',
         title: '인증 실패',
-        description: error.message || '예상치 못한 오류가 발생했습니다.',
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
@@ -197,7 +188,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      await createUserProfile(result.user, { role: 'member', email: result.user.email!, password: '' });
+      await createUserProfile(result.user, { role: 'member', email: result.user.email! });
       // The main layout will handle redirection
     } catch (error: any) {
       console.error(error);
@@ -226,7 +217,7 @@ export default function LoginPage() {
     
     let role: UserProfile['role'] = values.role || 'member';
     // Hardcoded admin user for initial setup
-    if (user.uid === 'J4I2IkDZsxSiU9bNeu9qZyxzSkk1') {
+    if (user.email === 'admin@kgf-nexus.com') {
       role = 'admin';
     }
     
@@ -242,10 +233,10 @@ export default function LoginPage() {
       ...(role === 'club-admin' && { clubName: values.clubName, phoneNumber: values.phoneNumber }),
     };
 
-    await setDoc(userRef, userProfile, { merge: true });
+    await setDoc(userRef, userProfile);
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading || (!isUserLoading && user)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -431,5 +422,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
