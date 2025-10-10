@@ -1,23 +1,29 @@
+'use client';
+
 import type { Metadata } from 'next';
 import './globals.css';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/layout/sidebar';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
-
-export const metadata: Metadata = {
-  title: 'KGF 넥서스',
-  description: '대한체조협회 관리 플랫폼',
-};
+import { usePathname } from 'next/navigation';
+import { MainLayout } from '@/components/layout/main-layout';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
+
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* metadata is not supported in client components, but we will add basic tags */}
+        <title>KGF 넥서스</title>
+        <meta
+          name="description"
+          content="대한체조협회 관리 플랫폼"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -31,12 +37,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <SidebarProvider>
-            <Sidebar>
-              <AppSidebar />
-            </Sidebar>
-            <SidebarInset>{children}</SidebarInset>
-          </SidebarProvider>
+          {isLoginPage ? (
+            children
+          ) : (
+            <MainLayout>{children}</MainLayout>
+          )}
           <Toaster />
         </FirebaseClientProvider>
       </body>
