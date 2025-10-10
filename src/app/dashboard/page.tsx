@@ -23,6 +23,7 @@ import { Users, Building, Trophy, CalendarCheck, Loader2 } from 'lucide-react';
 import type { Member, Club, Competition } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 const chartData = [
   { month: '1월', members: 0 },
@@ -54,12 +55,8 @@ export default function DashboardPage() {
   const competitionsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'competitions') : null), [firestore]);
   const { data: competitions, isLoading: isCompetitionsLoading } = useCollection<Competition>(competitionsCollection);
 
-  // This is a placeholder. We'll need a more robust way to check if a user has completed their profile.
-  // For now, let's assume if they aren't associated with a Member document, their profile is incomplete.
   const isProfileComplete = useMemo(() => {
     if (!user || !members) return false;
-    // Check if there is a member document where the email matches the user's email 
-    // or if the user is a guardian for any member.
     return members.some(m => m.email === user.email || m.guardianId === user.uid);
   }, [user, members]);
 
@@ -72,7 +69,8 @@ export default function DashboardPage() {
   }
 
   // Admin and Club Admin see the main dashboard, Members see a profile completion prompt if needed
-  if (user && user.role === 'member' && !isProfileComplete) {
+  if (user && (user.role === 'member' || user.role === 'club-admin') && !isProfileComplete) {
+    // Also show for club-admin if they haven't created a member profile for themselves
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card className="w-full max-w-lg text-center">
@@ -213,3 +211,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+    
