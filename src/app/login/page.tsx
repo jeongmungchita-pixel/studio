@@ -116,14 +116,14 @@ export default function LoginPage() {
         await createUserProfile(userCredential.user, values);
         toast({
           title: '회원가입 성공!',
-          description: values.role === 'club-admin' ? '관리자 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
+          description: values.role === 'club-admin' ? '최고 관리자의 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
         
-        if (values.role === 'club-admin') {
-          await signOut(auth);
-          setCurrentFormType('login');
-        }
-        // For 'member' role, onAuthStateChanged will handle the redirect.
+        // For both 'club-admin' and 'member', sign out and force login after signup.
+        // This ensures pending admins cannot proceed and members get a clean login flow.
+        await signOut(auth);
+        setCurrentFormType('login');
+        
       } else {
         await signInWithEmailAndPassword(auth, values.email, values.password);
       }
