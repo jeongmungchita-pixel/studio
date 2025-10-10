@@ -35,7 +35,7 @@ import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Club, Member, UserProfile } from '@/types';
 import { useMemoFirebase } from '@/firebase/provider';
-import { ChangeEvent, useRef } from 'react';
+import { ChangeEvent, useRef, useState } from 'react';
 import Image from 'next/image';
 
 const personSchema = z.object({
@@ -60,6 +60,7 @@ export default function ProfileSetupPage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const adultFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const childFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -129,7 +130,7 @@ export default function ProfileSetupPage() {
       return;
     }
 
-    form.formState.isSubmitting = true;
+    setIsSubmitting(true);
 
     try {
       const batch = writeBatch(firestore);
@@ -242,7 +243,7 @@ export default function ProfileSetupPage() {
         description: '프로필을 저장하는 중 오류가 발생했습니다.',
       });
     } finally {
-        form.formState.isSubmitting = false;
+        setIsSubmitting(false);
     }
   };
 
@@ -674,9 +675,9 @@ export default function ProfileSetupPage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={form.formState.isSubmitting}
+                disabled={isSubmitting}
               >
-                {form.formState.isSubmitting && (
+                {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 저장 및 승인 요청
