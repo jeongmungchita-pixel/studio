@@ -110,7 +110,6 @@ export default function ClubDashboardPage() {
                                     <TableRow>
                                         <TableHead>이름</TableHead>
                                         <TableHead>생년월일</TableHead>
-                                        <TableHead>보호자</TableHead>
                                         <TableHead>기능</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -119,13 +118,12 @@ export default function ClubDashboardPage() {
                                         <TableRow key={member.id}>
                                             <TableCell>{member.firstName} {member.lastName}</TableCell>
                                             <TableCell>{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
-                                            <TableCell>{member.guardianName || '-'}</TableCell>
                                             <TableCell className="space-x-2">
                                                 <Button size="sm" onClick={() => handleApproval(member.id, 'active')}>승인</Button>
                                                 <Button size="sm" variant="destructive" onClick={() => handleRejection(member.id)}>거절</Button>
                                             </TableCell>
                                         </TableRow>
-                                    )) : <TableRow><TableCell colSpan={4} className="text-center">새로운 가입 요청이 없습니다.</TableCell></TableRow>}
+                                    )) : <TableRow><TableCell colSpan={3} className="text-center">새로운 가입 요청이 없습니다.</TableCell></TableRow>}
                                 </TableBody>
                             </Table>
                         </CardContent>

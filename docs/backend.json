@@ -46,17 +46,12 @@
           "enum": ["active", "inactive", "pending"],
           "description": "The status of the member."
         },
-        "guardianId": {
-          "type": "string",
-          "description": "The UID of the guardian UserProfile, if applicable."
-        },
-        "guardianName": {
-          "type": "string",
-          "description": "The name of the guardian, if applicable."
-        },
-        "guardianPhoneNumber": {
-          "type": "string",
-          "description": "The phone number of the guardian, if applicable."
+        "guardianIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of UIDs for the guardian UserProfiles, if applicable."
         }
       },
       "required": [
@@ -65,7 +60,6 @@
         "lastName",
         "dateOfBirth",
         "gender",
-        "email",
         "clubId",
         "status"
       ]

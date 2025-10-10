@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -46,8 +46,16 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const router = useRouter();
   
-  const membersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
-  const { data: members, isLoading: isMembersLoading } = useCollection<Member>(membersCollection);
+  const membersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'members'), where('guardianIds', 'array-contains', user.uid));
+  }, [firestore, user]);
+  
+  const { data: userAssociatedMembers, isLoading: isMembersLoading } = useCollection<Member>(membersQuery);
+
+  const allMembersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
+  const { data: allMembers, isLoading: areAllMembersLoading } = useCollection<Member>(allMembersCollection);
+
 
   const clubsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'clubs') : null), [firestore]);
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
@@ -56,11 +64,11 @@ export default function DashboardPage() {
   const { data: competitions, isLoading: isCompetitionsLoading } = useCollection<Competition>(competitionsCollection);
 
   const isProfileComplete = useMemo(() => {
-    if (!user || !members) return false;
-    return members.some(m => m.email === user.email || m.guardianId === user.uid);
-  }, [user, members]);
+    if (!user || !userAssociatedMembers) return false;
+    return userAssociatedMembers.length > 0;
+  }, [user, userAssociatedMembers]);
 
-  if (isUserLoading || isMembersLoading || isClubsLoading || isCompetitionsLoading) {
+  if (isUserLoading || isMembersLoading || isClubsLoading || isCompetitionsLoading || areAllMembersLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -70,7 +78,6 @@ export default function DashboardPage() {
 
   // Admin and Club Admin see the main dashboard, Members see a profile completion prompt if needed
   if (user && (user.role === 'member' || user.role === 'club-admin') && !isProfileComplete) {
-    // Also show for club-admin if they haven't created a member profile for themselves
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card className="w-full max-w-lg text-center">
@@ -106,7 +113,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{members?.length || 0}</div>
+            <div className="text-2xl font-bold">{allMembers?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               -
             </p>
@@ -211,5 +218,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-
-    

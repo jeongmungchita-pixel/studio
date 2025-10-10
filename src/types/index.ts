@@ -7,13 +7,11 @@ export type Member = {
   lastName: string;
   dateOfBirth: string; // ISO 8601 date string
   gender: 'male' | 'female';
-  email: string;
+  email?: string;
   phoneNumber?: string;
   clubId: string;
   status: 'active' | 'inactive' | 'pending';
-  guardianId?: string;
-  guardianName?: string;
-  guardianPhoneNumber?: string;
+  guardianIds?: string[];
 };
 
 export type Club = {
