@@ -28,7 +28,7 @@ const personSchema = z.object({
 });
 
 const formSchema = z.object({
-  adultsInfo: z.array(personSchema).min(1, '최소 한 명의 성인 정보를 등록해야 합니다.'),
+  adultsInfo: z.array(personSchema).optional(), // 성인 정보는 선택사항
   childrenInfo: z.array(personSchema).optional(),
   phoneNumber: z.string().min(1, '전화번호를 입력하세요.'),
   clubId: z.string().min(1, '클럽을 선택하세요.'),
@@ -83,35 +83,51 @@ export default function ProfileSetupPage() {
   const onSubmit = async (values: FormValues) => {
     if (!firestore || !user || !storage) return;
 
+    if (!values.adultsInfo?.length && !values.childrenInfo?.length) {
+      toast({
+        variant: 'destructive',
+        title: '선수 정보 없음',
+        description: '최소 한 명의 성인 또는 자녀 선수를 등록해야 합니다.',
+      });
+      return;
+    }
+
     try {
       const batch = writeBatch(firestore);
-      const adultUids: string[] = [];
+      let guardianUids: string[] = [];
 
-      // Process adults
-      for (let i = 0; i < values.adultsInfo.length; i++) {
-        const adult = values.adultsInfo[i];
-        const memberRef = doc(collection(firestore, 'members'));
-        const guardianId = i === 0 ? user.uid : doc(collection(firestore, 'users')).id;
-        adultUids.push(guardianId);
+      // Process adults if they exist
+      if (values.adultsInfo && values.adultsInfo.length > 0) {
+        for (let i = 0; i < values.adultsInfo.length; i++) {
+          const adult = values.adultsInfo[i];
+          const memberRef = doc(collection(firestore, 'members'));
+          
+          // The first adult registered is associated with the logged-in user's account
+          const guardianId = i === 0 ? user.uid : doc(collection(firestore, 'users')).id; 
+          guardianUids.push(guardianId);
 
-        let photoURL: string | undefined = undefined;
-        if (adult.photo) {
-          photoURL = await uploadImage(storage, `profile_pictures/${memberRef.id}`, adult.photo);
+          let photoURL: string | undefined = undefined;
+          if (adult.photo) {
+            photoURL = await uploadImage(storage, `profile_pictures/${memberRef.id}`, adult.photo);
+          }
+          
+          const memberPayload: Member = {
+            id: memberRef.id,
+            name: adult.name,
+            dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
+            gender: adult.gender,
+            email: i === 0 ? user.email : undefined,
+            phoneNumber: i === 0 ? values.phoneNumber : undefined,
+            clubId: values.clubId,
+            status: 'pending',
+            guardianIds: [guardianId],
+            photoURL: photoURL,
+          };
+          batch.set(memberRef, memberPayload);
         }
-        
-        const memberPayload: Omit<Member, 'guardianIds'> & { guardianIds: string[] } = {
-          id: memberRef.id,
-          name: adult.name,
-          dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
-          gender: adult.gender,
-          ...(i === 0 && { email: user.email }), // Only set email for the primary user
-          ...(i === 0 && { phoneNumber: values.phoneNumber }),
-          clubId: values.clubId,
-          status: 'pending',
-          guardianIds: [guardianId],
-          ...(photoURL && { photoURL }),
-        };
-        batch.set(memberRef, memberPayload);
+      } else {
+        // If no adults are registered as members, the logged-in user is the sole guardian.
+        guardianUids.push(user.uid);
       }
 
       // Process children
@@ -125,20 +141,27 @@ export default function ProfileSetupPage() {
             photoURL = await uploadImage(storage, `profile_pictures/${memberRef.id}`, child.photo);
           }
 
-          const memberPayload: Omit<Member, 'email' | 'phoneNumber'> & { email?: string; phoneNumber?: string; guardianIds: string[] } = {
+          const memberPayload: Member = {
             id: memberRef.id,
             name: child.name,
             dateOfBirth: new Date(child.dateOfBirth).toISOString(),
             gender: child.gender,
             clubId: values.clubId,
             status: 'pending',
-            guardianIds: adultUids,
-            ...(photoURL && { photoURL }),
+            guardianIds: guardianUids,
+            photoURL: photoURL,
           };
           batch.set(memberRef, memberPayload);
         }
       }
       
+      // Update the user's main profile with phone number if they are the primary guardian
+      // and not registered as a member themselves.
+      if (values.adultsInfo?.length === 0) {
+        const userRef = doc(firestore, 'users', user.uid);
+        batch.update(userRef, { phoneNumber: values.phoneNumber });
+      }
+
       await batch.commit();
 
       toast({
@@ -156,7 +179,7 @@ export default function ProfileSetupPage() {
     }
   };
   
-  if (isUserLoading || areClubsLoading) {
+  if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -170,7 +193,7 @@ export default function ProfileSetupPage() {
         <CardHeader>
           <CardTitle>프로필 설정</CardTitle>
           <CardDescription>
-            선수 또는 학부모 정보를 입력하여 KGF 넥서스 활동을 시작하세요. 한 번에 여러 명의 성인과 자녀를 등록할 수 있습니다.
+            선수 또는 학부모 정보를 입력하여 KGF 넥서스 활동을 시작하세요.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -178,16 +201,19 @@ export default function ProfileSetupPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               
               <div className="space-y-4">
-                <h3 className="font-medium">성인 정보</h3>
+                <div className="space-y-1">
+                    <h3 className="font-medium">성인 정보</h3>
+                    <p className="text-sm text-muted-foreground">보호자 본인 또는 다른 성인 가족을 '선수'로 등록할 경우에만 추가해주세요.</p>
+                </div>
                 {adultFields.map((field, index) => (
                     <div key={field.id} className="p-4 border rounded-md relative space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                            <FormField control={form.control} name={`adultsInfo.${index}.name`} render={({ field }) => (
-                              <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} placeholder="예: 홍길동" /></FormControl><FormMessage /></FormItem>
                            )}/>
                            <div className="flex items-center gap-4 pt-6">
                             {form.watch(`adultsInfo.${index}.photoPreview`) ? (
-                                <Image src={form.watch(`adultsInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full" />
+                                <Image src={form.watch(`adultsInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full object-cover" />
                             ) : (
                                 <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                                   <Upload className="w-5 h-5"/>
@@ -217,7 +243,7 @@ export default function ProfileSetupPage() {
                            <FormField control={form.control} name={`adultsInfo.${index}.gender`} render={({ field }) => (
                               <FormItem><FormLabel>성별</FormLabel>
                                   <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
                                       <FormItem className="flex items-center space-x-2 space-y-0">
                                         <FormControl><RadioGroupItem value="male" /></FormControl>
                                         <FormLabel className="font-normal">남자</FormLabel>
@@ -244,16 +270,16 @@ export default function ProfileSetupPage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="font-medium">자녀 정보</h3>
+                 <h3 className="font-medium">자녀 정보</h3>
                 {childFields.map((field, index) => (
                     <div key={field.id} className="p-4 border rounded-md relative space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                             <FormField control={form.control} name={`childrenInfo.${index}.name`} render={({ field }) => (
-                                <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>이름</FormLabel><FormControl><Input {...field} placeholder="예: 홍자녀"/></FormControl><FormMessage /></FormItem>
                             )}/>
                             <div className="flex items-center gap-4 pt-6">
                             {form.watch(`childrenInfo.${index}.photoPreview`) ? (
-                                <Image src={form.watch(`childrenInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full" />
+                                <Image src={form.watch(`childrenInfo.${index}.photoPreview`)!} alt="프로필 사진 미리보기" width={40} height={40} className="rounded-full object-cover" />
                             ) : (
                                 <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                                   <Upload className="w-5 h-5"/>
@@ -283,7 +309,7 @@ export default function ProfileSetupPage() {
                             <FormField control={form.control} name={`childrenInfo.${index}.gender`} render={({ field }) => (
                                 <FormItem><FormLabel>성별</FormLabel>
                                     <FormControl>
-                                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
                                         <FormItem className="flex items-center space-x-2 space-y-0">
                                           <FormControl><RadioGroupItem value="male" /></FormControl>
                                           <FormLabel className="font-normal">남자</FormLabel>
@@ -316,6 +342,9 @@ export default function ProfileSetupPage() {
                     <FormControl>
                       <Input type="tel" {...field} placeholder="연락 가능한 대표 전화번호를 입력하세요" />
                     </FormControl>
+                    <FormDescription>
+                      가족/선수 그룹의 대표 연락처입니다.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -327,9 +356,9 @@ export default function ProfileSetupPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>소속 클럽</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areClubsLoading}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={areClubsLoading}>
                           <SelectValue placeholder="등록할 클럽을 선택하세요" />
                         </SelectTrigger>
                       </FormControl>
@@ -346,7 +375,7 @@ export default function ProfileSetupPage() {
                           ))
                         ) : (
                           <div className="p-4 text-center text-sm text-muted-foreground">
-                            불러올 클럽이 없습니다.
+                            등록된 클럽이 없습니다. 관리자에게 문의하세요.
                           </div>
                         )}
                       </SelectContent>
