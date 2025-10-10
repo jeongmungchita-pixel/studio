@@ -136,59 +136,54 @@ export default function ProfileSetupPage() {
       const batch = writeBatch(firestore);
       const userRef = doc(firestore, 'users', user.uid);
 
-      // 1. Update the guardian's user profile, regardless of who is being added
+      // 1. Update the guardian's user profile
       const userProfileUpdate: Partial<UserProfile> = {
         phoneNumber: values.phoneNumber,
         isGuardian: true,
       };
       batch.update(userRef, userProfileUpdate);
 
-      // 2. Prepare member data with consistent IDs
-      const allMembersToCreate = [
-        ...(values.adultsInfo || []).map(person => ({ ...person, isChild: false })),
-        ...(values.childrenInfo || []).map(person => ({ ...person, isChild: true })),
+      // 2. Combine all members to create
+      const allMembersToProcess = [
+        ...(values.adultsInfo || []),
+        ...(values.childrenInfo || []),
       ];
 
-      const processedMembers = await Promise.all(
-        allMembersToCreate.map(async (person) => {
-          const memberRef = doc(collection(firestore, 'members'));
-          const memberId = memberRef.id;
-          let photoURL: string | undefined = person.photoPreview;
+      for (const person of allMembersToProcess) {
+        // Create a new ref for each member to get a unique ID
+        const memberRef = doc(collection(firestore, 'members'));
+        const memberId = memberRef.id;
+        
+        let photoURL = person.photoPreview || `https://picsum.photos/seed/${memberId}/40/40`;
 
-          if (person.photo) {
-            photoURL = await uploadImage(
-              storage,
-              `profile_pictures/${memberId}`,
-              person.photo
-            );
-          }
-          
-          const memberPayload: Member = {
-            id: memberId,
-            name: person.name,
-            dateOfBirth: new Date(person.dateOfBirth).toISOString(),
-            gender: person.gender,
-            email: user.email, // Guardian's email
-            phoneNumber: person.isChild ? values.phoneNumber : undefined, // Only for child
-            clubId: values.clubId,
-            status: 'active',
-            guardianIds: [user.uid],
-            photoURL: photoURL,
-          };
-          
-          return { ref: memberRef, payload: memberPayload };
-        })
-      );
+        // Upload photo if it exists
+        if (person.photo) {
+          photoURL = await uploadImage(
+            storage,
+            `profile_pictures/${memberId}`,
+            person.photo
+          );
+        }
 
-      // 3. Add all member documents to the batch
-      processedMembers.forEach(({ ref, payload }) => {
-        batch.set(ref, payload);
-      });
+        const memberPayload: Member = {
+          id: memberId,
+          name: person.name,
+          dateOfBirth: new Date(person.dateOfBirth).toISOString(),
+          gender: person.gender,
+          email: user.email, // Guardian's email for all
+          phoneNumber: values.phoneNumber, // Guardian's phone for all
+          clubId: values.clubId,
+          status: 'active', // Directly active as per new logic
+          guardianIds: [user.uid],
+          photoURL: photoURL,
+        };
 
-      // 4. Commit all changes at once
+        batch.set(memberRef, memberPayload);
+      }
+      
+      // 3. Commit all changes at once
       await batch.commit();
 
-      // 5. Provide feedback and redirect
       toast({
         title: '프로필 저장 완료',
         description: '정보가 성공적으로 저장되었습니다.',
@@ -200,7 +195,7 @@ export default function ProfileSetupPage() {
       toast({
         variant: 'destructive',
         title: '오류 발생',
-        description: '프로필을 저장하는 중 오류가 발생했습니다.',
+        description: '프로필을 저장하는 중 오류가 발생했습니다. 다시 시도해 주세요.',
       });
     } finally {
       setIsSubmitting(false);
