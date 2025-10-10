@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useUser } from '@/firebase';
-import { collection, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
       };
       batch.set(clubRef, newClub);
 
-      // 3. (Optional) Update the club-admin's profile with the new clubId
+      // 3. Update the club-admin's profile with the new clubId
       batch.update(userRef, { clubId: clubRef.id });
   
       await batch.commit();
