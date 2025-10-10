@@ -25,12 +25,12 @@
         },
         "email": {
           "type": "string",
-          "description": "Email address of the member.",
+          "description": "Email address of the member. Can be guardian's email.",
           "format": "email"
         },
         "phoneNumber": {
           "type": "string",
-          "description": "Phone number of the member."
+          "description": "Phone number of the member. Can be guardian's phone number."
         },
         "gymnasticsLevel": {
           "type": "string",
@@ -44,6 +44,14 @@
           "type": "string",
           "enum": ["active", "inactive"],
           "description": "The status of the member."
+        },
+        "guardianId": {
+          "type": "string",
+          "description": "The UID of the guardian UserProfile, if applicable."
+        },
+        "guardianName": {
+          "type": "string",
+          "description": "The name of the guardian, if applicable."
         }
       },
       "required": [
@@ -52,7 +60,6 @@
         "lastName",
         "dateOfBirth",
         "email",
-        "phoneNumber",
         "gymnasticsLevel",
         "clubId",
         "status"
@@ -338,6 +345,10 @@
             "type": "string",
             "enum": ["pending", "approved"],
             "description": "The approval status of the user."
+        },
+        "isGuardian": {
+          "type": "boolean",
+          "description": "Indicates if the user is a guardian."
         },
         "clubName": {
             "type": "string",

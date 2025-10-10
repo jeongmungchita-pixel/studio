@@ -6,10 +6,12 @@ export type Member = {
   lastName: string;
   dateOfBirth: string; // ISO 8601 date string
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   gymnasticsLevel: string;
   clubId: string;
-  status: 'active' | 'inactive'; // Not in backend.json, but useful for UI
+  status: 'active' | 'inactive';
+  guardianId?: string;
+  guardianName?: string;
 };
 
 export type Club = {
@@ -54,6 +56,7 @@ export type UserProfile = {
   role: 'admin' | 'member' | 'club-admin';
   provider: 'email' | 'google';
   status: 'pending' | 'approved';
+  isGuardian?: boolean;
   clubName?: string;
   phoneNumber?: string;
 };
