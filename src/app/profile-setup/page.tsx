@@ -133,12 +133,15 @@ export default function ProfileSetupPage() {
       const batch = writeBatch(firestore);
       const guardianUids: string[] = [user.uid];
 
+      // 1. Update the guardian's user profile
+      const userRef = doc(firestore, 'users', user.uid);
       const userProfileUpdate: Partial<UserProfile> = {
         phoneNumber: values.phoneNumber,
         isGuardian: true,
       };
+      batch.update(userRef, userProfileUpdate);
 
-      // Case 1: User registers themselves (and maybe children) as members
+      // 2. Process adult members
       if (values.adultsInfo && values.adultsInfo.length > 0) {
         for (let i = 0; i < values.adultsInfo.length; i++) {
           const adult = values.adultsInfo[i];
@@ -168,23 +171,8 @@ export default function ProfileSetupPage() {
           batch.set(memberRef, memberPayload);
         }
       }
-      // Case 2: User only registers children
-      else if (values.childrenInfo && values.childrenInfo.length > 0) {
-         // Create a member doc for the guardian user, but not as a competitor
-         const guardianMemberRef = doc(firestore, 'members', user.uid);
-         const guardianMemberPayload: Partial<Member> & { isGuardianOnly: boolean } = {
-            id: user.uid,
-            name: user.displayName,
-            email: user.email,
-            phoneNumber: values.phoneNumber,
-            clubId: values.clubId,
-            status: 'active', // Guardians are active by default
-            guardianIds: [],
-            isGuardianOnly: true,
-         };
-         batch.set(guardianMemberRef, guardianMemberPayload, { merge: true });
-      }
 
+      // 3. Process child members
       if (values.childrenInfo && values.childrenInfo.length > 0) {
         for (let i = 0; i < values.childrenInfo.length; i++) {
           const child = values.childrenInfo[i];
@@ -198,7 +186,7 @@ export default function ProfileSetupPage() {
               child.photo
             );
           }
-          
+
           const memberPayload: Member = {
             id: memberRef.id,
             name: child.name,
@@ -213,19 +201,33 @@ export default function ProfileSetupPage() {
           batch.set(memberRef, memberPayload);
         }
       }
-      
-      const userRef = doc(firestore, 'users', user.uid);
-      batch.update(userRef, userProfileUpdate);
 
+      // 4. If only children are registered, create a non-playing guardian member record
+      if ((!values.adultsInfo || values.adultsInfo.length === 0) && (values.childrenInfo && values.childrenInfo.length > 0)) {
+         const guardianMemberRef = doc(firestore, 'members', user.uid);
+         const guardianMemberPayload: Partial<Member> = {
+            id: user.uid,
+            name: user.displayName,
+            email: user.email,
+            phoneNumber: values.phoneNumber,
+            clubId: values.clubId,
+            status: 'active', // Guardians are active by default
+            guardianIds: [],
+            isGuardianOnly: true,
+         };
+         batch.set(guardianMemberRef, guardianMemberPayload, { merge: true });
+      }
+
+      // 5. Commit all changes
       await batch.commit();
-      
+
+      // 6. Provide feedback and redirect
       toast({
         title: '프로필 저장 완료',
         description:
           '정보가 성공적으로 저장되었습니다. 클럽 승인을 기다려주세요.',
       });
       router.push('/dashboard');
-
     } catch (error) {
       console.error('Error setting up profile:', error);
       toast({
@@ -236,7 +238,8 @@ export default function ProfileSetupPage() {
     }
   };
 
-  if (isUserLoading) {
+
+  if (isUserLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -406,11 +409,12 @@ export default function ProfileSetupPage() {
                     </div>
                   ))}
                 </div>
-                 {adultFields.length === 0 && (
-                   <p className="text-sm text-center text-muted-foreground py-4">
-                     본인 또는 다른 성인 선수를 등록하려면 아래 버튼을 클릭하세요.
-                   </p>
-                 )}
+                {adultFields.length === 0 && (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    본인 또는 다른 성인 선수를 등록하려면 아래 버튼을
+                    클릭하세요.
+                  </p>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -573,11 +577,11 @@ export default function ProfileSetupPage() {
                     </div>
                   ))}
                 </div>
-                 {childFields.length === 0 && (
-                   <p className="text-sm text-center text-muted-foreground py-4">
-                     자녀 선수를 등록하려면 아래 버튼을 클릭하세요.
-                   </p>
-                 )}
+                {childFields.length === 0 && (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    자녀 선수를 등록하려면 아래 버튼을 클릭하세요.
+                  </p>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -599,7 +603,7 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="phoneNumber"
