@@ -52,7 +52,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
+              <Link href={item.href}>
                 <SidebarMenuButton
                   isActive={isActive(item.href)}
                   tooltip={{ children: item.label, side: 'right' }}
@@ -69,7 +69,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-2">
          <SidebarMenu>
             <SidebarMenuItem>
-                <Link href="/settings" passHref legacyBehavior>
+                <Link href="/settings">
                     <SidebarMenuButton isActive={isActive('/settings')} tooltip={{ children: 'Settings', side: 'right' }}>
                         <Settings />
                         <span>Settings</span>
