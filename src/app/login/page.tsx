@@ -158,10 +158,11 @@ export default function LoginPage() {
           description: values.role === 'club-admin' ? '관리자 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
         
-        // 클럽 관리자는 승인 대기 상태이므로 로그인 화면으로, 일반 회원은 바로 대시보드로
+        // 클럽 관리자는 승인 대기 상태이므로 로그아웃 후 로그인 화면으로, 일반 회원은 바로 대시보드로
         if(values.role !== 'club-admin') {
             redirect('/dashboard');
         } else {
+            await auth.signOut();
             setFormType('login');
         }
       } else {
