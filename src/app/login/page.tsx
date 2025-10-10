@@ -13,7 +13,7 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -79,6 +79,7 @@ export default function LoginPage() {
   const { auth, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const router = useRouter();
   const [formType, setFormType] = useState<'login' | 'member-signup' | 'admin-signup'>('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -97,12 +98,12 @@ export default function LoginPage() {
   useEffect(() => {
     if (user) {
       if (user.role === 'club-admin' && user.status === 'approved') {
-        redirect('/club-dashboard');
+        router.push('/club-dashboard');
       } else if (user.role !== 'club-admin') {
-        redirect('/dashboard');
+        router.push('/dashboard');
       }
     }
-  }, [user]);
+  }, [user, router]);
 
   const getFormTitle = () => {
     switch (formType) {
@@ -160,10 +161,10 @@ export default function LoginPage() {
         
         // 클럽 관리자는 승인 대기 상태이므로 로그아웃 후 로그인 화면으로, 일반 회원은 바로 대시보드로
         if(values.role !== 'club-admin') {
-            redirect('/dashboard');
+            router.push('/dashboard');
         } else {
             await auth.signOut();
-            redirect('/login');
+            router.push('/login');
         }
       } else {
         // --- 로그인 로직 ---
@@ -441,5 +442,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
