@@ -167,7 +167,8 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
                 memberId: member.id,
                 clubId: params.id,
                 date: dateKey,
-                status: newStatus
+                status: newStatus,
+                passId: passData.id,
             });
         }
       });

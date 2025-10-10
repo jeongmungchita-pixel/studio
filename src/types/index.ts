@@ -48,6 +48,7 @@ export type Attendance = {
   clubId: string;
   date: string; // ISO 8601 date string
   status: 'present' | 'absent' | 'excused';
+  passId: string;
 };
 
 export type MemberPass = {
@@ -100,4 +101,14 @@ export type GymClass = {
   time: string; // e.g., "14:00"
   capacity: number;
   memberIds: string[];
+};
+
+export type MediaItem = {
+    id: string;
+    memberId: string;
+    clubId: string;
+    mediaURL: string;
+    mediaType: 'image' | 'video';
+    caption?: string;
+    uploadDate: string; // ISO 8601 date string
 };

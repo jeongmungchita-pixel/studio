@@ -133,6 +133,10 @@
           "description": "Date of the attendance record.",
           "format": "date-time"
         },
+        "passId": {
+          "type": "string",
+          "description": "Reference to the MemberPass active during this attendance."
+        },
         "status": {
           "type": "string",
           "enum": ["present", "absent", "excused"],
@@ -144,6 +148,7 @@
         "memberId",
         "clubId",
         "date",
+        "passId",
         "status"
       ]
     },
@@ -534,6 +539,51 @@
         "time",
         "capacity"
       ]
+    },
+    "MediaItem": {
+      "title": "MediaItem",
+      "type": "object",
+      "description": "Represents a media item (image or video) associated with a member.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the media item."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "The ID of the member this media belongs to."
+        },
+        "clubId": {
+          "type": "string",
+          "description": "The ID of the club this media belongs to."
+        },
+        "mediaURL": {
+          "type": "string",
+          "description": "URL of the uploaded media file in Firebase Storage."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "video"],
+          "description": "The type of the media."
+        },
+        "caption": {
+          "type": "string",
+          "description": "A caption or description for the media item."
+        },
+        "uploadDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the media was uploaded."
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "clubId",
+        "mediaURL",
+        "mediaType",
+        "uploadDate"
+      ]
     }
   },
   "auth": {
@@ -591,6 +641,12 @@
         "$ref": "#/entities/GymClass"
       },
       "description": "Stores information about gymnastics classes."
+    },
+    "/media_items/{mediaId}": {
+      "schema": {
+        "$ref": "#/entities/MediaItem"
+      },
+      "description": "Stores media items (images/videos) for members."
     }
   }
 }

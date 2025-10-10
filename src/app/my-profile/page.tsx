@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import type { Member, MemberPass, PassTemplate } from '@/types';
 import { collection, query, where, doc, writeBatch, orderBy } from 'firebase/firestore';
@@ -165,22 +166,24 @@ export default function MyProfilePage() {
 
           return (
             <Card key={member.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Image
-                      src={member.photoURL || `https://picsum.photos/seed/${member.id}/48/48`}
-                      alt={member.name}
-                      width={48}
-                      height={48}
-                      className="rounded-full"
-                  />
-                  <div>
-                    <p className="font-bold">{member.name}</p>
-                    <p className="text-sm text-muted-foreground">{new Date(member.dateOfBirth || '').toLocaleDateString()}</p>
-                  </div>
-                </div>
-                 {getPassStatusBadge(currentPass)}
-              </CardHeader>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <Image
+                                src={member.photoURL || `https://picsum.photos/seed/${member.id}/48/48`}
+                                alt={member.name}
+                                width={48}
+                                height={48}
+                                className="rounded-full"
+                            />
+                            <div>
+                                <p className="font-bold text-lg">{member.name}</p>
+                                <p className="text-sm text-muted-foreground">{new Date(member.dateOfBirth || '').toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        {getPassStatusBadge(currentPass)}
+                    </div>
+                </CardHeader>
               <CardContent>
                 {memberPasses.length > 0 && (
                    <div className="space-y-2">
@@ -193,11 +196,16 @@ export default function MyProfilePage() {
                    </div>
                 )}
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex justify-between items-center">
                  <Button onClick={() => openModal(member)} disabled={!canRequestNewPass}>
                   <Ticket className="mr-2 h-4 w-4"/>
                   {canRequestNewPass ? '신규 이용권 신청' : '활성/대기중인 이용권 있음'}
                 </Button>
+                <Link href={`/members/${member.id}`} passHref>
+                    <Button variant="outline">
+                        상세보기 <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </Link>
               </CardFooter>
             </Card>
           )
