@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import type { Member, MemberPass } from '@/types';
-import { collection, query, where, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, where, writeBatch, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -39,7 +39,7 @@ export default function ClubPassesPage() {
   // 2. Fetch all passes for the members of this club (active, pending, and expired)
   const memberIds = members?.map(m => m.id) || [];
   const passesQuery = useMemoFirebase(() => {
-    if (!firestore || memberIds.length === 0) return null;
+    if (!firestore || memberIds.length === 0) return null; // Prevent query with empty 'in' array
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
   }, [firestore, memberIds]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
