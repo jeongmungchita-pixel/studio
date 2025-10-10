@@ -2,7 +2,7 @@
 
 import { useMemo, useState, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { notFound, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser, useDoc, useCollection, useFirestore, useStorage, uploadImage } from '@/firebase';
 import type { Member, MemberPass, Attendance, MediaItem } from '@/types';
 import { doc, collection, query, where, orderBy, writeBatch } from 'firebase/firestore';
