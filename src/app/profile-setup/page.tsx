@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { useCollection, useFirebase, useUser } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -72,44 +72,28 @@ export default function ProfileSetupPage() {
     name: 'childrenInfo',
   });
 
-  // Set default adult when user data is loaded
-  if (user && adultFields.length === 0) {
-    const defaultAdult = {
-      firstName: user.displayName?.split(' ')[0] || '',
-      lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-      dateOfBirth: '',
-      gender: undefined,
-      email: user.email || '',
-      phoneNumber: user.phoneNumber || '',
-    };
-    if (form.getValues('adultsInfo').length === 0) {
-       appendAdult(defaultAdult, { shouldFocus: false });
-    }
-  }
-
-
   const onSubmit = async (values: FormValues) => {
     if (!firestore || !user) return;
 
     try {
       const batch = writeBatch(firestore);
-      const adultUids = values.adultsInfo.map((_, index) => {
-        // For simplicity, we assume the first adult is the logged-in user.
-        // A more robust implementation would match by email or have a selection mechanism.
-        return index === 0 ? user.uid : doc(collection(firestore, 'users')).id;
-      });
+      
+      const adultUids: string[] = [];
 
       // Register adults
       values.adultsInfo.forEach((adult, index) => {
         const memberRef = doc(collection(firestore, 'members'));
+        // The first registered adult is associated with the logged-in user's UID.
+        const guardianId = index === 0 ? user.uid : doc(collection(firestore, 'users')).id;
+        adultUids.push(guardianId);
+        
         const memberPayload: Member = {
             id: memberRef.id,
             ...adult,
             dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
             clubId: values.clubId,
             status: 'pending',
-            // The first adult is the user, link their UID
-            guardianIds: index === 0 ? [user.uid] : [],
+            guardianIds: [guardianId],
         };
         batch.set(memberRef, memberPayload);
       });
@@ -197,20 +181,20 @@ export default function ProfileSetupPage() {
                               <FormMessage /></FormItem>
                            )}/>
                             <FormField control={form.control} name={`adultsInfo.${index}.email`} render={({ field }) => (
-                                <FormItem><FormLabel>이메일</FormLabel><FormControl><Input type="email" {...field} disabled={index === 0} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>이메일</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                             <FormField control={form.control} name={`adultsInfo.${index}.phoneNumber`} render={({ field }) => (
                                 <FormItem><FormLabel>전화번호</FormLabel><FormControl><Input type="tel" {...field} placeholder="선택사항" /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
-                        {index > 0 && (
+                        {adultFields.length > 0 && (
                           <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeAdult(index)}>
                               <Trash2 className="h-4 w-4 text-destructive"/>
                           </Button>
                         )}
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined, email: '', phoneNumber: '' })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendAdult({ firstName: '', lastName: '', dateOfBirth: '', gender: undefined, email: (adultFields.length === 0 ? user?.email : '') || '', phoneNumber: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 성인 추가
                 </Button>
               </div>
