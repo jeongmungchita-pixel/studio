@@ -311,7 +311,7 @@ export default function ProfileSetupPage() {
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="등록할 클럽을 선택하세요" />
-                          </Trigger>
+                          </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {clubs?.map((club) => (
