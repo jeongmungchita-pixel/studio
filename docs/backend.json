@@ -1,0 +1,528 @@
+{
+  "entities": {
+    "Member": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Member",
+      "type": "object",
+      "description": "Represents a member of the Korean Gymnastics Federation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the member."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the member."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the member."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth of the member.",
+          "format": "date-time"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the member.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number of the member."
+        },
+        "gymnasticsLevel": {
+          "type": "string",
+          "description": "Gymnastics level of the member."
+        },
+        "clubId": {
+          "type": "string",
+          "description": "Reference to Club. (Relationship: Club 1:N Member)"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "dateOfBirth",
+        "email",
+        "phoneNumber",
+        "gymnasticsLevel",
+        "clubId"
+      ]
+    },
+    "Club": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Club",
+      "type": "object",
+      "description": "Represents a gymnastics club affiliated with the Korean Gymnastics Federation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the club."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the club."
+        },
+        "contactName": {
+          "type": "string",
+          "description": "Contact name for the club."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Contact email for the club.",
+          "format": "email"
+        },
+        "contactPhoneNumber": {
+          "type": "string",
+          "description": "Contact phone number for the club."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the club."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "contactName",
+        "contactEmail",
+        "contactPhoneNumber",
+        "location"
+      ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents a member's attendance record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the attendance record."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to Member. (Relationship: Member 1:N Attendance)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the attendance record.",
+          "format": "date-time"
+        },
+        "isPresent": {
+          "type": "boolean",
+          "description": "Indicates whether the member was present."
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "date",
+        "isPresent"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment made by a member or club.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payment."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to Member. (Relationship: Member 1:N Payment) Nullable if payment is from Club directly."
+        },
+        "clubId": {
+          "type": "string",
+          "description": "Reference to Club. (Relationship: Club 1:N Payment) Nullable if payment is from Member directly."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the payment."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the payment.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the payment (e.g., club fees, competition entry)."
+        }
+      },
+      "required": [
+        "id",
+        "amount",
+        "date",
+        "description"
+      ]
+    },
+    "Competition": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Competition",
+      "type": "object",
+      "description": "Represents a gymnastics competition.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the competition."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the competition."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the competition.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the competition.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the competition."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "startDate",
+        "endDate",
+        "location"
+      ]
+    },
+    "LevelTest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LevelTest",
+      "type": "object",
+      "description": "Represents a gymnastics level test.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the level test."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the level test."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the level test.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the level test."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "date",
+        "location"
+      ]
+    },
+    "TestResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TestResult",
+      "type": "object",
+      "description": "Represents the result of a member's level test.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the test result."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to Member. (Relationship: Member 1:N TestResult)"
+        },
+        "levelTestId": {
+          "type": "string",
+          "description": "Reference to LevelTest. (Relationship: LevelTest 1:N TestResult)"
+        },
+        "score": {
+          "type": "number",
+          "description": "Score achieved on the level test."
+        },
+        "passed": {
+          "type": "boolean",
+          "description": "Indicates whether the member passed the level test."
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "levelTestId",
+        "score",
+        "passed"
+      ]
+    },
+    "CompetitionRegistration": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CompetitionRegistration",
+      "type": "object",
+      "description": "Represents a member's registration for a competition.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the registration."
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to Member. (Relationship: Member 1:N CompetitionRegistration)"
+        },
+        "competitionId": {
+          "type": "string",
+          "description": "Reference to Competition. (Relationship: Competition 1:N CompetitionRegistration)"
+        },
+        "registrationDate": {
+          "type": "string",
+          "description": "Date of the registration.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "memberId",
+        "competitionId",
+        "registrationDate"
+      ]
+    },
+    "SuperAdmin": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SuperAdmin",
+      "type": "object",
+      "description": "Represents a super administrator account for development use only.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the super admin."
+        },
+        "username": {
+          "type": "string",
+          "description": "Username for the super admin account."
+        }
+      },
+      "required": [
+        "id",
+        "username"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "clubs/{clubId}",
+        "definition": {
+          "entityName": "Club",
+          "schema": {
+            "$ref": "#/backend/entities/Club"
+          },
+          "description": "Stores club information.  All documents in this collection share the same security requirements.",
+          "params": [
+            {
+              "name": "clubId",
+              "description": "Unique identifier for the club."
+            }
+          ]
+        }
+      },
+      {
+        "path": "clubs/{clubId}/members/{memberId}",
+        "definition": {
+          "entityName": "Member",
+          "schema": {
+            "$ref": "#/backend/entities/Member"
+          },
+          "description": "Stores member information. Includes denormalized 'clubId' for authorization independence.",
+          "params": [
+            {
+              "name": "clubId",
+              "description": "Unique identifier for the club."
+            },
+            {
+              "name": "memberId",
+              "description": "Unique identifier for the member."
+            }
+          ]
+        }
+      },
+      {
+        "path": "clubs/{clubId}/members/{memberId}/attendance/{attendanceId}",
+        "definition": {
+          "entityName": "Attendance",
+          "schema": {
+            "$ref": "#/backend/entities/Attendance"
+          },
+          "description": "Stores attendance records for members. Includes denormalized 'clubId' and 'memberId' for authorization independence.",
+          "params": [
+            {
+              "name": "clubId",
+              "description": "Unique identifier for the club."
+            },
+            {
+              "name": "memberId",
+              "description": "Unique identifier for the member."
+            },
+            {
+              "name": "attendanceId",
+              "description": "Unique identifier for the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "clubs/{clubId}/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment records for clubs. Includes denormalized 'clubId' for authorization independence.",
+          "params": [
+            {
+              "name": "clubId",
+              "description": "Unique identifier for the club."
+            },
+            {
+              "name": "paymentId",
+              "description": "Unique identifier for the payment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "competitions/{competitionId}",
+        "definition": {
+          "entityName": "Competition",
+          "schema": {
+            "$ref": "#/backend/entities/Competition"
+          },
+          "description": "Stores competition information.",
+          "params": [
+            {
+              "name": "competitionId",
+              "description": "Unique identifier for the competition."
+            }
+          ]
+        }
+      },
+      {
+        "path": "level_tests/{levelTestId}",
+        "definition": {
+          "entityName": "LevelTest",
+          "schema": {
+            "$ref": "#/backend/entities/LevelTest"
+          },
+          "description": "Stores level test information.",
+          "params": [
+            {
+              "name": "levelTestId",
+              "description": "Unique identifier for the level test."
+            }
+          ]
+        }
+      },
+      {
+        "path": "clubs/{clubId}/members/{memberId}/test_results/{testResultId}",
+        "definition": {
+          "entityName": "TestResult",
+          "schema": {
+            "$ref": "#/backend/entities/TestResult"
+          },
+          "description": "Stores test results for members. Includes denormalized 'clubId' and 'memberId' for authorization independence.",
+          "params": [
+            {
+              "name": "clubId",
+              "description": "Unique identifier for the club."
+            },
+            {
+              "name": "memberId",
+              "description": "Unique identifier for the member."
+            },
+            {
+              "name": "testResultId",
+              "description": "Unique identifier for the test result."
+            }
+          ]
+        }
+      },
+      {
+        "path": "clubs/{clubId}/members/{memberId}/competition_registrations/{competitionRegistrationId}",
+        "definition": {
+          "entityName": "CompetitionRegistration",
+          "schema": {
+            "$ref": "#/backend/entities/CompetitionRegistration"
+          },
+          "description": "Stores competition registrations for members. Includes denormalized 'clubId' and 'memberId' for authorization independence.",
+          "params": [
+            {
+              "name": "clubId",
+              "description": "Unique identifier for the club."
+            },
+            {
+              "name": "memberId",
+              "description": "Unique identifier for the member."
+            },
+            {
+              "name": "competitionRegistrationId",
+              "description": "Unique identifier for the competition registration."
+            }
+          ]
+        }
+      },
+      {
+        "path": "super_admins/{userId}",
+        "definition": {
+          "entityName": "SuperAdmin",
+          "schema": {
+            "$ref": "#/backend/entities/SuperAdmin"
+          },
+          "description": "Stores super admin user IDs. Existence of a document grants super admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the super admin user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "users/{userId}/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment records for individual users.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "paymentId",
+              "description": "Unique identifier for the payment."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the KGF Nexus application, focusing on secure and scalable data management for members, clubs, attendance, payments, competitions, and level tests. It emphasizes authorization independence through denormalization and structural segregation to simplify security rules and ensure efficient data access.  \n\n*   **Authorization Independence:** The structure denormalizes access control data to avoid `get()` calls in security rules. For example, access to `members` is controlled by their `clubId`, which is also present in the `Member` document itself. This allows direct access control without needing to fetch the `Club` document.\n*   **Structural Segregation:** The structure separates data with different access requirements into different collections.  For instance, `super_admins` are stored in a separate collection to grant them elevated privileges without affecting the security of other collections. The `users/{userId}/payments/{paymentId}` structure enables secure management of user-specific payments, independent of club-level payments.\n*   **Access Modeling:** Uses path-based ownership for user-owned data (e.g., `/users/{userId}/payments/{paymentId}`) and membership maps where applicable (though not explicitly defined in the current data model, this is the recommended pattern for collaborative entities). Global roles are managed via dedicated collections like `/super_admins/{uid}`.\n*   **QAPs (Rules are not Filters):** The separation of data into distinct collections based on access control requirements ensures that list operations are secure and do not require filtering based on user roles or permissions.\n\nThis structure enables simple and robust security rules, enhances debuggability, and supports the core features of the KGF Nexus application, including member and club management, attendance tracking, payment processing, competition management, and level test management."
+  }
+}

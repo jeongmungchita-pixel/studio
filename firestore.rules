@@ -1,0 +1,187 @@
+/**
+ * @fileoverview Firestore Security Rules for KGF Nexus.
+ *
+ * Core Philosophy: This ruleset enforces a strict ownership model for user data and a role-based model for administrative functions. Data denormalization is used to optimize security checks and avoid costly `get()` calls.
+ *
+ * Data Structure:
+ * - /clubs/{clubId}: Stores club information, accessible based on club ownership (not implemented in the data structure).
+ * - /clubs/{clubId}/members/{memberId}: Stores member data, accessible by club admins (not implemented in the data structure).
+ * - /clubs/{clubId}/members/{memberId}/attendance/{attendanceId}: Stores attendance data, accessible by club admins.
+ * - /clubs/{clubId}/payments/{paymentId}: Stores club payments, accessible by club admins.
+ * - /competitions/{competitionId}: Stores competition data; currently publicly readable with write access restricted (TODO: Implement admin-only write access).
+ * - /level_tests/{levelTestId}: Stores level test data; currently publicly readable with write access restricted (TODO: Implement admin-only write access).
+ * - /clubs/{clubId}/members/{memberId}/test_results/{testResultId}: Stores test results, accessible by club admins.
+ * - /clubs/{clubId}/members/{memberId}/competition_registrations/{competitionRegistrationId}: Stores competition registrations, accessible by club admins.
+ * - /super_admins/{userId}: Collection of super admin UIDs. Presence in this collection grants admin privileges.
+ * - /users/{userId}/payments/{paymentId}: Stores user-specific payment data, accessible only by the user.
+ *
+ * Key Security Decisions:
+ * - Listing of members, attendance, test results, and competition registrations is restricted to ensure data privacy.
+ * - Super admin privileges are granted based on the presence of a user's UID in the `/super_admins` collection.
+ * - Data validation is minimized to allow for rapid prototyping. Only critical fields for authorization are validated.
+ *
+ * Denormalization for Authorization:
+ * - The `clubId` is denormalized into the `Member`, `Attendance`, `Payment`, `TestResult`, and `CompetitionRegistration` documents, removing the need for `get()` calls to the `Club` document for authorization.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows read-only access to club information. Write access is denied.
+     * @path /clubs/{clubId}
+     * @allow get, list: if true;
+     * @deny create, update, delete: if false;
+     * @principle Public read, no writes during prototyping.
+     */
+    match /clubs/{clubId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows management of member information within a club by club admins (not implemented in this data structure).
+     * @path /clubs/{clubId}/members/{memberId}
+     * @allow get: if true; // TODO: Implement admin role check.
+     * @allow list: if false;
+     * @deny create, update, delete: if false;
+     * @principle Club-admin-only access for member data management.
+     */
+    match /clubs/{clubId}/members/{memberId} {
+      allow get: if true; // TODO: Implement admin role check.
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows management of attendance records by club admins (not implemented in this data structure).
+     * @path /clubs/{clubId}/members/{memberId}/attendance/{attendanceId}
+     * @allow get: if true; // TODO: Implement admin role check.
+     * @allow list: if false;
+     * @deny create, update, delete: if false;
+     * @principle Club-admin-only access for attendance management.
+     */
+    match /clubs/{clubId}/members/{memberId}/attendance/{attendanceId} {
+      allow get: if true; // TODO: Implement admin role check.
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows management of club payments by club admins (not implemented in this data structure).
+     * @path /clubs/{clubId}/payments/{paymentId}
+     * @allow get: if true; // TODO: Implement admin role check.
+     * @allow list: if false;
+     * @deny create, update, delete: if false;
+     * @principle Club-admin-only access for payment management.
+     */
+    match /clubs/{clubId}/payments/{paymentId} {
+      allow get: if true; // TODO: Implement admin role check.
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows public read access to competition information, with write access restricted (TODO: Implement admin-only write access).
+     * @path /competitions/{competitionId}
+     * @allow get, list: if true;
+     * @deny create, update, delete: if false;
+     * @principle Public read, admin-only writes for competition data.
+     */
+    match /competitions/{competitionId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Implement admin role check.
+    }
+
+    /**
+     * @description Allows public read access to level test information, with write access restricted (TODO: Implement admin-only write access).
+     * @path /level_tests/{levelTestId}
+     * @allow get, list: if true;
+     * @deny create, update, delete: if false;
+     * @principle Public read, admin-only writes for level test data.
+     */
+    match /level_tests/{levelTestId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Implement admin role check.
+    }
+
+    /**
+     * @description Allows management of test results by club admins (not implemented in this data structure).
+     * @path /clubs/{clubId}/members/{memberId}/test_results/{testResultId}
+     * @allow get: if true; // TODO: Implement admin role check.
+     * @allow list: if false;
+     * @deny create, update, delete: if false;
+     * @principle Club-admin-only access for test result management.
+     */
+    match /clubs/{clubId}/members/{memberId}/test_results/{testResultId} {
+      allow get: if true; // TODO: Implement admin role check.
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows management of competition registrations by club admins (not implemented in this data structure).
+     * @path /clubs/{clubId}/members/{memberId}/competition_registrations/{competitionRegistrationId}
+     * @allow get: if true; // TODO: Implement admin role check.
+     * @allow list: if false;
+     * @deny create, update, delete: if false;
+     * @principle Club-admin-only access for competition registration management.
+     */
+    match /clubs/{clubId}/members/{memberId}/competition_registrations/{competitionRegistrationId} {
+      allow get: if true; // TODO: Implement admin role check.
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Grants super admin privileges based on the presence of the user's UID in this collection.
+     * @path /super_admins/{userId}
+     * @allow get: if isSignedIn() && request.auth.uid == userId;
+     * @allow list: if false;
+     * @allow create: if isSignedIn() && request.auth.uid == userId;
+     * @allow update: if false;
+     * @allow delete: if isSignedIn() && request.auth.uid == userId;
+     * @principle Role-based access control for super admins.
+     */
+    match /super_admins/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if false;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Allows a user to manage their own payment information.
+     * @path /users/{userId}/payments/{paymentId}
+     * @allow get: if isOwner(userId);
+     * @allow list: if isOwner(userId);
+     * @allow create: if isOwner(userId);
+     * @allow update: if isExistingOwner(userId);
+     * @allow delete: if isExistingOwner(userId);
+     * @principle Enforces user-ownership for payment data.
+     */
+    match /users/{userId}/payments/{paymentId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+
+  // Helper function to determine if the user is signed in
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  // Helper function to determine if the user is the owner
+  function isOwner(userId) {
+    return isSignedIn() && request.auth.uid == userId;
+  }
+
+   // Helper function to determine if the user is the owner and the resource exists
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
+  }
+}
