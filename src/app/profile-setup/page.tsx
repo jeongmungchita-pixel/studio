@@ -129,9 +129,10 @@ export default function ProfileSetupPage() {
       return;
     }
 
+    form.formState.isSubmitting = true;
+
     try {
       const batch = writeBatch(firestore);
-      const guardianUids: string[] = [user.uid];
 
       // 1. Update the guardian's user profile
       const userRef = doc(firestore, 'users', user.uid);
@@ -141,83 +142,87 @@ export default function ProfileSetupPage() {
       };
       batch.update(userRef, userProfileUpdate);
 
-      // 2. Process adult members
-      if (values.adultsInfo && values.adultsInfo.length > 0) {
-        for (let i = 0; i < values.adultsInfo.length; i++) {
-          const adult = values.adultsInfo[i];
-          const memberRef = doc(collection(firestore, 'members'));
-
+      // 2. Upload images first and get URLs
+      const adultsWithPhotoUrls = await Promise.all(
+        (values.adultsInfo || []).map(async (adult) => {
           let photoURL: string | undefined = undefined;
           if (adult.photo) {
+            const memberIdForPhoto = doc(collection(firestore, 'members')).id;
             photoURL = await uploadImage(
               storage,
-              `profile_pictures/${memberRef.id}`,
+              `profile_pictures/${memberIdForPhoto}`,
               adult.photo
             );
           }
+          return { ...adult, photoURL };
+        })
+      );
 
-          const memberPayload: Member = {
-            id: memberRef.id,
-            name: adult.name,
-            dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
-            gender: adult.gender,
-            email: user.email,
-            phoneNumber: values.phoneNumber,
-            clubId: values.clubId,
-            status: 'pending',
-            guardianIds: [user.uid],
-            photoURL: photoURL,
-          };
-          batch.set(memberRef, memberPayload);
-        }
-      }
-
-      // 3. Process child members
-      if (values.childrenInfo && values.childrenInfo.length > 0) {
-        for (let i = 0; i < values.childrenInfo.length; i++) {
-          const child = values.childrenInfo[i];
-          const memberRef = doc(collection(firestore, 'members'));
-
+      const childrenWithPhotoUrls = await Promise.all(
+        (values.childrenInfo || []).map(async (child) => {
           let photoURL: string | undefined = undefined;
           if (child.photo) {
-            photoURL = await uploadImage(
+             const memberIdForPhoto = doc(collection(firestore, 'members')).id;
+             photoURL = await uploadImage(
               storage,
-              `profile_pictures/${memberRef.id}`,
+              `profile_pictures/${memberIdForPhoto}`,
               child.photo
             );
           }
+          return { ...child, photoURL };
+        })
+      );
+      
+      // 3. Prepare member documents with photo URLs
+      adultsWithPhotoUrls.forEach(adult => {
+        const memberRef = doc(collection(firestore, 'members'));
+        const memberPayload: Member = {
+          id: memberRef.id,
+          name: adult.name,
+          dateOfBirth: new Date(adult.dateOfBirth).toISOString(),
+          gender: adult.gender,
+          email: user.email,
+          phoneNumber: values.phoneNumber,
+          clubId: values.clubId,
+          status: 'pending',
+          guardianIds: [user.uid],
+          photoURL: adult.photoURL,
+        };
+        batch.set(memberRef, memberPayload);
+      });
 
-          const memberPayload: Member = {
-            id: memberRef.id,
-            name: child.name,
-            dateOfBirth: new Date(child.dateOfBirth).toISOString(),
-            gender: child.gender,
-            email: user.email, // Guardian's email
-            clubId: values.clubId,
-            status: 'pending',
-            guardianIds: guardianUids,
-            photoURL: photoURL,
-          };
-          batch.set(memberRef, memberPayload);
-        }
-      }
+      childrenWithPhotoUrls.forEach(child => {
+        const memberRef = doc(collection(firestore, 'members'));
+        const memberPayload: Member = {
+          id: memberRef.id,
+          name: child.name,
+          dateOfBirth: new Date(child.dateOfBirth).toISOString(),
+          gender: child.gender,
+          email: user.email, // Guardian's email
+          clubId: values.clubId,
+          status: 'pending',
+          guardianIds: [user.uid],
+          photoURL: child.photoURL,
+        };
+        batch.set(memberRef, memberPayload);
+      });
 
       // 4. If only children are registered, create a non-playing guardian member record
-      if ((!values.adultsInfo || values.adultsInfo.length === 0) && (values.childrenInfo && values.childrenInfo.length > 0)) {
-         const guardianMemberRef = doc(firestore, 'members', user.uid);
-         const guardianMemberPayload: Partial<Member> = {
-            id: user.uid,
-            name: user.displayName,
-            email: user.email,
-            phoneNumber: values.phoneNumber,
-            clubId: values.clubId,
-            status: 'active', // Guardians are active by default
-            guardianIds: [],
-            isGuardianOnly: true,
-         };
-         batch.set(guardianMemberRef, guardianMemberPayload, { merge: true });
+      if (adultsWithPhotoUrls.length === 0 && childrenWithPhotoUrls.length > 0) {
+        const guardianMemberRef = doc(firestore, 'members', user.uid);
+        const guardianMemberPayload: Partial<Member> = {
+           id: user.uid,
+           name: user.displayName,
+           email: user.email,
+           phoneNumber: values.phoneNumber,
+           clubId: values.clubId,
+           status: 'active', // Guardians are active by default
+           guardianIds: [],
+           isGuardianOnly: true,
+        };
+        batch.set(guardianMemberRef, guardianMemberPayload, { merge: true });
       }
-
+      
       // 5. Commit all changes
       await batch.commit();
 
@@ -228,6 +233,7 @@ export default function ProfileSetupPage() {
           '정보가 성공적으로 저장되었습니다. 클럽 승인을 기다려주세요.',
       });
       router.push('/dashboard');
+
     } catch (error) {
       console.error('Error setting up profile:', error);
       toast({
@@ -235,6 +241,8 @@ export default function ProfileSetupPage() {
         title: '오류 발생',
         description: '프로필을 저장하는 중 오류가 발생했습니다.',
       });
+    } finally {
+        form.formState.isSubmitting = false;
     }
   };
 
