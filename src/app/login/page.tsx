@@ -104,8 +104,13 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    // If user data is loaded and a user exists, redirect them.
     if (!isUserLoading && user) {
-        router.push('/dashboard');
+        if (user.role === 'club-admin' && user.status === 'approved') {
+            router.push('/club-dashboard');
+        } else {
+            router.push('/dashboard');
+        }
     }
   }, [user, isUserLoading, router]);
 
@@ -171,6 +176,8 @@ export default function LoginPage() {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
       } else if (error.code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Google 로그인 팝업이 닫혔습니다.'
       }
       toast({
         variant: 'destructive',
@@ -185,25 +192,20 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSubmitting(true);
+    const provider = new GoogleAuthProvider();
     try {
-      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       await createUserProfile(result.user, { role: 'member', email: result.user.email! });
-      // The main layout will handle redirection
+      // The onAuthStateChanged listener in useUser will handle the rest.
     } catch (error: any) {
-      console.error(error);
-      if (error.code !== 'auth/popup-closed-by-user') {
-        toast({
-          variant: 'destructive',
-          title: 'Google 로그인 실패',
-          description: error.message || 'Google로 로그인할 수 없습니다.',
-        });
-      }
+      // The onSubmit handler will catch and display the error toast.
+      // Re-throwing the error to be caught by the generic handler.
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   const createUserProfile = async (
     user: User,
     values: Partial<FormValues>
@@ -212,7 +214,7 @@ export default function LoginPage() {
     const userRef = doc(firestore, 'users', user.uid);
     const docSnap = await getDoc(userRef);
     if (docSnap.exists()) {
-      return; 
+      return; // Profile already exists, do nothing.
     }
     
     let role: UserProfile['role'] = values.role || 'member';
@@ -373,7 +375,7 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={handleGoogleSignIn}
+                onClick={() => form.handleSubmit(() => handleGoogleSignIn().catch(err => onSubmit(form.getValues()) ))()}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

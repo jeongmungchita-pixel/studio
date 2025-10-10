@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/types';
 
@@ -18,43 +18,55 @@ export function useUser(): UserHookResult {
 
   useEffect(() => {
     if (!auth || !firestore) {
-      setIsUserLoading(false);
+      // Firebase services are not available yet.
+      setIsUserLoading(false); // Set loading to false as we can't proceed.
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setIsUserLoading(true); // Set loading true at the start of auth state change
       if (firebaseUser) {
         const userRef = doc(firestore, 'users', firebaseUser.uid);
-        const userSnap = await getDoc(userRef);
+        try {
+            const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-          const userProfile = userSnap.data() as UserProfile;
-          setUser({ ...firebaseUser, ...userProfile });
-        } else {
-          // This case might happen if profile creation fails after signup.
-          // We can create a default profile here or handle it as an error.
-          const defaultProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email!,
-            displayName: firebaseUser.displayName || 'New User',
-            photoURL:
-              firebaseUser.photoURL ||
-              `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
-            role: 'member',
-            provider:
-              (firebaseUser.providerData[0]?.providerId as
-                | 'google'
-                | 'email') || 'email',
-          };
-          // You might want to save this default profile to Firestore here.
-          setUser({ ...firebaseUser, ...defaultProfile });
+            if (userSnap.exists()) {
+              const userProfile = userSnap.data() as UserProfile;
+              setUser({ ...firebaseUser, ...userProfile });
+            } else {
+              // This can happen if profile creation fails after signup or for a new social login.
+              // Let's create a default profile.
+              const defaultProfile: UserProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email!,
+                displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+                photoURL:
+                  firebaseUser.photoURL ||
+                  `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+                role: 'member', // Default role
+                provider:
+                  (firebaseUser.providerData[0]?.providerId as
+                    | 'google'
+                    | 'password') || 'password',
+                status: 'approved', // Default status for new members/social logins
+              };
+              // Save this default profile to Firestore
+              await setDoc(userRef, defaultProfile);
+              setUser({ ...firebaseUser, ...defaultProfile });
+            }
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            // Handle error, maybe sign out user
+            setUser(null);
         }
       } else {
+        // No user is signed in.
         setUser(null);
       }
-      setIsUserLoading(false);
+      setIsUserLoading(false); // Set loading false after all async operations are done
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [auth, firestore]);
 
