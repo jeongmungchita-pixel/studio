@@ -174,7 +174,7 @@ export default function ProfileSetupPage() {
           email: user.email, // Guardian's email for all
           phoneNumber: values.phoneNumber, // Guardian's phone for all
           clubId: values.clubId,
-          status: 'active', // Directly active as per new logic
+          status: 'pending', // New members require approval
           guardianIds: [user.uid],
           photoURL: photoURL,
         };
@@ -187,8 +187,8 @@ export default function ProfileSetupPage() {
       await batch.commit();
 
       toast({
-        title: '프로필 저장 완료',
-        description: '정보가 성공적으로 저장되었습니다.',
+        title: '프로필 저장 및 가입 신청 완료',
+        description: '정보가 저장되었으며, 클럽 관리자의 승인을 기다립니다.',
       });
       router.push('/dashboard');
 
