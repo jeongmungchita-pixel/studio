@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirebase, useUser } from '@/firebase';
+import { useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
 import type { UserProfile } from '@/types';
 
@@ -158,7 +158,6 @@ export default function LoginPage() {
           description: values.role === 'club-admin' ? '관리자 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
         
-        // 클럽 관리자는 승인 대기 상태이므로 로그아웃 후 로그인 화면으로, 일반 회원은 바로 대시보드로
         if(values.role !== 'club-admin') {
             router.push('/dashboard');
         } else {
@@ -170,7 +169,6 @@ export default function LoginPage() {
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const loggedInUser = userCredential.user;
         
-        // Firestore에서 사용자 프로필 가져오기
         const userRef = doc(firestore, 'users', loggedInUser.uid);
         const userSnap = await getDoc(userRef);
 
@@ -182,9 +180,7 @@ export default function LoginPage() {
               title: '승인 대기 중',
               description: '관리자 승인이 필요한 계정입니다. 승인 후 다시 시도해주세요.',
             });
-            await auth.signOut(); // 승인 대기중인 사용자는 로그아웃 처리
-          } else {
-            // 리디렉션은 useEffect에서 처리
+            await auth.signOut(); 
           }
         }
       }
@@ -207,7 +203,7 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       await createUserProfile(result.user, { role: 'member', email: result.user.email!, password: '' });
-      // 리디렉션은 useEffect에서 처리
+      router.push('/dashboard');
     } catch (error: any) {
       console.error(error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -228,11 +224,9 @@ export default function LoginPage() {
   ) => {
     if (!firestore) return;
     const userRef = doc(firestore, 'users', user.uid);
-
-    // 중복 생성 방지
     const docSnap = await getDoc(userRef);
     if (docSnap.exists()) {
-      return; // 이미 프로필이 있으면 생성하지 않음
+      return; 
     }
     
     let role: UserProfile['role'] = values.role || 'member';
@@ -441,5 +435,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
