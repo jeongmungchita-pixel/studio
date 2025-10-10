@@ -4,14 +4,15 @@
 export type Member = {
   id: string;
   name: string;
-  dateOfBirth: string; // ISO 8601 date string
-  gender: 'male' | 'female';
+  dateOfBirth?: string; // ISO 8601 date string
+  gender?: 'male' | 'female';
   email?: string;
   phoneNumber?: string;
   clubId: string;
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[];
   photoURL?: string;
+  isGuardianOnly?: boolean;
 };
 
 export type Club = {

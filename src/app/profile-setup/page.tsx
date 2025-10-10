@@ -138,6 +138,7 @@ export default function ProfileSetupPage() {
         isGuardian: true,
       };
 
+      // Case 1: User registers themselves (and maybe children) as members
       if (values.adultsInfo && values.adultsInfo.length > 0) {
         for (let i = 0; i < values.adultsInfo.length; i++) {
           const adult = values.adultsInfo[i];
@@ -166,6 +167,22 @@ export default function ProfileSetupPage() {
           };
           batch.set(memberRef, memberPayload);
         }
+      }
+      // Case 2: User only registers children
+      else if (values.childrenInfo && values.childrenInfo.length > 0) {
+         // Create a member doc for the guardian user, but not as a competitor
+         const guardianMemberRef = doc(firestore, 'members', user.uid);
+         const guardianMemberPayload: Partial<Member> & { isGuardianOnly: boolean } = {
+            id: user.uid,
+            name: user.displayName,
+            email: user.email,
+            phoneNumber: values.phoneNumber,
+            clubId: values.clubId,
+            status: 'active', // Guardians are active by default
+            guardianIds: [],
+            isGuardianOnly: true,
+         };
+         batch.set(guardianMemberRef, guardianMemberPayload, { merge: true });
       }
 
       if (values.childrenInfo && values.childrenInfo.length > 0) {
@@ -244,11 +261,11 @@ export default function ProfileSetupPage() {
                 <CardTitle>성인 선수 정보</CardTitle>
                 <CardDescription>
                   보호자 본인 또는 다른 성인 가족을 '선수'로 등록할 경우에만
-                  추가해주세요.
+                  '성인 추가'를 눌러 정보를 입력해주세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   {adultFields.map((field, index) => (
                     <div
                       key={field.id}
@@ -359,7 +376,7 @@ export default function ProfileSetupPage() {
                             <FormField
                               control={form.control}
                               name={`adultsInfo.${index}.photo`}
-                              render={({ field }) => (
+                              render={() => (
                                 <FormItem className="hidden">
                                   <FormControl>
                                     <Input
@@ -415,7 +432,7 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   {childFields.map((field, index) => (
                     <div
                       key={field.id}
@@ -526,7 +543,7 @@ export default function ProfileSetupPage() {
                             <FormField
                               control={form.control}
                               name={`childrenInfo.${index}.photo`}
-                              render={({ field }) => (
+                              render={() => (
                                 <FormItem className="hidden">
                                   <FormControl>
                                     <Input
