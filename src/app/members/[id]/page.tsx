@@ -57,29 +57,31 @@ export default function MemberProfilePage({ params }: { params: { id:string } })
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
+  const memberId = params.id;
+
   // 1. Fetch member data
-  const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', params.id) : null), [firestore, params.id]);
+  const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', memberId) : null), [firestore, memberId]);
   const { data: member, isLoading: isMemberLoading } = useDoc<Member>(memberRef);
 
   // 2. Fetch all passes for this member
   const passesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'member_passes'), where('memberId', '==', params.id), orderBy('startDate', 'desc'));
-  }, [firestore, params.id]);
+    return query(collection(firestore, 'member_passes'), where('memberId', '==', memberId), orderBy('startDate', 'desc'));
+  }, [firestore, memberId]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
   
   // 3. Fetch all attendance records for this member
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'attendance'), where('memberId', '==', params.id), orderBy('date', 'desc'));
-  }, [firestore, params.id]);
+    return query(collection(firestore, 'attendance'), where('memberId', '==', memberId), orderBy('date', 'desc'));
+  }, [firestore, memberId]);
   const { data: allAttendance, isLoading: areAttendanceLoading } = useCollection<Attendance>(attendanceQuery);
 
   // 4. Fetch all media items for this member
   const mediaQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'media_items'), where('memberId', '==', params.id), orderBy('uploadDate', 'desc'));
-  }, [firestore, params.id]);
+    return query(collection(firestore, 'media_items'), where('memberId', '==', memberId), orderBy('uploadDate', 'desc'));
+  }, [firestore, memberId]);
   const { data: mediaItems, isLoading: areMediaLoading } = useCollection<MediaItem>(mediaQuery);
 
   const isLoading = isUserLoading || isMemberLoading || arePassesLoading || areAttendanceLoading || areMediaLoading;
@@ -91,9 +93,9 @@ export default function MemberProfilePage({ params }: { params: { id:string } })
 
   const hasAccess = useMemo(() => {
     if (!user || !member) return false;
+    if (user.role === 'admin') return true;
     if (member.guardianIds?.includes(user.uid)) return true;
     if (user.role === 'club-admin' && user.clubId === member.clubId) return true;
-    if (user.role === 'admin') return true;
     return false;
   }, [user, member]);
   
