@@ -201,13 +201,14 @@ export default function ProfileSetupPage() {
       batch.update(userRef, userProfileUpdate);
 
       await batch.commit();
-
+      
       toast({
         title: '프로필 저장 완료',
         description:
           '정보가 성공적으로 저장되었습니다. 클럽 승인을 기다려주세요.',
       });
       router.push('/dashboard');
+
     } catch (error) {
       console.error('Error setting up profile:', error);
       toast({
@@ -250,33 +251,35 @@ export default function ProfileSetupPage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {adultFields.map((field, index) => (
                       <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-card shadow-sm">
-                         <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name={`adultsInfo.${index}.name`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>이름</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="예: 홍길동" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`adultsInfo.${index}.dateOfBirth`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>생년월일</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name={`adultsInfo.${index}.name`}
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>이름</FormLabel>
+                                        <FormControl>
+                                        <Input {...field} placeholder="예: 홍길동" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`adultsInfo.${index}.dateOfBirth`}
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>생년월일</FormLabel>
+                                        <FormControl>
+                                        <Input type="date" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </div>
                           <FormField
                             control={form.control}
                             name={`adultsInfo.${index}.gender`}
@@ -367,32 +370,34 @@ export default function ProfileSetupPage() {
                     {childFields.map((field, index) => (
                       <div key={field.id} className="p-4 border rounded-lg relative space-y-4 bg-card shadow-sm">
                         <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name={`childrenInfo.${index}.name`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>이름</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="예: 홍자녀" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`childrenInfo.${index}.dateOfBirth`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>생년월일</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name={`childrenInfo.${index}.name`}
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>이름</FormLabel>
+                                    <FormControl>
+                                    <Input {...field} placeholder="예: 홍자녀" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name={`childrenInfo.${index}.dateOfBirth`}
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>생년월일</FormLabel>
+                                    <FormControl>
+                                    <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                           </div>
                            <FormField
                             control={form.control}
                             name={`childrenInfo.${index}.gender`}
