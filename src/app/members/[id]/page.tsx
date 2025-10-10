@@ -350,7 +350,7 @@ export default function MemberProfilePage({ params }: { params: { id:string } })
                             {mediaItems.map(item => (
                                 <div key={item.id} className="relative aspect-square group">
                                   {item.mediaType === 'image' ? (
-                                    <Image src={item.mediaURL} alt={item.caption || "Member media"} layout="fill" className="object-cover rounded-md" />
+                                    <Image src={item.mediaURL} alt={item.caption || "Member media"} fill className="object-cover rounded-md" />
                                   ) : (
                                     <video src={item.mediaURL} className="object-cover rounded-md w-full h-full" controls />
                                   )}

@@ -38,17 +38,18 @@ const attendanceStatusTranslations: Record<Attendance['status'], string> = {
 };
 
 export default function ClubDetailsPage({ params }: { params: { id: string } }) {
+  const { id: clubId } = params;
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
 
-  const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', params.id) : null), [firestore, params.id]);
+  const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', clubId) : null), [firestore, clubId]);
   const { data: club, isLoading: isClubLoading } = useDoc<Club>(clubRef);
 
   const membersQuery = useMemoFirebase(() => (
-    firestore ? query(collection(firestore, 'members'), where('clubId', '==', params.id), where('status', '==', 'active')) : null
-  ), [firestore, params.id]);
+    firestore ? query(collection(firestore, 'members'), where('clubId', '==', clubId), where('status', '==', 'active')) : null
+  ), [firestore, clubId]);
   const { data: clubMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
   
   const attendanceQuery = useMemoFirebase(() => {
@@ -57,11 +58,11 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
     const dayEnd = endOfDay(selectedDate);
     return query(
       collection(firestore, 'attendance'), 
-      where('clubId', '==', params.id),
+      where('clubId', '==', clubId),
       where('date', '>=', dayStart.toISOString()),
       where('date', '<=', dayEnd.toISOString())
     );
-  }, [firestore, params.id, selectedDate]);
+  }, [firestore, clubId, selectedDate]);
 
   const { data: attendanceRecords, isLoading: areAttendanceRecordsLoading } = useCollection<Attendance>(attendanceQuery);
   
@@ -166,7 +167,7 @@ export default function ClubDetailsPage({ params }: { params: { id: string } }) 
             transaction.set(newAttendanceRef, {
                 id: newAttendanceRef.id,
                 memberId: member.id,
-                clubId: params.id,
+                clubId: clubId,
                 date: dateKey,
                 status: newStatus,
                 passId: passData.id,
