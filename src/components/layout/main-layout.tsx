@@ -19,25 +19,25 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-      router.push('/login');
+      if (pathname !== '/login') {
+         router.push('/login');
+      }
       return;
     }
 
     // Role-based redirection logic
     if (pathname.startsWith('/login')) {
-        if(user.role === 'club-admin' && user.status === 'approved') {
-            router.push('/club-dashboard');
-        } else {
-            router.push('/dashboard');
-        }
-    } else if (user.role === 'club-admin') {
-      if (user.status === 'approved' && !pathname.startsWith('/club-dashboard')) {
-        router.push('/club-dashboard');
-      } else if (user.status === 'pending') {
-        // If pending admin tries to access any protected page, send to login
-        router.push('/login');
+      if(user.role === 'club-admin' && user.status === 'approved') {
+          router.push('/club-dashboard');
+      } else {
+          router.push('/dashboard');
       }
-    } else if ((user.role === 'admin' || user.role === 'member') && pathname.startsWith('/club-dashboard')) {
+    } else if (user.role === 'club-admin' && user.status === 'pending') {
+        // If pending admin tries to access any protected page, send to login
+        if (pathname !== '/login') {
+          router.push('/login');
+        }
+    } else if (user.role === 'admin' && pathname.startsWith('/club-dashboard')) {
         router.push('/dashboard');
     }
 
@@ -54,7 +54,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   
   // Prevent flashing of content for users who will be redirected
   if (user.role === 'club-admin' && user.status === 'pending') {
-    return (
+     // Show loader instead of login to prevent flashing login page
+     return (
        <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>

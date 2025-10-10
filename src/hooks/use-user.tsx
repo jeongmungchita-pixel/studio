@@ -1,19 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
-import type { UserProfile } from '@/types';
+import type { UserProfile, Club } from '@/types';
 
 export interface UserHookResult {
-  user: (User & UserProfile) | null;
+  user: (User & UserProfile & { clubId?: string }) | null;
   isUserLoading: boolean;
 }
 
 export function useUser(): UserHookResult {
   const auth = useAuth();
   const firestore = useFirestore();
-  const [user, setUser] = useState<(User & UserProfile) | null>(null);
+  const [user, setUser] = useState<(User & UserProfile & { clubId?: string }) | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
@@ -29,10 +29,10 @@ export function useUser(): UserHookResult {
         const userRef = doc(firestore, 'users', firebaseUser.uid);
         try {
             const userSnap = await getDoc(userRef);
+            let userProfileData: UserProfile & { clubId?: string };
 
             if (userSnap.exists()) {
-              const userProfile = userSnap.data() as UserProfile;
-              setUser({ ...firebaseUser, ...userProfile });
+              userProfileData = userSnap.data() as UserProfile;
             } else {
               // This can happen if profile creation fails after signup or for a new social login.
               // Let's create a default profile.
@@ -52,8 +52,22 @@ export function useUser(): UserHookResult {
               };
               // Save this default profile to Firestore
               await setDoc(userRef, defaultProfile);
-              setUser({ ...firebaseUser, ...defaultProfile });
+              userProfileData = defaultProfile;
             }
+
+            // If the user is a club-admin, find their clubId
+            if (userProfileData.role === 'club-admin' && userProfileData.clubName) {
+                const clubsRef = collection(firestore, 'clubs');
+                const q = query(clubsRef, where("name", "==", userProfileData.clubName));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const clubDoc = querySnapshot.docs[0];
+                    userProfileData.clubId = clubDoc.id;
+                }
+            }
+            
+            setUser({ ...firebaseUser, ...userProfileData });
+
         } catch (error) {
             console.error("Error fetching user profile:", error);
             // Handle error, maybe sign out user

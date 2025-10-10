@@ -109,7 +109,7 @@ export default function ProfileSetupPage() {
             email: user.email!,
             phoneNumber: user.phoneNumber,
             clubId: values.clubId,
-            status: 'active', // Or 'pending'
+            status: 'pending',
             // When registering self AND children, the user becomes a guardian to themselves technically which is fine
             guardianId: (values.registrationType === 'both' || values.registrationType === 'self') ? user.uid : undefined,
             guardianName: (values.registrationType === 'both' || values.registrationType === 'self') ? user.displayName : undefined,
@@ -130,7 +130,7 @@ export default function ProfileSetupPage() {
                 gender: child.gender,
                 email: user.email!, // Guardian's email
                 clubId: values.clubId,
-                status: 'active',
+                status: 'pending',
                 guardianId: user.uid,
                 guardianName: user.displayName || '',
                 guardianPhoneNumber: child.guardianPhoneNumber,

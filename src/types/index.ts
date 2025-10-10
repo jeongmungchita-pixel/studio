@@ -9,7 +9,7 @@ export type Member = {
   email: string;
   phoneNumber?: string;
   clubId: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   guardianId?: string;
   guardianName?: string;
   guardianPhoneNumber?: string;
@@ -60,4 +60,5 @@ export type UserProfile = {
   isGuardian?: boolean;
   clubName?: string;
   phoneNumber?: string;
+  clubId?: string; // Added for club-admin convenience
 };

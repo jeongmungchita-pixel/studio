@@ -43,7 +43,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["active", "inactive"],
+          "enum": ["active", "inactive", "pending"],
           "description": "The status of the member."
         },
         "guardianId": {
