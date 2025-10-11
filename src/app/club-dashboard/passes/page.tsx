@@ -29,17 +29,17 @@ export default function ClubPassesPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isIssuing, setIsIssuing] = useState(false);
 
-  // 1. Fetch active members for the current club admin
+  // 1. Fetch ONLY active members for the current club admin
   const membersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
+    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId), where('status', '==', 'active'));
   }, [firestore, user?.clubId]);
   const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
 
-  // 2. Fetch all passes for the members of this club (active, pending, and expired)
+  // 2. Fetch all passes for the active members of this club
   const memberIds = members?.map(m => m.id) || [];
   const passesQuery = useMemoFirebase(() => {
-    if (!firestore || memberIds.length === 0) return null; // Prevent query with empty 'in' array
+    if (!firestore || memberIds.length === 0) return null;
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
   }, [firestore, memberIds]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
@@ -51,7 +51,6 @@ export default function ClubPassesPage() {
     try {
       const batch = writeBatch(firestore);
 
-      // New pass document with 'active' status
       const newPassRef = doc(collection(firestore, 'member_passes'));
       const newPass: MemberPass = {
         id: newPassRef.id,
@@ -64,13 +63,12 @@ export default function ClubPassesPage() {
         attendableSessions: 4,
         remainingSessions: 5,
         attendanceCount: 0,
-        status: 'active', // Manually issued pass is active immediately
+        status: 'active',
       };
       batch.set(newPassRef, newPass);
 
-      // Update member's activePassId and status
       const memberRef = doc(firestore, 'members', selectedMember.id);
-      batch.update(memberRef, { activePassId: newPass.id, status: 'active' });
+      batch.update(memberRef, { activePassId: newPass.id });
 
       await batch.commit();
       
@@ -91,25 +89,18 @@ export default function ClubPassesPage() {
     }
   };
   
-  const getPassStatusBadge = (pass: MemberPass | undefined, member: Member) => {
-      if(member.status === 'pending') {
-         return <Badge variant="destructive">가입/갱신 대기</Badge>
+  const getPassStatusBadge = (pass: MemberPass | undefined) => {
+      if (pass && pass.status === 'active') {
+          if (pass.totalSessions !== undefined) {
+            return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
+          }
+           if (pass.endDate) {
+            const remainingDays = Math.ceil((new Date(pass.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            return <Badge>{`기간권 (${remainingDays > 0 ? `${remainingDays}일 남음` : '만료'})`}</Badge>;
+          }
+          return <Badge>활성 (무제한)</Badge>;
       }
-      if (pass) {
-          if (pass.status === 'active') {
-             if (pass.totalSessions !== undefined) {
-                return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
-             }
-             return <Badge>활성 (무제한)</Badge>;
-          }
-          if (pass.status === 'pending') {
-             return <Badge variant="destructive">갱신 승인 대기</Badge>;
-          }
-           if (pass.status === 'expired') {
-             return <Badge variant="secondary">만료됨</Badge>;
-          }
-      }
-      return <Badge variant="secondary">이용권 없음</Badge>;
+      return <Badge variant="secondary">이용권 없음 / 만료</Badge>;
   }
 
   const isLoading = areMembersLoading || arePassesLoading;
@@ -138,7 +129,6 @@ export default function ClubPassesPage() {
               <TableBody>
                 {members?.map(member => {
                   const currentPass = passes?.find(p => p.id === member.activePassId);
-                  const hasPendingPass = passes?.some(p => p.memberId === member.id && p.status === 'pending');
                   const canIssueNewPass = !currentPass || currentPass.status === 'expired';
                   
                   return (
@@ -157,14 +147,14 @@ export default function ClubPassesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getPassStatusBadge(currentPass, member)}
+                        {getPassStatusBadge(currentPass)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
                           size="sm"
                           onClick={() => setSelectedMember(member)}
-                          disabled={!canIssueNewPass || hasPendingPass}
-                          title={!canIssueNewPass ? "활성 또는 대기중인 이용권이 이미 있습니다." : ""}
+                          disabled={!canIssueNewPass}
+                          title={!canIssueNewPass ? "활성 또는 대기중인 이용권이 이미 있습니다." : "새 이용권을 수동으로 발급합니다."}
                         >
                           <Ticket className="mr-2 h-4 w-4" />
                           수동 발급
@@ -194,7 +184,7 @@ export default function ClubPassesPage() {
               <p><strong>발급 대상:</strong> {selectedMember?.name}</p>
               <p><strong>이용권 유형:</strong> 수동 발급 표준 이용권 (총 5회, 출석 4회 필요)</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                발급 즉시 이용권이 활성화되며, 선수의 상태도 '활동중'으로 변경됩니다.
+                발급 즉시 이용권이 활성화되며, 선수의 activePassId가 갱신됩니다.
               </p>
           </div>
           <DialogFooter>
