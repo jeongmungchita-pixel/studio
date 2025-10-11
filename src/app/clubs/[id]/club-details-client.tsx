@@ -402,5 +402,3 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
     </main>
   );
 }
-
-    
