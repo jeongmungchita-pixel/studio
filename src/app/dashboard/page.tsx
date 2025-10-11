@@ -19,11 +19,13 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Users, Building, Trophy, CalendarCheck, Loader2 } from 'lucide-react';
-import type { Member, Club, Competition } from '@/types';
+import { Users, Building, Trophy, CalendarCheck, Loader2, User } from 'lucide-react';
+import type { Member, Club, Competition, UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
+import { RoleBadge } from '@/components/role-badge';
+import { useRole } from '@/hooks/use-role';
 
 const chartData = [
   { month: '1월', members: 0 },
@@ -43,6 +45,7 @@ const chartConfig = {
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
+  const { userRole } = useRole();
   const firestore = useFirestore();
   const router = useRouter();
   
@@ -109,6 +112,26 @@ export default function DashboardPage() {
 
   return (
     <main className="flex-1 p-6 space-y-6">
+      {/* 사용자 프로필 카드 */}
+      {user && userRole && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle>{user.displayName || '사용자'}</CardTitle>
+                  <CardDescription>{user.email}</CardDescription>
+                </div>
+              </div>
+              <RoleBadge role={userRole} />
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
