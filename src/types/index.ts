@@ -161,13 +161,25 @@ export type UserProfile = {
   photoURL: string;
   role: UserRole; // 13개 역할 시스템 사용
   provider: 'email' | 'google';
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'rejected';
   isGuardian?: boolean;
   clubName?: string;
   phoneNumber?: string;
   clubId?: string;
   committeeId?: string; // 위원회 소속
   parentId?: string; // 상위 관리자 (코치의 경우 상위 코치)
+  
+  // 승인 관련
+  approvedBy?: string; // 승인한 사람 UID
+  approvedAt?: string; // 승인 날짜
+  rejectedBy?: string; // 거부한 사람 UID
+  rejectedAt?: string; // 거부 날짜
+  rejectionReason?: string; // 거부 사유
+  requestedAt?: string; // 신청 날짜
+  
+  // 가족 회원
+  familyType?: 'individual' | 'parent' | 'child';
+  familyMembers?: string[]; // 가족 구성원 UID 배열
   
   // 추가 프로필 정보
   address?: string;
@@ -310,4 +322,72 @@ export type OrderParticipation = {
   status: 'PENDING' | 'CONFIRMED' | 'PAID' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
+};
+
+// ============================================
+// ✅ 승인 시스템 (Approval System)
+// ============================================
+
+// 승인 규칙: 누가 누구를 승인할 수 있는가
+export const approvalRules: Record<UserRole, UserRole[]> = {
+  // 슈퍼 어드민이 승인
+  [UserRole.SUPER_ADMIN]: [
+    UserRole.FEDERATION_ADMIN,
+    UserRole.FEDERATION_SECRETARIAT,
+    UserRole.COMMITTEE_CHAIR,
+    UserRole.CLUB_OWNER,
+  ],
+  
+  // 연맹 관리자가 승인
+  [UserRole.FEDERATION_ADMIN]: [
+    UserRole.COMMITTEE_MEMBER,
+  ],
+  
+  // 클럽 오너가 승인
+  [UserRole.CLUB_OWNER]: [
+    UserRole.CLUB_MANAGER,
+    UserRole.CLUB_STAFF,
+    UserRole.MEDIA_MANAGER,
+    UserRole.HEAD_COACH,
+    UserRole.ASSISTANT_COACH,
+    UserRole.MEMBER,
+    UserRole.PARENT,
+  ],
+  
+  // 나머지 역할은 승인 권한 없음
+  [UserRole.FEDERATION_SECRETARIAT]: [],
+  [UserRole.COMMITTEE_CHAIR]: [],
+  [UserRole.COMMITTEE_MEMBER]: [],
+  [UserRole.CLUB_MANAGER]: [],
+  [UserRole.CLUB_STAFF]: [],
+  [UserRole.MEDIA_MANAGER]: [],
+  [UserRole.HEAD_COACH]: [],
+  [UserRole.ASSISTANT_COACH]: [],
+  [UserRole.MEMBER]: [],
+  [UserRole.PARENT]: [],
+  [UserRole.VENDOR]: [],
+};
+
+// 승인 권한 체크 함수
+export function canApproveRole(approverRole: UserRole, targetRole: UserRole): boolean {
+  return approvalRules[approverRole]?.includes(targetRole) || false;
+}
+
+// 승인 요청 타입
+export type ApprovalRequest = {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  requestedRole: UserRole;
+  clubId?: string;
+  clubName?: string;
+  familyType?: 'individual' | 'parent' | 'child';
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
 };
