@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import type { Member, MemberPass } from '@/types';
@@ -37,7 +37,7 @@ export default function ClubPassesPage() {
   const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
 
   // 2. Fetch all passes for the active members of this club
-  const memberIds = members?.map(m => m.id) || [];
+  const memberIds = useMemo(() => members?.map(m => m.id) || [], [members]);
   const passesQuery = useMemoFirebase(() => {
     if (!firestore || memberIds.length === 0) return null;
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
