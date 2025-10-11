@@ -416,3 +416,5 @@ export default function MemberProfileClient({ id }: { id:string }) {
     </main>
   );
 }
+
+    

@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { format, startOfDay, endOfDay, addDays } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
@@ -66,10 +66,12 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
   const { data: attendanceRecords, isLoading: areAttendanceRecordsLoading } = useCollection<Attendance>(attendanceQuery);
   
   const memberIds = useMemo(() => clubMembers?.map(m => m.id) || [], [clubMembers]);
+  
   const memberPassesQuery = useMemoFirebase(() => {
     if (!firestore || memberIds.length === 0) return null;
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
   }, [firestore, memberIds]);
+
   const { data: memberPasses, isLoading: arePassesLoading } = useCollection<MemberPass>(memberPassesQuery);
   
   // Check for expired duration-based passes on page load
@@ -400,3 +402,5 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
     </main>
   );
 }
+
+    
