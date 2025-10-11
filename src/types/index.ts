@@ -88,14 +88,26 @@ export type Member = {
   name: string;
   dateOfBirth?: string; // ISO 8601 date string
   gender?: 'male' | 'female';
-  email?: string;
+  email?: string; // 선택적 (자녀는 없을 수 있음)
   phoneNumber?: string;
   clubId: string;
   status: 'active' | 'inactive' | 'pending';
-  guardianIds?: string[];
+  guardianIds?: string[]; // 부모 UserProfile UID 배열
   photoURL?: string;
   activePassId?: string; // ID of the current MemberPass
   classId?: string; // ID of the class the member is enrolled in
+  
+  // 가족 회원 관련
+  memberType?: 'individual' | 'family'; // 개인 or 가족 회원
+  familyRole?: 'parent' | 'child'; // 부모 or 자녀
+  
+  // 승인 관련
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  requestedAt?: string;
 };
 
 export type Club = {
