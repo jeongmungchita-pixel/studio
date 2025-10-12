@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser } from '@/hooks/use-user';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Member, MessageHistory, MessageTemplate } from '@/types';
+import { Member } from '@/types';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useState } from 'react';
+import type { MessageHistory, MessageTemplate } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -82,7 +85,7 @@ export default function MessagesPage() {
         .map(m => ({
           memberId: m.id,
           memberName: m.name,
-          phone: m.phone,
+          phone: m.phoneNumber || '',
           status: 'pending' as const,
         })) || [];
 
@@ -103,13 +106,40 @@ export default function MessagesPage() {
 
       await setDoc(historyRef, historyData);
 
-      // TODO: 실제 네이버 클라우드 API 호출은 서버 사이드에서 처리
-      // Firebase Functions 또는 Next.js API Route 사용
-
+      // TODO: SMS 발송 기능은 나중에 구현 예정
+      // Firebase Functions를 통한 실제 SMS 발송은 외부 API 연동 및 비용이 발생하므로 보류
+      // 현재는 발송 기록만 저장됨
       toast({
-        title: '발송 요청 완료',
-        description: `${recipients.length}명에게 ${messageType.toUpperCase()} 발송을 요청했습니다.`,
+        title: '발송 기록 저장 완료',
+        description: `${recipients.length}명에게 ${messageType.toUpperCase()} 발송 기록이 저장되었습니다. (실제 발송 기능은 추후 구현 예정)`,
       });
+      
+      // 향후 구현 시 아래 코드 활성화
+      // try {
+      //   const functions = getFunctions();
+      //   const sendBulkSMS = httpsCallable(functions, 'sendBulkSMS');
+      //   
+      //   await sendBulkSMS({
+      //     recipients: recipients.map(r => ({
+      //       phone: r.phone,
+      //       name: r.memberName,
+      //     })),
+      //     message: content,
+      //     type: messageType,
+      //   });
+      //
+      //   toast({
+      //     title: '발송 완료',
+      //     description: `${recipients.length}명에게 ${messageType.toUpperCase()} 발송이 완료되었습니다.`,
+      //   });
+      // } catch (error) {
+      //   console.error('SMS send error:', error);
+      //   toast({
+      //     title: '발송 실패',
+      //     description: 'SMS 발송 중 오류가 발생했습니다.',
+      //     variant: 'destructive',
+      //   });
+      // }
 
       setContent('');
       setSelectedMembers([]);
@@ -131,6 +161,13 @@ export default function MessagesPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">단체 문자 발송</h1>
         <p className="text-muted-foreground mt-1">회원들에게 문자를 발송하세요</p>
+      </div>
+
+      {/* 개발 중 알림 */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-sm text-yellow-800">
+          <strong>알림:</strong> 실제 SMS 발송 기능은 추후 구현 예정입니다. 현재는 발송 기록만 저장됩니다.
+        </p>
       </div>
 
       <Tabs defaultValue="send" className="w-full">
@@ -225,7 +262,7 @@ export default function MessagesPage() {
                     />
                     <div className="flex-1">
                       <p className="font-semibold">{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.phone}</p>
+                      <p className="text-sm text-muted-foreground">{member.phoneNumber || '전화번호 없음'}</p>
                     </div>
                   </div>
                 ))}

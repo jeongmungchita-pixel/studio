@@ -13,11 +13,13 @@ import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import type { MemberRequest, Club } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MemberRegisterPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -41,7 +43,11 @@ export default function MemberRegisterPage() {
     e.preventDefault();
     
     if (!firestore || !user) {
-      alert('로그인이 필요합니다.');
+      toast({
+        variant: 'destructive',
+        title: '로그인 필요',
+        description: '로그인이 필요합니다.',
+      });
       router.push('/login');
       return;
     }
@@ -51,7 +57,11 @@ export default function MemberRegisterPage() {
     try {
       const selectedClub = clubs?.find(c => c.id === formData.clubId);
       if (!selectedClub) {
-        alert('클럽을 선택해주세요.');
+        toast({
+          variant: 'destructive',
+          title: '클럽 선택 필요',
+          description: '클럽을 선택해주세요.',
+        });
         return;
       }
 
@@ -74,11 +84,18 @@ export default function MemberRegisterPage() {
       // Firestore에 저장
       await addDoc(collection(firestore, 'memberRequests'), requestData);
       
-      alert('가입 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.');
+      toast({
+        title: '신청 완료',
+        description: '가입 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.',
+      });
       router.push('/dashboard');
     } catch (error) {
       console.error('가입 신청 실패:', error);
-      alert('가입 신청에 실패했습니다. 다시 시도해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '가입 신청에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +132,7 @@ export default function MemberRegisterPage() {
               <Label>가입 유형</Label>
               <RadioGroup
                 value={formData.familyType}
-                onValueChange={(value: any) => setFormData({ ...formData, familyType: value })}
+                onValueChange={(value) => setFormData({ ...formData, familyType: value as 'individual' | 'parent' | 'child' })}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="individual" id="individual" />

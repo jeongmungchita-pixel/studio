@@ -124,7 +124,8 @@ export default function MediaManagementPage() {
       
       // Upload to Firebase Storage
       const fileName = `media/${selectedMember.id}/${Date.now()}.webm`;
-      const downloadURL = await uploadImage(storage, blob, fileName);
+      const file = new File([blob], fileName, { type: 'video/webm' });
+      const downloadURL = await uploadImage(storage, fileName, file);
       
       // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));
@@ -181,7 +182,8 @@ export default function MediaManagementPage() {
       
       // Upload to Firebase Storage
       const fileName = `media/${selectedMember.id}/${Date.now()}.jpg`;
-      const downloadURL = await uploadImage(storage, blob, fileName);
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      const downloadURL = await uploadImage(storage, fileName, file);
       
       // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));

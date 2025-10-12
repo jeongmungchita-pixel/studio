@@ -11,11 +11,13 @@ import { useUser } from '@/hooks/use-user';
 import { UserPlus, AlertCircle } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AddChildPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [children, setChildren] = useState([
     {
@@ -37,7 +39,7 @@ export default function AddChildPage() {
     setChildren(children.filter((_, i) => i !== index));
   };
 
-  const updateChild = (index: number, field: string, value: any) => {
+  const updateChild = (index: number, field: keyof typeof children[0], value: string) => {
     const updated = [...children];
     updated[index] = { ...updated[index], [field]: value };
     setChildren(updated);
@@ -65,11 +67,18 @@ export default function AddChildPage() {
         });
       }
       
-      alert(`${children.length}명의 자녀가 추가되었습니다!`);
+      toast({
+        title: '자녀 추가 완료',
+        description: `${children.length}명의 자녀가 추가되었습니다!`,
+      });
       router.push('/my-profile/family');
     } catch (error) {
       console.error('자녀 추가 실패:', error);
-      alert('자녀 추가에 실패했습니다. 다시 시도해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '자녀 추가에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -172,7 +181,7 @@ export default function AddChildPage() {
                     <Label>성별 *</Label>
                     <RadioGroup
                       value={child.gender}
-                      onValueChange={(value: any) => updateChild(index, 'gender', value)}
+                      onValueChange={(value) => updateChild(index, 'gender', value as 'male' | 'female')}
                     >
                       <div className="flex gap-4">
                         <div className="flex items-center space-x-2">

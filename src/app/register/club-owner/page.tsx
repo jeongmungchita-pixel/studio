@@ -7,15 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Shield } from 'lucide-react';
+import { Users, Building2, MapPin, Phone, Mail, Loader2, Shield } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import type { ClubOwnerRequest } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ClubOwnerRegisterPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     // 개인 정보
@@ -35,7 +37,11 @@ export default function ClubOwnerRegisterPage() {
     e.preventDefault();
     
     if (!firestore || !user) {
-      alert('로그인이 필요합니다.');
+      toast({
+        variant: 'destructive',
+        title: '로그인 필요',
+        description: '로그인이 필요합니다.',
+      });
       router.push('/login');
       return;
     }
@@ -61,11 +67,18 @@ export default function ClubOwnerRegisterPage() {
       // Firestore에 저장
       await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
       
-      alert('가입 신청이 완료되었습니다! 슈퍼 어드민의 승인을 기다려주세요.');
+      toast({
+        title: '신청 완료',
+        description: '가입 신청이 완료되었습니다! 슈퍼 어드민의 승인을 기다려주세요.',
+      });
       router.push('/dashboard');
     } catch (error) {
       console.error('가입 신청 실패:', error);
-      alert('가입 신청에 실패했습니다. 다시 시도해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '가입 신청에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsSubmitting(false);
     }

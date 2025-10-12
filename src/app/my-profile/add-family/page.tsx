@@ -11,11 +11,13 @@ import { useUser } from '@/hooks/use-user';
 import { Users, UserPlus } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AddFamilyMemberPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -46,11 +48,18 @@ export default function AddFamilyMemberPage() {
         updatedAt: new Date().toISOString(),
       });
       
-      alert('가족 회원 추가 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.');
+      toast({
+        title: '신청 완료',
+        description: '가족 회원 추가 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.',
+      });
       router.push('/my-profile/family');
     } catch (error) {
       console.error('가족 회원 추가 실패:', error);
-      alert('가족 회원 추가에 실패했습니다. 다시 시도해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '가족 회원 추가에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +102,7 @@ export default function AddFamilyMemberPage() {
               <Label>관계 *</Label>
               <RadioGroup
                 value={formData.relationship}
-                onValueChange={(value: any) => setFormData({ ...formData, relationship: value })}
+                onValueChange={(value) => setFormData({ ...formData, relationship: value as 'parent' | 'child' })}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="parent" id="parent" />

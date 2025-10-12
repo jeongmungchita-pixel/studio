@@ -51,12 +51,12 @@ export default function MemberEventsPage() {
 
   // Fetch my registrations
   const myRegistrationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.id) return null;
+    if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'event_registrations'),
-      where('memberId', '==', user.id)
+      where('memberId', '==', user.uid)
     );
-  }, [firestore, user?.id]);
+  }, [firestore, user?.uid]);
   const { data: myRegistrations } = useCollection<EventRegistration>(myRegistrationsQuery);
 
   const handleApply = async () => {
@@ -84,7 +84,7 @@ export default function MemberEventsPage() {
       const registrationData: EventRegistration = {
         id: regRef.id,
         eventId: selectedEvent.id,
-        memberId: user.id,
+        memberId: user.uid,
         memberName: user.displayName || user.email || '회원',
         clubId: selectedEvent.clubId,
         selectedOptions,
@@ -242,7 +242,7 @@ export default function MemberEventsPage() {
                 
                 <Button
                   className="w-full"
-                  disabled={isRegistered || isFull}
+                  disabled={!!isRegistered || !!isFull}
                   onClick={() => setSelectedEvent(event)}
                 >
                   {isRegistered ? '신청 완료' :

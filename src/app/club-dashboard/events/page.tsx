@@ -169,7 +169,7 @@ export default function ClubEventsPage() {
     setOptions([...options, { id: Date.now().toString(), name: '', values: [], required: false }]);
   };
 
-  const updateOption = (index: number, field: keyof EventOption, value: any) => {
+  const updateOption = (index: number, field: keyof EventOption, value: string | string[] | boolean) => {
     const newOptions = [...options];
     newOptions[index] = { ...newOptions[index], [field]: value };
     setOptions(newOptions);

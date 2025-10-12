@@ -113,7 +113,7 @@ export default function ClubApprovalsPage() {
 
       // 새 이용권 생성
       const newPassRef = doc(collection(firestore, 'member_passes'));
-      const newPass: any = {
+      const newPass: MemberPass = {
         id: newPassRef.id,
         memberId: request.memberId,
         clubId: request.clubId,

@@ -58,6 +58,7 @@ export default function AnalyticsPage() {
     
     // New members this month
     const newMembers = members.filter(m => {
+      if (!m.joinDate) return false;
       const joinDate = new Date(m.joinDate);
       return joinDate >= new Date(monthStart) && joinDate <= new Date(monthEnd);
     }).length;
@@ -84,6 +85,7 @@ export default function AnalyticsPage() {
     };
     
     members.forEach(m => {
+      if (!m.dateOfBirth) return;
       const age = differenceInYears(new Date(), new Date(m.dateOfBirth));
       if (age <= 6) ageDist['유아 (0-6세)']++;
       else if (age <= 12) ageDist['초등 (7-12세)']++;

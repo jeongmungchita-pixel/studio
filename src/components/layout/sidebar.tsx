@@ -53,7 +53,7 @@ import { UserProfile, UserRole } from '@/types';
 interface SubMenuItem {
   href: string;
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   section: string; // 어느 섹션의 서브메뉴인지
   group?: string; // 그룹 (main, operations, finance, system 등)
   roles: UserRole[];

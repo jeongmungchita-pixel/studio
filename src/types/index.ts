@@ -91,6 +91,7 @@ export type Member = {
   email?: string; // 선택적 (자녀는 없을 수 있음)
   phoneNumber?: string;
   clubId: string;
+  clubName?: string; // 비정규화 - 클럽 이름 (조인 방지)
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[]; // 부모 UserProfile UID 배열
   photoURL?: string;
@@ -108,6 +109,13 @@ export type Member = {
   rejectedAt?: string;
   rejectionReason?: string;
   requestedAt?: string;
+  
+  // 추가 필드 (분석/통계용)
+  joinDate?: string; // 가입일
+  level?: string; // 현재 급수 (예: "1급", "2급")
+  levelColor?: string; // 띠 색상 (예: "black", "red")
+  levelRank?: number; // 급수 순위 (숫자)
+  grade?: string; // 학년 (예: "초등 3학년")
 };
 
 export type Club = {
@@ -168,6 +176,7 @@ export type MemberPass = {
 // ============================================
 
 export type UserProfile = {
+  id: string; // 문서 ID (uid와 동일하거나 별도 ID)
   uid: string;
   email: string;
   displayName: string;

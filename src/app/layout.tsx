@@ -22,7 +22,7 @@ export default function RootLayout({
         <title>KGF 넥서스</title>
         <meta
           name="description"
-          content="대한검도연맹 통합 관리 시스템"
+          content="대한체조협회 관리 플랫폼"
         />
         <meta name="theme-color" content="#667eea" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />

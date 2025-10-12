@@ -100,7 +100,9 @@ export default function MembersPage() {
                       {statusTranslations[member.status]}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{new Date(member.dateOfBirth).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : '-'}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

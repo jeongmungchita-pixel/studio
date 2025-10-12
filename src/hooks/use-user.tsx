@@ -38,6 +38,7 @@ export function useUser(): UserHookResult {
               // This can happen if profile creation fails after signup or for a new social login.
               // Let's create a default profile.
               const defaultProfile: UserProfile = {
+                id: firebaseUser.uid, // id와 uid를 동일하게 설정
                 uid: firebaseUser.uid,
                 email: firebaseUser.email!,
                 displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],

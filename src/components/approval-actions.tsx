@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ interface ApprovalActionsProps {
 }
 
 export function ApprovalActions({ onApprove, onReject, disabled = false }: ApprovalActionsProps) {
+  const { toast } = useToast();
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -38,7 +40,11 @@ export function ApprovalActions({ onApprove, onReject, disabled = false }: Appro
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      alert('거부 사유를 입력해주세요');
+      toast({
+        variant: 'destructive',
+        title: '입력 필요',
+        description: '거부 사유를 입력해주세요',
+      });
       return;
     }
 

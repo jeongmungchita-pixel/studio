@@ -10,9 +10,21 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "npm run test && npm run test:e2e",
     "deploy:rules": "firebase deploy --only firestore:rules",
     "deploy:firestore": "firebase deploy --only firestore",
-    "deploy:all": "firebase deploy"
+    "deploy:indexes": "firebase deploy --only firestore:indexes",
+    "deploy:all": "firebase deploy",
+    "reset:firestore": "tsx scripts/reset-firestore.ts",
+    "validate:schema": "tsx scripts/validate-firestore-schema.ts",
+    "fix:schema": "tsx scripts/fix-firestore-schema.ts",
+    "simulate": "tsx scripts/simulate-full-workflow.ts"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.20.0",

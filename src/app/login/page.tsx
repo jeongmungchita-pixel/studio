@@ -185,6 +185,7 @@ export default function LoginPage() {
     }
 
     const userProfile: UserProfile = {
+      id: user.uid, // id와 uid를 동일하게 설정
       uid: user.uid,
       email: user.email!,
       displayName: user.displayName || user.email!.split('@')[0],

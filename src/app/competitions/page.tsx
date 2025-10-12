@@ -86,7 +86,8 @@ export default function CompetitionsPage() {
     setIsSubmitting(true);
     try {
       const regRef = doc(collection(firestore, 'competition_registrations'));
-      const age = differenceInYears(new Date(), new Date(member.dateOfBirth));
+      const birthDate = member.dateOfBirth || '';
+      const age = member.dateOfBirth ? differenceInYears(new Date(), new Date(member.dateOfBirth)) : 0;
       
       const registrationData: CompetitionRegistration = {
         id: regRef.id,
@@ -95,8 +96,8 @@ export default function CompetitionsPage() {
         memberName: member.name,
         clubId: member.clubId,
         clubName: member.clubName || '',
-        gender: member.gender,
-        birthDate: member.dateOfBirth,
+        gender: member.gender || 'male',
+        birthDate,
         age,
         grade: member.grade,
         level: member.level,

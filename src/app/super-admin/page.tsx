@@ -25,7 +25,9 @@ import {
   Activity,
   AlertCircle,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { UserRole, UserProfile, ClubOwnerRequest, Club } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -39,15 +41,20 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SuperAdminDashboard() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
   // 클럽 오너 신청 목록
   const clubOwnerRequestsQuery = useMemoFirebase(() => {
@@ -125,10 +132,17 @@ export default function SuperAdminDashboard() {
         approvedAt: new Date().toISOString(),
       });
 
-      alert(`${request.clubName} 클럽이 승인되었습니다!`);
+      toast({
+        title: '승인 완료',
+        description: `${request.clubName} 클럽이 승인되었습니다!`,
+      });
     } catch (error) {
       console.error('승인 실패:', error);
-      alert('승인 처리 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '승인 처리 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -161,13 +175,20 @@ export default function SuperAdminDashboard() {
         rejectionReason,
       });
 
-      alert('신청이 거부되었습니다.');
+      toast({
+        title: '거부 완료',
+        description: '신청이 거부되었습니다.',
+      });
       setRejectDialogOpen(false);
       setRejectionReason('');
       setSelectedRequestId(null);
     } catch (error) {
       console.error('거부 실패:', error);
-      alert('거부 처리 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '거부 처리 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -198,13 +219,80 @@ export default function SuperAdminDashboard() {
         expiresAt: expiresAt.toISOString(),
       });
 
-      alert(`${federationAdminForm.email}로 연맹 관리자 초대가 발송되었습니다.\n초대 링크는 7일간 유효합니다.`);
+      toast({
+        title: '초대 발송 완료',
+        description: `${federationAdminForm.email}로 연맹 관리자 초대가 발송되었습니다. 초대 링크는 7일간 유효합니다.`,
+      });
       setFederationAdminForm({ email: '', name: '', phoneNumber: '' });
     } catch (error) {
       console.error('임명 실패:', error);
-      alert('임명 처리 중 오류가 발생했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '임명 처리 중 오류가 발생했습니다.',
+      });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Firestore 데이터 초기화
+  const handleResetFirestore = async () => {
+    if (confirmText !== 'RESET') {
+      toast({
+        variant: 'destructive',
+        title: '확인 필요',
+        description: 'RESET을 정확히 입력해주세요.',
+      });
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      // Firebase Auth 토큰 가져오기
+      const auth = (await import('firebase/auth')).getAuth();
+      const token = await auth.currentUser?.getIdToken();
+
+      if (!token) {
+        throw new Error('인증 토큰을 가져올 수 없습니다.');
+      }
+
+      const response = await fetch('/api/admin/reset-firestore', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '초기화 실패');
+      }
+
+      toast({
+        title: '초기화 완료',
+        description: `Firestore: ${data.totalDeleted}개 문서, Auth: ${data.deletedAuthUsers}개 계정 삭제됨`,
+      });
+
+      setResetDialogOpen(false);
+      setConfirmText('');
+      
+      // 페이지 새로고침
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
+    } catch (error) {
+      console.error('초기화 실패:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: error instanceof Error ? error.message : '초기화 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -228,10 +316,21 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
           </div>
-          <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 px-3 py-1.5">
-            <Activity className="h-3.5 w-3.5 mr-1.5" />
-            시스템 정상
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setResetDialogOpen(true)}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              데이터 초기화
+            </Button>
+            <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 px-3 py-1.5">
+              <Activity className="h-3.5 w-3.5 mr-1.5" />
+              시스템 정상
+            </Badge>
+          </div>
         </div>
         <div className="h-px bg-slate-200" />
       </div>
@@ -533,6 +632,70 @@ export default function SuperAdminDashboard() {
               disabled={!rejectionReason.trim() || isProcessing}
             >
               거부
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 데이터 초기화 확인 다이얼로그 */}
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Firestore 데이터 초기화
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 pt-2">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-2">
+                  <p className="font-semibold text-red-900">⚠️ 경고: 이 작업은 되돌릴 수 없습니다!</p>
+                  <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+                    <li>모든 Firestore 컬렉션 데이터가 삭제됩니다</li>
+                    <li>모든 Firebase Auth 계정이 삭제됩니다</li>
+                    <li>회원, 클럽, 이용권, 출석 등 모든 데이터가 사라집니다</li>
+                    <li>최상위 관리자 계정만 보존됩니다</li>
+                  </ul>
+                </div>
+                <p className="text-sm text-slate-600">
+                  계속하려면 아래에 <span className="font-mono font-bold text-red-600">RESET</span>을 입력하세요:
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="RESET 입력"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            className="font-mono"
+          />
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setResetDialogOpen(false);
+                setConfirmText('');
+              }}
+              disabled={isResetting}
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleResetFirestore}
+              disabled={confirmText !== 'RESET' || isResetting}
+              className="gap-2"
+            >
+              {isResetting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  초기화 중...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  데이터 초기화
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

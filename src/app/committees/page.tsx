@@ -2,22 +2,22 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Calendar } from 'lucide-react';
+import { Plus, Users, Calendar, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { RequireRole } from '@/components/require-role';
-import { UserRole } from '@/types';
+import { UserRole, Committee, CommitteeType } from '@/types';
 import { RoleBadge } from '@/components/role-badge';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
 
-// TODO: Firestore에서 실제 위원회 데이터를 가져와야 합니다
-const committees: any[] = [];
-
-const committeeTypeNames = {
+const committeeTypeNames: Record<CommitteeType, string> = {
   COMPETITION: '대회',
   EDUCATION: '교육',
   MARKETING: '마케팅',
 };
 
-const committeeTypeColors = {
+const committeeTypeColors: Record<CommitteeType, string> = {
   COMPETITION: 'bg-blue-500/10 text-blue-700 border-blue-200',
   EDUCATION: 'bg-green-500/10 text-green-700 border-green-200',
   MARKETING: 'bg-purple-500/10 text-purple-700 border-purple-200',
@@ -25,6 +25,26 @@ const committeeTypeColors = {
 
 export default function CommitteesPage() {
   const router = useRouter();
+  const firestore = useFirestore();
+
+  // 위원회 목록 조회
+  const committeesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'committees'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore]);
+
+  const { data: committees, isLoading } = useCollection<Committee>(committeesQuery);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <main className="flex-1 p-6 space-y-6">
@@ -48,7 +68,7 @@ export default function CommitteesPage() {
 
       {/* 위원회 목록 */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {committees.map((committee) => (
+        {committees && committees.length > 0 && committees.map((committee) => (
           <Card 
             key={committee.id}
             className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -72,17 +92,13 @@ export default function CommitteesPage() {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span>위원 {committee.memberCount}명</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>생성일: {new Date(committee.createdAt).toLocaleDateString()}</span>
                 </div>
                 {committee.chairId && (
                   <div className="mt-3 pt-3 border-t">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">위원장:</span>
+                      <span className="text-sm text-muted-foreground">위원장 지정됨</span>
                       <RoleBadge role={UserRole.COMMITTEE_CHAIR} />
                     </div>
                   </div>
@@ -94,7 +110,7 @@ export default function CommitteesPage() {
       </div>
 
       {/* 위원회가 없을 때 */}
-      {committees.length === 0 && (
+      {(!committees || committees.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />

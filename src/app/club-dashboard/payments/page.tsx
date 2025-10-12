@@ -73,13 +73,24 @@ export default function PaymentsPage() {
         paidAt: approved ? new Date().toISOString() : undefined,
       });
 
-      // TODO: 승인 시 이용권 갱신 로직 추가
+      // 승인 시 이용권 활성화 및 회원 정보 업데이트
       if (approved && payment.type === 'pass' && payment.relatedId) {
-        // Update member pass status
+        const now = new Date();
+        
+        // 이용권 활성화
         await updateDoc(doc(firestore, 'member_passes', payment.relatedId), {
           status: 'active',
-          updatedAt: new Date().toISOString(),
+          startDate: now.toISOString(),
+          updatedAt: now.toISOString(),
         });
+
+        // 회원의 activePassId 업데이트
+        if (payment.memberId) {
+          await updateDoc(doc(firestore, 'members', payment.memberId), {
+            activePassId: payment.relatedId,
+            updatedAt: now.toISOString(),
+          });
+        }
       }
 
       toast({
@@ -100,8 +111,8 @@ export default function PaymentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }

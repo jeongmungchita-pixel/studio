@@ -3,9 +3,9 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Upload, Loader2, X } from 'lucide-react';
-import { useStorage } from '@/firebase/storage';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { Camera, Loader2, X, Upload } from 'lucide-react';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfilePhotoUploadProps {
   currentPhotoURL?: string;
@@ -15,16 +15,11 @@ interface ProfilePhotoUploadProps {
   disabled?: boolean;
 }
 
-export function ProfilePhotoUpload({
-  currentPhotoURL,
-  onPhotoUploaded,
-  userId,
-  userName = 'User',
-  disabled = false,
-}: ProfilePhotoUploadProps) {
-  const storage = useStorage();
+export function ProfilePhotoUpload({ userId, currentPhotoURL, onPhotoUploaded, userName = 'User', disabled = false }: ProfilePhotoUploadProps) {
+  const { toast } = useToast();
+  const storage = getStorage();
   const [isUploading, setIsUploading] = useState(false);
-  const [previewURL, setPreviewURL] = useState<string | null>(currentPhotoURL || null);
+  const [previewURL, setPreviewURL] = useState(currentPhotoURL || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,13 +30,21 @@ export function ProfilePhotoUpload({
     try {
       // 파일 크기 체크 (5MB 제한)
       if (file.size > 5 * 1024 * 1024) {
-        alert('파일 크기는 5MB 이하여야 합니다.');
+        toast({
+          variant: 'destructive',
+          title: '파일 크기 초과',
+          description: '파일 크기는 5MB 이하여야 합니다.',
+        });
         return;
       }
 
       // 이미지 파일 체크
       if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
+        toast({
+          variant: 'destructive',
+          title: '파일 형식 오류',
+          description: '이미지 파일만 업로드 가능합니다.',
+        });
         return;
       }
 
@@ -66,10 +69,17 @@ export function ProfilePhotoUpload({
 
       setPreviewURL(downloadURL);
       onPhotoUploaded(downloadURL);
-      alert('프로필 사진이 업로드되었습니다!');
+      toast({
+        title: '업로드 완료',
+        description: '프로필 사진이 업로드되었습니다!',
+      });
     } catch (error) {
       console.error('업로드 실패:', error);
-      alert('업로드에 실패했습니다. 다시 시도해주세요.');
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '업로드에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsUploading(false);
     }
