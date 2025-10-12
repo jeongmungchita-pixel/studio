@@ -1,83 +1,274 @@
 /**
- * @file Firebase Security Rules for the Korean Gymnastics Federation App.
- *
- * @corePhilosophy This ruleset prioritizes rapid prototyping. All read and write operations are allowed
- * during this phase for authenticated users. All operations are allowed for all users without authentication.
- * Data shape validation is skipped to accelerate development, but authorization checks are in place.
- *
- * @dataStructure
- * - `/users/{userId}`: Stores user profile data, with the `userId` matching the Firebase Auth UID.
- * - `/clubs/{clubId}`: Stores club information.
- * - `/clubs/{clubId}/members/{memberId}`: Stores member information associated with a specific club.
- * - `/competitions/{competitionId}`: Stores competition details.
- * - `/level_tests/{levelTestId}`: Stores level test details.
- *
- * @keySecurityDecisions
- * - No data shape validation is performed in this prototype phase to allow for rapid iteration.
- * - All operations are allowed for all users without authentication.
- * - Read and write access is granted to all authenticated users for all data.
- *
- * @denormalizationForAuthorization Not applicable in this prototype due to open access.
- * @structuralSegregation Not applicable in this prototype due to open access.
+ * @file Firebase Security Rules for KGF Nexus (Production)
+ * @description Role-based access control
+ * 
+ * Roles:
+ * - SUPER_ADMIN: Full access
+ * - FEDERATION_ADMIN: Federation-wide access
+ * - CLUB_OWNER: Own club access
+ * - CLUB_MANAGER: Own club access
+ * - MEMBER: Own data access
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Manages user profile data.
-     * @path /users/{userId}
-     * @allow (create) User with matching UID can create their profile.
-     * @allow (get, list, update, delete) Any user can access.
-     * @deny (create) User cannot create a profile with a mismatched UID.
-     * @principle Allows any user to perform CRUD operations.
-     */
+    // ============================================
+    // 🔧 Helper Functions
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserData().role == 'SUPER_ADMIN';
+    }
+    
+    function isFederationAdmin() {
+      return isAuthenticated() && getUserData().role == 'FEDERATION_ADMIN';
+    }
+    
+    function isClubOwner() {
+      return isAuthenticated() && getUserData().role == 'CLUB_OWNER';
+    }
+    
+    function isClubManager() {
+      return isAuthenticated() && getUserData().role == 'CLUB_MANAGER';
+    }
+    
+    function isClubStaff() {
+      return isClubOwner() || isClubManager();
+    }
+    
+    function isMember() {
+      return isAuthenticated() && getUserData().role == 'MEMBER';
+    }
+    
+    function isAdmin() {
+      return isSuperAdmin() || isFederationAdmin();
+    }
+    
+    function belongsToClub(clubId) {
+      return isAuthenticated() && getUserData().clubId == clubId;
+    }
+
+    // ============================================
+    // 👤 Users Collection
+    // ============================================
+    
     match /users/{userId} {
-      allow get, list, create, update, delete: if true;
+      // 자기 프로필 읽기: 본인 또는 관리자
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      
+      // 프로필 생성: 본인만
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // 프로필 수정: 본인 또는 관리자
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      
+      // 프로필 삭제: 관리자만
+      allow delete: if isAdmin();
+      
+      // 전체 목록: 관리자만
+      allow list: if isAdmin();
     }
 
-    /**
-     * @description Manages club information.
-     * @path /clubs/{clubId}
-     * @allow (get, list, create, update, delete) Any user can access.
-     * @deny None.
-     * @principle Allows any user to perform CRUD operations.
-     */
+    // ============================================
+    // 🏢 Clubs Collection
+    // ============================================
+    
     match /clubs/{clubId} {
-      allow get, list, create, update, delete: if true;
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 생성: 관리자만
+      allow create: if isAdmin();
+      
+      // 수정: 관리자 또는 해당 클럽 스태프
+      allow update: if isAdmin() || belongsToClub(clubId);
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
     }
 
-    /**
-     * @description Manages member information within a club.
-     * @path /clubs/{clubId}/members/{memberId}
-     * @allow (get, list, create, update, delete) Any user can access.
-     * @deny None.
-     * @principle Allows any user to perform CRUD operations.
-     */
-    match /clubs/{clubId}/members/{memberId} {
-      allow get, list, create, update, delete: if true;
+    // ============================================
+    // 👥 Members Collection
+    // ============================================
+    
+    match /members/{memberId} {
+      // 읽기: 관리자 또는 같은 클럽
+      allow read: if isAuthenticated() && (isAdmin() || belongsToClub(resource.data.clubId));
+      
+      // 생성/수정/삭제: 관리자 또는 해당 클럽 스태프
+      allow create, update, delete: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
     }
 
-    /**
-     * @description Manages competition information.
-     * @path /competitions/{competitionId}
-     * @allow (get, list, create, update, delete) Any user can access.
-     * @deny None.
-     * @principle Allows any user to perform CRUD operations.
-     */
+    // ============================================
+    // 🏆 Competitions Collection
+    // ============================================
+    
     match /competitions/{competitionId} {
-      allow get, list, create, update, delete: if true;
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 생성/수정/삭제: 관리자만
+      allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Manages level test information.
-     * @path /level_tests/{levelTestId}
-     * @allow (get, list, create, update, delete) Any user can access.
-     * @deny None.
-     * @principle Allows any user to perform CRUD operations.
-     */
+    // ============================================
+    // 📝 Level Tests Collection
+    // ============================================
+    
     match /level_tests/{levelTestId} {
-      allow get, list, create, update, delete: if true;
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 생성/수정/삭제: 관리자 또는 클럽 스태프
+      allow create, update, delete: if isAdmin() || isClubStaff();
     }
+
+    // ============================================
+    // 📋 Requests Collections
+    // ============================================
+    
+    match /clubOwnerRequests/{requestId} {
+      // 읽기: 관리자 또는 본인
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // 생성: 인증된 사용자
+      allow create: if isAuthenticated();
+      
+      // 수정/삭제: 관리자만
+      allow update, delete: if isAdmin();
+    }
+    
+    match /superAdminRequests/{requestId} {
+      // 관리자만
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /federationAdminInvites/{inviteId} {
+      // 읽기: 관리자 또는 초대받은 사람
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);
+      
+      // 생성/수정: 관리자만
+      allow create, update: if isSuperAdmin();
+      
+      // 삭제: 관리자만
+      allow delete: if isSuperAdmin();
+    }
+
+    // ============================================
+    // 🎫 Passes & Attendance
+    // ============================================
+    
+    match /member_passes/{passId} {
+      // 읽기: 관리자, 클럽 스태프, 본인
+      allow read: if isAdmin() || isClubStaff() || (isAuthenticated() && resource.data.memberId == request.auth.uid);
+      
+      // 생성/수정/삭제: 관리자 또는 클럽 스태프
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    match /attendance/{attendanceId} {
+      // 읽기: 관리자, 클럽 스태프, 본인
+      allow read: if isAdmin() || isClubStaff() || (isAuthenticated() && resource.data.memberId == request.auth.uid);
+      
+      // 생성/수정/삭제: 관리자 또는 클럽 스태프
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+
+    // ============================================
+    // 📚 Classes & Templates
+    // ============================================
+    
+    match /gym_classes/{classId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    match /pass_templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+
+    // ============================================
+    // 📸 Media Collection
+    // ============================================
+    
+    match /media/{mediaId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+
+    // ============================================
+    // 💰 Financial Collections
+    // ============================================
+    
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || isClubStaff();
+      allow create, update: if isAdmin() || isClubStaff();
+      allow delete: if isAdmin();
+    }
+    
+    match /incomes/{incomeId} {
+      allow read: if isAdmin() || isClubStaff();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    match /expenses/{expenseId} {
+      allow read: if isAdmin() || isClubStaff();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    match /budgets/{budgetId} {
+      allow read: if isAdmin() || isClubStaff();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+
+    // ============================================
+    // 📢 Announcements & Messages
+    // ============================================
+    
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    match /messageHistory/{messageId} {
+      allow read: if isAdmin() || isClubStaff();
+      allow create: if isAdmin() || isClubStaff();
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // ⚙️ Settings Collections
+    // ============================================
+    
+    match /club_bank_accounts/{accountId} {
+      allow read: if isAdmin() || belongsToClub(accountId);
+      allow create, update, delete: if isAdmin() || (isClubStaff() && belongsToClub(accountId));
+    }
+    
+    match /naverCloudConfigs/{configId} {
+      allow read: if isAdmin() || belongsToClub(configId);
+      allow create, update, delete: if isAdmin() || (isClubStaff() && belongsToClub(configId));
+    }
+
+    // ============================================
+    // 🚫 Deny all other access
+    // ============================================
+    
+    // 명시되지 않은 모든 접근 차단
   }
 }

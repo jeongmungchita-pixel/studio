@@ -1,0 +1,565 @@
+'use client';
+
+import { useState } from 'react';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, doc, setDoc, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { ClubEvent, EventRegistration, EventOption } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Plus, Edit, Trash2, Users, Calendar, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+
+const eventFormSchema = z.object({
+  title: z.string().min(1, '제목을 입력하세요'),
+  description: z.string().min(1, '설명을 입력하세요'),
+  eventType: z.enum(['merchandise', 'uniform', 'special_class', 'competition', 'event', 'other']),
+  price: z.number().min(0, '가격은 0 이상이어야 합니다'),
+  priceUnit: z.enum(['per_person', 'per_item']),
+  registrationStart: z.string(),
+  registrationEnd: z.string(),
+  eventDate: z.string().optional(),
+  minParticipants: z.number().optional(),
+  maxParticipants: z.number().optional(),
+  allowMultipleQuantity: z.boolean(),
+});
+
+type EventFormValues = z.infer<typeof eventFormSchema>;
+
+const eventTypeLabels = {
+  merchandise: '굿즈/티셔츠',
+  uniform: '유니폼',
+  special_class: '특강/캠프',
+  competition: '대회',
+  event: '행사',
+  other: '기타',
+};
+
+const statusLabels = {
+  upcoming: '예정',
+  open: '신청중',
+  closed: '마감',
+  completed: '완료',
+  cancelled: '취소',
+};
+
+export default function ClubEventsPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ClubEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ClubEvent | null>(null);
+  const [options, setOptions] = useState<EventOption[]>([]);
+
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      eventType: 'merchandise',
+      price: 0,
+      priceUnit: 'per_item',
+      registrationStart: new Date().toISOString().split('T')[0],
+      registrationEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      allowMultipleQuantity: true,
+    },
+  });
+
+  // Fetch events
+  const eventsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.clubId) return null;
+    return query(
+      collection(firestore, 'events'),
+      where('clubId', '==', user.clubId),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user?.clubId]);
+  const { data: events, isLoading: areEventsLoading } = useCollection<ClubEvent>(eventsQuery);
+
+  // Fetch registrations for selected event
+  const registrationsQuery = useMemoFirebase(() => {
+    if (!firestore || !selectedEvent) return null;
+    return query(
+      collection(firestore, 'event_registrations'),
+      where('eventId', '==', selectedEvent.id)
+    );
+  }, [firestore, selectedEvent?.id]);
+  const { data: registrations } = useCollection<EventRegistration>(registrationsQuery);
+
+  const onSubmit = async (values: EventFormValues) => {
+    if (!firestore || !user?.clubId) return;
+
+    try {
+      if (editingEvent) {
+        // Update
+        await updateDoc(doc(firestore, 'events', editingEvent.id), {
+          ...values,
+          options,
+          updatedAt: new Date().toISOString(),
+        });
+        toast({ title: '이벤트 수정 완료' });
+      } else {
+        // Create
+        const eventRef = doc(collection(firestore, 'events'));
+        const eventData: ClubEvent = {
+          ...values,
+          id: eventRef.id,
+          clubId: user.clubId,
+          currentParticipants: 0,
+          options,
+          status: 'upcoming',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await setDoc(eventRef, eventData);
+        toast({ title: '이벤트 생성 완료' });
+      }
+      setIsDialogOpen(false);
+      form.reset();
+      setOptions([]);
+      setEditingEvent(null);
+    } catch (error) {
+      console.error('Event save error:', error);
+      toast({ variant: 'destructive', title: '저장 실패' });
+    }
+  };
+
+  const handleEdit = (event: ClubEvent) => {
+    setEditingEvent(event);
+    form.reset({
+      title: event.title,
+      description: event.description,
+      eventType: event.eventType,
+      price: event.price,
+      priceUnit: event.priceUnit,
+      registrationStart: event.registrationStart.split('T')[0],
+      registrationEnd: event.registrationEnd.split('T')[0],
+      eventDate: event.eventDate?.split('T')[0],
+      minParticipants: event.minParticipants,
+      maxParticipants: event.maxParticipants,
+      allowMultipleQuantity: event.allowMultipleQuantity,
+    });
+    setOptions(event.options || []);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (eventId: string) => {
+    if (!firestore || !confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await deleteDoc(doc(firestore, 'events', eventId));
+      toast({ title: '이벤트 삭제 완료' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: '삭제 실패' });
+    }
+  };
+
+  const addOption = () => {
+    setOptions([...options, { id: Date.now().toString(), name: '', values: [], required: false }]);
+  };
+
+  const updateOption = (index: number, field: keyof EventOption, value: any) => {
+    const newOptions = [...options];
+    newOptions[index] = { ...newOptions[index], [field]: value };
+    setOptions(newOptions);
+  };
+
+  const removeOption = (index: number) => {
+    setOptions(options.filter((_, i) => i !== index));
+  };
+
+  if (areEventsLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <main className="flex-1 p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">이벤트 관리</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            공동구매, 특강, 대회 등 다양한 이벤트를 생성하고 관리하세요
+          </p>
+        </div>
+        <Button onClick={() => {
+          setEditingEvent(null);
+          form.reset();
+          setOptions([]);
+          setIsDialogOpen(true);
+        }}>
+          <Plus className="mr-2 h-4 w-4" />
+          새 이벤트 생성
+        </Button>
+      </div>
+
+      {/* Events Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {events?.map((event) => (
+          <Card key={event.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge>{eventTypeLabels[event.eventType]}</Badge>
+                    <Badge variant={
+                      event.status === 'open' ? 'default' :
+                      event.status === 'closed' ? 'destructive' :
+                      'secondary'
+                    }>
+                      {statusLabels[event.status]}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-lg">{event.title}</CardTitle>
+                  <CardDescription className="line-clamp-2 mt-2">
+                    {event.description}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <DollarSign className="h-4 w-4" />
+                  가격
+                </span>
+                <span className="font-semibold">
+                  {event.price.toLocaleString()}원
+                  {event.priceUnit === 'per_person' ? '/인' : '/개'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  신청자
+                </span>
+                <span className="font-semibold">
+                  {event.currentParticipants}
+                  {event.maxParticipants && `/${event.maxParticipants}`}명
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  신청 마감
+                </span>
+                <span className="font-semibold">
+                  {format(new Date(event.registrationEnd), 'MM/dd', { locale: ko })}
+                </span>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setSelectedEvent(event)}
+                >
+                  <Users className="h-4 w-4 mr-1" />
+                  신청자 보기
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleEdit(event)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(event.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {(!events || events.length === 0) && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center h-64">
+            <p className="text-muted-foreground mb-4">생성된 이벤트가 없습니다</p>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              첫 이벤트 만들기
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingEvent ? '이벤트 수정' : '새 이벤트 생성'}</DialogTitle>
+            <DialogDescription>
+              공동구매, 특강, 대회 등 다양한 이벤트를 만들어보세요
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>제목</FormLabel>
+                    <FormControl>
+                      <Input placeholder="예: 2025 봄 유니폼 공동구매" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>설명</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="이벤트 상세 설명" rows={3} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="eventType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>이벤트 종류</FormLabel>
+                      <FormControl>
+                        <select {...field} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                          {Object.entries(eventTypeLabels).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="priceUnit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>가격 단위</FormLabel>
+                      <FormControl>
+                        <select {...field} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                          <option value="per_item">개당</option>
+                          <option value="per_person">인당</option>
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>가격 (원)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="50000"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="registrationStart"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>신청 시작일</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="registrationEnd"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>신청 마감일</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="minParticipants"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>최소 인원 (선택)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="10"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="maxParticipants"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>최대 인원 (선택)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="30"
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Options */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <FormLabel>옵션 (사이즈, 색상 등)</FormLabel>
+                  <Button type="button" size="sm" variant="outline" onClick={addOption}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    옵션 추가
+                  </Button>
+                </div>
+                {options.map((option, index) => (
+                  <Card key={option.id} className="p-3">
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="옵션명 (예: 사이즈)"
+                          value={option.name}
+                          onChange={(e) => updateOption(index, 'name', e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removeOption(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        placeholder="값 (쉼표로 구분, 예: S,M,L,XL)"
+                        value={option.values.join(',')}
+                        onChange={(e) => updateOption(index, 'values', e.target.value.split(',').map(v => v.trim()))}
+                      />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  취소
+                </Button>
+                <Button type="submit">
+                  {editingEvent ? '수정' : '생성'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Registrations Dialog */}
+      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedEvent?.title} - 신청자 목록</DialogTitle>
+            <DialogDescription>
+              총 {registrations?.length || 0}명이 신청했습니다
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {registrations?.map((reg) => (
+              <Card key={reg.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{reg.memberName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {Object.entries(reg.selectedOptions).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      수량: {reg.quantity}개 | 총액: {reg.totalPrice.toLocaleString()}원
+                    </p>
+                  </div>
+                  <Badge variant={
+                    reg.paymentStatus === 'paid' ? 'default' :
+                    reg.paymentStatus === 'cancelled' ? 'destructive' :
+                    'secondary'
+                  }>
+                    {reg.paymentStatus === 'paid' ? '결제완료' :
+                     reg.paymentStatus === 'cancelled' ? '취소' : '대기중'}
+                  </Badge>
+                </div>
+              </Card>
+            ))}
+            {(!registrations || registrations.length === 0) && (
+              <p className="text-center text-muted-foreground py-8">
+                아직 신청자가 없습니다
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </main>
+  );
+}

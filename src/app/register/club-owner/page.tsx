@@ -8,9 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Shield } from 'lucide-react';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import type { ClubOwnerRequest } from '@/types';
 
 export default function ClubOwnerRegisterPage() {
   const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     // 개인 정보
@@ -28,12 +33,33 @@ export default function ClubOwnerRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!firestore || !user) {
+      alert('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      console.log('클럽 오너 가입 신청:', formData);
-      // TODO: Firestore에 저장
-      // await createClubOwnerRequest(formData);
+      // ClubOwnerRequest 생성
+      const requestData: Omit<ClubOwnerRequest, 'id'> = {
+        userId: user.uid,
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        clubName: formData.clubName,
+        clubAddress: formData.clubAddress,
+        clubPhone: formData.clubPhone,
+        clubEmail: formData.clubEmail || undefined,
+        clubDescription: formData.clubDescription || undefined,
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+      };
+
+      // Firestore에 저장
+      await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
       
       alert('가입 신청이 완료되었습니다! 슈퍼 어드민의 승인을 기다려주세요.');
       router.push('/dashboard');

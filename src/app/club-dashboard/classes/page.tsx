@@ -20,13 +20,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -35,19 +28,26 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Edit, Trash2 } from 'lucide-react';
-import { AppHeader } from '@/components/layout/header';
+import { Loader2, Edit, Trash2, PlusCircle, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 
 const classFormSchema = z.object({
   name: z.string().min(1, '클래스 이름을 입력해주세요.'),
   dayOfWeek: z.enum(['월', '화', '수', '목', '금', '토', '일'], { required_error: '요일을 선택해주세요.'}),
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'HH:MM 형식으로 시간을 입력해주세요.'),
-  capacity: z.preprocess(
-    (a) => (a === '' ? undefined : parseInt(z.string().parse(a), 10)),
-    z.number().positive('정원은 0보다 커야 합니다.')
-  ),
+  capacity: z.number().int().positive('정원은 0보다 커야 합니다.'),
 });
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
@@ -57,9 +57,11 @@ export default function ClassesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<GymClass | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingClass, setDeletingClass] = useState<GymClass | null>(null);
 
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
@@ -67,6 +69,7 @@ export default function ClassesPage() {
       name: '',
       time: '14:00',
       dayOfWeek: '월',
+      capacity: 10,
     },
   });
 
@@ -76,13 +79,16 @@ export default function ClassesPage() {
   }, [firestore, user?.clubId]);
   const { data: classes, isLoading } = useCollection<GymClass>(classesQuery);
 
-  useEffect(() => {
-    if (editingClass) {
+  const handleOpenDialog = (gymClass: GymClass | null = null) => {
+    setEditingClass(gymClass);
+    
+    // Reset form with proper values
+    if (gymClass) {
       form.reset({
-        name: editingClass.name,
-        dayOfWeek: editingClass.dayOfWeek,
-        time: editingClass.time,
-        capacity: editingClass.capacity,
+        name: gymClass.name,
+        dayOfWeek: gymClass.dayOfWeek,
+        time: gymClass.time,
+        capacity: gymClass.capacity,
       });
     } else {
       form.reset({
@@ -92,26 +98,36 @@ export default function ClassesPage() {
         capacity: 10,
       });
     }
-  }, [editingClass, form]);
-
-  const handleOpenDialog = (gymClass: GymClass | null = null) => {
-    setEditingClass(gymClass);
+    
     setIsDialogOpen(true);
   };
 
   const onSubmit = async (values: ClassFormValues) => {
-    if (!firestore || !user?.clubId) return;
+    console.log('=== 클래스 생성 시작 ===');
+    console.log('입력값:', values);
+    console.log('firestore:', !!firestore);
+    console.log('user.clubId:', user?.clubId);
+    
+    if (!firestore || !user?.clubId) {
+      console.error('Firebase 또는 클럽 정보 없음');
+      toast({ variant: 'destructive', title: '오류', description: 'Firebase 또는 클럽 정보가 없습니다.' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
       if (editingClass) {
         // Update existing class
+        console.log('클래스 수정 모드');
         const classRef = doc(firestore, 'classes', editingClass.id);
         const updatedData: Partial<GymClass> = { ...values };
         await setDoc(classRef, updatedData, { merge: true });
+        console.log('클래스 수정 완료');
         toast({ title: '클래스 수정 완료', description: `'${values.name}' 클래스 정보가 업데이트되었습니다.` });
       } else {
         // Create new class
+        console.log('새 클래스 생성 모드');
         const newClassRef = doc(collection(firestore, 'classes'));
         const classData: GymClass = {
             ...values,
@@ -119,23 +135,28 @@ export default function ClassesPage() {
             clubId: user.clubId,
             memberIds: [],
         };
+        console.log('생성할 클래스 데이터:', classData);
         await setDoc(newClassRef, classData);
+        console.log('클래스 생성 완료');
         toast({ title: '클래스 생성 완료', description: `'${values.name}' 클래스가 생성되었습니다.` });
       }
       setIsDialogOpen(false);
+      form.reset();
     } catch (error) {
-      console.error('Error saving class:', error);
+      console.error('=== 클래스 저장 에러 ===');
+      console.error('에러 상세:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '저장 중 오류가 발생했습니다.' });
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  const handleDelete = async (classId: string) => {
-    if (!firestore) return;
+  const handleDelete = async () => {
+    if (!firestore || !deletingClass) return;
     try {
-      await deleteDoc(doc(firestore, 'classes', classId));
-      toast({ title: '삭제 완료', description: '클래스가 삭제되었습니다.' });
+      await deleteDoc(doc(firestore, 'classes', deletingClass.id));
+      toast({ title: '삭제 완료', description: `'${deletingClass.name}' 클래스가 삭제되었습니다.` });
+      setDeletingClass(null);
     } catch (error) {
       console.error('Error deleting class:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '삭제 중 오류가 발생했습니다.' });
@@ -144,17 +165,23 @@ export default function ClassesPage() {
 
 
   return (
-    <>
-      <AppHeader
-        showAddButton={true}
-        addButtonLabel="새 클래스 생성"
-        onAddClick={() => handleOpenDialog(null)}
-      />
-      <main className="flex-1 p-6 space-y-6">
+    <main className="flex-1 p-6 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>클래스 관리</CardTitle>
-            <CardDescription>클럽에서 운영할 클래스(수업)를 생성하고 관리하세요.</CardDescription>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <CardTitle>클래스 관리</CardTitle>
+                <CardDescription>클럽에서 운영할 클래스(수업)를 생성하고 관리하세요.</CardDescription>
+              </div>
+              <Button 
+                onClick={() => handleOpenDialog(null)}
+                className="shrink-0 relative z-10"
+                type="button"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                새 클래스 생성
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -180,10 +207,18 @@ export default function ClassesPage() {
                       <TableCell>{gymClass.time}</TableCell>
                       <TableCell>{gymClass.memberIds.length} / {gymClass.capacity}</TableCell>
                       <TableCell className="text-right space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => router.push(`/club-dashboard/classes/${gymClass.id}`)}
+                          title="회원 관리"
+                        >
+                          <Users className="h-4 w-4" />
+                        </Button>
                         <Button variant="outline" size="icon" onClick={() => handleOpenDialog(gymClass)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="destructive" size="icon" onClick={() => handleDelete(gymClass.id)}>
+                        <Button variant="destructive" size="icon" onClick={() => setDeletingClass(gymClass)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -198,7 +233,22 @@ export default function ClassesPage() {
           </CardContent>
         </Card>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog 
+          open={isDialogOpen} 
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) {
+              // Reset form when dialog closes
+              setEditingClass(null);
+              form.reset({
+                name: '',
+                dayOfWeek: '월',
+                time: '14:00',
+                capacity: 10,
+              });
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editingClass ? '클래스 수정' : '새 클래스 생성'}</DialogTitle>
@@ -207,7 +257,14 @@ export default function ClassesPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <form onSubmit={form.handleSubmit((values) => {
+                console.log('폼 제출 이벤트 발생');
+                console.log('현재 폼 값:', values);
+                console.log('폼 에러:', form.formState.errors);
+                onSubmit(values);
+              }, (errors) => {
+                console.log('폼 검증 실패:', errors);
+              })} className="space-y-4 py-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -228,18 +285,16 @@ export default function ClassesPage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>요일</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="요일 선택" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {daysOfWeek.map(day => (
-                                    <SelectItem key={day} value={day}>{day}요일</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <select
+                            {...field}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          >
+                            {daysOfWeek.map(day => (
+                              <option key={day} value={day}>{day}요일</option>
+                            ))}
+                          </select>
+                        </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -265,7 +320,12 @@ export default function ClassesPage() {
                       <FormItem>
                         <FormLabel>정원</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="예: 10" {...field} />
+                          <Input 
+                            type="number" 
+                            placeholder="예: 10"
+                            value={field.value}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -276,7 +336,11 @@ export default function ClassesPage() {
                   <DialogClose asChild>
                     <Button type="button" variant="outline">취소</Button>
                   </DialogClose>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    onClick={() => console.log('저장 버튼 클릭됨')}
+                  >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     저장
                   </Button>
@@ -285,7 +349,26 @@ export default function ClassesPage() {
             </Form>
           </DialogContent>
         </Dialog>
-      </main>
-    </>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletingClass} onOpenChange={(open) => !open && setDeletingClass(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>클래스 삭제 확인</AlertDialogTitle>
+              <AlertDialogDescription>
+                '{deletingClass?.name}' 클래스를 삭제하시겠습니까?
+                <br />
+                <span className="text-destructive font-medium">이 작업은 되돌릴 수 없습니다.</span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+    </main>
   );
 }

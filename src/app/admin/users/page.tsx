@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { UserProfile, Club } from '@/types';
+import { UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +42,7 @@ export default function AdminUsersPage() {
   }
 
   // This page is for admins only
-  if (user.role !== 'admin') {
+  if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.FEDERATION_ADMIN) {
     router.push('/dashboard');
     return null;
   }
@@ -114,31 +115,37 @@ export default function AdminUsersPage() {
     }
   };
 
-  const getStatusVariant = (
-    status?: 'pending' | 'approved'
-  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-    if (!status) return 'secondary';
+  const getStatusVariant = (status: UserProfile['status']): 'default' | 'destructive' | 'secondary' => {
     switch (status) {
       case 'approved':
         return 'default';
       case 'pending':
         return 'destructive';
+      case 'rejected':
+        return 'secondary';
       default:
         return 'secondary';
     }
   };
 
   const getRoleDisplayName = (role: UserProfile['role']) => {
-    switch (role) {
-      case 'admin':
-        return '최고 관리자';
-      case 'club-admin':
-        return '클럽 관리자';
-      case 'member':
-        return '일반 회원';
-      default:
-        return role;
-    }
+    const roleNames: Record<UserRole, string> = {
+      [UserRole.SUPER_ADMIN]: '최고 관리자',
+      [UserRole.FEDERATION_ADMIN]: '연맹 관리자',
+      [UserRole.FEDERATION_SECRETARIAT]: '연맹 사무국',
+      [UserRole.COMMITTEE_CHAIR]: '위원회 위원장',
+      [UserRole.COMMITTEE_MEMBER]: '위원회 위원',
+      [UserRole.CLUB_OWNER]: '클럽 소유자',
+      [UserRole.CLUB_MANAGER]: '클럽 관리자',
+      [UserRole.CLUB_STAFF]: '클럽 직원',
+      [UserRole.MEDIA_MANAGER]: '미디어 관리자',
+      [UserRole.HEAD_COACH]: '수석 코치',
+      [UserRole.ASSISTANT_COACH]: '보조 코치',
+      [UserRole.MEMBER]: '회원',
+      [UserRole.PARENT]: '학부모',
+      [UserRole.VENDOR]: '협력업체',
+    };
+    return roleNames[role as UserRole] || role;
   };
 
   return (
@@ -175,7 +182,7 @@ export default function AdminUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="space-x-2">
-                      {u.role === 'club-admin' && u.status === 'pending' ? (
+                      {(u.role === UserRole.CLUB_OWNER || u.role === UserRole.CLUB_MANAGER) && u.status === 'pending' ? (
                         <>
                           <Button size="sm" onClick={() => handleApprove(u)}>
                             승인

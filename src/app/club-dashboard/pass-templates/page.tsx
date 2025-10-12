@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -31,12 +32,14 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
-import { AppHeader } from '@/components/layout/header';
 
 
 const templateFormSchema = z.object({
   name: z.string().min(1, '이용권 이름을 입력해주세요.'),
   description: z.string().optional(),
+  passType: z.enum(['period', 'session', 'unlimited'], {
+    required_error: '이용권 타입을 선택해주세요.',
+  }),
   price: z.preprocess(
     (a) => (a === '' ? undefined : parseInt(z.string().parse(a), 10)),
     z.number().positive('가격은 0보다 커야 합니다.').optional()
@@ -47,11 +50,11 @@ const templateFormSchema = z.object({
   ),
   totalSessions: z.preprocess(
     (a) => (a === '' ? undefined : parseInt(z.string().parse(a), 10)),
-    z.number().positive('허용일수는 0보다 커야 합니다.').optional()
+    z.number().positive('총 횟수는 0보다 커야 합니다.').optional()
   ),
   attendableSessions: z.preprocess(
     (a) => (a === '' ? undefined : parseInt(z.string().parse(a), 10)),
-    z.number().positive('출석일수는 0보다 커야 합니다.').optional()
+    z.number().positive('출석 횟수는 0보다 커야 합니다.').optional()
   ),
 });
 
@@ -70,8 +73,15 @@ export default function PassTemplatesPage() {
     defaultValues: {
       name: '',
       description: '',
+      passType: 'period' as any,
+      price: '' as any,
+      durationDays: '' as any,
+      totalSessions: '' as any,
+      attendableSessions: '' as any,
     },
   });
+
+  const passType = form.watch('passType');
 
   const templatesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.clubId) return null;
@@ -107,7 +117,11 @@ export default function PassTemplatesPage() {
   };
 
   const onSubmit = async (values: TemplateFormValues) => {
-    if (!firestore || !user?.clubId) return;
+    console.log('Form submitted with values:', values);
+    if (!firestore || !user?.clubId) {
+      console.error('Missing firestore or clubId');
+      return;
+    }
     setIsSubmitting(true);
 
     const templateData: Omit<PassTemplate, 'id'> = {
@@ -119,6 +133,8 @@ export default function PassTemplatesPage() {
       totalSessions: values.totalSessions,
       attendableSessions: values.attendableSessions,
     };
+
+    console.log('Saving template data:', templateData);
 
     try {
       if (editingTemplate) {
@@ -133,6 +149,15 @@ export default function PassTemplatesPage() {
         toast({ title: '템플릿 생성 완료', description: `'${values.name}' 이용권이 생성되었습니다.` });
       }
       setIsDialogOpen(false);
+      form.reset({
+        name: '',
+        description: '',
+        passType: 'period' as any,
+        price: '' as any,
+        durationDays: '' as any,
+        totalSessions: '' as any,
+        attendableSessions: '' as any,
+      });
     } catch (error) {
       console.error('Error saving template:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '저장 중 오류가 발생했습니다.' });
@@ -154,13 +179,17 @@ export default function PassTemplatesPage() {
 
 
   return (
-    <>
-      <AppHeader
-        showAddButton={true}
-        addButtonLabel="새 이용권 종류"
-        onAddClick={() => handleOpenDialog(null)}
-      />
-      <main className="flex-1 p-6 space-y-6">
+    <main className="flex-1 p-6 space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">이용권 종류 관리</h1>
+          <p className="text-slate-600 mt-1">클럽에서 판매할 이용권 종류를 생성하고 관리하세요</p>
+        </div>
+        <Button onClick={() => handleOpenDialog(null)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          새 이용권 종류
+        </Button>
+      </div>
         <Card>
           <CardHeader>
             <CardTitle>이용권 종류 관리</CardTitle>
@@ -235,20 +264,44 @@ export default function PassTemplatesPage() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="durationDays"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>기간 (일)</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="passType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>이용권 타입</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input type="number" placeholder="예: 30" {...field} />
+                          <SelectTrigger>
+                            <SelectValue placeholder="타입 선택" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          <SelectItem value="period">기간제 (무제한 출석)</SelectItem>
+                          <SelectItem value="session">횟수제 (기간 무제한)</SelectItem>
+                          <SelectItem value="unlimited">기간+횟수제</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  {(passType === 'period' || passType === 'unlimited') && (
+                    <FormField
+                      control={form.control}
+                      name="durationDays"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>기간 (일)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="예: 30" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="price"
@@ -263,22 +316,23 @@ export default function PassTemplatesPage() {
                     )}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="totalSessions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>총 허용 횟수</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="예: 5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
+                {(passType === 'session' || passType === 'unlimited') && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="totalSessions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>총 허용 횟수</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="예: 12" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
                     name="attendableSessions"
                     render={({ field }) => (
                       <FormItem>
@@ -290,8 +344,9 @@ export default function PassTemplatesPage() {
                       </FormItem>
                     )}
                   />
-                </div>
-                 <FormField
+                  </div>
+                )}
+                <FormField
                   control={form.control}
                   name="description"
                   render={({ field }) => (
@@ -317,7 +372,6 @@ export default function PassTemplatesPage() {
             </Form>
           </DialogContent>
         </Dialog>
-      </main>
-    </>
+    </main>
   );
 }

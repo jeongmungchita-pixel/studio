@@ -4,44 +4,13 @@ import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Users, Building, Trophy, CalendarCheck, Loader2, User } from 'lucide-react';
-import type { Member, Club, Competition, UserRole } from '@/types';
+import { Users, Building, Trophy, CalendarCheck, Loader2 } from 'lucide-react';
+import type { Member, Club, Competition } from '@/types';
+import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
-import { RoleBadge } from '@/components/role-badge';
 import { useRole } from '@/hooks/use-role';
-
-const chartData = [
-  { month: '1월', members: 0 },
-  { month: '2월', members: 0 },
-  { month: '3월', members: 0 },
-  { month: '4월', members: 0 },
-  { month: '5월', members: 0 },
-  { month: '6월', members: 0 },
-];
-
-const chartConfig = {
-  members: {
-    label: "신규 회원",
-    color: "hsl(var(--primary))",
-  },
-} satisfies ChartConfig
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -56,12 +25,28 @@ export default function DashboardPage() {
   
   const { data: userAssociatedMembers, isLoading: isMembersLoading } = useCollection<Member>(membersQuery);
 
-  const allMembersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
-  const { data: allMembers, isLoading: areAllMembersLoading } = useCollection<Member>(allMembersCollection);
+  // 역할별로 다른 데이터 쿼리
+  const allMembersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    // 클럽 관리자는 자신의 클럽 회원만
+    if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.clubId) {
+      return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
+    }
+    // 연맹 관리자는 모든 회원
+    return collection(firestore, 'members');
+  }, [firestore, user]);
+  const { data: allMembers, isLoading: areAllMembersLoading } = useCollection<Member>(allMembersQuery);
 
-
-  const clubsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'clubs') : null), [firestore]);
-  const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
+  const clubsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    // 클럽 관리자는 자신의 클럽만
+    if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.clubId) {
+      return query(collection(firestore, 'clubs'), where('__name__', '==', user.clubId));
+    }
+    // 연맹 관리자는 모든 클럽
+    return collection(firestore, 'clubs');
+  }, [firestore, user]);
+  const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsQuery);
 
   const competitionsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'competitions') : null), [firestore]);
   const { data: competitions, isLoading: isCompetitionsLoading } = useCollection<Competition>(competitionsCollection);
@@ -69,7 +54,7 @@ export default function DashboardPage() {
   const isProfileComplete = useMemo(() => {
     if (!user || !userAssociatedMembers) return false;
     // For members, check if they are associated with any member profiles.
-    if (user.role === 'member') {
+    if (user.role === UserRole.MEMBER || user.role === UserRole.PARENT) {
       return userAssociatedMembers.length > 0;
     }
     // For admins and club-admins, profile is always considered complete in this context.
@@ -85,7 +70,7 @@ export default function DashboardPage() {
   }
 
   // Only redirect 'member' role if their profile is incomplete.
-  if (user && user.role === 'member' && !isProfileComplete) {
+  if (user && (user.role === UserRole.MEMBER || user.role === UserRole.PARENT) && !isProfileComplete) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card className="w-full max-w-lg text-center">
@@ -110,139 +95,126 @@ export default function DashboardPage() {
     (c) => new Date(c.startDate) > new Date()
   ) || [];
 
+  // 역할별 레이블 설정
+  const getMembersLabel = () => {
+    if (userRole === UserRole.CLUB_OWNER || userRole === UserRole.CLUB_MANAGER) {
+      return '클럽 회원 수';
+    }
+    if (userRole === UserRole.MEMBER || userRole === UserRole.PARENT) {
+      return '내 가족 회원';
+    }
+    return '총 회원 수';
+  };
+
+  const getClubsLabel = () => {
+    if (userRole === UserRole.CLUB_OWNER || userRole === UserRole.CLUB_MANAGER) {
+      return '내 클럽';
+    }
+    return '활동 중인 클럽';
+  };
+
+  const displayMembers = userRole === UserRole.MEMBER || userRole === UserRole.PARENT 
+    ? userAssociatedMembers 
+    : allMembers;
+
   return (
-    <main className="flex-1 p-6 space-y-6">
-      {/* 사용자 프로필 카드 */}
-      {user && userRole && (
-        <Card>
-          <CardHeader>
+    <div className="p-8 space-y-6">
+      {/* 간단한 헤더 */}
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">대시보드</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          {userRole === UserRole.CLUB_OWNER || userRole === UserRole.CLUB_MANAGER 
+            ? '클럽 현황' 
+            : userRole === UserRole.MEMBER || userRole === UserRole.PARENT
+            ? '내 정보'
+            : 'KGF 넥서스 전체 현황'}
+        </p>
+      </div>
+
+      {/* 통계 카드 - 간결하게 */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-slate-200">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle>{user.displayName || '사용자'}</CardTitle>
-                  <CardDescription>{user.email}</CardDescription>
-                </div>
+              <div>
+                <p className="text-sm text-slate-600">{getMembersLabel()}</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{displayMembers?.length || 0}</p>
               </div>
-              <RoleBadge role={userRole} />
+              <Users className="h-8 w-8 text-slate-400" />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">{getClubsLabel()}</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{clubs?.length || 0}</p>
+              </div>
+              <Building className="h-8 w-8 text-slate-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">예정된 대회</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{upcomingCompetitions.length}</p>
+              </div>
+              <Trophy className="h-8 w-8 text-slate-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">이번 달 활동</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">-</p>
+              </div>
+              <CalendarCheck className="h-8 w-8 text-slate-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {/* 예정된 대회 */}
+      {upcomingCompetitions.length > 0 && (
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-slate-900">예정된 대회</CardTitle>
           </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {upcomingCompetitions.slice(0, 5).map((comp) => (
+                <div 
+                  key={comp.id} 
+                  className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/competitions/${comp.id}`)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                      <Trophy className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{comp.name}</p>
+                      <p className="text-sm text-slate-500">{comp.location}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-slate-900">
+                      {new Date(comp.startDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
       )}
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              총 회원 수
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{allMembers?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              -
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">활동 중인 클럽</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{clubs?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              -
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              예정된 대회
-            </CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {upcomingCompetitions.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              -
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              납부 예정 회비
-            </CardTitle>
-            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              -
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>신규 회원 증가 추이</CardTitle>
-            <CardDescription>지난 6개월</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-              <BarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  stroke="hsl(var(--muted-foreground))"
-                />
-                <YAxis stroke="hsl(var(--muted-foreground))"/>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent />}
-                />
-                <Bar dataKey="members" fill="var(--color-members)" radius={4} />
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>예정된 대회</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>대회명</TableHead>
-                  <TableHead>날짜</TableHead>
-                  <TableHead>장소</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {upcomingCompetitions.length > 0 ? upcomingCompetitions.map((comp) => (
-                  <TableRow key={comp.id}>
-                    <TableCell className="font-medium">{comp.name}</TableCell>
-                    <TableCell>{new Date(comp.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{comp.location}</TableCell>
-                  </TableRow>
-                )) : <TableRow><TableCell colSpan={3} className="text-center">예정된 대회가 없습니다.</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+    </div>
   );
 }

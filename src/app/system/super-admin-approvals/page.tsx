@@ -4,59 +4,111 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ApprovalActions } from '@/components/approval-actions';
-import { Shield, User, Mail, Phone, Building2, Briefcase, FileText, AlertTriangle } from 'lucide-react';
+import { Shield, User, Mail, Phone, Building2, Briefcase, FileText, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { SuperAdminRequest, UserRole } from '@/types';
 
-// 임시 데이터
-const mockSuperAdminRequests = [
-  {
-    id: '1',
-    name: '김최고',
-    email: 'super@example.com',
-    phoneNumber: '010-1111-2222',
-    organization: '대한체조협회',
-    position: '사무총장',
-    reason: '전국 체조 클럽 통합 관리 및 연맹 시스템 운영을 위해 최고 관리자 권한이 필요합니다.',
-    secretCode: '****',
-    requestedAt: new Date().toISOString(),
-    status: 'pending' as const,
-  },
-  {
-    id: '2',
-    name: '이시스템',
-    email: 'system@example.com',
-    phoneNumber: '010-3333-4444',
-    organization: '체조연맹 본부',
-    position: '시스템 관리자',
-    reason: '시스템 전반 관리 및 보안 설정을 위한 최고 권한이 필요합니다.',
-    secretCode: '****',
-    requestedAt: new Date(Date.now() - 86400000).toISOString(),
-    status: 'pending' as const,
-  },
-];
 
 export default function SuperAdminApprovalsPage() {
-  const [requests, setRequests] = useState(mockSuperAdminRequests);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Firestore에서 최고 관리자 신청 목록 가져오기
+  const requestsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'superAdminRequests') : null),
+    [firestore]
+  );
+  const { data: requests, isLoading: isRequestsLoading } = useCollection<SuperAdminRequest>(requestsCollection);
 
   const handleApprove = async (id: string) => {
-    console.log('최고관리자 승인:', id);
-    // TODO: Firestore 업데이트
-    setRequests(prev => prev.map(req =>
-      req.id === id ? { ...req, status: 'approved' as const } : req
-    ));
-    alert('최고 관리자로 승인되었습니다!');
+    if (!firestore || !user) return;
+    
+    setIsProcessing(true);
+    try {
+      const request = requests?.find(r => r.id === id);
+      if (!request) {
+        alert('신청을 찾을 수 없습니다.');
+        return;
+      }
+
+      // SuperAdminRequest 업데이트
+      const requestRef = doc(firestore, 'superAdminRequests', id);
+      await updateDoc(requestRef, {
+        status: 'approved',
+        approvedBy: user.uid,
+        approvedAt: new Date().toISOString(),
+      });
+
+      // 사용자 프로필 업데이트 (역할을 SUPER_ADMIN으로 변경)
+      const userRef = doc(firestore, 'users', request.userId);
+      await updateDoc(userRef, {
+        role: 'SUPER_ADMIN' as UserRole,
+        status: 'approved',
+        approvedBy: user.uid,
+        approvedAt: new Date().toISOString(),
+      });
+
+      alert('최고 관리자로 승인되었습니다!');
+    } catch (error) {
+      console.error('승인 처리 중 오류:', error);
+      alert('승인 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleReject = async (id: string, reason: string) => {
-    console.log('최고관리자 거부:', id, reason);
-    // TODO: Firestore 업데이트
-    setRequests(prev => prev.map(req =>
-      req.id === id ? { ...req, status: 'rejected' as const } : req
-    ));
-    alert('신청이 거부되었습니다.');
+    if (!firestore || !user) return;
+    
+    setIsProcessing(true);
+    try {
+      const request = requests?.find(r => r.id === id);
+      if (!request) {
+        alert('신청을 찾을 수 없습니다.');
+        return;
+      }
+
+      // SuperAdminRequest 업데이트
+      const requestRef = doc(firestore, 'superAdminRequests', id);
+      await updateDoc(requestRef, {
+        status: 'rejected',
+        rejectedBy: user.uid,
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: reason,
+      });
+
+      // 사용자 프로필 업데이트
+      const userRef = doc(firestore, 'users', request.userId);
+      await updateDoc(userRef, {
+        status: 'rejected',
+        rejectedBy: user.uid,
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: reason,
+      });
+
+      alert('신청이 거부되었습니다.');
+    } catch (error) {
+      console.error('거부 처리 중 오류:', error);
+      alert('거부 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  // 로딩 상태
+  if (isUserLoading || isRequestsLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const pendingCount = requests?.filter(r => r.status === 'pending').length || 0;
 
   return (
     <main className="flex-1 p-6 space-y-6">
@@ -100,7 +152,7 @@ export default function SuperAdminApprovalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {requests.filter(r => r.status === 'pending').length}
+              {requests?.filter(r => r.status === 'pending').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -112,7 +164,7 @@ export default function SuperAdminApprovalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {requests.filter(r => r.status === 'approved').length}
+              {requests?.filter(r => r.status === 'approved').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -124,7 +176,7 @@ export default function SuperAdminApprovalsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {requests.filter(r => r.status === 'rejected').length}
+              {requests?.filter(r => r.status === 'rejected').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -134,7 +186,7 @@ export default function SuperAdminApprovalsPage() {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">신청 목록</h2>
         
-        {requests.length > 0 ? (
+        {requests && requests.length > 0 ? (
           <div className="grid gap-4">
             {requests.map((request) => (
               <Card key={request.id} className={
@@ -213,6 +265,7 @@ export default function SuperAdminApprovalsPage() {
                         <ApprovalActions
                           onApprove={() => handleApprove(request.id)}
                           onReject={(reason) => handleReject(request.id, reason)}
+                          disabled={isProcessing}
                         />
                       </div>
                     )}

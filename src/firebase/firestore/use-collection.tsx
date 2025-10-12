@@ -95,6 +95,9 @@ export function useCollection<T = any>(
             path = `[path could not be determined for ${memoizedTargetRefOrQuery.type}]`;
         }
 
+        // Log the error but don't throw it globally during development
+        console.warn(`Firestore permission error on ${path}:`, error.message);
+
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path,
@@ -104,8 +107,8 @@ export function useCollection<T = any>(
         setData(null);
         setIsLoading(false);
 
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+        // TEMPORARILY DISABLED: Don't trigger global error propagation during development
+        // errorEmitter.emit('permission-error', contextualError);
       }
     );
 

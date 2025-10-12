@@ -6,21 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserRole } from '@/types';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Building2, UserPlus } from 'lucide-react';
-
-// 임시 클럽 데이터
-const mockClubs = [
-  { id: '1', name: '서울체조클럽' },
-  { id: '2', name: '부산체조센터' },
-  { id: '3', name: '대전체조아카데미' },
-  { id: '4', name: '광주체조교실' },
-];
+import { Users, Building2, UserPlus, Loader2 } from 'lucide-react';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { MemberRequest, Club } from '@/types';
 
 export default function MemberRegisterPage() {
   const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -30,16 +27,52 @@ export default function MemberRegisterPage() {
     familyType: 'individual' as 'individual' | 'parent' | 'child',
     birthDate: '',
     address: '',
+    gender: '' as 'male' | 'female' | '',
   });
+
+  // Firestore에서 클럽 목록 가져오기
+  const clubsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'clubs') : null),
+    [firestore]
+  );
+  const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!firestore || !user) {
+      alert('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      console.log('회원 가입 신청:', formData);
-      // TODO: Firestore에 저장
-      // await createMemberRequest(formData);
+      const selectedClub = clubs?.find(c => c.id === formData.clubId);
+      if (!selectedClub) {
+        alert('클럽을 선택해주세요.');
+        return;
+      }
+
+      // MemberRequest 생성
+      const requestData: Omit<MemberRequest, 'id'> = {
+        userId: user.uid,
+        name: formData.name,
+        email: formData.email || undefined,
+        phoneNumber: formData.phoneNumber || undefined,
+        dateOfBirth: formData.birthDate || undefined,
+        gender: formData.gender || undefined,
+        clubId: formData.clubId,
+        clubName: selectedClub.name,
+        memberType: formData.familyType === 'individual' ? 'individual' : 'family',
+        familyRole: formData.familyType !== 'individual' ? formData.familyType : undefined,
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+      };
+
+      // Firestore에 저장
+      await addDoc(collection(firestore, 'memberRequests'), requestData);
       
       alert('가입 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.');
       router.push('/dashboard');
@@ -50,6 +83,14 @@ export default function MemberRegisterPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isClubsLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
@@ -111,11 +152,17 @@ export default function MemberRegisterPage() {
                   <SelectValue placeholder="가입할 클럽을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockClubs.map((club) => (
-                    <SelectItem key={club.id} value={club.id}>
-                      {club.name}
+                  {clubs && clubs.length > 0 ? (
+                    clubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      등록된 클럽이 없습니다
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>

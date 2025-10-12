@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
-import type { UserProfile, Club } from '@/types';
+import { UserProfile, Club, UserRole } from '@/types';
 
 export interface UserHookResult {
   user: (User & UserProfile & { clubId?: string }) | null;
@@ -44,11 +44,9 @@ export function useUser(): UserHookResult {
                 photoURL:
                   firebaseUser.photoURL ||
                   `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
-                role: 'member', // Default role
+                role: UserRole.MEMBER, // Default role
                 provider:
-                  (firebaseUser.providerData[0]?.providerId as
-                    | 'google'
-                    | 'password') || 'password',
+                  firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                 status: 'approved', // Default status for new members/social logins
               };
               // Save this default profile to Firestore
@@ -56,8 +54,8 @@ export function useUser(): UserHookResult {
               userProfileData = defaultProfile;
             }
 
-            // If the user is a club-admin, find their clubId
-            if (userProfileData.role === 'club-admin' && userProfileData.clubName) {
+            // If the user is a club owner/manager, find their clubId
+            if ((userProfileData.role === UserRole.CLUB_OWNER || userProfileData.role === UserRole.CLUB_MANAGER) && userProfileData.clubName) {
                 const clubsRef = collection(firestore, 'clubs');
                 const q = query(clubsRef, where("name", "==", userProfileData.clubName));
                 const querySnapshot = await getDocs(q);
@@ -67,7 +65,11 @@ export function useUser(): UserHookResult {
                 }
             }
             
-            setUser({ ...firebaseUser, ...userProfileData });
+            setUser({ 
+              ...firebaseUser, 
+              ...userProfileData,
+              phoneNumber: firebaseUser.phoneNumber ?? userProfileData.phoneNumber
+            } as User & UserProfile & { clubId?: string });
 
         } catch (error) {
             console.error("Error fetching user profile:", error);

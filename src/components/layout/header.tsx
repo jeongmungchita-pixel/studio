@@ -11,16 +11,29 @@ import {
 } from '@/components/ui/breadcrumb';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { PlusCircle } from 'lucide-react';
+import { GlobalSearch } from '@/components/layout/global-search';
 
 function toTitleCase(str: string) {
   const koreanMap: { [key: string]: string } = {
     'dashboard': '대시보드',
+    'club-dashboard': '클럽 대시보드',
+    'my-profile': '내 정보',
+    'super-admin': '시스템 관리',
     'members': '회원',
     'clubs': '클럽',
     'competitions': '대회',
     'level-tests': '레벨 테스트',
+    'admin': '관리',
+    'users': '사용자',
+    'classes': '클래스',
+    'passes': '이용권',
+    'pass-templates': '이용권 종류',
+    'approvals': '승인 요청',
+    'family': '가족',
+    'system': '시스템',
+    'super-admin-approvals': '최고 관리자 승인',
+    'pending': '승인 대기',
   }
   if (koreanMap[str]) {
     return koreanMap[str];
@@ -47,38 +60,10 @@ export function AppHeader({
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden"/>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">대시보드</BreadcrumbLink>
-            </BreadcrumbItem>
-            {segments.length > 1 && segments.map((segment, index) => (
-              <React.Fragment key={segment}>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  {index === segments.length - 1 ? (
-                    <BreadcrumbPage>{toTitleCase(segment)}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink href={`/${segments.slice(0, index + 1).join('/')}`}>
-                      {toTitleCase(segment)}
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </React.Fragment>
-            ))}
-          </BreadcrumbList>
-        </Breadcrumb>
       </div>
 
       <div className="ml-auto flex items-center gap-4">
-        <div className="relative flex-1 md:grow-0">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-                type="search"
-                placeholder="검색..."
-                className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
-            />
-        </div>
+        <GlobalSearch />
 
         {showAddButton && (
           <Button onClick={onAddClick}>

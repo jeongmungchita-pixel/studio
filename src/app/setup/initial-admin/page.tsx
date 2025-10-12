@@ -8,7 +8,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { collection, getDocs, query, limit, doc, setDoc } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { UserRole } from '@/types';
 
 export default function InitialAdminSetupPage() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export default function InitialAdminSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: 'wo1109ok@me.com', // 기본 이메일
     password: '',
     confirmPassword: '',
     phoneNumber: '',
@@ -66,20 +68,55 @@ export default function InitialAdminSetupPage() {
       return;
     }
 
+    if (!firestore) {
+      alert('Firebase 초기화 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      console.log('최초 관리자 생성:', formData);
+      // 1. Firebase Authentication으로 계정 생성
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
       
-      // TODO: Firebase Authentication + Firestore
-      // 1. createUserWithEmailAndPassword
-      // 2. Firestore에 UserProfile 생성 (role: SUPER_ADMIN)
+      const user = userCredential.user;
       
-      alert('최초 관리자가 생성되었습니다! 로그인해주세요.');
+      // 2. Firestore에 UserProfile 생성 (SUPER_ADMIN)
+      const userRef = doc(firestore, 'users', user.uid);
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: formData.email,
+        displayName: formData.name,
+        photoURL: '',
+        role: UserRole.SUPER_ADMIN,
+        provider: 'email',
+        status: 'approved', // 최초 관리자는 자동 승인
+        phoneNumber: formData.phoneNumber || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      
+      console.log('최초 관리자 생성 완료:', user.uid);
+      alert(`최초 관리자가 생성되었습니다!\n이메일: ${formData.email}\n\n로그인해주세요.`);
       router.push('/login');
-    } catch (error) {
+    } catch (error: any) {
       console.error('관리자 생성 실패:', error);
-      alert('관리자 생성에 실패했습니다. 다시 시도해주세요.');
+      
+      let errorMessage = '관리자 생성에 실패했습니다.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = '이미 사용 중인 이메일입니다.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = '유효하지 않은 이메일 형식입니다.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = '비밀번호가 너무 약합니다. (최소 6자)';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -122,16 +159,19 @@ export default function InitialAdminSetupPage() {
 
   // 최초 설정 가능
   return (
-    <main className="flex-1 p-6 flex items-center justify-center">
-      <Card className="w-full max-w-2xl border-green-200">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-green-600" />
+    <main className="flex min-h-screen items-center justify-center bg-white p-4">
+      {/* Windsurf 스타일 배경 그리드 */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      
+      <Card className="w-full max-w-2xl border border-slate-200 shadow-sm relative bg-white">
+        <CardHeader className="space-y-6 pt-12 pb-8">
+          <div className="flex flex-col items-center gap-6">
+            <div className="p-3 bg-slate-900 rounded-lg">
+              <Shield className="h-8 w-8 text-white" />
             </div>
-            <div>
-              <CardTitle className="text-2xl text-green-600">최초 관리자 설정</CardTitle>
-              <CardDescription>
+            <div className="text-center">
+              <CardTitle className="text-2xl font-semibold text-slate-900">최초 관리자 설정</CardTitle>
+              <CardDescription className="text-sm text-slate-600 mt-2">
                 시스템의 첫 번째 최고 관리자를 생성합니다
               </CardDescription>
             </div>

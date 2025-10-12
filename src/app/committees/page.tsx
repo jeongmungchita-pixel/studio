@@ -8,36 +8,8 @@ import { RequireRole } from '@/components/require-role';
 import { UserRole } from '@/types';
 import { RoleBadge } from '@/components/role-badge';
 
-// 임시 데이터 (나중에 Firestore에서 가져올 예정)
-const committees = [
-  {
-    id: '1',
-    name: '대회 위원회',
-    type: 'COMPETITION' as const,
-    description: '체조 대회 기획, 운영 및 심사를 담당합니다.',
-    chairId: null,
-    memberCount: 0,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: '교육 위원회',
-    type: 'EDUCATION' as const,
-    description: '코치 교육, 선수 육성 프로그램을 개발하고 운영합니다.',
-    chairId: null,
-    memberCount: 0,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: '마케팅 위원회',
-    type: 'MARKETING' as const,
-    description: '체조 홍보, 스폰서십, 미디어 관리를 담당합니다.',
-    chairId: null,
-    memberCount: 0,
-    createdAt: new Date().toISOString(),
-  },
-];
+// TODO: Firestore에서 실제 위원회 데이터를 가져와야 합니다
+const committees: any[] = [];
 
 const committeeTypeNames = {
   COMPETITION: '대회',

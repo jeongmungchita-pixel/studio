@@ -1,0 +1,285 @@
+'use client';
+import { useState, useMemo, use } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
+import { collection, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { GymClass, Member } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, ArrowLeft, UserPlus, UserMinus, Users } from 'lucide-react';
+import { differenceInYears } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+
+export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch class data
+  const classRef = useMemoFirebase(() => (firestore ? doc(firestore, 'classes', id) : null), [firestore, id]);
+  const { data: classData, isLoading: isClassLoading } = useDoc<GymClass>(classRef);
+
+  // Fetch all members for this club
+  const membersQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.clubId) return null;
+    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId), where('status', '==', 'active'));
+  }, [firestore, user?.clubId]);
+  const { data: allMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
+
+  // Get members in this class
+  const classMembers = useMemo(() => {
+    if (!allMembers || !classData) return [];
+    return allMembers.filter(member => classData.memberIds.includes(member.id));
+  }, [allMembers, classData]);
+
+  // Get available members (not in this class)
+  const availableMembers = useMemo(() => {
+    if (!allMembers || !classData) return [];
+    return allMembers.filter(member => !classData.memberIds.includes(member.id));
+  }, [allMembers, classData]);
+
+  const getMemberAge = (dateOfBirth?: string) => {
+    if (!dateOfBirth) return null;
+    return differenceInYears(new Date(), new Date(dateOfBirth));
+  };
+
+  const handleAddMembers = async () => {
+    if (!firestore || !classData || selectedMemberIds.length === 0) return;
+    setIsSubmitting(true);
+
+    try {
+      const classRef = doc(firestore, 'classes', id);
+      
+      // Add members to class
+      for (const memberId of selectedMemberIds) {
+        await updateDoc(classRef, {
+          memberIds: arrayUnion(memberId)
+        });
+      }
+
+      toast({ 
+        title: '회원 추가 완료', 
+        description: `${selectedMemberIds.length}명의 회원이 추가되었습니다.` 
+      });
+
+      setIsAddMemberDialogOpen(false);
+      setSelectedMemberIds([]);
+    } catch (error) {
+      console.error('Error adding members:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: '오류 발생', 
+        description: '회원 추가 중 오류가 발생했습니다.' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!firestore || !classData) return;
+
+    try {
+      const classRef = doc(firestore, 'classes', id);
+      await updateDoc(classRef, {
+        memberIds: arrayRemove(memberId)
+      });
+
+      toast({ 
+        title: '회원 제거 완료', 
+        description: '회원이 클래스에서 제거되었습니다.' 
+      });
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: '오류 발생', 
+        description: '회원 제거 중 오류가 발생했습니다.' 
+      });
+    }
+  };
+
+  const toggleMemberSelection = (memberId: string) => {
+    setSelectedMemberIds(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  const isLoading = isClassLoading || areMembersLoading;
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 p-6">
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </main>
+    );
+  }
+
+  if (!classData) {
+    return (
+      <main className="flex-1 p-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center h-40">
+            <p className="text-muted-foreground">클래스를 찾을 수 없습니다.</p>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex-1 p-6 space-y-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-slate-900">{classData.name}</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="secondary">
+              {classData.dayOfWeek}요일 {classData.time}
+            </Badge>
+            <span className="text-slate-600">
+              정원: {classMembers.length} / {classData.capacity}명
+            </span>
+          </div>
+        </div>
+        <Button onClick={() => setIsAddMemberDialogOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          회원 추가
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            등록 회원 ({classMembers.length}명)
+          </CardTitle>
+          <CardDescription>이 클래스에 등록된 회원 목록입니다.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {classMembers.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              등록된 회원이 없습니다.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {classMembers.map((member) => {
+                const age = getMemberAge(member.dateOfBirth);
+                return (
+                  <Card key={member.id} className="relative">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{member.name}</h3>
+                          {age && (
+                            <p className="text-sm text-muted-foreground">{age}세</p>
+                          )}
+                          {member.phoneNumber && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {member.phoneNumber}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <UserMinus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Members Dialog */}
+      <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>회원 추가</DialogTitle>
+            <DialogDescription>
+              클래스에 추가할 회원을 선택하세요.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="max-h-96 overflow-y-auto space-y-2 py-4">
+            {availableMembers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                추가 가능한 회원이 없습니다.
+              </p>
+            ) : (
+              availableMembers.map((member) => {
+                const age = getMemberAge(member.dateOfBirth);
+                const isSelected = selectedMemberIds.includes(member.id);
+                return (
+                  <div
+                    key={member.id}
+                    className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
+                    onClick={() => toggleMemberSelection(member.id)}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleMemberSelection(member.id)}
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">{member.name}</p>
+                      {age && (
+                        <p className="text-sm text-muted-foreground">{age}세</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddMemberDialogOpen(false);
+                setSelectedMemberIds([]);
+              }}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleAddMembers}
+              disabled={selectedMemberIds.length === 0 || isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              추가 ({selectedMemberIds.length})
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </main>
+  );
+}

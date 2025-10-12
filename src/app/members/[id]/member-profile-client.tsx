@@ -4,10 +4,12 @@ import { useMemo, useState, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser, useDoc, useCollection, useFirestore, useStorage, uploadImage } from '@/firebase';
-import type { Member, MemberPass, Attendance, MediaItem } from '@/types';
-import { doc, collection, query, where, orderBy, writeBatch } from 'firebase/firestore';
+import type { Member, MemberPass, Attendance, MediaItem, UserProfile, PassTemplate, PassRenewalRequest } from '@/types';
+import { UserRole } from '@/types';
+import { doc, collection, query, where, orderBy, writeBatch, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { differenceInYears, format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,7 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon, Camera, File, Video } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon, Camera, File, Video, Phone, Mail, MapPin, Users as UsersIcon, CreditCard, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { 
   DropdownMenu, 
@@ -39,7 +42,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
   absent: '결석',
-  excused: '사유',
+  excused: '메모',
 };
 
 export default function MemberProfileClient({ id }: { id:string }) {
@@ -52,10 +55,16 @@ export default function MemberProfileClient({ id }: { id:string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
 
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [isRenewalDialogOpen, setIsRenewalDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<PassTemplate | null>(null);
+  const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
+  const [editAttendanceStatus, setEditAttendanceStatus] = useState<Attendance['status']>('present');
+  const [editAttendanceNote, setEditAttendanceNote] = useState('');
 
   // 1. Fetch member data
   const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', id) : null), [firestore, id]);
@@ -78,11 +87,26 @@ export default function MemberProfileClient({ id }: { id:string }) {
   // 4. Fetch all media items for this member
   const mediaQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'media_items'), where('memberId', '==', id), orderBy('uploadDate', 'desc'));
+    return query(collection(firestore, 'media'), where('memberId', '==', id));
   }, [firestore, id]);
   const { data: mediaItems, isLoading: areMediaLoading } = useCollection<MediaItem>(mediaQuery);
 
-  const isLoading = isUserLoading || isMemberLoading || arePassesLoading || areAttendanceLoading || areMediaLoading;
+  // 5. Fetch guardian (parent) information if exists
+  const guardianIds = member?.guardianIds || [];
+  const guardianQuery = useMemoFirebase(() => {
+    if (!firestore || guardianIds.length === 0) return null;
+    return query(collection(firestore, 'users'), where('__name__', 'in', guardianIds));
+  }, [firestore, guardianIds]);
+  const { data: guardians, isLoading: areGuardiansLoading } = useCollection<UserProfile>(guardianQuery);
+
+  // 6. Fetch pass templates for renewal
+  const passTemplatesQuery = useMemoFirebase(() => {
+    if (!firestore || !member?.clubId) return null;
+    return query(collection(firestore, 'pass_templates'), where('clubId', '==', member.clubId));
+  }, [firestore, member?.clubId]);
+  const { data: passTemplates } = useCollection<PassTemplate>(passTemplatesQuery);
+
+  const isLoading = isUserLoading || isMemberLoading || arePassesLoading || areAttendanceLoading || areMediaLoading || areGuardiansLoading;
 
   const age = useMemo(() => {
     if (!member?.dateOfBirth) return null;
@@ -91,11 +115,42 @@ export default function MemberProfileClient({ id }: { id:string }) {
 
   const hasAccess = useMemo(() => {
     if (!user || !member) return false;
-    if (user.role === 'admin') return true;
+    // Check if user is admin or club manager
+    if (user.role === 'FEDERATION_ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    if (user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') {
+      if (user.clubId === member.clubId) return true;
+    }
+    // Check if user is guardian
     if (member.guardianIds?.includes(user.uid)) return true;
-    if (user.role === 'club-admin' && user.clubId === member.clubId) return true;
     return false;
   }, [user, member]);
+
+  // 편집 권한: 관리자만 가능
+  const canEdit = useMemo(() => {
+    if (!user || !member) return false;
+    // Only admins and club managers can edit
+    if (user.role === 'FEDERATION_ADMIN' || user.role === 'SUPER_ADMIN') return true;
+    if (user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') {
+      if (user.clubId === member.clubId) return true;
+    }
+    return false;
+  }, [user, member]);
+
+  // 현재 활성 이용권 확인
+  const activePass = useMemo(() => {
+    if (!passes || passes.length === 0) return null;
+    const now = new Date();
+    return passes.find(pass => {
+      if (!pass.endDate) return false;
+      const endDate = new Date(pass.endDate);
+      return endDate > now;
+    });
+  }, [passes]);
+
+  // 이용권 갱신 가능 여부 (만료되었거나 이용권이 없는 경우)
+  const canRequestRenewal = useMemo(() => {
+    return !activePass;
+  }, [activePass]);
   
   // Effect for handling camera permission and stream
   useEffect(() => {
@@ -126,17 +181,17 @@ export default function MemberProfileClient({ id }: { id:string }) {
 
 
   const uploadBlob = async (blob: Blob, type: 'image' | 'video') => {
-    if (!storage || !member) return;
+    if (!storage || !member || !firestore) return;
     setIsUploading(true);
 
     try {
-      const mediaRef = doc(collection(firestore, 'media_items'));
+      const mediaRef = doc(collection(firestore, 'media'));
       const mediaId = mediaRef.id;
       const fileExtension = type === 'image' ? 'jpg' : 'webm';
       const mimeType = type === 'image' ? 'image/jpeg' : 'video/webm';
-      const file = new File([blob], `capture.${fileExtension}`, { type: mimeType });
+      const file = new (File as any)([blob], `capture.${fileExtension}`, { type: mimeType });
 
-      const mediaURL = await uploadImage(storage, `media/${member.id}/${mediaId}`, file);
+      const mediaURL = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
 
       const newMediaItem: MediaItem = {
         id: mediaId,
@@ -161,6 +216,81 @@ export default function MemberProfileClient({ id }: { id:string }) {
     }
   };
 
+  // Handle attendance edit
+  const handleEditAttendance = (attendance: Attendance) => {
+    setEditingAttendance(attendance);
+    setEditAttendanceStatus(attendance.status);
+    setEditAttendanceNote(attendance.note || '');
+  };
+
+  // Handle attendance update
+  const handleUpdateAttendance = async () => {
+    if (!firestore || !editingAttendance) return;
+    
+    try {
+      await updateDoc(doc(firestore, 'attendance', editingAttendance.id), {
+        status: editAttendanceStatus,
+        note: editAttendanceNote || null,
+      });
+      
+      toast({
+        title: '출석 기록 수정 완료',
+        description: '출석 기록이 수정되었습니다.',
+      });
+      
+      setEditingAttendance(null);
+    } catch (error) {
+      console.error('Attendance update error:', error);
+      toast({
+        variant: 'destructive',
+        title: '수정 실패',
+        description: '출석 기록 수정 중 오류가 발생했습니다.',
+      });
+    }
+  };
+
+  // Handle attendance delete
+  const handleDeleteAttendance = async (attendanceId: string) => {
+    if (!firestore || !confirm('정말 이 출석 기록을 삭제하시겠습니까?')) return;
+    
+    try {
+      await deleteDoc(doc(firestore, 'attendance', attendanceId));
+      
+      toast({
+        title: '출석 기록 삭제 완료',
+        description: '출석 기록이 삭제되었습니다.',
+      });
+    } catch (error) {
+      console.error('Attendance delete error:', error);
+      toast({
+        variant: 'destructive',
+        title: '삭제 실패',
+        description: '출석 기록 삭제 중 오류가 발생했습니다.',
+      });
+    }
+  };
+
+  const handleProfilePhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!storage || !member || !firestore || !event.target.files || event.target.files.length === 0) return;
+    const file = event.target.files[0];
+    setIsUploading(true);
+
+    try {
+      const photoURL = await uploadImage(storage, `profiles/${member.id}/profile`, file);
+      
+      // Update member's photoURL in Firestore
+      const memberRef = doc(firestore, 'members', member.id);
+      await updateDoc(memberRef, { photoURL });
+      
+      toast({ title: '업로드 성공', description: '프로필 사진이 업데이트되었습니다.' });
+    } catch (error) {
+      console.error("Profile photo upload failed: ", error);
+      toast({ variant: 'destructive', title: '업로드 실패', description: '프로필 사진 업로드 중 오류가 발생했습니다.' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleCapturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -176,15 +306,15 @@ export default function MemberProfileClient({ id }: { id:string }) {
   };
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (!storage || !member || !event.target.files || event.target.files.length === 0) return;
+    if (!storage || !member || !firestore || !event.target.files || event.target.files.length === 0) return;
     const file = event.target.files[0];
     setIsUploading(true);
 
     try {
-      const mediaRef = doc(collection(firestore, 'media_items'));
+      const mediaRef = doc(collection(firestore, 'media'));
       const mediaId = mediaRef.id;
 
-      const mediaURL = await uploadImage(storage, `media/${member.id}/${mediaId}`, file);
+      const mediaURL = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
 
       const newMediaItem: MediaItem = {
         id: mediaId,
@@ -208,6 +338,50 @@ export default function MemberProfileClient({ id }: { id:string }) {
     }
   };
 
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!firestore || !confirm('이 미디어를 삭제하시겠습니까?')) return;
+
+    try {
+      await deleteDoc(doc(firestore, 'media', mediaId));
+      toast({ title: '삭제 완료', description: '미디어가 삭제되었습니다.' });
+    } catch (error) {
+      console.error('Error deleting media:', error);
+      toast({ variant: 'destructive', title: '오류 발생', description: '미디어 삭제 중 오류가 발생했습니다.' });
+    }
+  };
+
+  const handleRequestRenewal = async (template: PassTemplate) => {
+    if (!firestore || !member || !user) return;
+
+    try {
+      const requestRef = doc(collection(firestore, 'pass_renewal_requests'));
+      const renewalRequest: PassRenewalRequest = {
+        id: requestRef.id,
+        memberId: member.id,
+        memberName: member.name,
+        clubId: member.clubId,
+        passTemplateId: template.id,
+        passTemplateName: template.name,
+        requestedAt: new Date().toISOString(),
+        status: 'pending',
+      };
+
+      await setDoc(requestRef, renewalRequest);
+      toast({ 
+        title: '신청 완료', 
+        description: `${template.name} 이용권 갱신 신청이 완료되었습니다. 클럽의 승인을 기다려주세요.` 
+      });
+      setIsRenewalDialogOpen(false);
+    } catch (error) {
+      console.error('Error requesting renewal:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: '오류 발생', 
+        description: '이용권 갱신 신청 중 오류가 발생했습니다.' 
+      });
+    }
+  };
+
 
   if (isLoading) {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -215,7 +389,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
 
   if (!member || !user || !hasAccess) {
      toast({ variant: 'destructive', title: '접근 권한 없음', description: '이 페이지를 볼 수 있는 권한이 없습니다.' });
-     const redirectUrl = user?.role === 'club-admin' ? '/club-dashboard' : '/my-profile';
+     const redirectUrl = (user?.role === 'CLUB_OWNER' || user?.role === 'CLUB_MANAGER') ? '/club-dashboard' : '/my-profile';
      router.push(redirectUrl);
      return null;
   }
@@ -228,27 +402,142 @@ export default function MemberProfileClient({ id }: { id:string }) {
       <Card>
         <CardHeader>
           <div className="flex items-start gap-6">
-            <Image src={member.photoURL || `https://picsum.photos/seed/${member.id}/96/96`} alt={member.name} width={96} height={96} className="rounded-full border-4 border-background shadow-md" />
+            <div className="relative">
+              <Image src={member.photoURL || `https://picsum.photos/seed/${member.id}/96/96`} alt={member.name} width={96} height={96} className="rounded-full border-4 border-background shadow-md" />
+              {canEdit && (
+                <>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                    onClick={() => profilePhotoInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit className="h-4 w-4" />}
+                  </Button>
+                  <Input
+                    ref={profilePhotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePhotoUpload}
+                    className="hidden"
+                  />
+                </>
+              )}
+            </div>
             <div className="flex-grow">
               <CardTitle className="text-3xl">{member.name}</CardTitle>
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-muted-foreground">
                 <span className="flex items-center gap-2"><User className="w-4 h-4" />{member.gender === 'male' ? '남자' : '여자'}</span>
                 <span className="flex items-center gap-2"><Calendar className="w-4 h-4" />{format(new Date(member.dateOfBirth!), 'yyyy년 M월 d일')} ({age}세)</span>
+                {member.email && <span className="flex items-center gap-2"><Mail className="w-4 h-4" />{member.email}</span>}
+                {member.phoneNumber && <span className="flex items-center gap-2"><Phone className="w-4 h-4" />{member.phoneNumber}</span>}
               </div>
             </div>
           </div>
         </CardHeader>
       </Card>
+
+      {/* 부모 정보 카드 */}
+      {guardians && guardians.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className="w-5 h-5" />
+              부모/보호자 정보
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {guardians.map((guardian) => (
+                <div key={guardian.uid} className="p-4 rounded-lg bg-secondary">
+                  <p className="font-semibold text-lg">{guardian.displayName}</p>
+                  <div className="grid md:grid-cols-2 gap-2 mt-2 text-sm text-muted-foreground">
+                    {guardian.email && (
+                      <span className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        {guardian.email}
+                      </span>
+                    )}
+                    {guardian.phoneNumber && (
+                      <span className="flex items-center gap-2">
+                        <Phone className="w-4 h-4" />
+                        {guardian.phoneNumber}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
-      <Tabs defaultValue="status">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="status">회원권/출석 현황</TabsTrigger>
+      <Tabs defaultValue="info">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="info">기본 정보</TabsTrigger>
+          <TabsTrigger value="status">회원권/출석</TabsTrigger>
           <TabsTrigger value="media">미디어</TabsTrigger>
         </TabsList>
+        <TabsContent value="info">
+          <Card>
+            <CardHeader>
+              <CardTitle>회원 상세 정보</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">이름</Label>
+                  <p className="font-medium">{member.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">성별</Label>
+                  <p className="font-medium">{member.gender === 'male' ? '남자' : '여자'}</p>
+                </div>
+                {member.dateOfBirth && (
+                  <div>
+                    <Label className="text-muted-foreground">생년월일</Label>
+                    <p className="font-medium">{format(new Date(member.dateOfBirth), 'yyyy년 M월 d일')} ({age}세)</p>
+                  </div>
+                )}
+                {member.email && (
+                  <div>
+                    <Label className="text-muted-foreground">이메일</Label>
+                    <p className="font-medium">{member.email}</p>
+                  </div>
+                )}
+                {member.phoneNumber && (
+                  <div>
+                    <Label className="text-muted-foreground">전화번호</Label>
+                    <p className="font-medium">{member.phoneNumber}</p>
+                  </div>
+                )}
+                <div>
+                  <Label className="text-muted-foreground">회원 상태</Label>
+                  <div className="font-medium">
+                    <Badge variant={member.status === 'active' ? 'default' : member.status === 'pending' ? 'secondary' : 'destructive'}>
+                      {member.status === 'active' ? '활성' : member.status === 'pending' ? '대기중' : '비활성'}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">회원 유형</Label>
+                  <p className="font-medium">{member.memberType === 'individual' ? '개인 회원' : '가족 회원'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="status">
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>현재 회원권</CardTitle>
+                    {canRequestRenewal && (
+                      <Button onClick={() => setIsRenewalDialogOpen(true)} size="sm">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        이용권 갱신 신청
+                      </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {currentPass ? (
@@ -269,7 +558,88 @@ export default function MemberProfileClient({ id }: { id:string }) {
                 </CardContent>
             </Card>
 
+            {/* 최근 출석 이력 */}
             <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5"/>
+                        최근 출석 이력
+                    </CardTitle>
+                    <CardDescription>최근 10회의 출석 기록입니다.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {allAttendance && allAttendance.length > 0 ? (
+                        <div className="space-y-2">
+                            {allAttendance.slice(0, 10).map(att => (
+                                <div key={att.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <div className={`w-2 h-2 rounded-full ${
+                                            att.status === 'present' ? 'bg-green-500' : 
+                                            att.status === 'absent' ? 'bg-red-500' : 
+                                            'bg-blue-500'
+                                        }`} />
+                                        <div className="flex-1">
+                                            <p className="font-medium">{format(new Date(att.date), 'yyyy년 M월 d일 (E)', { locale: ko })}</p>
+                                            <p className="text-xs text-muted-foreground">{format(new Date(att.date), 'HH:mm')}</p>
+                                            {att.note && (
+                                                <p className="text-xs text-muted-foreground mt-1">메모: {att.note}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant={
+                                            att.status === 'present' ? 'default' : 
+                                            att.status === 'absent' ? 'destructive' : 
+                                            'secondary'
+                                        }>
+                                            {attendanceStatusTranslations[att.status]}
+                                        </Badge>
+                                        {(user?.role === UserRole.CLUB_OWNER || user?.role === UserRole.CLUB_MANAGER) && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEditAttendance(att)}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        수정
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleDeleteAttendance(att.id)}
+                                                        className="text-red-600"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        삭제
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {allAttendance.length > 10 && (
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full mt-4"
+                                    onClick={() => {
+                                        const element = document.getElementById('past-passes');
+                                        element?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                >
+                                    <History className="mr-2 h-4 w-4" />
+                                    과거 내역 더보기 ({allAttendance.length - 10}개)
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-center py-8">출석 기록이 없습니다.</p>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card className="mt-6" id="past-passes">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><History className="w-5 h-5"/>지난 회원권 현황</CardTitle>
                     <CardDescription>지난 회원권을 선택하여 상세 출석 기록을 확인하세요.</CardDescription>
@@ -327,25 +697,29 @@ export default function MemberProfileClient({ id }: { id:string }) {
                         <CardTitle>미디어 갤러리</CardTitle>
                         <CardDescription>선수의 활동 사진이나 영상을 업로드하고 관리하세요.</CardDescription>
                     </div>
-                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button disabled={isUploading}>
-                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                          미디어 업로드
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => setIsCameraOpen(true)}>
-                          <Camera className="mr-2 h-4 w-4" />
-                          <span>카메라로 촬영</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
-                          <File className="mr-2 h-4 w-4" />
-                          <span>파일에서 선택</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept="image/*,video/*"/>
+                    {canEdit && (
+                      <>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button disabled={isUploading}>
+                              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                              미디어 업로드
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => setIsCameraOpen(true)}>
+                              <Camera className="mr-2 h-4 w-4" />
+                              <span>카메라로 촬영</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
+                              <File className="mr-2 h-4 w-4" />
+                              <span>파일 선택</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept="image/*,video/*"/>
+                      </>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {mediaItems && mediaItems.length > 0 ? (
@@ -357,8 +731,18 @@ export default function MemberProfileClient({ id }: { id:string }) {
                                   ) : (
                                     <video src={item.mediaURL} className="object-cover rounded-md w-full h-full" controls />
                                   )}
-                                    <div className="absolute inset-0 bg-black/50 flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="absolute inset-0 bg-black/50 flex items-end justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <p className="text-white text-xs">{format(new Date(item.uploadDate), 'yyyy-MM-dd')}</p>
+                                        {canEdit && (
+                                          <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            className="h-6 w-6 p-0"
+                                            onClick={() => handleDeleteMedia(item.id)}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -411,6 +795,91 @@ export default function MemberProfileClient({ id }: { id:string }) {
                 사진 촬영
              </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Attendance Dialog */}
+      <Dialog open={!!editingAttendance} onOpenChange={() => setEditingAttendance(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>출석 기록 수정</DialogTitle>
+            <DialogDescription>
+              {editingAttendance && format(new Date(editingAttendance.date), 'yyyy년 M월 d일 (E) HH:mm', { locale: ko })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>출석 상태</Label>
+              <select
+                value={editAttendanceStatus}
+                onChange={(e) => setEditAttendanceStatus(e.target.value as Attendance['status'])}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="present">출석</option>
+                <option value="absent">결석</option>
+                <option value="excused">메모</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>메모 (선택)</Label>
+              <Input
+                value={editAttendanceNote}
+                onChange={(e) => setEditAttendanceNote(e.target.value)}
+                placeholder="메모를 입력하세요..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAttendance(null)}>
+              취소
+            </Button>
+            <Button onClick={handleUpdateAttendance}>
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 이용권 갱신 신청 다이얼로그 */}
+      <Dialog open={isRenewalDialogOpen} onOpenChange={setIsRenewalDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>이용권 갱신 신청</DialogTitle>
+            <DialogDescription>
+              갱신할 이용권을 선택하세요. 클럽의 승인 후 이용권이 활성화됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {passTemplates && passTemplates.length > 0 ? (
+              <div className="grid gap-4">
+                {passTemplates.map((template) => (
+                  <Card key={template.id} className="cursor-pointer hover:bg-secondary" onClick={() => handleRequestRenewal(template)}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      {template.description && (
+                        <CardDescription>{template.description}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {template.passType === 'period' && <Badge variant="outline">기간제</Badge>}
+                        {template.passType === 'session' && <Badge variant="outline">횟수제</Badge>}
+                        {template.passType === 'unlimited' && <Badge variant="outline">기간+횟수제</Badge>}
+                        {template.price && <p>가격: {template.price.toLocaleString()}원</p>}
+                        {template.durationDays && <p>기간: {template.durationDays}일</p>}
+                        {template.totalSessions && <p>총 횟수: {template.totalSessions}회</p>}
+                        {template.attendableSessions && <p>필수 출석: {template.attendableSessions}회</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                사용 가능한 이용권이 없습니다.
+              </p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </main>

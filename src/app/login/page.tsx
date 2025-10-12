@@ -13,7 +13,7 @@ import {
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -37,13 +37,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
-import type { UserProfile } from '@/types';
+import { UserProfile, UserRole } from '@/types';
 
 const formSchema = z.object({
   email: z.string().email({ message: '유효하지 않은 이메일 주소입니다.' }),
   password: z.string().min(6, { message: '비밀번호는 6자 이상이어야 합니다.' }),
   confirmPassword: z.string().optional(),
-  role: z.enum(['member', 'club-admin'], {
+  role: z.nativeEnum(UserRole, {
     required_error: '역할을 선택해야 합니다.',
   }),
   clubName: z.string().optional(), // For club admins
@@ -77,7 +77,7 @@ export default function LoginPage() {
       email: '',
       password: '',
       confirmPassword: '',
-      role: 'member',
+      role: UserRole.MEMBER,
     },
   });
 
@@ -85,8 +85,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
-        // Redirection logic is now primarily handled in MainLayout
+      // User is already logged in, redirect based on role
+      if (user.role === UserRole.SUPER_ADMIN) {
+        router.push('/super-admin');
+      } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
+        router.push('/club-dashboard');
+      } else if (user.role === UserRole.FEDERATION_ADMIN) {
         router.push('/dashboard');
+      } else {
+        router.push('/my-profile');
+      }
     }
   }, [user, isUserLoading, router]);
 
@@ -102,7 +110,7 @@ export default function LoginPage() {
     form.reset();
     setCurrentFormType(type);
     if(type === 'signup') {
-        form.setValue('role', 'member');
+        form.setValue('role', UserRole.MEMBER);
     }
   }
 
@@ -116,7 +124,7 @@ export default function LoginPage() {
         await createUserProfile(userCredential.user, values);
         toast({
           title: '회원가입 성공!',
-          description: values.role === 'club-admin' ? '최고 관리자의 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
+          description: (values.role === UserRole.CLUB_OWNER || values.role === UserRole.CLUB_MANAGER) ? '최고 관리자의 승인 후 로그인이 가능합니다.' : '로그인 되었습니다.',
         });
         
         // For both 'club-admin' and 'member', sign out and force login after signup.
@@ -150,7 +158,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      await createUserProfile(result.user, { role: 'member', email: result.user.email! });
+      await createUserProfile(result.user, { role: UserRole.MEMBER, email: result.user.email! });
     } catch (error: any) {
       console.error(error);
       toast({
@@ -170,10 +178,10 @@ export default function LoginPage() {
     const docSnap = await getDoc(userRef);
     if (docSnap.exists()) return;
 
-    let role: UserProfile['role'] = values.role || 'member';
+    let role: UserProfile['role'] = values.role || UserRole.MEMBER;
     // Super admin check
     if (user.email === 'wo1109ok@me.com') {
-      role = 'admin';
+      role = UserRole.SUPER_ADMIN;
     }
 
     const userProfile: UserProfile = {
@@ -182,12 +190,28 @@ export default function LoginPage() {
       displayName: user.displayName || user.email!.split('@')[0],
       photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
       role: role,
-      provider: (user.providerData[0]?.providerId as 'google' | 'password') || 'password',
-      status: role === 'club-admin' ? 'pending' : 'approved',
-      ...(role === 'club-admin' && { clubName: values.clubName, phoneNumber: values.phoneNumber }),
+      provider: user.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+      status: (role === UserRole.CLUB_OWNER || role === UserRole.CLUB_MANAGER) ? 'pending' : 'approved',
+      ...((role === UserRole.CLUB_OWNER || role === UserRole.CLUB_MANAGER) && { clubName: values.clubName, phoneNumber: values.phoneNumber }),
     };
 
     await setDoc(userRef, userProfile);
+
+    // 클럽 오너인 경우 clubOwnerRequests에도 추가
+    if (role === UserRole.CLUB_OWNER && values.clubName) {
+      await addDoc(collection(firestore, 'clubOwnerRequests'), {
+        userId: user.uid,
+        name: user.displayName || user.email!.split('@')[0],
+        email: user.email!,
+        phoneNumber: values.phoneNumber || '',
+        clubName: values.clubName,
+        clubAddress: '', // 로그인 페이지에서는 주소 입력 안 받음
+        clubPhone: values.phoneNumber || '',
+        clubEmail: user.email,
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+      });
+    }
   };
 
   if (isUserLoading || (!isUserLoading && user)) {
@@ -199,17 +223,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-6 flex flex-col items-center gap-4">
-            <div className="rounded-lg bg-primary p-3">
-              <Trophy className="h-8 w-8 text-primary-foreground" />
+    <div className="flex min-h-screen items-center justify-center bg-white p-4">
+      {/* Windsurf 스타일 배경 그리드 */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+      
+      <Card className="w-full max-w-md border border-slate-200 shadow-sm relative bg-white">
+        <CardHeader className="space-y-6 pt-12 pb-8">
+          <div className="flex flex-col items-center gap-6">
+            {/* 미니멀한 로고 */}
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-slate-900 rounded-lg">
+                <Trophy className="h-6 w-6 text-white" />
+              </div>
+              <div className="text-left">
+                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+                  KGF Nexus
+                </h1>
+                <p className="text-xs text-slate-500 font-medium">
+                  Korea Gymnastics Federation
+                </p>
+              </div>
             </div>
-            <CardTitle className="text-3xl">KGF 넥서스</CardTitle>
           </div>
-          <CardTitle className="text-2xl">{getFormTitle()}</CardTitle>
-          <CardDescription>{getFormDescription()}</CardDescription>
+          
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-semibold text-slate-900">{getFormTitle()}</h2>
+            <p className="text-sm text-slate-600">{getFormDescription()}</p>
+          </div>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -225,17 +265,17 @@ export default function LoginPage() {
                             <div className="flex gap-4">
                                 <Button
                                     type="button"
-                                    variant={field.value === 'member' ? 'default' : 'outline'}
+                                    variant={field.value === UserRole.MEMBER ? 'default' : 'outline'}
                                     className="flex-1"
-                                    onClick={() => field.onChange('member')}
+                                    onClick={() => field.onChange(UserRole.MEMBER)}
                                 >
                                     일반/학부모 회원
                                 </Button>
                                 <Button
                                     type="button"
-                                    variant={field.value === 'club-admin' ? 'default' : 'outline'}
+                                    variant={field.value === UserRole.CLUB_OWNER ? 'default' : 'outline'}
                                     className="flex-1"
-                                    onClick={() => field.onChange('club-admin')}
+                                    onClick={() => field.onChange(UserRole.CLUB_OWNER)}
                                 >
                                     클럽 관리자
                                 </Button>
@@ -282,14 +322,20 @@ export default function LoginPage() {
                       <FormItem>
                         <FormLabel>비밀번호 확인</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} autoComplete="new-password" />
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            {...field} 
+                            value={field.value || ''}
+                            autoComplete="new-password" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  {role === 'club-admin' && (
+                  {(role === UserRole.CLUB_OWNER || role === UserRole.CLUB_MANAGER) && (
                     <>
                       <FormField
                         control={form.control}
@@ -298,7 +344,11 @@ export default function LoginPage() {
                           <FormItem>
                             <FormLabel>클럽 이름</FormLabel>
                             <FormControl>
-                              <Input placeholder="소속 클럽의 이름을 입력하세요" {...field} />
+                              <Input 
+                                placeholder="소속 클럽의 이름을 입력하세요" 
+                                {...field} 
+                                value={field.value || ''}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -311,7 +361,11 @@ export default function LoginPage() {
                           <FormItem>
                             <FormLabel>클럽 전화번호</FormLabel>
                             <FormControl>
-                              <Input placeholder="연락 가능한 클럽 전화번호를 입력하세요" {...field} />
+                              <Input 
+                                placeholder="연락 가능한 클럽 전화번호를 입력하세요" 
+                                {...field} 
+                                value={field.value || ''}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -321,7 +375,11 @@ export default function LoginPage() {
                   )}
                 </>
               )}
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" 
+                disabled={isSubmitting}
+              >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {currentFormType === 'login' ? '로그인' : '회원가입'}
               </Button>
@@ -329,15 +387,20 @@ export default function LoginPage() {
           </Form>
           {currentFormType === 'login' && (
             <>
-              <div className="relative my-4">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+                  <span className="w-full border-t border-slate-200" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">또는</span>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-3 text-slate-500">또는</span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting}>
+              <Button 
+                variant="outline" 
+                className="w-full h-11 border-slate-200 hover:bg-slate-50 font-medium transition-colors" 
+                onClick={handleGoogleSignIn} 
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -350,15 +413,34 @@ export default function LoginPage() {
             </>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-3 pb-8 pt-6">
+          <div className="w-full h-px bg-slate-100" />
           {currentFormType === 'login' ? (
-            <Button variant="link" className="w-full" onClick={() => handleFormTypeChange('signup')}>
-              계정이 없으신가요? 회원가입
-            </Button>
+            <div className="text-center space-y-3">
+              <p className="text-sm text-slate-600">
+                계정이 없으신가요?
+              </p>
+              <Button 
+                variant="ghost" 
+                className="w-full h-11 text-slate-900 hover:bg-slate-50 font-medium transition-colors" 
+                onClick={() => handleFormTypeChange('signup')}
+              >
+                회원가입하기
+              </Button>
+            </div>
           ) : (
-            <Button variant="link" className="w-full" onClick={() => handleFormTypeChange('login')}>
-              이미 계정이 있으신가요? 로그인
-            </Button>
+            <div className="text-center space-y-3">
+              <p className="text-sm text-slate-600">
+                이미 계정이 있으신가요?
+              </p>
+              <Button 
+                variant="ghost" 
+                className="w-full h-11 text-slate-900 hover:bg-slate-50 font-medium transition-colors" 
+                onClick={() => handleFormTypeChange('login')}
+              >
+                로그인하기
+              </Button>
+            </div>
           )}
         </CardFooter>
       </Card>

@@ -6,31 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { Users, UserPlus, Calendar, User, Mail, Phone } from 'lucide-react';
 
-// 임시 데이터 (나중에 Firestore에서 가져올 예정)
-const mockChildren = [
-  {
-    id: 'child1',
-    name: '홍철수',
-    birthDate: '2015-03-15',
-    gender: 'male',
-    age: 10,
-    classId: 'class-A',
-    className: '초급반',
-    activePassId: 'pass-1',
-    remainingSessions: 8,
-  },
-  {
-    id: 'child2',
-    name: '홍영희',
-    birthDate: '2017-07-22',
-    gender: 'female',
-    age: 8,
-    classId: 'class-B',
-    className: '입문반',
-    activePassId: 'pass-2',
-    remainingSessions: 12,
-  },
-];
+// TODO: Firestore에서 실제 자녀 데이터를 가져와야 합니다
+const mockChildren: any[] = [];
 
 export default function FamilyManagementPage() {
   const router = useRouter();

@@ -143,6 +143,7 @@ export type Attendance = {
   date: string; // ISO 8601 date string
   status: 'present' | 'absent' | 'excused';
   passId: string;
+  note?: string; // 메모/사유
 };
 
 export type MemberPass = {
@@ -223,6 +224,7 @@ export type PassTemplate = {
     id: string;
     clubId: string;
     name: string;
+    passType?: 'period' | 'session' | 'unlimited'; // 기간제, 횟수제, 기간+횟수제
     totalSessions?: number;
     attendableSessions?: number;
     durationDays?: number;
@@ -230,25 +232,83 @@ export type PassTemplate = {
     description?: string;
 }
 
+export type PassRenewalRequest = {
+    id: string;
+    memberId: string;
+    memberName: string;
+    clubId: string;
+    passTemplateId: string;
+    passTemplateName: string;
+    requestedAt: string;
+    status: 'pending' | 'approved' | 'rejected';
+    rejectionReason?: string;
+}
+
 export type GymClass = {
   id: string;
   clubId: string;
   name: string;
   dayOfWeek: '월' | '화' | '수' | '목' | '금' | '토' | '일';
-  time: string; // e.g., "14:00"
+  time: string;
   capacity: number;
   memberIds: string[];
 };
 
-export type MediaItem = {
-    id: string;
-    memberId: string;
-    clubId: string;
-    mediaURL: string;
-    mediaType: 'image' | 'video';
-    caption?: string;
-    uploadDate: string; // ISO 8601 date string
-};
+export interface MediaItem {
+  id: string;
+  memberId: string;
+  clubId: string;
+  mediaType: 'image' | 'video';
+  mediaURL: string;
+  thumbnailURL?: string;
+  uploadDate: string;
+  caption?: string;
+  tags?: string[];
+}
+
+export interface EventOption {
+  id: string;
+  name: string;
+  values: string[];
+  required: boolean;
+}
+
+export interface ClubEvent {
+  id: string;
+  clubId: string;
+  title: string;
+  description: string;
+  eventType: 'merchandise' | 'uniform' | 'special_class' | 'competition' | 'event' | 'other';
+  price: number;
+  priceUnit: 'per_person' | 'per_item';
+  registrationStart: string;
+  registrationEnd: string;
+  eventDate?: string;
+  minParticipants?: number;
+  maxParticipants?: number;
+  currentParticipants: number;
+  options?: EventOption[];
+  allowMultipleQuantity: boolean;
+  status: 'upcoming' | 'open' | 'closed' | 'completed' | 'cancelled';
+  imageURL?: string;
+  attachments?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventRegistration {
+  id: string;
+  eventId: string;
+  memberId: string;
+  memberName: string;
+  clubId: string;
+  selectedOptions: Record<string, string>;
+  quantity: number;
+  totalPrice: number;
+  paymentStatus: 'pending' | 'paid' | 'cancelled';
+  registeredAt: string;
+  notes?: string;
+}
 
 // ============================================
 // 🏛️ 위원회 시스템 (windsurf 통합)
@@ -403,3 +463,590 @@ export type ApprovalRequest = {
   rejectedAt?: string;
   rejectionReason?: string;
 };
+
+// 최고 관리자 신청 타입
+export type SuperAdminRequest = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  organization: string;
+  position: string;
+  reason: string;
+  secretCode: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+};
+
+// 클럽 오너 신청 타입
+export type ClubOwnerRequest = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  clubName: string;
+  clubAddress: string;
+  clubPhone: string;
+  clubEmail?: string;
+  clubDescription?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+};
+
+// 회원 가입 신청 타입
+export type MemberRequest = {
+  id: string;
+  userId: string;
+  name: string;
+  email?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female';
+  clubId: string;
+  clubName: string;
+  memberType: 'individual' | 'family';
+  familyRole?: 'parent' | 'child';
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+};
+
+// 가족 대표 가입 신청 타입
+export type FamilyRequest = {
+  id: string;
+  userId: string;
+  parentName: string;
+  parentEmail: string;
+  parentPhone: string;
+  clubId: string;
+  clubName: string;
+  children: Array<{
+    name: string;
+    dateOfBirth: string;
+    gender: 'male' | 'female';
+  }>;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+};
+
+// ============================================
+// 🏆 시합 시스템
+// ============================================
+
+export interface GymnasticsEvent {
+  id: string;
+  name: string;
+  code: string; // FX, PH, SR, VT, PB, HB, UB, BB
+  gender: 'male' | 'female' | 'both';
+  maxScore: number;
+  judgeCount: number;
+}
+
+export interface CompetitionCategory {
+  id: string;
+  type: 'grade' | 'level';
+  name: string;
+  minAge?: number;
+  maxAge?: number;
+  level?: string;
+}
+
+export interface GymnasticsCompetition {
+  id: string;
+  title: string;
+  description: string;
+  registrationStart: string;
+  registrationEnd: string;
+  competitionDate: string;
+  venue?: string;
+  status: 'draft' | 'registration_open' | 'registration_closed' | 'in_progress' | 'completed' | 'cancelled';
+  events: GymnasticsEvent[];
+  categories: CompetitionCategory[];
+  genderSeparate: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+export interface CompetitionRegistration {
+  id: string;
+  competitionId: string;
+  memberId: string;
+  memberName: string;
+  clubId: string;
+  clubName: string;
+  gender: 'male' | 'female';
+  birthDate: string;
+  age: number;
+  grade?: string;
+  level?: string;
+  registeredEvents: string[];
+  clubOrder?: number;
+  categoryId?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  registeredAt: string;
+}
+
+export interface CompetitionSchedule {
+  id: string;
+  competitionId: string;
+  eventId: string;
+  eventName: string;
+  categoryId: string;
+  categoryName: string;
+  gender: 'male' | 'female';
+  participants: ScheduleParticipant[];
+  assignedJudges: string[];
+  status: 'scheduled' | 'in_progress' | 'completed';
+  startTime?: string;
+  endTime?: string;
+}
+
+export interface ScheduleParticipant {
+  registrationId: string;
+  memberId: string;
+  memberName: string;
+  clubName: string;
+  order: number;
+  bib?: string;
+}
+
+export interface JudgeScore {
+  judgeId: string;
+  judgeName: string;
+  score: number;
+  note?: string;
+}
+
+export interface GymnasticsScore {
+  id: string;
+  competitionId: string;
+  scheduleId: string;
+  registrationId: string;
+  memberId: string;
+  memberName: string;
+  clubName: string;
+  eventId: string;
+  eventName: string;
+  categoryId: string;
+  gender: 'male' | 'female';
+  dScore: {
+    judge1: number;
+    judge2: number;
+    final: number;
+  };
+  eScore: {
+    judge1: number;
+    judge2: number;
+    final: number;
+  };
+  deductions?: Array<{
+    type: string;
+    points: number;
+  }>;
+  finalScore: number;
+  rank?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompetitionResult {
+  id: string;
+  competitionId: string;
+  competitionTitle: string;
+  memberId: string;
+  memberName: string;
+  clubName: string;
+  categoryId: string;
+  categoryName: string;
+  gender: 'male' | 'female';
+  eventScores: Array<{
+    eventId: string;
+    eventName: string;
+    score: number;
+    rank: number;
+  }>;
+  totalScore: number;
+  overallRank: number;
+  completedAt: string;
+}
+
+export interface Judge {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  certification?: string;
+  assignedEvents: string[];
+  role: 'D' | 'E';
+  createdAt: string;
+}
+
+// ============================================
+// 🥋 레벨테스트 시스템
+// ============================================
+
+export interface TestLevel {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  minScore: number;
+  maxScore: number;
+  order: number;
+  icon?: string;
+}
+
+export interface EvaluationItem {
+  id: string;
+  name: string;
+  maxScore: number;
+  weight: number;
+}
+
+export interface ClubLevelTest {
+  id: string;
+  clubId: string;
+  title: string;
+  description: string;
+  testDate: string;
+  registrationStart: string;
+  registrationEnd: string;
+  levels: TestLevel[];
+  evaluationItems: EvaluationItem[];
+  status: 'draft' | 'registration_open' | 'registration_closed' | 'in_progress' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LevelTestRegistration {
+  id: string;
+  testId: string;
+  memberId: string;
+  memberName: string;
+  clubId: string;
+  currentLevel?: string;
+  targetLevel: string;
+  status: 'pending' | 'approved' | 'rejected';
+  registeredAt: string;
+}
+
+export interface LevelTestScore {
+  id: string;
+  testId: string;
+  registrationId: string;
+  memberId: string;
+  memberName: string;
+  targetLevel: string;
+  itemScores: Array<{
+    itemId: string;
+    itemName: string;
+    score: number;
+    maxScore: number;
+  }>;
+  totalScore: number;
+  percentage: number;
+  passed: boolean;
+  achievedLevel?: string;
+  rank?: number;
+  evaluatorId: string;
+  evaluatorName: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface LevelTestResult {
+  id: string;
+  testId: string;
+  testTitle: string;
+  memberId: string;
+  clubId: string;
+  targetLevel: string;
+  achievedLevel: string;
+  passed: boolean;
+  totalScore: number;
+  percentage: number;
+  rank?: number;
+  badge: {
+    level: string;
+    color: string;
+    icon?: string;
+    earnedAt: string;
+  };
+  completedAt: string;
+}
+
+export interface MemberLevel {
+  currentLevel: string;
+  levelCode: string;
+  levelColor: string;
+  levelIcon?: string;
+  earnedAt: string;
+  testId: string;
+  testTitle: string;
+  rank?: number;
+}
+
+// ============================================
+// 📊 통계 및 분석
+// ============================================
+
+export interface ClubStatistics {
+  clubId: string;
+  totalMembers: number;
+  activeMemberCount: number;
+  newMembersThisMonth: number;
+  totalAttendanceThisMonth: number;
+  attendanceRate: number;
+  revenueThisMonth: number;
+  levelDistribution: Record<string, number>;
+  ageDistribution: Record<string, number>;
+  genderDistribution: { male: number; female: number };
+  updatedAt: string;
+}
+
+// ============================================
+// 📢 공지사항
+// ============================================
+
+export interface Announcement {
+  id: string;
+  clubId?: string;
+  federationId?: string;
+  title: string;
+  content: string;
+  type: 'general' | 'important' | 'event' | 'emergency';
+  targetAudience: 'all' | 'members' | 'parents' | 'staff';
+  isPinned: boolean;
+  attachments?: string[];
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// 🔔 알림
+// ============================================
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'announcement' | 'event' | 'pass' | 'attendance' | 'competition' | 'level_test' | 'payment';
+  title: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// ============================================
+// 💳 결제
+// ============================================
+
+export interface Payment {
+  id: string;
+  memberId: string;
+  memberName: string;
+  clubId: string;
+  type: 'pass' | 'event' | 'competition' | 'level_test' | 'other';
+  relatedId?: string;
+  amount: number;
+  method: 'card' | 'bank_transfer' | 'cash' | 'other';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  bankTransferInfo?: {
+    depositorName: string;
+    depositDate: string;
+    receiptImage?: string;
+  };
+  verifiedBy?: string;
+  verifiedAt?: string;
+  paidAt?: string;
+  createdAt: string;
+}
+
+// ============================================
+// 🏦 클럽 계좌 정보
+// ============================================
+
+export interface ClubBankAccount {
+  clubId: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// 📱 단체문자 / 알림톡
+// ============================================
+
+export interface MessageTemplate {
+  id: string;
+  clubId: string;
+  name: string;
+  type: 'sms' | 'lms' | 'kakao';
+  content: string;
+  variables: string[];
+  createdAt: string;
+}
+
+export interface MessageHistory {
+  id: string;
+  clubId: string;
+  type: 'sms' | 'lms' | 'kakao';
+  templateId?: string;
+  recipients: Array<{
+    memberId: string;
+    memberName: string;
+    phone: string;
+    status: 'pending' | 'sent' | 'failed';
+    sentAt?: string;
+    failReason?: string;
+  }>;
+  content: string;
+  totalCount: number;
+  successCount: number;
+  failCount: number;
+  sentBy: string;
+  sentByName: string;
+  createdAt: string;
+}
+
+// ============================================
+// 🔔 네이버 클라우드 설정
+// ============================================
+
+export interface NaverCloudConfig {
+  clubId: string;
+  serviceId: string;
+  accessKey: string;
+  secretKey: string;
+  senderPhone: string;
+  kakaoSenderId?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
+// 📧 연맹 관리자 초대
+// ============================================
+
+export interface FederationAdminInvite {
+  id: string;
+  email: string;
+  name: string;
+  phoneNumber: string;
+  inviteToken: string;
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  invitedBy: string;
+  invitedByName: string;
+  invitedAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+}
+
+// ============================================
+// 💰 재무 관리
+// ============================================
+
+export interface Income {
+  id: string;
+  clubId: string;
+  type: 'pass' | 'event' | 'competition' | 'level_test' | 'other';
+  category: string;
+  amount: number;
+  description: string;
+  date: string;
+  paymentId?: string;
+  memberId?: string;
+  memberName?: string;
+  isRecurring: boolean;
+  isSplit: boolean;
+  splitInfo?: {
+    totalAmount: number;
+    months: number;
+    monthlyAmount: number;
+    startMonth: string;
+    allocations: Array<{
+      month: string;
+      amount: number;
+      allocated: boolean;
+    }>;
+  };
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface Expense {
+  id: string;
+  clubId: string;
+  category: 'rent' | 'salary' | 'equipment' | 'supplies' | 'utilities' | 'marketing' | 'maintenance' | 'other';
+  amount: number;
+  description: string;
+  date: string;
+  isRecurring: boolean;
+  recurringInfo?: {
+    frequency: 'monthly' | 'quarterly' | 'yearly';
+    nextDate: string;
+  };
+  receiptImage?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface Budget {
+  id: string;
+  clubId: string;
+  month: string;
+  categories: {
+    rent: number;
+    salary: number;
+    equipment: number;
+    supplies: number;
+    utilities: number;
+    marketing: number;
+    maintenance: number;
+    other: number;
+  };
+  totalBudget: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinancialSummary {
+  clubId: string;
+  month: string;
+  totalIncome: number;
+  totalExpense: number;
+  netIncome: number;
+  incomeByCategory: Record<string, number>;
+  expenseByCategory: Record<string, number>;
+  memberCount: number;
+  arpu: number;
+  updatedAt: string;
+}

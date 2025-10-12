@@ -3,10 +3,12 @@
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/sidebar';
 import { AppHeader } from '@/components/layout/header';
+import { TopNav } from '@/components/layout/top-nav';
 import { useUser } from '@/firebase';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { UserRole } from '@/types';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -19,32 +21,49 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-      if (pathname !== '/login') {
+      // Allow access to login and initial admin setup pages without authentication
+      if (pathname !== '/login' && pathname !== '/setup/initial-admin') {
          router.push('/login');
       }
       return;
     }
 
-    // Role-based redirection logic
-    if (pathname.startsWith('/login')) {
-      if(user.role === 'club-admin' && user.status === 'approved') {
-          router.push('/club-dashboard');
-      } else {
-          router.push('/dashboard');
-      }
-    } else if (user.role === 'club-admin' && user.status === 'pending') {
+    // Role-based page access control
+    if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.status === 'pending') {
         // If pending admin tries to access any protected page, send to login
         if (pathname !== '/login') {
           router.push('/login');
         }
-    } else if (user.role === 'admin' && pathname.startsWith('/club-dashboard')) {
+    } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
+      // Club owners should not access federation admin pages
+      if (pathname === '/dashboard' || pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
+        router.push('/club-dashboard');
+      }
+    } else if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.FEDERATION_ADMIN) {
+      // Admins should not access club dashboard
+      if (pathname.startsWith('/club-dashboard')) {
         router.push('/dashboard');
+      }
     }
 
   }, [user, isUserLoading, pathname, router]);
 
-  if (isUserLoading || !user) {
-    // Show a global loader while user is being authenticated or if they are being redirected.
+  // Show loader only while checking authentication
+  if (isUserLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Allow unauthenticated access to specific pages
+  if (!user && (pathname === '/login' || pathname === '/setup/initial-admin')) {
+    return <>{children}</>;
+  }
+
+  // Show loader for unauthenticated users being redirected
+  if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -53,7 +72,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
   
   // Prevent flashing of content for users who will be redirected
-  if (user.role === 'club-admin' && user.status === 'pending') {
+  if ((user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') && user.status === 'pending') {
      // Show loader instead of login to prevent flashing login page
      return (
        <div className="flex min-h-screen items-center justify-center bg-background">

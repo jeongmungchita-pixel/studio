@@ -8,29 +8,10 @@ import { UserRole } from '@/types';
 import { Shield, Users, Building2, Trophy } from 'lucide-react';
 import { useState } from 'react';
 
-// 임시 데이터
+// TODO: Firestore에서 실제 승인 요청 데이터를 가져와야 합니다
 const mockApprovals = {
-  federationAdmin: [
-    {
-      userId: '1',
-      userName: '김연맹',
-      userEmail: 'federation@example.com',
-      requestedRole: UserRole.FEDERATION_ADMIN,
-      requestedAt: new Date().toISOString(),
-      status: 'pending' as const,
-    },
-  ],
-  clubOwner: [
-    {
-      userId: '4',
-      userName: '최클럽',
-      userEmail: 'club@example.com',
-      requestedRole: UserRole.CLUB_OWNER,
-      clubName: '서울체조클럽',
-      requestedAt: new Date().toISOString(),
-      status: 'pending' as const,
-    },
-  ],
+  federationAdmin: [] as any[],
+  clubOwner: [] as any[],
 };
 
 export default function AdminApprovalsPage() {

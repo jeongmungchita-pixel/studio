@@ -8,9 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, AlertTriangle } from 'lucide-react';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import type { SuperAdminRequest } from '@/types';
 
 export default function SuperAdminRegisterPage() {
   const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -24,12 +29,32 @@ export default function SuperAdminRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!firestore || !user) {
+      alert('로그인이 필요합니다.');
+      router.push('/login');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      console.log('최고관리자 신청:', formData);
-      // TODO: Firestore에 저장
-      // 특별한 검증 프로세스 필요
+      // SuperAdminRequest 생성
+      const requestData: Omit<SuperAdminRequest, 'id'> = {
+        userId: user.uid,
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        organization: formData.organization,
+        position: formData.position,
+        reason: formData.reason,
+        secretCode: formData.secretCode,
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+      };
+
+      // Firestore에 저장
+      await addDoc(collection(firestore, 'superAdminRequests'), requestData);
       
       alert('최고관리자 신청이 완료되었습니다. 시스템 관리자의 검토 후 승인됩니다.');
       router.push('/dashboard');

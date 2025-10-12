@@ -1,25 +1,28 @@
 'use client';
 
-import { useUser, useCollection } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Users2, Clock } from 'lucide-react';
-import { redirect } from 'next/navigation';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-import type { Member, GymClass } from '@/types';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, doc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { Member, MemberPass, GymClass } from '@/types';
+import { UserRole } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Image from 'next/image';
+import { Loader2, Users, CreditCard, BookMarked, TrendingUp, Search, Clock, Users2 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import Image from 'next/image';
+import { redirect } from 'next/navigation';
 
 export default function ClubDashboardPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Query for all members (regular and pending) in the club
     const membersQuery = useMemoFirebase(() => {
@@ -36,9 +39,20 @@ export default function ClubDashboardPage() {
     const { data: gymClasses, isLoading: areClassesLoading } = useCollection<GymClass>(classesQuery);
 
     
-    // Filter members based on their status
-    const pendingMembers = useMemo(() => members?.filter(m => m.status === 'pending') || [], [members]);
-    const regularMembers = useMemo(() => members?.filter(m => m.status === 'active' || m.status === 'inactive') || [], [members]);
+    // Filter members based on their status and search query
+    const filteredMembers = useMemo(() => {
+        if (!members) return [];
+        if (!searchQuery) return members;
+        const query = searchQuery.toLowerCase();
+        return members.filter(m => 
+            m.name.toLowerCase().includes(query) ||
+            m.email?.toLowerCase().includes(query) ||
+            m.phoneNumber?.includes(query)
+        );
+    }, [members, searchQuery]);
+
+    const pendingMembers = useMemo(() => filteredMembers.filter(m => m.status === 'pending'), [filteredMembers]);
+    const regularMembers = useMemo(() => filteredMembers.filter(m => m.status === 'active' || m.status === 'inactive'), [filteredMembers]);
 
 
     const handleApproval = async (memberId: string, approve: boolean) => {
@@ -111,7 +125,7 @@ export default function ClubDashboardPage() {
         );
     }
     
-    if (!user || user.role !== 'club-admin') {
+    if (!user || (user.role !== UserRole.CLUB_OWNER && user.role !== UserRole.CLUB_MANAGER)) {
         redirect('/dashboard');
         return null;
     }
@@ -212,8 +226,21 @@ export default function ClubDashboardPage() {
                 <TabsContent value="members">
                     <Card>
                         <CardHeader>
-                            <CardTitle>소속 선수 관리</CardTitle>
-                            <CardDescription>현재 클럽에 소속된 활동중 또는 비활동 상태의 선수 목록입니다.</CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>소속 선수 관리</CardTitle>
+                                    <CardDescription>현재 클럽에 소속된 활동중 또는 비활동 상태의 선수 목록입니다.</CardDescription>
+                                </div>
+                            </div>
+                            <div className="relative mt-4">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="이름, 이메일, 전화번호로 검색..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
                         </CardHeader>
                         <CardContent>
                            <MemberTable memberList={regularMembers} listType="regular" />
@@ -234,7 +261,7 @@ export default function ClubDashboardPage() {
                 <TabsContent value="classes">
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {gymClasses?.map((gymClass) => {
-                            const enrolledMembers = members?.filter(m => m.classId === gymClass.id);
+                            const enrolledMembers = members?.filter(m => gymClass.memberIds?.includes(m.id)) || [];
                             return (
                                 <Card key={gymClass.id}>
                                     <CardHeader>
