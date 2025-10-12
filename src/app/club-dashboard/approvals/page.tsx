@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PendingApprovalCard } from '@/components/pending-approval-card';
 import { RequireAnyRole } from '@/components/require-role';
-import { UserRole, PassRenewalRequest, PassTemplate, MemberPass } from '@/types';
-import { Users, UserCheck, CreditCard } from 'lucide-react';
-import { useState } from 'react';
+import { UserRole, PassRenewalRequest, PassTemplate, MemberPass, Member } from '@/types';
+import { Users, UserCheck, CreditCard, Loader2 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, setDoc } from 'firebase/firestore';
@@ -16,17 +15,21 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { addDays, format } from 'date-fns';
 
-// TODO: Firestore에서 실제 승인 요청 데이터를 가져와야 합니다
-const mockApprovals = {
-  familyParents: [] as any[],
-  coaches: [] as any[],
-};
-
 export default function ClubApprovalsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [approvals, setApprovals] = useState(mockApprovals);
+
+  // 승인 대기 중인 회원 가져오기
+  const pendingMembersQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.clubId) return null;
+    return query(
+      collection(firestore, 'members'),
+      where('clubId', '==', user.clubId),
+      where('status', '==', 'pending')
+    );
+  }, [firestore, user?.clubId]);
+  const { data: pendingMembers, isLoading: isMembersLoading } = useCollection<Member>(pendingMembersQuery);
 
   // 이용권 갱신 요청 가져오기
   const renewalRequestsQuery = useMemoFirebase(() => {
@@ -46,24 +49,53 @@ export default function ClubApprovalsPage() {
   }, [firestore, user?.clubId]);
   const { data: passTemplates } = useCollection<PassTemplate>(passTemplatesQuery);
 
-  const handleApprove = async (userId: string, category: keyof typeof mockApprovals) => {
-    console.log('승인:', userId);
-    setApprovals(prev => ({
-      ...prev,
-      [category]: prev[category].map(item =>
-        item.userId === userId ? { ...item, status: 'approved' as const } : item
-      ),
-    }));
+  const handleApproveMember = async (memberId: string) => {
+    if (!firestore) return;
+
+    try {
+      await updateDoc(doc(firestore, 'members', memberId), {
+        status: 'active',
+        approvedAt: new Date().toISOString(),
+        approvedBy: user?.uid,
+      });
+
+      toast({
+        title: '승인 완료',
+        description: '회원이 승인되었습니다.',
+      });
+    } catch (error) {
+      console.error('승인 실패:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '승인 중 오류가 발생했습니다.',
+      });
+    }
   };
 
-  const handleReject = async (userId: string, reason: string, category: keyof typeof mockApprovals) => {
-    console.log('거부:', userId, reason);
-    setApprovals(prev => ({
-      ...prev,
-      [category]: prev[category].map(item =>
-        item.userId === userId ? { ...item, status: 'rejected' as const } : item
-      ),
-    }));
+  const handleRejectMember = async (memberId: string, reason: string) => {
+    if (!firestore) return;
+
+    try {
+      await updateDoc(doc(firestore, 'members', memberId), {
+        status: 'rejected',
+        rejectedAt: new Date().toISOString(),
+        rejectedBy: user?.uid,
+        rejectionReason: reason,
+      });
+
+      toast({
+        title: '거부 완료',
+        description: '회원 신청이 거부되었습니다.',
+      });
+    } catch (error) {
+      console.error('거부 실패:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '거부 중 오류가 발생했습니다.',
+      });
+    }
   };
 
   const handleApproveRenewal = async (request: PassRenewalRequest) => {
