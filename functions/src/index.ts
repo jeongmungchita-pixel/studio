@@ -1,4 +1,7 @@
 import * as functions from 'firebase-functions';
+import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
@@ -24,11 +27,13 @@ const getTransporter = () => {
 // 📧 연맹 관리자 초대 이메일 발송
 // ============================================
 
-export const onFederationAdminInviteCreated = functions.firestore
-  .document('federationAdminInvites/{inviteId}')
-  .onCreate(async (snap, context) => {
-    const invite = snap.data();
-    const inviteToken = context.params.inviteId;
+export const onFederationAdminInviteCreated = onDocumentCreated(
+  'federationAdminInvites/{inviteId}',
+  async (event) => {
+    const invite = event.data?.data();
+    if (!invite) return;
+    
+    const inviteToken = event.params.inviteId;
     
     console.log(`새 연맹 관리자 초대 생성: ${invite.email}`);
     
@@ -147,22 +152,23 @@ export const onFederationAdminInviteCreated = functions.firestore
       // 에러가 발생해도 초대는 생성되어 있으므로 수동으로 링크 전달 가능
       return null;
     }
-  });
+  }
+);
 
 // ============================================
 // 📱 단체문자 발송 (네이버 클라우드)
 // ============================================
 
-export const sendBulkSMS = functions.https.onCall(async (data, context) => {
+export const sendBulkSMS = onCall(async (request) => {
   // 인증 확인
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       'unauthenticated',
       '로그인이 필요합니다'
     );
   }
   
-  const { recipients, message, type } = data;
+  const { recipients, message, type } = request.data;
   
   console.log(`단체문자 발송 요청: ${recipients.length}명`);
   console.log(`메시지 타입: ${type}`);
@@ -184,11 +190,13 @@ export const sendBulkSMS = functions.https.onCall(async (data, context) => {
 // 💳 결제 완료 알림
 // ============================================
 
-export const onPaymentCompleted = functions.firestore
-  .document('payments/{paymentId}')
-  .onUpdate(async (change, context) => {
-    const before = change.before.data();
-    const after = change.after.data();
+export const onPaymentCompleted = onDocumentUpdated(
+  'payments/{paymentId}',
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    
+    if (!before || !after) return null;
     
     // 상태가 completed로 변경된 경우
     if (before.status !== 'completed' && after.status === 'completed') {
@@ -201,32 +209,36 @@ export const onPaymentCompleted = functions.firestore
     }
     
     return null;
-  });
+  }
+);
 
 // ============================================
 // 📊 월별 통계 자동 계산 (매월 1일 자정)
 // ============================================
 
-export const calculateMonthlyStats = functions.pubsub
-  .schedule('0 0 1 * *')
-  .timeZone('Asia/Seoul')
-  .onRun(async (context) => {
+export const calculateMonthlyStats = onSchedule(
+  {
+    schedule: '0 0 1 * *',
+    timeZone: 'Asia/Seoul',
+  },
+  async () => {
     console.log('월별 통계 계산 시작');
     
     // TODO: 모든 클럽의 월별 통계 계산
     // TODO: Firestore에 저장
-    
-    return null;
-  });
+  }
+);
 
 // ============================================
 // 🔔 초대 만료 체크 (매일 자정)
 // ============================================
 
-export const checkExpiredInvites = functions.pubsub
-  .schedule('0 0 * * *')
-  .timeZone('Asia/Seoul')
-  .onRun(async (context) => {
+export const checkExpiredInvites = onSchedule(
+  {
+    schedule: '0 0 * * *',
+    timeZone: 'Asia/Seoul',
+  },
+  async () => {
     console.log('만료된 초대 확인 시작');
     
     const now = new Date();
@@ -248,6 +260,5 @@ export const checkExpiredInvites = functions.pubsub
     await batch.commit();
     
     console.log(`${expiredInvites.size}개의 초대가 만료되었습니다`);
-    
-    return null;
-  });
+  }
+);
