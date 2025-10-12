@@ -158,10 +158,15 @@ export default function ClubApprovalsPage() {
     }
   };
 
-  const totalPending = 
-    approvals.familyParents.filter(a => a.status === 'pending').length +
-    approvals.coaches.filter(a => a.status === 'pending').length +
-    (renewalRequests?.length || 0);
+  if (isMembersLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const totalPending = (pendingMembers?.length || 0) + (renewalRequests?.length || 0);
 
   return (
     <RequireAnyRole roles={[UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER]}>
@@ -183,28 +188,15 @@ export default function ClubApprovalsPage() {
           )}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">부모/가족</CardTitle>
+              <CardTitle className="text-sm font-medium">회원 승인</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {approvals.familyParents.filter(a => a.status === 'pending').length}
-              </div>
-              <p className="text-xs text-muted-foreground">승인 대기</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">코치/직원</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {approvals.coaches.filter(a => a.status === 'pending').length}
+                {pendingMembers?.length || 0}
               </div>
               <p className="text-xs text-muted-foreground">승인 대기</p>
             </CardContent>
@@ -224,76 +216,66 @@ export default function ClubApprovalsPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="all" className="space-y-4">
+        <Tabs defaultValue="members" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="all">
-              전체 ({totalPending})
-            </TabsTrigger>
-            <TabsTrigger value="parents">
-              부모/가족 ({approvals.familyParents.filter(a => a.status === 'pending').length})
-            </TabsTrigger>
-            <TabsTrigger value="coaches">
-              코치/직원 ({approvals.coaches.filter(a => a.status === 'pending').length})
+            <TabsTrigger value="members">
+              회원 승인 ({pendingMembers?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="renewals">
               이용권 갱신 ({renewalRequests?.length || 0})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              {[...approvals.familyParents, ...approvals.coaches]
-                .filter(a => a.status === 'pending')
-                .map((approval) => (
-                  <PendingApprovalCard
-                    key={approval.userId}
-                    {...approval}
-                    clubName={user?.clubName}
-                    onApprove={() => handleApprove(approval.userId, 
-                      approvals.familyParents.includes(approval) ? 'familyParents' : 'coaches'
-                    )}
-                    onReject={(reason) => handleReject(approval.userId, reason,
-                      approvals.familyParents.includes(approval) ? 'familyParents' : 'coaches'
-                    )}
-                  />
+          <TabsContent value="members" className="space-y-4">
+            {pendingMembers && pendingMembers.length > 0 ? (
+              <div className="grid gap-4">
+                {pendingMembers.map((member) => (
+                  <Card key={member.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>{member.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {member.email || '이메일 없음'} • {member.phoneNumber || '전화번호 없음'}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">대기중</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          <p>가족 역할: {member.familyRole || '일반 회원'}</p>
+                          <p>상태: 승인 대기</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRejectMember(member.id, '클럽 사정으로 거부')}
+                          >
+                            거부
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveMember(member.id)}
+                          >
+                            승인
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
-            </div>
-            {totalPending === 0 && (
+              </div>
+            ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <UserCheck className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">승인 대기 중인 요청이 없습니다</h3>
+                  <h3 className="text-lg font-semibold mb-2">승인 대기 중인 회원이 없습니다</h3>
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="parents" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              {approvals.familyParents.filter(a => a.status === 'pending').map((approval) => (
-                <PendingApprovalCard
-                  key={approval.userId}
-                  {...approval}
-                  clubName={user?.clubName}
-                  onApprove={() => handleApprove(approval.userId, 'familyParents')}
-                  onReject={(reason) => handleReject(approval.userId, reason, 'familyParents')}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="coaches" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              {approvals.coaches.filter(a => a.status === 'pending').map((approval) => (
-                <PendingApprovalCard
-                  key={approval.userId}
-                  {...approval}
-                  clubName={user?.clubName}
-                  onApprove={() => handleApprove(approval.userId, 'coaches')}
-                  onReject={(reason) => handleReject(approval.userId, reason, 'coaches')}
-                />
-              ))}
-            </div>
           </TabsContent>
 
           <TabsContent value="renewals" className="space-y-4">
