@@ -27,7 +27,7 @@ const getTransporter = () => {
 // 📧 연맹 관리자 초대 이메일 발송
 // ============================================
 
-export const onFederationAdminInviteCreated = onDocumentCreated(
+export const onFederationAdminInviteCreatedV2 = onDocumentCreated(
   'federationAdminInvites/{inviteId}',
   async (event) => {
     const invite = event.data?.data();
@@ -159,7 +159,7 @@ export const onFederationAdminInviteCreated = onDocumentCreated(
 // 📱 단체문자 발송 (네이버 클라우드)
 // ============================================
 
-export const sendBulkSMS = onCall(async (request) => {
+export const sendBulkSMSV2 = onCall(async (request) => {
   // 인증 확인
   if (!request.auth) {
     throw new HttpsError(
@@ -190,7 +190,7 @@ export const sendBulkSMS = onCall(async (request) => {
 // 💳 결제 완료 알림
 // ============================================
 
-export const onPaymentCompleted = onDocumentUpdated(
+export const onPaymentCompletedV2 = onDocumentUpdated(
   'payments/{paymentId}',
   async (event) => {
     const before = event.data?.before.data();
@@ -216,7 +216,7 @@ export const onPaymentCompleted = onDocumentUpdated(
 // 📊 월별 통계 자동 계산 (매월 1일 자정)
 // ============================================
 
-export const calculateMonthlyStats = onSchedule(
+export const calculateMonthlyStatsV2 = onSchedule(
   {
     schedule: '0 0 1 * *',
     timeZone: 'Asia/Seoul',
@@ -233,7 +233,7 @@ export const calculateMonthlyStats = onSchedule(
 // 🔔 초대 만료 체크 (매일 자정)
 // ============================================
 
-export const checkExpiredInvites = onSchedule(
+export const checkExpiredInvitesV2 = onSchedule(
   {
     schedule: '0 0 * * *',
     timeZone: 'Asia/Seoul',
