@@ -5,13 +5,20 @@ import * as nodemailer from 'nodemailer';
 admin.initializeApp();
 
 // 이메일 전송 설정
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: functions.config().email?.user,
-    pass: functions.config().email?.pass,
-  },
-});
+const getTransporter = () => {
+  const emailConfig = functions.config().email;
+  if (!emailConfig?.user || !emailConfig?.pass) {
+    console.warn('이메일 설정이 없습니다. 이메일 발송이 비활성화됩니다.');
+    return null;
+  }
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: emailConfig.user,
+      pass: emailConfig.pass,
+    },
+  });
+};
 
 // ============================================
 // 📧 연맹 관리자 초대 이메일 발송
@@ -115,6 +122,14 @@ export const onFederationAdminInviteCreated = functions.firestore
     `;
     
     try {
+      const transporter = getTransporter();
+      
+      if (!transporter) {
+        console.log(`⚠️ 이메일 설정이 없어 이메일을 발송하지 않습니다: ${invite.email}`);
+        console.log(`초대 링크 (수동 전달 필요): ${inviteLink}`);
+        return null;
+      }
+      
       // 이메일 발송
       await transporter.sendMail({
         from: `"KGF 넥서스" <${functions.config().email?.user}>`,
