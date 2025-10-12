@@ -9,10 +9,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { UserPlus, AlertCircle } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 export default function AddChildPage() {
   const router = useRouter();
   const { user } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [children, setChildren] = useState([
     {
@@ -42,26 +45,25 @@ export default function AddChildPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore || !user) return;
     setIsSubmitting(true);
 
     try {
-      console.log('자녀 추가:', {
-        parentId: user?.uid,
-        clubId: user?.clubId,
-        children,
-      });
-      
-      // TODO: Firestore에 Member 생성
-      // for (const child of children) {
-      //   await createMember({
-      //     ...child,
-      //     guardianIds: [user.uid],
-      //     clubId: user.clubId,
-      //     memberType: 'family',
-      //     familyRole: 'child',
-      //     status: 'active', // 이미 부모가 승인됨
-      //   });
-      // }
+      // Firestore에 각 자녀를 Member로 생성
+      for (const child of children) {
+        await addDoc(collection(firestore, 'members'), {
+          name: child.name,
+          birthDate: child.birthDate,
+          gender: child.gender,
+          guardianIds: [user.uid], // 부모 UID 배열
+          clubId: user.clubId,
+          memberType: 'family',
+          familyRole: 'child',
+          status: 'active', // 이미 부모가 승인됨
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
       
       alert(`${children.length}명의 자녀가 추가되었습니다!`);
       router.push('/my-profile/family');
