@@ -4,14 +4,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
-import { Users, UserPlus, Calendar, User, Mail, Phone } from 'lucide-react';
-
-// TODO: Firestore에서 실제 자녀 데이터를 가져와야 합니다
-const mockChildren: any[] = [];
+import { Users, UserPlus, Calendar, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import type { Member } from '@/types';
 
 export default function FamilyManagementPage() {
   const router = useRouter();
   const { user } = useUser();
+  const firestore = useFirestore();
+
+  // 자녀 목록 조회
+  const childrenQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'members'),
+      where('guardianIds', 'array-contains', user.uid)
+    );
+  }, [firestore, user]);
+
+  const { data: children, isLoading: isChildrenLoading } = useCollection<Member>(childrenQuery);
 
   if (!user) {
     return (
@@ -24,6 +37,14 @@ export default function FamilyManagementPage() {
           </CardContent>
         </Card>
       </main>
+    );
+  }
+
+  if (isChildrenLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
     );
   }
 
@@ -81,55 +102,48 @@ export default function FamilyManagementPage() {
 
       {/* 자녀 목록 */}
       <div>
-        <h2 className="text-2xl font-bold mb-4">자녀 ({mockChildren.length}명)</h2>
+        <h2 className="text-2xl font-bold mb-4">자녀 ({children?.length || 0}명)</h2>
         
-        {mockChildren.length > 0 ? (
+        {children && children.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
-            {mockChildren.map((child) => (
+            {children.map((child: Member) => (
               <Card key={child.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-xl">{child.name}</CardTitle>
                       <CardDescription>
-                        {child.age}세 • {child.gender === 'male' ? '남' : '여'}
+                        {child.gender === 'male' ? '남' : '여'}
                       </CardDescription>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium text-primary">
-                        {child.className}
+                        {child.status === 'active' ? '활동중' : '비활동'}
                       </div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">
-                        생년월일: {new Date(child.birthDate).toLocaleDateString()}
-                      </span>
-                    </div>
+                    {child.phoneNumber && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {child.phoneNumber}
+                        </span>
+                      </div>
+                    )}
 
-                    <div className="pt-3 border-t">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">이용권</span>
-                        <span className="text-sm text-muted-foreground">
-                          남은 횟수
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-primary h-2 rounded-full"
-                            style={{ width: `${(child.remainingSessions / 12) * 100}%` }}
-                          />
+                    {child.activePassId && (
+                      <div className="pt-3 border-t">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">이용권</span>
+                          <span className="text-sm text-primary">
+                            활성
+                          </span>
                         </div>
-                        <span className="text-sm font-bold">
-                          {child.remainingSessions}회
-                        </span>
                       </div>
-                    </div>
+                    )}
 
                     <div className="pt-3 border-t flex gap-2">
                       <Button
@@ -139,14 +153,6 @@ export default function FamilyManagementPage() {
                         className="flex-1"
                       >
                         상세보기
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/members/${child.id}/attendance`)}
-                        className="flex-1"
-                      >
-                        출석기록
                       </Button>
                     </div>
                   </div>
