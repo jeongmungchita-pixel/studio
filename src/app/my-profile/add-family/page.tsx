@@ -9,10 +9,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { Users, UserPlus } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 export default function AddFamilyMemberPage() {
   const router = useRouter();
   const { user } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -24,23 +27,27 @@ export default function AddFamilyMemberPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore || !user) return;
     setIsSubmitting(true);
 
     try {
-      console.log('가족 회원 추가:', {
-        ...formData,
-        parentUserId: user?.uid,
-        clubId: user?.clubId,
+      // Firestore에 가족 회원 추가 (승인 대기 상태)
+      await addDoc(collection(firestore, 'members'), {
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        birthDate: formData.birthDate,
+        guardianIds: [user.uid], // 부모 UID
+        clubId: user.clubId,
+        memberType: 'family',
+        familyRole: formData.relationship, // 'parent' or 'child'
+        status: 'pending', // 클럽 오너 승인 필요
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
-      // TODO: Firestore에 저장
-      // await addFamilyMember({
-      //   ...formData,
-      //   parentUserId: user?.uid,
-      //   clubId: user?.clubId,
-      // });
       
       alert('가족 회원 추가 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.');
-      router.push('/my-profile');
+      router.push('/my-profile/family');
     } catch (error) {
       console.error('가족 회원 추가 실패:', error);
       alert('가족 회원 추가에 실패했습니다. 다시 시도해주세요.');
