@@ -1,11 +1,16 @@
-import * as functions from 'firebase-functions';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { defineString } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
 admin.initializeApp();
+
+// 환경 변수 정의 (Firebase Functions v2)
+const emailUser = defineString('EMAIL_USER');
+const emailPass = defineString('EMAIL_PASS');
+const appUrl = defineString('APP_URL');
 
 // ============================================
 // 🚀 Next.js SSR Function (현재 미사용)
@@ -35,16 +40,18 @@ admin.initializeApp();
 
 // 이메일 전송 설정
 const getTransporter = () => {
-  const emailConfig = functions.config().email;
-  if (!emailConfig?.user || !emailConfig?.pass) {
+  const user = emailUser.value();
+  const pass = emailPass.value();
+  
+  if (!user || !pass) {
     console.warn('이메일 설정이 없습니다. 이메일 발송이 비활성화됩니다.');
     return null;
   }
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: emailConfig.user,
-      pass: emailConfig.pass,
+      user: user,
+      pass: pass,
     },
   });
 };
@@ -56,7 +63,7 @@ const getTransporter = () => {
 export const onFederationAdminInviteCreatedV2 = onDocumentCreated(
   {
     document: 'federationAdminInvites/{inviteId}',
-    region: 'asia-northeast3', // 서울 리전
+    // region 제거 - Firestore 기본 리전 사용
   },
   async (event) => {
     const invite = event.data?.data();
@@ -67,8 +74,8 @@ export const onFederationAdminInviteCreatedV2 = onDocumentCreated(
     console.log(`새 연맹 관리자 초대 생성: ${invite.email}`);
     
     // 초대 링크 생성
-    const appUrl = functions.config().app?.url || 'http://localhost:9002';
-    const inviteLink = `${appUrl}/invite/${inviteToken}`;
+    const baseUrl = appUrl.value() || 'http://localhost:9002';
+    const inviteLink = `${baseUrl}/invite/${inviteToken}`;
     
     // 만료일 포맷
     const expiresAt = new Date(invite.expiresAt);
@@ -166,7 +173,7 @@ export const onFederationAdminInviteCreatedV2 = onDocumentCreated(
       
       // 이메일 발송
       await transporter.sendMail({
-        from: `"KGF 넥서스" <${functions.config().email?.user}>`,
+        from: `"KGF 넥서스" <${emailUser.value()}>`,
         to: invite.email,
         subject: `🎉 연맹 관리자 초대 - ${invite.name}님`,
         html: emailHtml,

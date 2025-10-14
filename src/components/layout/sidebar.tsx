@@ -45,6 +45,7 @@ import {
   ChevronDown,
   Users,
   Mail,
+  Building,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -225,6 +226,50 @@ const subMenuItems: SubMenuItem[] = [
     label: '승인 대기', 
     icon: CheckSquare, 
     section: 'admin/users',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  
+  // 연맹 관리자 대시보드 서브메뉴
+  { 
+    href: '/dashboard', 
+    label: '대시보드', 
+    icon: Home, 
+    section: 'dashboard',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/members', 
+    label: '회원 관리', 
+    icon: Users, 
+    section: 'dashboard',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/clubs', 
+    label: '클럽 관리', 
+    icon: Building, 
+    section: 'dashboard',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/competitions', 
+    label: '대회 관리', 
+    icon: Trophy, 
+    section: 'dashboard',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/level-tests', 
+    label: '레벨 테스트', 
+    icon: Award, 
+    section: 'dashboard',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/admin/users', 
+    label: '사용자 관리', 
+    icon: UserPlus, 
+    section: 'dashboard',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   

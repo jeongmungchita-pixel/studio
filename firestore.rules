@@ -153,11 +153,14 @@ service cloud.firestore {
     }
     
     match /federationAdminInvites/{inviteId} {
-      // 읽기: 관리자 또는 초대받은 사람
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);
+      // 읽기: 누구나 (초대 링크를 통한 접근 허용)
+      allow read: if true;
       
-      // 생성/수정: 관리자만
-      allow create, update: if isSuperAdmin();
+      // 생성: 관리자만
+      allow create: if isSuperAdmin();
+      
+      // 수정: 관리자 또는 초대받은 사람 (가입 시 상태 업데이트)
+      allow update: if isSuperAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);
       
       // 삭제: 관리자만
       allow delete: if isSuperAdmin();
