@@ -214,22 +214,6 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
   
-  // 사용자 관리 서브메뉴
-  { 
-    href: '/admin/users', 
-    label: '전체 사용자', 
-    icon: UserPlus, 
-    section: 'admin/users',
-    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
-  },
-  { 
-    href: '/admin/users/pending', 
-    label: '승인 대기', 
-    icon: CheckSquare, 
-    section: 'admin/users',
-    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
-  },
-  
   // 연맹 관리자 대시보드 서브메뉴
   { 
     href: '/admin', 
@@ -339,7 +323,6 @@ const subMenuItems: SubMenuItem[] = [
 function getCurrentSection(pathname: string): string {
   if (pathname.startsWith('/super-admin') || pathname.startsWith('/system')) return 'super-admin';
   if (pathname.startsWith('/club-dashboard')) return 'club-dashboard';
-  if (pathname.startsWith('/admin/users')) return 'admin/users';
   if (pathname.startsWith('/admin')) return 'admin'; // 연맹 관리자 섹션 (모든 /admin/* 포함)
   if (pathname.startsWith('/my-profile')) return 'my-profile';
   if (pathname.startsWith('/dashboard')) return 'dashboard';
