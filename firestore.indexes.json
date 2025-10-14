@@ -124,6 +124,23 @@
         { "fieldPath": "clubId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "financial_transactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clubId", "order": "ASCENDING" },
+        { "fieldPath": "isCancelled", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "financial_transactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "splitParentId", "order": "ASCENDING" },
+        { "fieldPath": "isCancelled", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

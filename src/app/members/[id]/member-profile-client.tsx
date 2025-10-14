@@ -19,7 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon, Camera, File, Video, Phone, Mail, MapPin, Users as UsersIcon, CreditCard, Edit, Trash2 } from 'lucide-react';
+import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon, Camera, File, Video, Phone, Mail, MapPin, Users as UsersIcon, CreditCard, Edit, Trash2, Baby } from 'lucide-react';
+import { canUsePassTemplate, calculateAge, getMemberCategoryLabel, getTargetCategoryLabel } from '@/lib/member-utils';
 import Link from 'next/link';
 import { 
   DropdownMenu, 
@@ -105,6 +106,12 @@ export default function MemberProfileClient({ id }: { id:string }) {
     return query(collection(firestore, 'pass_templates'), where('clubId', '==', member.clubId));
   }, [firestore, member?.clubId]);
   const { data: passTemplates } = useCollection<PassTemplate>(passTemplatesQuery);
+
+  // 7. Filter pass templates based on member category
+  const availablePassTemplates = useMemo(() => {
+    if (!passTemplates || !member) return [];
+    return passTemplates.filter(template => canUsePassTemplate(member, template));
+  }, [passTemplates, member]);
 
   const isLoading = isUserLoading || isMemberLoading || arePassesLoading || areAttendanceLoading || areMediaLoading || areGuardiansLoading;
 
@@ -524,6 +531,20 @@ export default function MemberProfileClient({ id }: { id:string }) {
                   <Label className="text-muted-foreground">회원 유형</Label>
                   <p className="font-medium">{member.memberType === 'individual' ? '개인 회원' : '가족 회원'}</p>
                 </div>
+                <div>
+                  <Label className="text-muted-foreground">회원 분류</Label>
+                  <div className="font-medium">
+                    <Badge className={getMemberCategoryColor(member.memberCategory || (age && age >= 19 ? 'adult' : 'child')).badge}>
+                      {(member.memberCategory || (age && age >= 19 ? 'adult' : 'child')) === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
+                      {getMemberCategoryLabel(member.memberCategory || (age && age >= 19 ? 'adult' : 'child'))}
+                    </Badge>
+                    {!member.memberCategory && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        * 나이를 기준으로 자동 분류됨
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -850,15 +871,37 @@ export default function MemberProfileClient({ id }: { id:string }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {passTemplates && passTemplates.length > 0 ? (
+            {member && (
+              <div className="mb-4 p-3 bg-secondary rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>{member.name}</strong> 님은 <Badge variant="outline" className="ml-1">{getMemberCategoryLabel(member.memberCategory)}</Badge> 회원입니다.
+                  {member.memberCategory ? ' 해당 분류에 맞는 이용권만 표시됩니다.' : ' 나이를 기준으로 자동 분류됩니다.'}
+                </p>
+              </div>
+            )}
+            {availablePassTemplates && availablePassTemplates.length > 0 ? (
               <div className="grid gap-4">
-                {passTemplates.map((template) => (
-                  <Card key={template.id} className="cursor-pointer hover:bg-secondary" onClick={() => handleRequestRenewal(template)}>
+                {availablePassTemplates.map((template) => (
+                  <Card key={template.id} className="cursor-pointer hover:bg-secondary transition-colors" onClick={() => handleRequestRenewal(template)}>
                     <CardHeader>
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
-                      {template.description && (
-                        <CardDescription>{template.description}</CardDescription>
-                      )}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{template.name}</CardTitle>
+                          {template.description && (
+                            <CardDescription>{template.description}</CardDescription>
+                          )}
+                        </div>
+                        <Badge variant={
+                          template.targetCategory === 'adult' ? 'default' :
+                          template.targetCategory === 'child' ? 'secondary' :
+                          'outline'
+                        }>
+                          {template.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
+                          {template.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
+                          {template.targetCategory === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
+                          {getTargetCategoryLabel(template.targetCategory)}
+                        </Badge>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -876,7 +919,10 @@ export default function MemberProfileClient({ id }: { id:string }) {
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
-                사용 가능한 이용권이 없습니다.
+                {member?.memberCategory 
+                  ? `${getMemberCategoryLabel(member.memberCategory)} 회원이 사용할 수 있는 이용권이 없습니다.`
+                  : '사용 가능한 이용권이 없습니다.'
+                }
               </p>
             )}
           </div>

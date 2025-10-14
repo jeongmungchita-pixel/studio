@@ -15,15 +15,17 @@ import { useMemo } from 'react';
 export default function ClubsPage() {
   const firestore = useFirestore();
   
-  // 승인된 클럽만 조회
+  // 임시: 모든 클럽 조회 (status 확인용)
   const clubsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(
-      collection(firestore, 'clubs'),
-      where('status', '==', 'approved')
-    );
+    return collection(firestore, 'clubs');
   }, [firestore]);
-  const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsQuery);
+  const { data: clubs, isLoading: isClubsLoading, error: clubsError } = useCollection<Club>(clubsQuery);
+  
+  // 디버깅: 클럽 데이터 콘솔 출력
+  console.log('🔍 전체 클럽 데이터:', clubs);
+  console.log('📊 각 클럽의 status:', clubs?.map(c => ({ name: c.name, status: c.status })));
+  console.log('❌ 클럽 조회 에러:', clubsError);
 
   // 전체 회원 조회 (클럽별 회원 수 계산용)
   const membersCollection = useMemoFirebase(

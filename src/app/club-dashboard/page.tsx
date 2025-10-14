@@ -13,10 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Users, CreditCard, BookMarked, TrendingUp, Search, Clock, Users2 } from 'lucide-react';
+import { Loader2, Users, CreditCard, BookMarked, TrendingUp, Search, Clock, Users2, User, Baby } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { getMemberCategoryLabel, getMemberCategoryColor, calculateAge } from '@/lib/member-utils';
 
 export default function ClubDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -53,6 +54,36 @@ export default function ClubDashboardPage() {
 
     const pendingMembers = useMemo(() => filteredMembers.filter(m => m.status === 'pending'), [filteredMembers]);
     const regularMembers = useMemo(() => filteredMembers.filter(m => m.status === 'active' || m.status === 'inactive'), [filteredMembers]);
+
+    // Member statistics by category
+    const memberStats = useMemo(() => {
+        if (!members) return { total: 0, active: 0, adult: 0, child: 0, adultActive: 0, childActive: 0 };
+        
+        const stats = {
+            total: members.length,
+            active: 0,
+            adult: 0,
+            child: 0,
+            adultActive: 0,
+            childActive: 0,
+        };
+        
+        members.forEach(member => {
+            const memberCategory = member.memberCategory || 
+                (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+            
+            if (member.status === 'active') {
+                stats.active++;
+                if (memberCategory === 'adult') stats.adultActive++;
+                else stats.childActive++;
+            }
+            
+            if (memberCategory === 'adult') stats.adult++;
+            else stats.child++;
+        });
+        
+        return stats;
+    }, [members]);
 
 
     const handleApproval = async (memberId: string, approve: boolean) => {
@@ -153,13 +184,19 @@ export default function ClubDashboardPage() {
           <TableHeader>
               <TableRow>
                   <TableHead>이름</TableHead>
+                  <TableHead>분류</TableHead>
                   <TableHead>상태</TableHead>
                   <TableHead>이메일</TableHead>
                   <TableHead>기능</TableHead>
               </TableRow>
           </TableHeader>
           <TableBody>
-              {memberList.length > 0 ? memberList.map(member => (
+              {memberList.length > 0 ? memberList.map(member => {
+                  const memberCategory = member.memberCategory || 
+                    (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+                  const categoryColors = getMemberCategoryColor(memberCategory);
+                  
+                  return (
                    <TableRow key={member.id}>
                       <TableCell className="font-medium">
                         <Link href={`/members/${member.id}`} className="flex items-center gap-3 hover:underline">
@@ -180,6 +217,12 @@ export default function ClubDashboardPage() {
                         </Link>
                       </TableCell>
                       <TableCell>
+                        <Badge className={categoryColors.badge}>
+                          {memberCategory === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
+                          {getMemberCategoryLabel(memberCategory)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                           <Badge variant={getStatusVariant(member.status)}>{statusTranslations[member.status]}</Badge>
                       </TableCell>
                       <TableCell>{member.email}</TableCell>
@@ -198,7 +241,7 @@ export default function ClubDashboardPage() {
                           )}
                       </TableCell>
                   </TableRow>
-              )) : <TableRow><TableCell colSpan={4} className="text-center">해당하는 선수가 없습니다.</TableCell></TableRow>}
+              )}) : <TableRow><TableCell colSpan={5} className="text-center">해당하는 선수가 없습니다.</TableCell></TableRow>}
           </TableBody>
       </Table>
     );
@@ -213,6 +256,61 @@ export default function ClubDashboardPage() {
                     </CardDescription>
                 </CardHeader>
             </Card>
+
+            {/* Statistics Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">전체 회원</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{memberStats.total}</div>
+                        <p className="text-xs text-muted-foreground">
+                            활동중 {memberStats.active}명
+                        </p>
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">성인 회원</CardTitle>
+                        <User className="h-4 w-4 text-blue-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-blue-600">{memberStats.adult}</div>
+                        <p className="text-xs text-muted-foreground">
+                            활동중 {memberStats.adultActive}명 ({memberStats.adult > 0 ? ((memberStats.adultActive / memberStats.adult) * 100).toFixed(0) : 0}%)
+                        </p>
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">주니어 회원</CardTitle>
+                        <Baby className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">{memberStats.child}</div>
+                        <p className="text-xs text-muted-foreground">
+                            활동중 {memberStats.childActive}명 ({memberStats.child > 0 ? ((memberStats.childActive / memberStats.child) * 100).toFixed(0) : 0}%)
+                        </p>
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">클래스</CardTitle>
+                        <BookMarked className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{gymClasses?.length || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                            운영중인 클래스
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
              <Tabs defaultValue="members" className="w-full">
                 <TabsList>

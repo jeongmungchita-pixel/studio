@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Ticket } from 'lucide-react';
+import { Loader2, Ticket, User, Baby, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getMemberCategoryLabel, getMemberCategoryColor, calculateAge } from '@/lib/member-utils';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +30,7 @@ export default function ClubPassesPage() {
   const { toast } = useToast();
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isIssuing, setIsIssuing] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child'>('all');
 
   // 1. Fetch ONLY active members for the current club admin
   const membersQuery = useMemoFirebase(() => {
@@ -35,6 +38,33 @@ export default function ClubPassesPage() {
     return query(collection(firestore, 'members'), where('clubId', '==', user.clubId), where('status', '==', 'active'));
   }, [firestore, user?.clubId]);
   const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
+
+  // Filter members by category
+  const filteredMembers = useMemo(() => {
+    if (!members) return [];
+    if (categoryFilter === 'all') return members;
+    
+    return members.filter(member => {
+      const memberCategory = member.memberCategory || 
+        (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+      return memberCategory === categoryFilter;
+    });
+  }, [members, categoryFilter]);
+
+  // Count members by category
+  const memberCounts = useMemo(() => {
+    if (!members) return { all: 0, adult: 0, child: 0 };
+    
+    const counts = { all: members.length, adult: 0, child: 0 };
+    members.forEach(member => {
+      const memberCategory = member.memberCategory || 
+        (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+      if (memberCategory === 'adult') counts.adult++;
+      else counts.child++;
+    });
+    
+    return counts;
+  }, [members]);
 
   // 2. Fetch all passes for the active members of this club
   const memberIds = useMemo(() => members?.map(m => m.id) || [], [members]);
@@ -105,6 +135,69 @@ export default function ClubPassesPage() {
 
   const isLoading = areMembersLoading || arePassesLoading;
 
+  const renderMemberTable = (membersList: Member[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>선수 이름</TableHead>
+          <TableHead>분류</TableHead>
+          <TableHead>이용권 상태</TableHead>
+          <TableHead className="text-right">수동 발급 (예외용)</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {membersList.map(member => {
+          const currentPass = passes?.find(p => p.id === member.activePassId);
+          const canIssueNewPass = !currentPass || currentPass.status === 'expired';
+          const memberCategory = member.memberCategory || 
+            (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+          const categoryColors = getMemberCategoryColor(memberCategory);
+          
+          return (
+            <TableRow key={member.id}>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
+                    alt={member.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    data-ai-hint="person gymnastics"
+                  />
+                  <span>{member.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge className={categoryColors.badge}>
+                  {memberCategory === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
+                  {getMemberCategoryLabel(memberCategory)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {getPassStatusBadge(currentPass)}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button 
+                  size="sm"
+                  onClick={() => setSelectedMember(member)}
+                  disabled={!canIssueNewPass}
+                  title={!canIssueNewPass ? "활성 또는 대기중인 이용권이 이미 있습니다." : "새 이용권을 수동으로 발급합니다."}
+                >
+                  <Ticket className="mr-2 h-4 w-4" />
+                  수동 발급
+                </Button>
+              </TableCell>
+            </TableRow>
+          )
+        })}
+        {membersList.length === 0 &&
+          <TableRow><TableCell colSpan={4} className="text-center">해당 분류의 활동중인 선수가 없습니다.</TableCell></TableRow>
+        }
+      </TableBody>
+    </Table>
+  );
+
   return (
     <main className="flex-1 p-6 space-y-6">
       <Card>
@@ -118,56 +211,31 @@ export default function ClubPassesPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
              </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>선수 이름</TableHead>
-                  <TableHead>이용권 상태</TableHead>
-                  <TableHead className="text-right">수동 발급 (예외용)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members?.map(member => {
-                  const currentPass = passes?.find(p => p.id === member.activePassId);
-                  const canIssueNewPass = !currentPass || currentPass.status === 'expired';
-                  
-                  return (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <Image
-                            src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
-                            alt={member.name}
-                            width={40}
-                            height={40}
-                            className="rounded-full object-cover"
-                            data-ai-hint="person gymnastics"
-                          />
-                          <span>{member.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getPassStatusBadge(currentPass)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          size="sm"
-                          onClick={() => setSelectedMember(member)}
-                          disabled={!canIssueNewPass}
-                          title={!canIssueNewPass ? "활성 또는 대기중인 이용권이 이미 있습니다." : "새 이용권을 수동으로 발급합니다."}
-                        >
-                          <Ticket className="mr-2 h-4 w-4" />
-                          수동 발급
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-                 {(!members || members.length === 0) &&
-                    <TableRow><TableCell colSpan={3} className="text-center">활동중인 선수가 없습니다.</TableCell></TableRow>
-                  }
-              </TableBody>
-            </Table>
+            <Tabs value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as 'all' | 'adult' | 'child')}>
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="all">
+                  <Users className="mr-2 h-4 w-4" />
+                  전체 ({memberCounts.all})
+                </TabsTrigger>
+                <TabsTrigger value="adult">
+                  <User className="mr-2 h-4 w-4" />
+                  성인 ({memberCounts.adult})
+                </TabsTrigger>
+                <TabsTrigger value="child">
+                  <Baby className="mr-2 h-4 w-4" />
+                  주니어 ({memberCounts.child})
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="all">
+                {renderMemberTable(filteredMembers)}
+              </TabsContent>
+              <TabsContent value="adult">
+                {renderMemberTable(filteredMembers)}
+              </TabsContent>
+              <TabsContent value="child">
+                {renderMemberTable(filteredMembers)}
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>

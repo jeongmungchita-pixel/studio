@@ -81,8 +81,8 @@ export default function MemberRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
 
-      // Firestore에 저장
-      await addDoc(collection(firestore, 'memberRequests'), requestData);
+      // Firestore에 저장 (통합된 컬렉션 사용)
+      await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
       
       toast({
         title: '신청 완료',

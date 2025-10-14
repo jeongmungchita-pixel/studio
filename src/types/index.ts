@@ -83,6 +83,8 @@ export function canManageUser(managerRole: UserRole, targetRole: UserRole): bool
 // 📋 기존 타입 정의
 // ============================================
 
+export type MemberCategory = 'adult' | 'child';
+
 export type Member = {
   id: string;
   name: string;
@@ -93,14 +95,22 @@ export type Member = {
   clubId: string;
   clubName?: string; // 비정규화 - 클럽 이름 (조인 방지)
   status: 'active' | 'inactive' | 'pending';
-  guardianIds?: string[]; // 부모 UserProfile UID 배열
+  guardianIds?: string[]; // 부모 Member ID 배열
   photoURL?: string;
   activePassId?: string; // ID of the current MemberPass
   classId?: string; // ID of the class the member is enrolled in
   
+  // 회원 분류 (새로 추가)
+  memberCategory?: MemberCategory; // 'adult' | 'child'
+  
   // 가족 회원 관련
   memberType?: 'individual' | 'family'; // 개인 or 가족 회원
   familyRole?: 'parent' | 'child'; // 부모 or 자녀
+  
+  // 보호자 정보 (비정규화 - 자녀인 경우)
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianRelation?: string;
   
   // 승인 관련
   approvedBy?: string;
@@ -109,6 +119,8 @@ export type Member = {
   rejectedAt?: string;
   rejectionReason?: string;
   requestedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
   
   // 추가 필드 (분석/통계용)
   joinDate?: string; // 가입일
@@ -238,6 +250,7 @@ export type PassTemplate = {
     clubId: string;
     name: string;
     passType?: 'period' | 'session' | 'unlimited'; // 기간제, 횟수제, 기간+횟수제
+    targetCategory?: 'adult' | 'child' | 'all'; // 대상 회원 분류 (새로 추가)
     totalSessions?: number;
     attendableSessions?: number;
     durationDays?: number;
@@ -264,6 +277,11 @@ export type GymClass = {
   dayOfWeek: '월' | '화' | '수' | '목' | '금' | '토' | '일';
   time: string;
   capacity: number;
+  targetCategory?: 'adult' | 'child' | 'all'; // 대상 회원 분류 (새로 추가)
+  ageRange?: {
+    min?: number; // 최소 나이
+    max?: number; // 최대 나이
+  };
   memberIds: string[];
 };
 
@@ -518,9 +536,9 @@ export type ClubOwnerRequest = {
   rejectionReason?: string;
 };
 
-// 회원 가입 신청 타입
+// 회원 가입 신청 타입 (간단한 버전 - /register/member에서 사용)
 export type MemberRequest = {
-  id: string;
+  id?: string;
   userId: string;
   name: string;
   email?: string;
@@ -540,20 +558,29 @@ export type MemberRequest = {
   rejectionReason?: string;
 };
 
-// 가족 대표 가입 신청 타입
-export type FamilyRequest = {
+// 회원 가입 신청 타입 (계약서 포함 버전 - /register/member-with-contract에서 사용)
+// memberRegistrationRequests 컬렉션에 저장됨
+export type MemberRegistrationRequest = {
   id: string;
-  userId: string;
-  parentName: string;
-  parentEmail: string;
-  parentPhone: string;
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female';
+  phoneNumber: string;
   clubId: string;
   clubName: string;
-  children: Array<{
-    name: string;
-    dateOfBirth: string;
-    gender: 'male' | 'female';
-  }>;
+  isMinor: boolean;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianRelation?: string;
+  agreements: {
+    personalInfo: boolean;
+    terms: boolean;
+    safety: boolean;
+    portrait: boolean;
+    agreedAt: string;
+  };
+  signature: string;
+  signedAt: string;
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: string;
   approvedBy?: string;
@@ -561,6 +588,97 @@ export type FamilyRequest = {
   rejectedBy?: string;
   rejectedAt?: string;
   rejectionReason?: string;
+};
+
+// 가족 회원 가입 신청 타입 (유연한 구조)
+export type FamilyRegistrationRequest = {
+  id: string;
+  clubId: string;
+  clubName: string;
+  requestType: 'family';
+  
+  // 부모 정보 (0-2명, 선택)
+  parents: Array<{
+    name: string;
+    birthDate: string;
+    gender: 'male' | 'female';
+    phoneNumber: string;
+    email?: string;
+  }>;
+  
+  // 자녀 정보 (0명 이상, 선택)
+  children: Array<{
+    name: string;
+    birthDate: string;
+    gender: 'male' | 'female';
+    grade?: string;
+  }>;
+  
+  // 외부 보호자 정보 (부모가 없고 자녀만 있는 경우)
+  externalGuardian?: {
+    name: string;
+    phoneNumber: string;
+    relation: 'parent' | 'grandparent' | 'legal_guardian' | 'other';
+  };
+  
+  // 약관 동의
+  agreements: {
+    personal: boolean;
+    terms: boolean;
+    safety: boolean;
+    portrait: boolean;
+    agreedAt: string;
+  };
+  
+  // 서명
+  signature: string;
+  signedAt: string;
+  
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  createdMemberIds?: string[]; // 승인 후 생성된 회원 ID들
+};
+
+// 성인 개인 회원 가입 신청 타입
+export type AdultRegistrationRequest = {
+  id: string;
+  clubId: string;
+  clubName: string;
+  requestType: 'adult';
+  
+  // 본인 정보
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female';
+  phoneNumber: string;
+  email?: string;
+  
+  // 약관 동의
+  agreements: {
+    personal: boolean;
+    terms: boolean;
+    safety: boolean;
+    portrait: boolean;
+    agreedAt: string;
+  };
+  
+  // 서명
+  signature: string;
+  signedAt: string;
+  
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  createdMemberId?: string; // 승인 후 생성된 회원 ID
 };
 
 // ============================================
@@ -911,6 +1029,58 @@ export interface ClubBankAccount {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// ============================================
+// 💰 재무 관리 (수입/지출)
+// ============================================
+
+export type TransactionType = 'income' | 'expense';
+export type TransactionCategory = 
+  // 수입 카테고리
+  | 'membership_fee'      // 회원권 수입
+  | 'event_fee'           // 이벤트 수입
+  | 'competition_fee'     // 시합 수입
+  | 'sponsorship'         // 후원금
+  | 'other_income'        // 기타 수입
+  // 지출 카테고리
+  | 'facility_rent'       // 시설 임대료
+  | 'equipment'           // 장비 구입
+  | 'salary'              // 급여
+  | 'utility'             // 공과금
+  | 'marketing'           // 마케팅
+  | 'maintenance'         // 유지보수
+  | 'other_expense';      // 기타 지출
+
+export interface FinancialTransaction {
+  id: string;
+  clubId: string;
+  type: TransactionType;
+  category: TransactionCategory;
+  amount: number;
+  description: string;
+  date: string; // ISO 8601 date string
+  
+  // 분할 관련
+  isSplit?: boolean;
+  splitMonths?: number;
+  splitParentId?: string; // 원본 거래 ID (분할된 경우)
+  splitIndex?: number; // 분할 순서 (1, 2, 3...)
+  
+  // 회원 관련 (선택)
+  memberId?: string;
+  memberName?: string;
+  memberCategory?: 'adult' | 'child';
+  
+  // 메타데이터
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+  
+  // 취소/되돌리기
+  isCancelled?: boolean;
+  cancelledAt?: string;
+  cancelledBy?: string;
 }
 
 // ============================================

@@ -48,6 +48,17 @@ export default function AddChildPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !user) return;
+    
+    // clubId 확인
+    if (!user.clubId) {
+      toast({
+        variant: 'destructive',
+        title: '클럽 정보 없음',
+        description: '클럽에 소속되어 있지 않습니다. 관리자에게 문의하세요.',
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {

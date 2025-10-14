@@ -31,7 +31,9 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Edit, Trash2, User, Baby, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { getTargetCategoryLabel } from '@/lib/member-utils';
 
 
 const templateFormSchema = z.object({
@@ -39,6 +41,9 @@ const templateFormSchema = z.object({
   description: z.string().optional(),
   passType: z.enum(['period', 'session', 'unlimited'], {
     required_error: '이용권 타입을 선택해주세요.',
+  }),
+  targetCategory: z.enum(['adult', 'child', 'all'], {
+    required_error: '대상 회원을 선택해주세요.',
   }),
   price: z.preprocess(
     (a) => (a === '' ? undefined : parseInt(z.string().parse(a), 10)),
@@ -74,6 +79,7 @@ export default function PassTemplatesPage() {
       name: '',
       description: '',
       passType: 'period' as any,
+      targetCategory: 'all' as any,
       price: '' as any,
       durationDays: '' as any,
       totalSessions: '' as any,
@@ -94,6 +100,8 @@ export default function PassTemplatesPage() {
       form.reset({
         name: editingTemplate.name,
         description: editingTemplate.description || '',
+        passType: editingTemplate.passType || 'period',
+        targetCategory: editingTemplate.targetCategory || 'all',
         price: editingTemplate.price,
         durationDays: editingTemplate.durationDays,
         totalSessions: editingTemplate.totalSessions,
@@ -103,6 +111,8 @@ export default function PassTemplatesPage() {
       form.reset({
         name: '',
         description: '',
+        passType: 'period' as any,
+        targetCategory: 'all' as any,
         price: undefined,
         durationDays: undefined,
         totalSessions: undefined,
@@ -128,6 +138,8 @@ export default function PassTemplatesPage() {
       clubId: user.clubId,
       name: values.name,
       description: values.description,
+      passType: values.passType,
+      targetCategory: values.targetCategory,
       price: values.price,
       durationDays: values.durationDays,
       totalSessions: values.totalSessions,
@@ -153,6 +165,7 @@ export default function PassTemplatesPage() {
         name: '',
         description: '',
         passType: 'period' as any,
+        targetCategory: 'all' as any,
         price: '' as any,
         durationDays: '' as any,
         totalSessions: '' as any,
@@ -205,6 +218,7 @@ export default function PassTemplatesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>이름</TableHead>
+                    <TableHead>대상</TableHead>
                     <TableHead>기간</TableHead>
                     <TableHead>횟수 (출석/총)</TableHead>
                     <TableHead>가격</TableHead>
@@ -215,6 +229,18 @@ export default function PassTemplatesPage() {
                   {templates?.map((template) => (
                     <TableRow key={template.id}>
                       <TableCell className="font-medium">{template.name}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          template.targetCategory === 'adult' ? 'default' :
+                          template.targetCategory === 'child' ? 'secondary' :
+                          'outline'
+                        }>
+                          {template.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
+                          {template.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
+                          {template.targetCategory === 'all' && <Users className="inline h-3 w-3 mr-1" />}
+                          {getTargetCategoryLabel(template.targetCategory)}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{template.durationDays ? `${template.durationDays}일` : '무제한'}</TableCell>
                       <TableCell>
                         {template.attendableSessions !== undefined || template.totalSessions !== undefined
@@ -233,7 +259,7 @@ export default function PassTemplatesPage() {
                     </TableRow>
                   ))}
                   {(!templates || templates.length === 0) && (
-                      <TableRow><TableCell colSpan={5} className="text-center h-24">생성된 이용권 종류가 없습니다.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center h-24">생성된 이용권 종류가 없습니다.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -280,6 +306,37 @@ export default function PassTemplatesPage() {
                           <SelectItem value="period">기간제 (무제한 출석)</SelectItem>
                           <SelectItem value="session">횟수제 (기간 무제한)</SelectItem>
                           <SelectItem value="unlimited">기간+횟수제</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetCategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>대상 회원</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="대상 선택" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="adult">
+                            <User className="inline h-4 w-4 mr-2" />
+                            성인 전용
+                          </SelectItem>
+                          <SelectItem value="child">
+                            <Baby className="inline h-4 w-4 mr-2" />
+                            주니어 전용
+                          </SelectItem>
+                          <SelectItem value="all">
+                            <Users className="inline h-4 w-4 mr-2" />
+                            전체 (성인+주니어)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

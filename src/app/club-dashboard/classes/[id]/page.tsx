@@ -9,8 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, UserPlus, UserMinus, Users } from 'lucide-react';
+import { Loader2, ArrowLeft, UserPlus, UserMinus, Users, User, Baby, AlertTriangle } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
+import { canJoinClass, calculateAge, getMemberCategoryLabel, getMemberCategoryColor } from '@/lib/member-utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -47,10 +49,21 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
     return allMembers.filter(member => classData.memberIds.includes(member.id));
   }, [allMembers, classData]);
 
-  // Get available members (not in this class)
+  // Get available members (not in this class) with eligibility check
   const availableMembers = useMemo(() => {
     if (!allMembers || !classData) return [];
-    return allMembers.filter(member => !classData.memberIds.includes(member.id));
+    return allMembers
+      .filter(member => !classData.memberIds.includes(member.id))
+      .map(member => ({
+        ...member,
+        canJoin: canJoinClass(member, classData),
+      }))
+      .sort((a, b) => {
+        // Sort eligible members first
+        if (a.canJoin && !b.canJoin) return -1;
+        if (!a.canJoin && b.canJoin) return 1;
+        return 0;
+      });
   }, [allMembers, classData]);
 
   const getMemberAge = (dateOfBirth?: string) => {
@@ -158,6 +171,25 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
             <Badge variant="secondary">
               {classData.dayOfWeek}요일 {classData.time}
             </Badge>
+            {classData.targetCategory && (
+              <Badge variant={
+                classData.targetCategory === 'adult' ? 'default' :
+                classData.targetCategory === 'child' ? 'secondary' :
+                'outline'
+              }>
+                {classData.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
+                {classData.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
+                {classData.targetCategory === 'all' && <Users className="inline h-3 w-3 mr-1" />}
+                {classData.targetCategory === 'adult' ? '성인 전용' : classData.targetCategory === 'child' ? '주니어 전용' : '전체'}
+              </Badge>
+            )}
+            {classData.ageRange && (classData.ageRange.min || classData.ageRange.max) && (
+              <Badge variant="outline">
+                {classData.ageRange.min && `${classData.ageRange.min}세`}
+                {classData.ageRange.min && classData.ageRange.max && ' ~ '}
+                {classData.ageRange.max && `${classData.ageRange.max}세`}
+              </Badge>
+            )}
             <span className="text-slate-600">
               정원: {classMembers.length} / {classData.capacity}명
             </span>
@@ -186,12 +218,21 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {classMembers.map((member) => {
                 const age = getMemberAge(member.dateOfBirth);
+                const memberCategory = member.memberCategory || 
+                  (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+                const categoryColors = getMemberCategoryColor(memberCategory);
                 return (
                   <Card key={member.id} className="relative">
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{member.name}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-lg">{member.name}</h3>
+                            <Badge className={categoryColors.badge}>
+                              {memberCategory === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
+                              {getMemberCategoryLabel(memberCategory)}
+                            </Badge>
+                          </div>
                           {age && (
                             <p className="text-sm text-muted-foreground">{age}세</p>
                           )}
@@ -225,9 +266,27 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
           <DialogHeader>
             <DialogTitle>회원 추가</DialogTitle>
             <DialogDescription>
-              클래스에 추가할 회원을 선택하세요.
+              클래스에 추가할 회원을 선택하세요. 자격 요건을 충족하지 않는 회원은 회색으로 표시됩니다.
             </DialogDescription>
           </DialogHeader>
+          
+          {classData.targetCategory && classData.targetCategory !== 'all' && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>클래스 제한 사항</AlertTitle>
+              <AlertDescription>
+                이 클래스는 <strong>{classData.targetCategory === 'adult' ? '성인' : '주니어'} 전용</strong>입니다.
+                {classData.ageRange && (classData.ageRange.min || classData.ageRange.max) && (
+                  <span>
+                    {' '}연령 범위: 
+                    {classData.ageRange.min && `${classData.ageRange.min}세`}
+                    {classData.ageRange.min && classData.ageRange.max && ' ~ '}
+                    {classData.ageRange.max && `${classData.ageRange.max}세`}
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
           
           <div className="max-h-96 overflow-y-auto space-y-2 py-4">
             {availableMembers.length === 0 ? (
@@ -238,20 +297,41 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
               availableMembers.map((member) => {
                 const age = getMemberAge(member.dateOfBirth);
                 const isSelected = selectedMemberIds.includes(member.id);
+                const canJoin = member.canJoin;
+                const memberCategory = member.memberCategory || 
+                  (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
+                const categoryColors = getMemberCategoryColor(memberCategory);
+                
                 return (
                   <div
                     key={member.id}
-                    className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer"
-                    onClick={() => toggleMemberSelection(member.id)}
+                    className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                      canJoin 
+                        ? 'hover:bg-accent cursor-pointer' 
+                        : 'opacity-50 cursor-not-allowed bg-muted'
+                    }`}
+                    onClick={() => canJoin && toggleMemberSelection(member.id)}
                   >
                     <Checkbox
                       checked={isSelected}
-                      onCheckedChange={() => toggleMemberSelection(member.id)}
+                      disabled={!canJoin}
+                      onCheckedChange={() => canJoin && toggleMemberSelection(member.id)}
                     />
                     <div className="flex-1">
-                      <p className="font-medium">{member.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{member.name}</p>
+                        <Badge className={categoryColors.badge}>
+                          {memberCategory === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
+                          {getMemberCategoryLabel(memberCategory)}
+                        </Badge>
+                      </div>
                       {age && (
                         <p className="text-sm text-muted-foreground">{age}세</p>
+                      )}
+                      {!canJoin && (
+                        <p className="text-xs text-destructive mt-1">
+                          ⚠️ 이 클래스의 자격 요건을 충족하지 않습니다
+                        </p>
                       )}
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -39,8 +39,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Edit, Trash2, PlusCircle, Users } from 'lucide-react';
+import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby, Users as UsersIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getTargetCategoryLabel } from '@/lib/member-utils';
 
 
 const classFormSchema = z.object({
@@ -48,6 +51,9 @@ const classFormSchema = z.object({
   dayOfWeek: z.enum(['월', '화', '수', '목', '금', '토', '일'], { required_error: '요일을 선택해주세요.'}),
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'HH:MM 형식으로 시간을 입력해주세요.'),
   capacity: z.number().int().positive('정원은 0보다 커야 합니다.'),
+  targetCategory: z.enum(['adult', 'child', 'all']).optional(),
+  ageMin: z.number().int().min(0).max(100).optional().nullable(),
+  ageMax: z.number().int().min(0).max(100).optional().nullable(),
 });
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
@@ -62,6 +68,7 @@ export default function ClassesPage() {
   const [editingClass, setEditingClass] = useState<GymClass | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingClass, setDeletingClass] = useState<GymClass | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child' | 'general'>('all');
 
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
@@ -70,6 +77,9 @@ export default function ClassesPage() {
       time: '14:00',
       dayOfWeek: '월',
       capacity: 10,
+      targetCategory: 'all',
+      ageMin: null,
+      ageMax: null,
     },
   });
 
@@ -78,6 +88,30 @@ export default function ClassesPage() {
     return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
   }, [firestore, user?.clubId]);
   const { data: classes, isLoading } = useCollection<GymClass>(classesQuery);
+
+  // Filter and sort classes
+  const filteredClasses = useMemo(() => {
+    if (!classes) return [];
+    
+    let filtered = classes;
+    
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      if (categoryFilter === 'general') {
+        filtered = filtered.filter(c => !c.targetCategory || c.targetCategory === 'all');
+      } else {
+        filtered = filtered.filter(c => c.targetCategory === categoryFilter);
+      }
+    }
+    
+    // Sort by day of week and time
+    const dayOrder = {'월': 0, '화': 1, '수': 2, '목': 3, '금': 4, '토': 5, '일': 6};
+    return filtered.sort((a, b) => {
+      const dayDiff = dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
+      if (dayDiff !== 0) return dayDiff;
+      return a.time.localeCompare(b.time);
+    });
+  }, [classes, categoryFilter]);
 
   const handleOpenDialog = (gymClass: GymClass | null = null) => {
     setEditingClass(gymClass);
@@ -89,6 +123,9 @@ export default function ClassesPage() {
         dayOfWeek: gymClass.dayOfWeek,
         time: gymClass.time,
         capacity: gymClass.capacity,
+        targetCategory: gymClass.targetCategory || 'all',
+        ageMin: gymClass.ageRange?.min ?? null,
+        ageMax: gymClass.ageRange?.max ?? null,
       });
     } else {
       form.reset({
@@ -96,6 +133,9 @@ export default function ClassesPage() {
         dayOfWeek: '월',
         time: '14:00',
         capacity: 10,
+        targetCategory: 'all',
+        ageMin: null,
+        ageMax: null,
       });
     }
     
@@ -121,7 +161,17 @@ export default function ClassesPage() {
         // Update existing class
         console.log('클래스 수정 모드');
         const classRef = doc(firestore, 'classes', editingClass.id);
-        const updatedData: Partial<GymClass> = { ...values };
+        const updatedData: Partial<GymClass> = {
+          name: values.name,
+          dayOfWeek: values.dayOfWeek,
+          time: values.time,
+          capacity: values.capacity,
+          targetCategory: values.targetCategory,
+          ageRange: (values.ageMin !== null || values.ageMax !== null) ? {
+            min: values.ageMin ?? undefined,
+            max: values.ageMax ?? undefined,
+          } : undefined,
+        };
         await setDoc(classRef, updatedData, { merge: true });
         console.log('클래스 수정 완료');
         toast({ title: '클래스 수정 완료', description: `'${values.name}' 클래스 정보가 업데이트되었습니다.` });
@@ -130,9 +180,17 @@ export default function ClassesPage() {
         console.log('새 클래스 생성 모드');
         const newClassRef = doc(collection(firestore, 'classes'));
         const classData: GymClass = {
-            ...values,
             id: newClassRef.id,
             clubId: user.clubId,
+            name: values.name,
+            dayOfWeek: values.dayOfWeek,
+            time: values.time,
+            capacity: values.capacity,
+            targetCategory: values.targetCategory,
+            ageRange: (values.ageMin !== null || values.ageMax !== null) ? {
+              min: values.ageMin ?? undefined,
+              max: values.ageMax ?? undefined,
+            } : undefined,
             memberIds: [],
         };
         console.log('생성할 클래스 데이터:', classData);
@@ -182,6 +240,42 @@ export default function ClassesPage() {
                 새 클래스 생성
               </Button>
             </div>
+            
+            {/* Filter Tabs */}
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant={categoryFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCategoryFilter('all')}
+              >
+                <UsersIcon className="mr-2 h-4 w-4" />
+                전체 ({classes?.length || 0})
+              </Button>
+              <Button
+                variant={categoryFilter === 'adult' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCategoryFilter('adult')}
+              >
+                <User className="mr-2 h-4 w-4" />
+                성인 ({classes?.filter(c => c.targetCategory === 'adult').length || 0})
+              </Button>
+              <Button
+                variant={categoryFilter === 'child' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCategoryFilter('child')}
+              >
+                <Baby className="mr-2 h-4 w-4" />
+                주니어 ({classes?.filter(c => c.targetCategory === 'child').length || 0})
+              </Button>
+              <Button
+                variant={categoryFilter === 'general' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCategoryFilter('general')}
+              >
+                <UsersIcon className="mr-2 h-4 w-4" />
+                일반 ({classes?.filter(c => !c.targetCategory || c.targetCategory === 'all').length || 0})
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -193,6 +287,7 @@ export default function ClassesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>클래스명</TableHead>
+                    <TableHead>대상</TableHead>
                     <TableHead>요일</TableHead>
                     <TableHead>시간</TableHead>
                     <TableHead>정원</TableHead>
@@ -200,9 +295,30 @@ export default function ClassesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {classes?.map((gymClass) => (
+                  {filteredClasses.map((gymClass) => (
                     <TableRow key={gymClass.id}>
                       <TableCell className="font-medium">{gymClass.name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={
+                            gymClass.targetCategory === 'adult' ? 'default' :
+                            gymClass.targetCategory === 'child' ? 'secondary' :
+                            'outline'
+                          }>
+                            {gymClass.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
+                            {gymClass.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
+                            {gymClass.targetCategory === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
+                            {getTargetCategoryLabel(gymClass.targetCategory)}
+                          </Badge>
+                          {gymClass.ageRange && (gymClass.ageRange.min || gymClass.ageRange.max) && (
+                            <span className="text-xs text-muted-foreground">
+                              {gymClass.ageRange.min && `${gymClass.ageRange.min}세`}
+                              {gymClass.ageRange.min && gymClass.ageRange.max && ' ~ '}
+                              {gymClass.ageRange.max && `${gymClass.ageRange.max}세`}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{gymClass.dayOfWeek}</TableCell>
                       <TableCell>{gymClass.time}</TableCell>
                       <TableCell>{gymClass.memberIds.length} / {gymClass.capacity}</TableCell>
@@ -224,8 +340,10 @@ export default function ClassesPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {(!classes || classes.length === 0) && (
-                      <TableRow><TableCell colSpan={5} className="text-center h-24">생성된 클래스가 없습니다.</TableCell></TableRow>
+                  {filteredClasses.length === 0 && (
+                      <TableRow><TableCell colSpan={6} className="text-center h-24">
+                        {categoryFilter === 'all' ? '생성된 클래스가 없습니다.' : '해당 분류의 클래스가 없습니다.'}
+                      </TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -237,7 +355,7 @@ export default function ClassesPage() {
           open={isDialogOpen} 
           onOpenChange={(open) => {
             setIsDialogOpen(open);
-            if (!open) {
+              if (!open) {
               // Reset form when dialog closes
               setEditingClass(null);
               form.reset({
@@ -245,6 +363,9 @@ export default function ClassesPage() {
                 dayOfWeek: '월',
                 time: '14:00',
                 capacity: 10,
+                targetCategory: 'all',
+                ageMin: null,
+                ageMax: null,
               });
             }
           }}
@@ -331,6 +452,77 @@ export default function ClassesPage() {
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                    control={form.control}
+                    name="targetCategory"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>대상 회원</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="대상 선택" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="adult">
+                              <User className="inline h-4 w-4 mr-2" />
+                              성인 전용
+                            </SelectItem>
+                            <SelectItem value="child">
+                              <Baby className="inline h-4 w-4 mr-2" />
+                              주니어 전용
+                            </SelectItem>
+                            <SelectItem value="all">
+                              <UsersIcon className="inline h-4 w-4 mr-2" />
+                              전체 (성인+주니어)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="ageMin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>최소 나이 (선택)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="예: 7"
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="ageMax"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>최대 나이 (선택)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="예: 13"
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 
                 <DialogFooter>
                   <DialogClose asChild>
