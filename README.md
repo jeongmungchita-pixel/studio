@@ -1,6 +1,29 @@
-# 🥋 KGF 넥서스 (Korean Gymnastics Federation Nexus)
+# 🥋 KGF 넥서스 (KGF Nexus)
 
-> 대한검도연맹 통합 관리 시스템
+대한체조협회 통합 관리 플랫폼
+
+## 🚀 빠른 시작
+
+### 배포 URL
+- **메인 앱**: https://gymnasticsfed--studio-2481293716-bdd83.asia-southeast1.hosted.app
+- **Firebase Project**: studio-2481293716-bdd83
+
+### 로컬 개발
+```bash
+npm install
+npm run dev  # http://localhost:9002
+```
+
+### 배포
+```bash
+# 메인 앱 (자동 배포)
+git push origin main
+
+# Cloud Functions
+firebase deploy --only functions
+```
+
+📖 **상세 정보**: [docs/DEPLOYMENT_INFO.md](./docs/DEPLOYMENT_INFO.md)
 
 [![Production Ready](https://img.shields.io/badge/Production-95%25-brightgreen)](https://github.com)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)

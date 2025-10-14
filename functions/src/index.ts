@@ -1,37 +1,37 @@
 import * as functions from 'firebase-functions';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
 admin.initializeApp();
 
 // ============================================
-// 🚀 Next.js SSR Function
+// 🚀 Next.js SSR Function (현재 미사용)
 // ============================================
-const next = require('next');
-
-const isDev = process.env.NODE_ENV !== 'production';
-const nextApp = next({
-  dev: isDev,
-  conf: {
-    distDir: '../.next',
-  },
-});
-const handle = nextApp.getRequestHandler();
-
-export const nextjsFunc = onRequest(
-  {
-    memory: '1GiB',
-    timeoutSeconds: 60,
-    maxInstances: 10,
-  },
-  async (req, res) => {
-    await nextApp.prepare();
-    return handle(req, res);
-  }
-);
+// const next = require('next');
+// 
+// const isDev = process.env.NODE_ENV !== 'production';
+// const nextApp = next({
+//   dev: isDev,
+//   conf: {
+//     distDir: '../.next',
+//   },
+// });
+// const handle = nextApp.getRequestHandler();
+// 
+// export const nextjsFunc = onRequest(
+//   {
+//     memory: '1GiB',
+//     timeoutSeconds: 60,
+//     maxInstances: 10,
+//   },
+//   async (req, res) => {
+//     await nextApp.prepare();
+//     return handle(req, res);
+//   }
+// );
 
 // 이메일 전송 설정
 const getTransporter = () => {
@@ -54,7 +54,10 @@ const getTransporter = () => {
 // ============================================
 
 export const onFederationAdminInviteCreatedV2 = onDocumentCreated(
-  'federationAdminInvites/{inviteId}',
+  {
+    document: 'federationAdminInvites/{inviteId}',
+    region: 'asia-northeast3', // 서울 리전
+  },
   async (event) => {
     const invite = event.data?.data();
     if (!invite) return;
@@ -185,7 +188,9 @@ export const onFederationAdminInviteCreatedV2 = onDocumentCreated(
 // 📱 단체문자 발송 (네이버 클라우드)
 // ============================================
 
-export const sendBulkSMSV2 = onCall(async (request) => {
+export const sendBulkSMSV2 = onCall(
+  { region: 'asia-northeast3' },
+  async (request) => {
   // 인증 확인
   if (!request.auth) {
     throw new HttpsError(
@@ -217,7 +222,10 @@ export const sendBulkSMSV2 = onCall(async (request) => {
 // ============================================
 
 export const onPaymentCompletedV2 = onDocumentUpdated(
-  'payments/{paymentId}',
+  {
+    document: 'payments/{paymentId}',
+    region: 'asia-northeast3',
+  },
   async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
@@ -246,6 +254,7 @@ export const calculateMonthlyStatsV2 = onSchedule(
   {
     schedule: '0 0 1 * *',
     timeZone: 'Asia/Seoul',
+    region: 'asia-northeast3',
   },
   async () => {
     console.log('월별 통계 계산 시작');
@@ -263,6 +272,7 @@ export const checkExpiredInvitesV2 = onSchedule(
   {
     schedule: '0 0 * * *',
     timeZone: 'Asia/Seoul',
+    region: 'asia-northeast3',
   },
   async () => {
     console.log('만료된 초대 확인 시작');
