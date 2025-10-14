@@ -210,24 +210,24 @@ export default function FederationAdminDashboard() {
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
-              onClick={() => router.push('/admin/users')}
-            >
-              <UserPlus className="mr-3 h-5 w-5 text-orange-500" />
-              <div className="text-left">
-                <div className="font-medium">사용자 관리</div>
-                <div className="text-xs text-slate-500">권한 및 계정 관리</div>
-              </div>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="justify-start h-auto py-4"
               onClick={() => router.push('/admin/committees')}
             >
               <TrendingUp className="mr-3 h-5 w-5 text-indigo-500" />
               <div className="text-left">
                 <div className="font-medium">위원회 관리</div>
                 <div className="text-xs text-slate-500">위원회 및 위원 관리</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="justify-start h-auto py-4"
+              onClick={() => router.push('/admin/judges')}
+            >
+              <Award className="mr-3 h-5 w-5 text-purple-500" />
+              <div className="text-left">
+                <div className="font-medium">심판 관리</div>
+                <div className="text-xs text-slate-500">심판 등록 및 관리</div>
               </div>
             </Button>
           </div>

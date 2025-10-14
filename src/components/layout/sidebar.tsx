@@ -46,6 +46,7 @@ import {
   Users,
   Mail,
   Building,
+  Gavel,
 } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -266,9 +267,9 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/admin/users', 
-    label: '사용자 관리', 
-    icon: UserPlus, 
+    href: '/admin/judges', 
+    label: '심판 관리', 
+    icon: Gavel, 
     section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
