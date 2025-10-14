@@ -4,42 +4,102 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PendingApprovalCard } from '@/components/pending-approval-card';
 import { RequireRole } from '@/components/require-role';
-import { UserRole } from '@/types';
-import { Shield, Users, Building2, Trophy } from 'lucide-react';
-import { useState } from 'react';
-
-// TODO: Firestore에서 실제 승인 요청 데이터를 가져와야 합니다
-const mockApprovals = {
-  federationAdmin: [] as any[],
-  clubOwner: [] as any[],
-};
+import { UserRole, ApprovalRequest } from '@/types';
+import { Shield, Users, Building2, Trophy, Loader2 } from 'lucide-react';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { useMemoFirebase } from '@/firebase/provider';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminApprovalsPage() {
-  const [approvals, setApprovals] = useState(mockApprovals);
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
-  const handleApprove = async (userId: string, category: keyof typeof mockApprovals) => {
-    console.log('승인:', userId);
-    setApprovals(prev => ({
-      ...prev,
-      [category]: prev[category].map(item =>
-        item.userId === userId ? { ...item, status: 'approved' as const } : item
-      ),
-    }));
+  // Firestore에서 승인 요청 조회
+  const approvalsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'approvalRequests'),
+      where('status', '==', 'pending')
+    );
+  }, [firestore]);
+
+  const { data: allApprovals, isLoading } = useCollection<ApprovalRequest>(approvalsQuery);
+
+  // 역할별로 분류
+  const federationAdminApprovals = allApprovals?.filter(
+    a => a.requestedRole === UserRole.FEDERATION_ADMIN
+  ) || [];
+  
+  const clubOwnerApprovals = allApprovals?.filter(
+    a => a.requestedRole === UserRole.CLUB_OWNER
+  ) || [];
+
+  const handleApprove = async (userId: string) => {
+    if (!firestore) return;
+    
+    try {
+      // approvalRequests 컬렉션에서 해당 요청 찾기
+      const approval = allApprovals?.find(a => a.userId === userId);
+      if (!approval) return;
+
+      const approvalRef = doc(firestore, 'approvalRequests', approval.id);
+      await updateDoc(approvalRef, {
+        status: 'approved',
+        approvedAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: '승인 완료',
+        description: `${approval.userName}님의 요청이 승인되었습니다.`,
+      });
+    } catch (error) {
+      console.error('승인 오류:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '승인 처리 중 오류가 발생했습니다.',
+      });
+    }
   };
 
-  const handleReject = async (userId: string, reason: string, category: keyof typeof mockApprovals) => {
-    console.log('거부:', userId, reason);
-    setApprovals(prev => ({
-      ...prev,
-      [category]: prev[category].map(item =>
-        item.userId === userId ? { ...item, status: 'rejected' as const } : item
-      ),
-    }));
+  const handleReject = async (userId: string, reason: string) => {
+    if (!firestore) return;
+
+    try {
+      const approval = allApprovals?.find(a => a.userId === userId);
+      if (!approval) return;
+
+      const approvalRef = doc(firestore, 'approvalRequests', approval.id);
+      await updateDoc(approvalRef, {
+        status: 'rejected',
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: reason,
+      });
+
+      toast({
+        title: '거부 완료',
+        description: `${approval.userName}님의 요청이 거부되었습니다.`,
+      });
+    } catch (error) {
+      console.error('거부 오류:', error);
+      toast({
+        variant: 'destructive',
+        title: '오류 발생',
+        description: '거부 처리 중 오류가 발생했습니다.',
+      });
+    }
   };
 
-  const totalPending = 
-    approvals.federationAdmin.filter(a => a.status === 'pending').length +
-    approvals.clubOwner.filter(a => a.status === 'pending').length;
+  const totalPending = (allApprovals?.length || 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <RequireRole role={UserRole.SUPER_ADMIN}>
@@ -69,7 +129,7 @@ export default function AdminApprovalsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {approvals.federationAdmin.filter(a => a.status === 'pending').length}
+                {federationAdminApprovals.length}
               </div>
               <p className="text-xs text-muted-foreground">승인 대기</p>
             </CardContent>
@@ -82,7 +142,7 @@ export default function AdminApprovalsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {approvals.clubOwner.filter(a => a.status === 'pending').length}
+                {clubOwnerApprovals.length}
               </div>
               <p className="text-xs text-muted-foreground">승인 대기</p>
             </CardContent>
@@ -95,29 +155,23 @@ export default function AdminApprovalsPage() {
               전체 ({totalPending})
             </TabsTrigger>
             <TabsTrigger value="federation">
-              연맹 관리자 ({approvals.federationAdmin.filter(a => a.status === 'pending').length})
+              연맹 관리자 ({federationAdminApprovals.length})
             </TabsTrigger>
             <TabsTrigger value="club">
-              클럽 오너 ({approvals.clubOwner.filter(a => a.status === 'pending').length})
+              클럽 오너 ({clubOwnerApprovals.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {[...approvals.federationAdmin, ...approvals.clubOwner]
-                .filter(a => a.status === 'pending')
-                .map((approval) => (
-                  <PendingApprovalCard
-                    key={approval.userId}
-                    {...approval}
-                    onApprove={() => handleApprove(approval.userId, 
-                      approvals.federationAdmin.includes(approval) ? 'federationAdmin' : 'clubOwner'
-                    )}
-                    onReject={(reason) => handleReject(approval.userId, reason,
-                      approvals.federationAdmin.includes(approval) ? 'federationAdmin' : 'clubOwner'
-                    )}
-                  />
-                ))}
+              {allApprovals?.map((approval) => (
+                <PendingApprovalCard
+                  key={approval.userId}
+                  {...approval}
+                  onApprove={() => handleApprove(approval.userId)}
+                  onReject={(reason) => handleReject(approval.userId, reason)}
+                />
+              ))}
             </div>
             {totalPending === 0 && (
               <Card>
@@ -131,12 +185,12 @@ export default function AdminApprovalsPage() {
 
           <TabsContent value="federation" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {approvals.federationAdmin.filter(a => a.status === 'pending').map((approval) => (
+              {federationAdminApprovals.map((approval) => (
                 <PendingApprovalCard
                   key={approval.userId}
                   {...approval}
-                  onApprove={() => handleApprove(approval.userId, 'federationAdmin')}
-                  onReject={(reason) => handleReject(approval.userId, reason, 'federationAdmin')}
+                  onApprove={() => handleApprove(approval.userId)}
+                  onReject={(reason) => handleReject(approval.userId, reason)}
                 />
               ))}
             </div>
@@ -144,12 +198,12 @@ export default function AdminApprovalsPage() {
 
           <TabsContent value="club" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {approvals.clubOwner.filter(a => a.status === 'pending').map((approval) => (
+              {clubOwnerApprovals.map((approval) => (
                 <PendingApprovalCard
                   key={approval.userId}
                   {...approval}
-                  onApprove={() => handleApprove(approval.userId, 'clubOwner')}
-                  onReject={(reason) => handleReject(approval.userId, reason, 'clubOwner')}
+                  onApprove={() => handleApprove(approval.userId)}
+                  onReject={(reason) => handleReject(approval.userId, reason)}
                 />
               ))}
             </div>

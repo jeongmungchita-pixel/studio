@@ -110,6 +110,10 @@ export default function SuperAdminDashboard() {
         contactEmail: request.email,
         contactPhoneNumber: request.phoneNumber,
         location: request.clubAddress,
+        status: 'approved',
+        createdAt: new Date().toISOString(),
+        approvedAt: new Date().toISOString(),
+        approvedBy: user.uid,
       };
       const clubRef = await addDoc(collection(firestore, 'clubs'), clubData);
 

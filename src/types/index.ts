@@ -122,9 +122,13 @@ export type Club = {
   id: string;
   name: string;
   contactName: string;
-  contactEmail:string;
+  contactEmail: string;
   contactPhoneNumber: string;
   location: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt?: string;
+  approvedAt?: string;
+  approvedBy?: string;
 };
 
 export type Competition = {

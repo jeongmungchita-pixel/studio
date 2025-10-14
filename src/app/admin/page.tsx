@@ -17,7 +17,7 @@ import {
   UserPlus,
   Building2,
 } from 'lucide-react';
-import type { Member, Club, Competition, LevelTest } from '@/types';
+import type { Member, Club, Competition } from '@/types';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/use-role';
@@ -55,12 +55,12 @@ export default function FederationAdminDashboard() {
   );
   const { data: competitions, isLoading: isCompetitionsLoading } = useCollection<Competition>(competitionsCollection);
 
-  // 레벨 테스트
-  const levelTestsCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'level_tests') : null),
+  // 위원회
+  const committeesCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'committees') : null),
     [firestore]
   );
-  const { data: levelTests, isLoading: isLevelTestsLoading } = useCollection<LevelTest>(levelTestsCollection);
+  const { data: committees, isLoading: isCommitteesLoading } = useCollection(committeesCollection);
 
   // 최근 가입 회원 (최근 5명)
   const recentMembersQuery = useMemoFirebase(() => {
@@ -84,7 +84,7 @@ export default function FederationAdminDashboard() {
   }, [firestore]);
   const { data: recentClubs } = useCollection<Club>(recentClubsQuery);
 
-  if (isUserLoading || isMembersLoading || isClubsLoading || isCompetitionsLoading || isLevelTestsLoading) {
+  if (isUserLoading || isMembersLoading || isClubsLoading || isCompetitionsLoading || isCommitteesLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -157,7 +157,7 @@ export default function FederationAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600">위원회</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-900">{levelTests?.length || 0}</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{committees?.length || 0}</p>
                 <p className="mt-1 text-xs text-slate-500">활동 중인 위원회</p>
               </div>
               <Award className="h-8 w-8 text-purple-500" />
@@ -323,7 +323,7 @@ export default function FederationAdminDashboard() {
         <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold text-slate-900">예정된 대회</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/competitions')}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/admin/competitions')}>
               전체 보기 <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </CardHeader>
@@ -333,7 +333,7 @@ export default function FederationAdminDashboard() {
                 <div
                   key={comp.id}
                   className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
-                  onClick={() => router.push(`/competitions/${comp.id}`)}
+                  onClick={() => router.push('/admin/competitions')}
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
