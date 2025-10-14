@@ -201,17 +201,15 @@ export default function SuperAdminDashboard() {
     setIsProcessing(true);
 
     try {
-      // 초대 토큰 생성
-      const inviteRef = doc(collection(firestore, 'federationAdminInvites'));
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7일 후 만료
 
       // 초대 생성 (Firestore Trigger가 자동으로 이메일 발송)
-      await addDoc(collection(firestore, 'federationAdminInvites'), {
+      const inviteDocRef = await addDoc(collection(firestore, 'federationAdminInvites'), {
         email: federationAdminForm.email,
         name: federationAdminForm.name,
         phoneNumber: federationAdminForm.phoneNumber,
-        inviteToken: inviteRef.id,
+        inviteToken: '', // 임시값, 아래에서 업데이트
         status: 'pending',
         invitedBy: user.uid,
         invitedByName: user.displayName || user.email || '최고 관리자',
@@ -219,10 +217,22 @@ export default function SuperAdminDashboard() {
         expiresAt: expiresAt.toISOString(),
       });
 
-      toast({
-        title: '초대 발송 완료',
-        description: `${federationAdminForm.email}로 연맹 관리자 초대가 발송되었습니다. 초대 링크는 7일간 유효합니다.`,
+      // 생성된 문서 ID를 inviteToken으로 업데이트
+      await updateDoc(inviteDocRef, {
+        inviteToken: inviteDocRef.id,
       });
+
+      // 초대 링크 생성
+      const inviteLink = `${window.location.origin}/invite/${inviteDocRef.id}`;
+
+      toast({
+        title: '초대 생성 완료',
+        description: `초대가 생성되었습니다. 초대 관리 페이지에서 링크를 복사하여 전달하세요.`,
+      });
+      
+      // 초대 관리 페이지로 이동
+      router.push('/super-admin/invites');
+      
       setFederationAdminForm({ email: '', name: '', phoneNumber: '' });
     } catch (error) {
       console.error('임명 실패:', error);

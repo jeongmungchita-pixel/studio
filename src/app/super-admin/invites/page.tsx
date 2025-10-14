@@ -154,6 +154,20 @@ export default function InvitesManagementPage() {
             연맹 관리자 초대 현황을 확인하고 관리하세요
           </p>
         </div>
+        
+        {/* 이메일 설정 안내 */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <Mail className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 mb-1">초대 링크 전달 방법</h3>
+              <p className="text-sm text-blue-800">
+                이메일 자동 발송이 설정되지 않은 경우, 아래 목록에서 <strong>복사 버튼</strong>을 클릭하여 초대 링크를 복사한 후 수동으로 전달하세요.
+              </p>
+            </div>
+          </div>
+        </div>
+        
         <div className="h-px bg-slate-200" />
       </div>
 

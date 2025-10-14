@@ -140,10 +140,13 @@ export default function InvitePage() {
 
       // 2. Firestore에 사용자 프로필 생성
       await setDoc(doc(firestore, 'users', user.uid), {
+        id: user.uid,
         uid: user.uid,
         email: email,
         displayName: displayName,
         phoneNumber: phoneNumber,
+        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
+        provider: 'email',
         role: UserRole.FEDERATION_ADMIN,
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -200,12 +203,33 @@ export default function InvitePage() {
       const user = userCredential.user;
 
       // 2. 사용자 프로필 업데이트 (연맹 관리자 권한 부여)
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        role: UserRole.FEDERATION_ADMIN,
-        status: 'approved',
-        approvedBy: invite.invitedBy,
-        approvedAt: new Date().toISOString(),
-      });
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        // 기존 사용자 프로필 업데이트
+        await updateDoc(userDocRef, {
+          role: UserRole.FEDERATION_ADMIN,
+          status: 'approved',
+          approvedBy: invite.invitedBy,
+          approvedAt: new Date().toISOString(),
+        });
+      } else {
+        // 프로필이 없으면 생성
+        await setDoc(userDocRef, {
+          id: user.uid,
+          uid: user.uid,
+          email: user.email!,
+          displayName: user.displayName || invite.name,
+          phoneNumber: invite.phoneNumber,
+          photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
+          provider: 'email',
+          role: UserRole.FEDERATION_ADMIN,
+          status: 'approved',
+          approvedBy: invite.invitedBy,
+          approvedAt: new Date().toISOString(),
+        });
+      }
 
       // 3. 초대 상태 업데이트
       await updateDoc(doc(firestore, 'federationAdminInvites', token), {

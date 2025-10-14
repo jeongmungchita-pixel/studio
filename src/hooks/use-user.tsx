@@ -55,8 +55,12 @@ export function useUser(): UserHookResult {
               userProfileData = defaultProfile;
             }
 
-            // If the user is a club owner/manager, find their clubId
-            if ((userProfileData.role === UserRole.CLUB_OWNER || userProfileData.role === UserRole.CLUB_MANAGER) && userProfileData.clubName) {
+            // If the user has a clubName, find their clubId
+            if (userProfileData.clubName && (
+                userProfileData.role === UserRole.CLUB_OWNER || 
+                userProfileData.role === UserRole.CLUB_MANAGER ||
+                userProfileData.role === UserRole.FEDERATION_ADMIN
+            )) {
                 const clubsRef = collection(firestore, 'clubs');
                 const q = query(clubsRef, where("name", "==", userProfileData.clubName));
                 const querySnapshot = await getDocs(q);
