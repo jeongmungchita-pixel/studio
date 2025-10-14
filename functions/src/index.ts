@@ -1,11 +1,37 @@
 import * as functions from 'firebase-functions';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onCall, HttpsError, onRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as nodemailer from 'nodemailer';
 
 admin.initializeApp();
+
+// ============================================
+// 🚀 Next.js SSR Function
+// ============================================
+const next = require('next');
+
+const isDev = process.env.NODE_ENV !== 'production';
+const nextApp = next({
+  dev: isDev,
+  conf: {
+    distDir: '../.next',
+  },
+});
+const handle = nextApp.getRequestHandler();
+
+export const nextjsFunc = onRequest(
+  {
+    memory: '1GiB',
+    timeoutSeconds: 60,
+    maxInstances: 10,
+  },
+  async (req, res) => {
+    await nextApp.prepare();
+    return handle(req, res);
+  }
+);
 
 // 이메일 전송 설정
 const getTransporter = () => {
