@@ -20,7 +20,7 @@ export default function ClubsPage() {
     if (!firestore) return null;
     return query(
       collection(firestore, 'clubs'),
-      where('status', '==', 'active')
+      where('status', '==', 'approved')
     );
   }, [firestore]);
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsQuery);

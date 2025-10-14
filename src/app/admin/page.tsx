@@ -97,7 +97,9 @@ export default function FederationAdminDashboard() {
     (c) => c.status === 'ongoing'
   ) || [];
 
-  const activeClubs = allClubs || [];
+  const activeClubs = allClubs?.filter(
+    (c) => c.status === 'approved'
+  ) || [];
 
   return (
     <div className="p-8 space-y-6">
