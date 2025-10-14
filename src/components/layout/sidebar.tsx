@@ -231,45 +231,45 @@ const subMenuItems: SubMenuItem[] = [
   
   // 연맹 관리자 대시보드 서브메뉴
   { 
-    href: '/dashboard', 
+    href: '/admin', 
     label: '대시보드', 
     icon: Home, 
-    section: 'dashboard',
+    section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/members', 
+    href: '/admin/members', 
     label: '회원 관리', 
     icon: Users, 
-    section: 'dashboard',
+    section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/clubs', 
+    href: '/admin/clubs', 
     label: '클럽 관리', 
     icon: Building, 
-    section: 'dashboard',
+    section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/competitions', 
+    href: '/admin/competitions', 
     label: '대회 관리', 
     icon: Trophy, 
-    section: 'dashboard',
+    section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/level-tests', 
-    label: '레벨 테스트', 
-    icon: Award, 
-    section: 'dashboard',
+    href: '/admin/committees', 
+    label: '위원회 관리', 
+    icon: Users, 
+    section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
     href: '/admin/users', 
     label: '사용자 관리', 
     icon: UserPlus, 
-    section: 'dashboard',
+    section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   
@@ -339,11 +339,8 @@ function getCurrentSection(pathname: string): string {
   if (pathname.startsWith('/super-admin') || pathname.startsWith('/system')) return 'super-admin';
   if (pathname.startsWith('/club-dashboard')) return 'club-dashboard';
   if (pathname.startsWith('/admin/users')) return 'admin/users';
+  if (pathname.startsWith('/admin')) return 'admin'; // 연맹 관리자 섹션 (모든 /admin/* 포함)
   if (pathname.startsWith('/my-profile')) return 'my-profile';
-  if (pathname.startsWith('/members')) return 'member-detail'; // 회원 상세 페이지 섹션
-  if (pathname.startsWith('/clubs')) return 'dashboard';
-  if (pathname.startsWith('/competitions')) return 'dashboard';
-  if (pathname.startsWith('/level-tests')) return 'dashboard';
   if (pathname.startsWith('/dashboard')) return 'dashboard';
   return '';
 }

@@ -94,14 +94,10 @@ export default function FederationAdminDashboard() {
 
   // 통계 계산
   const activeCompetitions = competitions?.filter(
-    (c) => new Date(c.startDate) > new Date() && new Date(c.endDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    (c) => c.status === 'ongoing'
   ) || [];
 
-  const upcomingLevelTests = levelTests?.filter(
-    (lt) => new Date(lt.testDate) > new Date()
-  ) || [];
-
-  const activeClubs = allClubs?.filter(club => club.status === 'active') || [];
+  const activeClubs = allClubs || [];
 
   return (
     <div className="p-8 space-y-6">
@@ -115,7 +111,7 @@ export default function FederationAdminDashboard() {
 
       {/* 통계 카드 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/clubs')}>
+        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/clubs')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -128,7 +124,7 @@ export default function FederationAdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/members')}>
+        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/members')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -141,7 +137,7 @@ export default function FederationAdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/competitions')}>
+        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/competitions')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -154,13 +150,13 @@ export default function FederationAdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/level-tests')}>
+        <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/committees')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">예정된 심사</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-900">{upcomingLevelTests.length}</p>
-                <p className="mt-1 text-xs text-slate-500">레벨 테스트</p>
+                <p className="text-sm text-slate-600">위원회</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-900">{levelTests?.length || 0}</p>
+                <p className="mt-1 text-xs text-slate-500">활동 중인 위원회</p>
               </div>
               <Award className="h-8 w-8 text-purple-500" />
             </div>
@@ -178,7 +174,7 @@ export default function FederationAdminDashboard() {
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
-              onClick={() => router.push('/clubs')}
+              onClick={() => router.push('/admin/clubs')}
             >
               <Building2 className="mr-3 h-5 w-5 text-blue-500" />
               <div className="text-left">
@@ -190,7 +186,7 @@ export default function FederationAdminDashboard() {
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
-              onClick={() => router.push('/members')}
+              onClick={() => router.push('/admin/members')}
             >
               <Users className="mr-3 h-5 w-5 text-green-500" />
               <div className="text-left">
@@ -202,24 +198,12 @@ export default function FederationAdminDashboard() {
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
-              onClick={() => router.push('/competitions')}
+              onClick={() => router.push('/admin/competitions')}
             >
               <Trophy className="mr-3 h-5 w-5 text-yellow-500" />
               <div className="text-left">
                 <div className="font-medium">대회 관리</div>
                 <div className="text-xs text-slate-500">대회 등록 및 운영</div>
-              </div>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="justify-start h-auto py-4"
-              onClick={() => router.push('/level-tests')}
-            >
-              <Award className="mr-3 h-5 w-5 text-purple-500" />
-              <div className="text-left">
-                <div className="font-medium">레벨 테스트</div>
-                <div className="text-xs text-slate-500">승급 심사 관리</div>
               </div>
             </Button>
 
@@ -238,7 +222,7 @@ export default function FederationAdminDashboard() {
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
-              onClick={() => router.push('/committees')}
+              onClick={() => router.push('/admin/committees')}
             >
               <TrendingUp className="mr-3 h-5 w-5 text-indigo-500" />
               <div className="text-left">
@@ -255,7 +239,7 @@ export default function FederationAdminDashboard() {
         <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold text-slate-900">최근 가입 회원</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/members')}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/admin/members')}>
               전체 보기 <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </CardHeader>
@@ -279,7 +263,7 @@ export default function FederationAdminDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500">
-                        {member.createdAt ? new Date(member.createdAt).toLocaleDateString('ko-KR') : '-'}
+                        최근 가입
                       </p>
                     </div>
                   </div>
@@ -295,7 +279,7 @@ export default function FederationAdminDashboard() {
         <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold text-slate-900">최근 등록 클럽</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/clubs')}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/admin/clubs')}>
               전체 보기 <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </CardHeader>
@@ -314,12 +298,12 @@ export default function FederationAdminDashboard() {
                       </div>
                       <div>
                         <p className="font-medium text-slate-900">{club.name}</p>
-                        <p className="text-sm text-slate-500">{club.address || '주소 미등록'}</p>
+                        <p className="text-sm text-slate-500">{club.location || '위치 미등록'}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500">
-                        {club.createdAt ? new Date(club.createdAt).toLocaleDateString('ko-KR') : '-'}
+                        최근 등록
                       </p>
                     </div>
                   </div>

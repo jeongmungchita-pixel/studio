@@ -58,8 +58,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
     } else if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.FEDERATION_ADMIN) {
       // Admins should not access club dashboard
       if (pathname.startsWith('/club-dashboard')) {
-        console.log('Admin trying to access club dashboard, redirecting to /dashboard');
-        router.push('/dashboard');
+        console.log('Admin trying to access club dashboard, redirecting to /admin');
+        router.push('/admin');
+      }
+      // Redirect /dashboard to /admin for federation admins
+      if (pathname === '/dashboard') {
+        router.push('/admin');
       }
     }
   }, [user, isUserLoading, pathname, router]);

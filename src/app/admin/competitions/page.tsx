@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Users, Play, Square } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Users, Play, Square, Gavel } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -67,6 +67,8 @@ export default function AdminCompetitionsPage() {
   const [editingCompetition, setEditingCompetition] = useState<GymnasticsCompetition | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [selectedCompetition, setSelectedCompetition] = useState<GymnasticsCompetition | null>(null);
+  const [judgeDialogOpen, setJudgeDialogOpen] = useState(false);
+  const [judgeCompetition, setJudgeCompetition] = useState<GymnasticsCompetition | null>(null);
 
   const form = useForm<CompetitionFormValues>({
     resolver: zodResolver(competitionFormSchema),
@@ -323,6 +325,17 @@ export default function AdminCompetitionsPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={() => {
+                    setJudgeCompetition(competition);
+                    setJudgeDialogOpen(true);
+                  }}
+                >
+                  <Gavel className="h-4 w-4 mr-1" />
+                  심판
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => handleEdit(competition)}
                 >
                   <Edit className="h-4 w-4" />
@@ -555,6 +568,63 @@ export default function AdminCompetitionsPage() {
               </p>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Judge Management Dialog */}
+      <Dialog open={judgeDialogOpen} onOpenChange={setJudgeDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{judgeCompetition?.title} - 심판 배정</DialogTitle>
+            <DialogDescription>
+              기계체조 심판을 종목별로 배정하세요 (D심판: 난이도, E심판: 실시)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {judgeCompetition?.events.map((event) => (
+              <Card key={event.id} className="p-4">
+                <h3 className="font-semibold text-lg mb-4">
+                  {event.name} ({event.code})
+                  <Badge className="ml-2" variant={event.gender === 'male' ? 'default' : 'secondary'}>
+                    {event.gender === 'male' ? '남자' : event.gender === 'female' ? '여자' : '공통'}
+                  </Badge>
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* D심판 (난이도) */}
+                  <div>
+                    <p className="text-sm font-semibold mb-2 text-blue-600">D심판 (난이도)</p>
+                    <div className="space-y-2">
+                      <Input placeholder="D1 심판 이름" />
+                      <Input placeholder="D2 심판 이름" />
+                    </div>
+                  </div>
+
+                  {/* E심판 (실시) */}
+                  <div>
+                    <p className="text-sm font-semibold mb-2 text-green-600">E심판 (실시)</p>
+                    <div className="space-y-2">
+                      <Input placeholder="E1 심판 이름" />
+                      <Input placeholder="E2 심판 이름" />
+                      <Input placeholder="E3 심판 이름" />
+                      <Input placeholder="E4 심판 이름" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJudgeDialogOpen(false)}>
+              닫기
+            </Button>
+            <Button onClick={() => {
+              toast({ title: '심판 배정 완료' });
+              setJudgeDialogOpen(false);
+            }}>
+              저장
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </main>

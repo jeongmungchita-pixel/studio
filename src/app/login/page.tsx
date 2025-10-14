@@ -91,7 +91,7 @@ export default function LoginPage() {
       } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
         router.push('/club-dashboard');
       } else if (user.role === UserRole.FEDERATION_ADMIN) {
-        router.push('/dashboard');
+        router.push('/admin');
       } else {
         router.push('/my-profile');
       }

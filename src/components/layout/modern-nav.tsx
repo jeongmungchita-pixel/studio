@@ -32,11 +32,11 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    id: 'dashboard',
-    label: '대시보드',
+    id: 'admin',
+    label: '연맹 관리',
     icon: LayoutDashboard,
-    href: '/dashboard',
-    roles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN],
+    href: '/admin',
+    roles: [UserRole.FEDERATION_ADMIN],
   },
   {
     id: 'club-dashboard',
@@ -60,8 +60,8 @@ const navSections: NavSection[] = [
     roles: [UserRole.MEMBER, UserRole.PARENT],
   },
   {
-    id: 'admin',
-    label: '관리',
+    id: 'super-admin',
+    label: '시스템 관리',
     icon: Shield,
     href: '/super-admin',
     roles: [UserRole.SUPER_ADMIN],
@@ -70,27 +70,6 @@ const navSections: NavSection[] = [
       { label: '사용자', href: '/admin/users' },
       { label: '승인 요청', href: '/system/super-admin-approvals' },
     ],
-  },
-  {
-    id: 'users',
-    label: '사용자',
-    icon: UserCog,
-    href: '/admin/users',
-    roles: [UserRole.FEDERATION_ADMIN],
-  },
-  {
-    id: 'members',
-    label: '회원',
-    icon: Users,
-    href: '/members',
-    roles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN],
-  },
-  {
-    id: 'clubs',
-    label: '클럽',
-    icon: Building,
-    href: '/clubs',
-    roles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN],
   },
   {
     id: 'competitions',
@@ -123,7 +102,7 @@ export function ModernNav({ mobile = false, onNavigate }: ModernNavProps) {
   );
 
   const isActive = (href: string) => {
-    if (href === '/dashboard' || href === '/club-dashboard' || href === '/my-profile') {
+    if (href === '/admin' || href === '/club-dashboard' || href === '/my-profile') {
       return pathname === href;
     }
     return pathname.startsWith(href);
