@@ -142,8 +142,20 @@ export default function LoginPage() {
               variant="outline"
               onClick={async () => {
                 if (auth) {
-                  await signOut(auth);
-                  window.location.reload(); // 페이지 새로고침으로 상태 초기화
+                  try {
+                    await signOut(auth);
+                    // 로컬 스토리지 완전 삭제
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    // 완전히 새로고침하여 모든 상태 초기화
+                    window.location.href = '/login';
+                  } catch (error) {
+                    console.error('로그아웃 실패:', error);
+                    // 에러가 나도 강제로 초기화
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/login';
+                  }
                 }
               }}
               className="flex-1"
