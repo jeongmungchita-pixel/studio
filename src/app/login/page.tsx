@@ -143,6 +143,7 @@ export default function LoginPage() {
               onClick={async () => {
                 if (auth) {
                   await signOut(auth);
+                  window.location.reload(); // 페이지 새로고침으로 상태 초기화
                 }
               }}
               className="flex-1"
