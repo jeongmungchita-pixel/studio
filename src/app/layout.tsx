@@ -12,10 +12,6 @@ export const metadata: Metadata = {
   description: '대한체조협회 관리 플랫폼',
   themeColor: '#667eea',
   manifest: '/manifest.json',
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/icon-192x192.png',
-  },
 };
 
 export default function RootLayout({
