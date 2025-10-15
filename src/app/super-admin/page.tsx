@@ -66,6 +66,11 @@ export default function SuperAdminDashboard() {
     );
   }, [firestore]);
   const { data: clubOwnerRequests, isLoading: isRequestsLoading } = useCollection<ClubOwnerRequest>(clubOwnerRequestsQuery);
+  
+  // 디버깅 로그
+  console.log('🔍 clubOwnerRequests:', clubOwnerRequests);
+  console.log('🔍 isRequestsLoading:', isRequestsLoading);
+  console.log('🔍 firestore:', firestore);
 
   // 최고 관리자 신청 목록
   const superAdminRequestsQuery = useMemoFirebase(() => {
