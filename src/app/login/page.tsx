@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -155,7 +155,7 @@ export default function LoginPage() {
   }
 
   // Force logout function
-  const forceLogout = async () => {
+  const forceLogout = useCallback(async () => {
     console.log('🔴 forceLogout 호출됨');
     // 먼저 스토리지 삭제
     localStorage.clear();
@@ -174,7 +174,7 @@ export default function LoginPage() {
       // router.push 대신 window.location.reload() 사용
       window.location.reload();
     }
-  };
+  }, [auth]);
 
   // If user is already logged in, show message
   if (user) {
