@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -64,22 +65,6 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      // User is already logged in, redirect based on role
-      if (user.role === UserRole.SUPER_ADMIN) {
-        router.push('/super-admin');
-      } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-        router.push('/club-dashboard');
-      } else if (user.role === UserRole.FEDERATION_ADMIN) {
-        router.push('/admin');
-      } else {
-        router.push('/my-profile');
-      }
-    }
-  }, [user, isUserLoading, router]);
-
-
   const onSubmit = async (values: FormValues) => {
     if (!auth) return;
     
@@ -119,10 +104,53 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || (!isUserLoading && user)) {
+  if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If user is already logged in, show message
+  if (user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>이미 로그인되어 있습니다</CardTitle>
+            <CardDescription>대시보드로 이동하시겠습니까?</CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-4">
+            <Button 
+              onClick={() => {
+                if (user.role === UserRole.SUPER_ADMIN) {
+                  router.push('/super-admin');
+                } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
+                  router.push('/club-dashboard');
+                } else if (user.role === UserRole.FEDERATION_ADMIN) {
+                  router.push('/admin');
+                } else {
+                  router.push('/my-profile');
+                }
+              }}
+              className="flex-1"
+            >
+              대시보드로 이동
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={async () => {
+                if (auth) {
+                  await signOut(auth);
+                }
+              }}
+              className="flex-1"
+            >
+              로그아웃
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -227,13 +255,15 @@ export default function LoginPage() {
             <p className="text-sm text-slate-600">
               계정이 없으신가요?
             </p>
-            <Button 
-              variant="ghost" 
-              className="w-full h-11 text-slate-900 hover:bg-slate-50 font-medium transition-colors" 
-              onClick={() => router.push('/register')}
-            >
-              회원가입하기
-            </Button>
+            <Link href="/register" className="block">
+              <Button 
+                variant="ghost" 
+                className="w-full h-11 text-slate-900 hover:bg-slate-50 font-medium transition-colors"
+                type="button"
+              >
+                회원가입하기
+              </Button>
+            </Link>
           </div>
         </CardFooter>
       </Card>

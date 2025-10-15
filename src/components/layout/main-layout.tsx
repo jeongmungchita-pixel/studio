@@ -21,8 +21,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-      // Allow access to login and initial admin setup pages without authentication
-      if (pathname !== '/login' && pathname !== '/setup/initial-admin') {
+      // Allow access to login, register, and initial admin setup pages without authentication
+      const publicPaths = ['/login', '/setup/initial-admin'];
+      const isRegisterPath = pathname.startsWith('/register');
+      
+      if (!publicPaths.includes(pathname) && !isRegisterPath) {
          router.push('/login');
       }
       return;

@@ -11,11 +11,11 @@ export function RootLayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
+  const isPublicPage = pathname === '/login' || pathname.startsWith('/register');
 
   return (
     <FirebaseClientProvider>
-      {isLoginPage ? (
+      {isPublicPage ? (
         children
       ) : (
         <MainLayout>{children}</MainLayout>
