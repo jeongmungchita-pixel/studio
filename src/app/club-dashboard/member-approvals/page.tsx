@@ -1,5 +1,6 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';

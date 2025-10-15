@@ -1,5 +1,6 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
 import { useUser } from '@/hooks/use-user';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';

@@ -1,5 +1,6 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
 import { useUser } from '@/firebase';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';

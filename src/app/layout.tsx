@@ -1,34 +1,32 @@
-'use client';
-
 import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase';
-import { usePathname } from 'next/navigation';
-import { MainLayout } from '@/components/layout/main-layout';
+import { RootLayoutClient } from './layout-client';
+
+// Force dynamic rendering for all pages - THIS WORKS IN SERVER COMPONENTS
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
+export const metadata: Metadata = {
+  title: 'KGF 넥서스',
+  description: '대한체조협회 관리 플랫폼',
+  themeColor: '#667eea',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon-192x192.png',
+  },
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
-
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
-        {/* metadata is not supported in client components, but we will add basic tags */}
-        <title>KGF 넥서스</title>
-        <meta
-          name="description"
-          content="대한체조협회 관리 플랫폼"
-        />
-        <meta name="theme-color" content="#667eea" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -41,14 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-          {isLoginPage ? (
-            children
-          ) : (
-            <MainLayout>{children}</MainLayout>
-          )}
-          <Toaster />
-        </FirebaseClientProvider>
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );

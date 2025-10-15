@@ -1,5 +1,6 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RequireAnyRole } from '@/components/require-role';
 import { UserRole, PassRenewalRequest, PassTemplate, MemberPass } from '@/types';

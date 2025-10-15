@@ -1,5 +1,6 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';

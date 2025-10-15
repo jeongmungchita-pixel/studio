@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, use } from 'react';
+export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';

@@ -1,5 +1,6 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
 import { useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
