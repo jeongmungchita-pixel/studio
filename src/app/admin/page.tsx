@@ -1,9 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-export const revalidate = 0;
-
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
