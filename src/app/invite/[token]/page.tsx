@@ -93,9 +93,9 @@ export default function InvitePage() {
     loadInvite();
   }, [firestore, token, toast]);
 
-  // 초대 수락하기 - 가입 페이지로 이동
+  // 초대 수락하기 - 연맹 관리자 전용 가입 페이지로 이동
   const handleAcceptInvite = () => {
-    router.push(`/register/super-admin?token=${token}`);
+    router.push(`/invite/accept/${token}`);
   };
 
   if (loading) {
