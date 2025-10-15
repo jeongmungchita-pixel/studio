@@ -251,6 +251,8 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pb-8 pt-6">
           <div className="w-full h-px bg-slate-100" />
+          
+          {/* 일반 회원 가입 */}
           <div className="text-center space-y-3">
             <p className="text-sm text-slate-600">
               계정이 없으신가요?
@@ -264,6 +266,38 @@ export default function LoginPage() {
                 회원가입하기
               </Button>
             </Link>
+          </div>
+
+          <div className="w-full h-px bg-slate-100" />
+
+          {/* 관리자 가입 */}
+          <div className="text-center space-y-3">
+            <p className="text-sm text-slate-600">
+              관리자이신가요?
+            </p>
+            <div className="flex gap-2">
+              <Link href="/register/club-owner" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11 text-slate-700 hover:bg-slate-50 font-medium transition-colors border-slate-200"
+                  type="button"
+                >
+                  클럽 관리자
+                </Button>
+              </Link>
+              <Link href="/register/super-admin" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11 text-slate-700 hover:bg-slate-50 font-medium transition-colors border-slate-200"
+                  type="button"
+                >
+                  연맹 관리자
+                </Button>
+              </Link>
+            </div>
+            <p className="text-xs text-slate-500">
+              * 연맹 관리자는 초대 링크를 통해 가입하세요
+            </p>
           </div>
         </CardFooter>
       </Card>
