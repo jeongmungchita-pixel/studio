@@ -93,7 +93,7 @@ export default function FederationAdminSignupPage() {
         setInvite(inviteData);
         setEmail(inviteData.email);
         setDisplayName(inviteData.name);
-        setPhoneNumber(inviteData.phoneNumber);
+        setPhoneNumber(inviteData.phoneNumber || '');
       } catch (error) {
         console.error('초대 로드 실패:', error);
         toast({
@@ -422,7 +422,11 @@ export default function FederationAdminSignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@example.com"
                   required
+                  disabled
                 />
+                <p className="text-xs text-slate-500">
+                  초대된 이메일로만 로그인할 수 있습니다
+                </p>
               </div>
 
               <div className="space-y-2">
