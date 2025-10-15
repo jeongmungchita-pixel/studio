@@ -65,6 +65,28 @@ export default function LoginPage() {
     },
   });
 
+  // Force logout function - 컴포넌트 최상위에 위치
+  const forceLogout = useCallback(async () => {
+    console.log('🔴 forceLogout 호출됨');
+    // 먼저 스토리지 삭제
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    try {
+      if (auth) {
+        console.log('🔴 signOut 시도');
+        await signOut(auth);
+        console.log('🔴 signOut 완료');
+      }
+    } catch (error) {
+      console.error('🔴 로그아웃 에러:', error);
+    } finally {
+      console.log('🔴 페이지 완전 새로고침');
+      // router.push 대신 window.location.reload() 사용
+      window.location.reload();
+    }
+  }, [auth]);
+
   const onSubmit = async (values: FormValues) => {
     if (!auth || !firestore) return;
     
@@ -153,28 +175,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
-  // Force logout function
-  const forceLogout = useCallback(async () => {
-    console.log('🔴 forceLogout 호출됨');
-    // 먼저 스토리지 삭제
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    try {
-      if (auth) {
-        console.log('🔴 signOut 시도');
-        await signOut(auth);
-        console.log('🔴 signOut 완료');
-      }
-    } catch (error) {
-      console.error('🔴 로그아웃 에러:', error);
-    } finally {
-      console.log('🔴 페이지 완전 새로고침');
-      // router.push 대신 window.location.reload() 사용
-      window.location.reload();
-    }
-  }, [auth]);
 
   // If user is already logged in, show message
   if (user) {
