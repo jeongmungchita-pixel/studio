@@ -66,11 +66,32 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+      
+      // 사용자 프로필 가져오기
+      const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userProfile = userDoc.data() as UserProfile;
+        
+        // 역할에 따라 리다이렉트
+        if (userProfile.role === UserRole.SUPER_ADMIN) {
+          router.push('/super-admin');
+        } else if (userProfile.role === UserRole.CLUB_OWNER || userProfile.role === UserRole.CLUB_MANAGER) {
+          router.push('/club-dashboard');
+        } else if (userProfile.role === UserRole.FEDERATION_ADMIN) {
+          router.push('/admin');
+        } else {
+          router.push('/my-profile');
+        }
+      } else {
+        // 프로필이 없으면 기본 페이지로
+        router.push('/my-profile');
+      }
     } catch (error: any) {
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
@@ -87,11 +108,32 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     setIsSubmitting(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      
+      // 사용자 프로필 가져오기
+      const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userProfile = userDoc.data() as UserProfile;
+        
+        // 역할에 따라 리다이렉트
+        if (userProfile.role === UserRole.SUPER_ADMIN) {
+          router.push('/super-admin');
+        } else if (userProfile.role === UserRole.CLUB_OWNER || userProfile.role === UserRole.CLUB_MANAGER) {
+          router.push('/club-dashboard');
+        } else if (userProfile.role === UserRole.FEDERATION_ADMIN) {
+          router.push('/admin');
+        } else {
+          router.push('/my-profile');
+        }
+      } else {
+        // 프로필이 없으면 기본 페이지로
+        router.push('/my-profile');
+      }
     } catch (error: any) {
       console.error(error);
       toast({
@@ -114,17 +156,23 @@ export default function LoginPage() {
 
   // Force logout function
   const forceLogout = async () => {
+    console.log('🔴 forceLogout 호출됨');
+    // 먼저 스토리지 삭제
+    localStorage.clear();
+    sessionStorage.clear();
+    
     try {
       if (auth) {
+        console.log('🔴 signOut 시도');
         await signOut(auth);
+        console.log('🔴 signOut 완료');
       }
     } catch (error) {
-      console.error('로그아웃 에러:', error);
+      console.error('🔴 로그아웃 에러:', error);
     } finally {
-      // 에러가 나도 강제로 초기화
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = '/login';
+      console.log('🔴 페이지 완전 새로고침');
+      // router.push 대신 window.location.reload() 사용
+      window.location.reload();
     }
   };
 
