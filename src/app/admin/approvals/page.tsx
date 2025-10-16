@@ -5,57 +5,105 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PendingApprovalCard } from '@/components/pending-approval-card';
 import { RequireRole } from '@/components/require-role';
-import { UserRole, ApprovalRequest } from '@/types';
+import { UserRole, ApprovalRequest, ClubOwnerRequest, Club } from '@/types';
 import { Shield, Users, Building2, Trophy, Loader2 } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser } from '@/firebase';
+import { collection, query, where, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminApprovalsPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
-  // Firestore에서 승인 요청 조회
-  const approvalsQuery = useMemoFirebase(() => {
+  // 클럽 오너 가입 신청 조회
+  const clubOwnerRequestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
-      collection(firestore, 'approvalRequests'),
+      collection(firestore, 'clubOwnerRequests'),
       where('status', '==', 'pending')
     );
   }, [firestore]);
 
-  const { data: allApprovals, isLoading } = useCollection<ApprovalRequest>(approvalsQuery);
+  const { data: clubOwnerRequests, isLoading } = useCollection<ClubOwnerRequest>(clubOwnerRequestsQuery);
 
-  // 역할별로 분류
-  const federationAdminApprovals = allApprovals?.filter(
-    a => a.requestedRole === UserRole.FEDERATION_ADMIN
-  ) || [];
-  
-  const clubOwnerApprovals = allApprovals?.filter(
-    a => a.requestedRole === UserRole.CLUB_OWNER
-  ) || [];
+  console.log('📊 클럽 오너 신청:', clubOwnerRequests);
 
-  const handleApprove = async (userId: string) => {
-    if (!firestore) return;
+  // 클럽 오너 신청만 있음
+  const clubOwnerApprovals = clubOwnerRequests || [];
+  const federationAdminApprovals: any[] = []; // 추후 구현
+
+  const handleApprove = async (requestId: string) => {
+    if (!firestore || !user) return;
     
     try {
-      // approvalRequests 컬렉션에서 해당 요청 찾기
-      const approval = allApprovals?.find(a => a.userId === userId);
-      if (!approval) return;
+      const request = clubOwnerRequests?.find(r => r.id === requestId);
+      if (!request) {
+        toast({
+          variant: 'destructive',
+          title: '오류',
+          description: '신청을 찾을 수 없습니다.',
+        });
+        return;
+      }
 
-      const approvalRef = doc(firestore, 'approvalRequests', approval.id);
-      await updateDoc(approvalRef, {
+      console.log('👉 승인 처리 시작:', request);
+
+      const batch = writeBatch(firestore);
+
+      // 1. clubOwnerRequest 상태 업데이트
+      const requestRef = doc(firestore, 'clubOwnerRequests', requestId);
+      batch.update(requestRef, {
         status: 'approved',
+        approvedBy: user.uid,
         approvedAt: new Date().toISOString(),
       });
 
+      // 2. 클럽 생성
+      const clubRef = doc(collection(firestore, 'clubs'));
+      const newClub: Club = {
+        id: clubRef.id,
+        name: request.clubName,
+        contactName: request.name,
+        contactEmail: request.email,
+        contactPhoneNumber: request.phoneNumber,
+        location: request.clubAddress,
+        status: 'approved',
+      };
+      batch.set(clubRef, newClub);
+
+      console.log('🏢 새 클럽 생성:', newClub);
+
+      // 3. 사용자 프로필 업데이트 (이미 존재하는 경우) 또는 생성
+      if (request.userId) {
+        const userRef = doc(firestore, 'users', request.userId);
+        batch.set(userRef, {
+          id: request.userId,
+          uid: request.userId,
+          email: request.email,
+          displayName: request.name,
+          phoneNumber: request.phoneNumber,
+          role: UserRole.CLUB_OWNER,
+          clubId: clubRef.id,
+          clubName: request.clubName,
+          status: 'approved',
+          approvedBy: user.uid,
+          approvedAt: new Date().toISOString(),
+        }, { merge: true });
+        console.log('👤 사용자 프로필 업데이트:', request.userId);
+      }
+
+      await batch.commit();
+
+      console.log('✅ 승인 완료!');
+
       toast({
         title: '승인 완료',
-        description: `${approval.userName}님의 요청이 승인되었습니다.`,
+        description: `${request.name}님의 클럽 오너 신청이 승인되었습니다.`,
       });
     } catch (error) {
-      console.error('승인 오류:', error);
+      console.error('❌ 승인 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -64,26 +112,29 @@ export default function AdminApprovalsPage() {
     }
   };
 
-  const handleReject = async (userId: string, reason: string) => {
-    if (!firestore) return;
+  const handleReject = async (requestId: string, reason: string) => {
+    if (!firestore || !user) return;
 
     try {
-      const approval = allApprovals?.find(a => a.userId === userId);
-      if (!approval) return;
+      const request = clubOwnerRequests?.find(r => r.id === requestId);
+      if (!request) return;
 
-      const approvalRef = doc(firestore, 'approvalRequests', approval.id);
-      await updateDoc(approvalRef, {
+      const requestRef = doc(firestore, 'clubOwnerRequests', requestId);
+      await updateDoc(requestRef, {
         status: 'rejected',
+        rejectedBy: user.uid,
         rejectedAt: new Date().toISOString(),
         rejectionReason: reason,
       });
 
+      console.log('❌ 거부 완료:', requestId);
+
       toast({
         title: '거부 완료',
-        description: `${approval.userName}님의 요청이 거부되었습니다.`,
+        description: `${request.name}님의 요청이 거부되었습니다.`,
       });
     } catch (error) {
-      console.error('거부 오류:', error);
+      console.error('❌ 거부 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -92,7 +143,7 @@ export default function AdminApprovalsPage() {
     }
   };
 
-  const totalPending = (allApprovals?.length || 0);
+  const totalPending = clubOwnerApprovals.length;
 
   if (isLoading) {
     return (
@@ -165,12 +216,20 @@ export default function AdminApprovalsPage() {
 
           <TabsContent value="all" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {allApprovals?.map((approval) => (
+              {clubOwnerApprovals.map((request) => (
                 <PendingApprovalCard
-                  key={approval.userId}
-                  {...approval}
-                  onApprove={() => handleApprove(approval.userId)}
-                  onReject={(reason) => handleReject(approval.userId, reason)}
+                  key={request.id}
+                  userId={request.userId || ''}
+                  userName={request.name}
+                  userEmail={request.email}
+                  requestedRole={UserRole.CLUB_OWNER}
+                  requestedAt={request.requestedAt}
+                  clubName={request.clubName}
+                  phoneNumber={request.phoneNumber}
+                  clubAddress={request.clubAddress}
+                  status={request.status}
+                  onApprove={() => handleApprove(request.id)}
+                  onReject={(reason) => handleReject(request.id, reason)}
                 />
               ))}
             </div>
@@ -199,12 +258,20 @@ export default function AdminApprovalsPage() {
 
           <TabsContent value="club" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {clubOwnerApprovals.map((approval) => (
+              {clubOwnerApprovals.map((request) => (
                 <PendingApprovalCard
-                  key={approval.userId}
-                  {...approval}
-                  onApprove={() => handleApprove(approval.userId)}
-                  onReject={(reason) => handleReject(approval.userId, reason)}
+                  key={request.id}
+                  userId={request.userId || ''}
+                  userName={request.name}
+                  userEmail={request.email}
+                  requestedRole={UserRole.CLUB_OWNER}
+                  requestedAt={request.requestedAt}
+                  clubName={request.clubName}
+                  phoneNumber={request.phoneNumber}
+                  clubAddress={request.clubAddress}
+                  status={request.status}
+                  onApprove={() => handleApprove(request.id)}
+                  onReject={(reason) => handleReject(request.id, reason)}
                 />
               ))}
             </div>

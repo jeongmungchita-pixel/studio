@@ -5,7 +5,7 @@ import { RoleBadge } from '@/components/role-badge';
 import { ApprovalStatusBadge } from '@/components/approval-status-badge';
 import { ApprovalActions } from '@/components/approval-actions';
 import { UserRole } from '@/types';
-import { User, Mail, Calendar, Building2 } from 'lucide-react';
+import { User, Mail, Calendar, Building2, Phone, MapPin } from 'lucide-react';
 
 interface PendingApprovalCardProps {
   userId: string;
@@ -13,6 +13,8 @@ interface PendingApprovalCardProps {
   userEmail: string;
   requestedRole: UserRole;
   clubName?: string;
+  phoneNumber?: string;
+  clubAddress?: string;
   familyType?: 'individual' | 'parent' | 'child';
   requestedAt: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -31,6 +33,8 @@ export function PendingApprovalCard({
   userEmail,
   requestedRole,
   clubName,
+  phoneNumber,
+  clubAddress,
   familyType,
   requestedAt,
   status,
@@ -71,6 +75,20 @@ export function PendingApprovalCard({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Building2 className="h-4 w-4" />
               <span>{clubName}</span>
+            </div>
+          )}
+          
+          {phoneNumber && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Phone className="h-4 w-4" />
+              <span>{phoneNumber}</span>
+            </div>
+          )}
+          
+          {clubAddress && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{clubAddress}</span>
             </div>
           )}
           
