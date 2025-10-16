@@ -141,8 +141,8 @@ export default function MemberRegisterPage() {
         description: '계정이 생성되었습니다. 클럽 오너의 승인을 기다려주세요.',
       });
       
-      // 승인 대기 페이지로 이동
-      router.push('/pending-approval');
+      // 승인 대기 페이지로 이동 (완전한 페이지 리로드)
+      window.location.href = '/pending-approval';
     } catch (error: any) {
       console.error('❌ 가입 실패:', error);
       
