@@ -128,37 +128,54 @@ export default function PassTemplatesPage() {
   };
 
   const onSubmit = async (values: TemplateFormValues) => {
-    console.log('Form submitted with values:', values);
-    if (!firestore || !user?.clubId) {
-      console.error('Missing firestore or clubId');
+    console.log('✅ Form submitted with values:', values);
+    console.log('🔍 User:', user);
+    console.log('🔍 Firestore:', firestore);
+    console.log('🔍 ClubId:', user?.clubId);
+    
+    if (!firestore) {
+      console.error('❌ Firestore가 없습니다!');
+      toast({ variant: 'destructive', title: '오류', description: 'Firestore가 초기화되지 않았습니다.' });
       return;
     }
+    
+    if (!user?.clubId) {
+      console.error('❌ ClubId가 없습니다!');
+      toast({ variant: 'destructive', title: '오류', description: '클럽 정보를 찾을 수 없습니다.' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const templateData: Omit<PassTemplate, 'id'> = {
       clubId: user.clubId,
       name: values.name,
-      description: values.description,
+      description: values.description || undefined,
       passType: values.passType,
       targetCategory: values.targetCategory,
-      price: values.price,
-      durationDays: values.durationDays,
-      totalSessions: values.totalSessions,
-      attendableSessions: values.attendableSessions,
+      ...(values.price !== undefined && { price: values.price }),
+      ...(values.durationDays !== undefined && { durationDays: values.durationDays }),
+      ...(values.totalSessions !== undefined && { totalSessions: values.totalSessions }),
+      ...(values.attendableSessions !== undefined && { attendableSessions: values.attendableSessions }),
     };
 
-    console.log('Saving template data:', templateData);
+    console.log('💾 Saving template data:', templateData);
 
     try {
       if (editingTemplate) {
         // Update existing template
+        console.log('📝 수정 모드:', editingTemplate.id);
         const templateRef = doc(firestore, 'pass_templates', editingTemplate.id);
         await setDoc(templateRef, templateData, { merge: true });
+        console.log('✅ 수정 성공!');
         toast({ title: '템플릿 수정 완료', description: `'${values.name}' 이용권 정보가 업데이트되었습니다.` });
       } else {
         // Create new template
+        console.log('🆕 생성 모드');
         const newTemplateRef = doc(collection(firestore, 'pass_templates'));
+        console.log('📄 새 문서 ID:', newTemplateRef.id);
         await setDoc(newTemplateRef, { ...templateData, id: newTemplateRef.id });
+        console.log('✅ 생성 성공!');
         toast({ title: '템플릿 생성 완료', description: `'${values.name}' 이용권이 생성되었습니다.` });
       }
       setIsDialogOpen(false);
@@ -172,9 +189,16 @@ export default function PassTemplatesPage() {
         totalSessions: '' as any,
         attendableSessions: '' as any,
       });
-    } catch (error) {
-      console.error('Error saving template:', error);
-      toast({ variant: 'destructive', title: '오류 발생', description: '저장 중 오류가 발생했습니다.' });
+    } catch (error: any) {
+      console.error('❌ 저장 실패:', error);
+      console.error('❌ 에러 코드:', error.code);
+      console.error('❌ 에러 메시지:', error.message);
+      console.error('❌ 전체 에러:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: '저장 실패', 
+        description: `오류: ${error.message || '알 수 없는 오류'}` 
+      });
     } finally {
       setIsSubmitting(false);
     }
