@@ -53,8 +53,6 @@ const classFormSchema = z.object({
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'HH:MM 형식으로 시간을 입력해주세요.'),
   capacity: z.number().int().positive('정원은 0보다 커야 합니다.'),
   targetCategory: z.enum(['adult', 'child', 'all']).optional(),
-  ageMin: z.number().int().min(0).max(100).optional().nullable(),
-  ageMax: z.number().int().min(0).max(100).optional().nullable(),
 });
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
@@ -79,8 +77,6 @@ export default function ClassesPage() {
       dayOfWeek: '월',
       capacity: 10,
       targetCategory: 'all',
-      ageMin: null,
-      ageMax: null,
     },
   });
 
@@ -125,8 +121,6 @@ export default function ClassesPage() {
         time: gymClass.time,
         capacity: gymClass.capacity,
         targetCategory: gymClass.targetCategory || 'all',
-        ageMin: gymClass.ageRange?.min ?? null,
-        ageMax: gymClass.ageRange?.max ?? null,
       });
     } else {
       form.reset({
@@ -135,8 +129,6 @@ export default function ClassesPage() {
         time: '14:00',
         capacity: 10,
         targetCategory: 'all',
-        ageMin: null,
-        ageMax: null,
       });
     }
     
@@ -162,16 +154,13 @@ export default function ClassesPage() {
         // Update existing class
         console.log('클래스 수정 모드');
         const classRef = doc(firestore, 'classes', editingClass.id);
+        
         const updatedData: Partial<GymClass> = {
           name: values.name,
           dayOfWeek: values.dayOfWeek,
           time: values.time,
           capacity: values.capacity,
           targetCategory: values.targetCategory,
-          ageRange: (values.ageMin !== null || values.ageMax !== null) ? {
-            min: values.ageMin ?? undefined,
-            max: values.ageMax ?? undefined,
-          } : undefined,
         };
         await setDoc(classRef, updatedData, { merge: true });
         console.log('클래스 수정 완료');
@@ -180,6 +169,7 @@ export default function ClassesPage() {
         // Create new class
         console.log('새 클래스 생성 모드');
         const newClassRef = doc(collection(firestore, 'classes'));
+        
         const classData: GymClass = {
             id: newClassRef.id,
             clubId: user.clubId,
@@ -188,10 +178,6 @@ export default function ClassesPage() {
             time: values.time,
             capacity: values.capacity,
             targetCategory: values.targetCategory,
-            ageRange: (values.ageMin !== null || values.ageMax !== null) ? {
-              min: values.ageMin ?? undefined,
-              max: values.ageMax ?? undefined,
-            } : undefined,
             memberIds: [],
         };
         console.log('생성할 클래스 데이터:', classData);
@@ -365,8 +351,6 @@ export default function ClassesPage() {
                 time: '14:00',
                 capacity: 10,
                 targetCategory: 'all',
-                ageMin: null,
-                ageMax: null,
               });
             }
           }}
@@ -486,45 +470,6 @@ export default function ClassesPage() {
                     )}
                   />
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="ageMin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>최소 나이 (선택)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="예: 7"
-                              value={field.value ?? ''}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="ageMax"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>최대 나이 (선택)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="예: 13"
-                              value={field.value ?? ''}
-                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button type="button" variant="outline">취소</Button>
