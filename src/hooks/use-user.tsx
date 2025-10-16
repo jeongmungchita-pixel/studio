@@ -35,22 +35,76 @@ export function useUser(): UserHookResult {
             if (userSnap.exists()) {
               userProfileData = userSnap.data() as UserProfile;
             } else {
-              // This can happen if profile creation fails after signup or for a new social login.
-              // Let's create a default profile.
-              const defaultProfile: UserProfile = {
-                id: firebaseUser.uid, // id와 uid를 동일하게 설정
-                uid: firebaseUser.uid,
-                email: firebaseUser.email!,
-                displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
-                photoURL:
-                  firebaseUser.photoURL ||
-                  `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
-                role: UserRole.MEMBER, // Default role
-                provider:
-                  firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                status: 'approved', // Default status for new members/social logins
-              };
-              // Save this default profile to Firestore
+              // 프로필이 없는 경우: 비회원 가입 승인 확인
+              console.log('🔍 프로필 없음, 승인된 가입 신청 확인 중...');
+              
+              let approvedRequest = null;
+              
+              // clubOwnerRequests에서 승인된 요청 찾기
+              try {
+                const clubOwnerRequestsRef = collection(firestore, 'clubOwnerRequests');
+                const q = query(
+                  clubOwnerRequestsRef, 
+                  where('email', '==', firebaseUser.email),
+                  where('status', '==', 'approved')
+                );
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                  approvedRequest = querySnapshot.docs[0].data();
+                  console.log('✅ 승인된 클럽 오너 신청 발견:', approvedRequest);
+                }
+              } catch (error) {
+                console.error('❌ 승인 요청 조회 오류:', error);
+              }
+              
+              let defaultProfile: UserProfile;
+              
+              if (approvedRequest) {
+                // 승인된 클럽 오너 신청이 있으면 CLUB_OWNER로 설정
+                // 클럽 ID 찾기
+                let clubId = '';
+                try {
+                  const clubsRef = collection(firestore, 'clubs');
+                  const clubQuery = query(clubsRef, where('name', '==', approvedRequest.clubName));
+                  const clubSnapshot = await getDocs(clubQuery);
+                  if (!clubSnapshot.empty) {
+                    clubId = clubSnapshot.docs[0].id;
+                    console.log('✅ 클럽 ID 찾음:', clubId);
+                  }
+                } catch (error) {
+                  console.error('❌ 클럽 ID 조회 오류:', error);
+                }
+                
+                defaultProfile = {
+                  id: firebaseUser.uid,
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  displayName: approvedRequest.name || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+                  phoneNumber: approvedRequest.phoneNumber,
+                  photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+                  role: UserRole.CLUB_OWNER,
+                  clubId: clubId || undefined,
+                  clubName: approvedRequest.clubName,
+                  provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+                  status: 'approved',
+                };
+                console.log('🏢 클럽 오너 프로필 생성:', defaultProfile);
+              } else {
+                // 승인된 요청이 없으면 기본 MEMBER
+                defaultProfile = {
+                  id: firebaseUser.uid,
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+                  photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+                  role: UserRole.MEMBER,
+                  provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+                  status: 'approved',
+                };
+                console.log('👤 기본 회원 프로필 생성:', defaultProfile);
+              }
+              
+              // Firestore에 저장
               await setDoc(userRef, defaultProfile);
               userProfileData = defaultProfile;
             }
