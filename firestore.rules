@@ -150,16 +150,19 @@ service cloud.firestore {
       // 읽기: 관리자 또는 본인
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       
-      // 생성: 인증된 사용자
-      allow create: if isAuthenticated();
+      // 생성: 누구나 가능 (가입 신청은 비회원도 가능)
+      allow create: if true;
       
       // 수정/삭제: 관리자만
       allow update, delete: if isAdmin();
     }
     
     match /superAdminRequests/{requestId} {
-      // 관리자만
-      allow read, write: if isSuperAdmin();
+      // 읽기/수정/삭제: SUPER_ADMIN만
+      allow read, update, delete: if isSuperAdmin();
+      
+      // 생성: 누구나 가능 (최고 관리자 신청)
+      allow create: if true;
     }
     
     match /federationAdminInvites/{inviteId} {

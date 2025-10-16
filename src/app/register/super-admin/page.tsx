@@ -31,18 +31,17 @@ export default function SuperAdminRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!firestore || !user) {
-      alert('로그인이 필요합니다.');
-      router.push('/login');
+    if (!firestore) {
+      alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // SuperAdminRequest 생성
+      // SuperAdminRequest 생성 (비회원도 가능, 단 보안 코드 필요)
       const requestData: Omit<SuperAdminRequest, 'id'> = {
-        userId: user.uid,
+        userId: user?.uid || '', // 로그인 안 했으면 빈 문자열
         name: formData.name,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
@@ -54,13 +53,17 @@ export default function SuperAdminRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
 
+      console.log('📤 슬퍼 관리자 신청 데이터:', requestData);
+
       // Firestore에 저장
-      await addDoc(collection(firestore, 'superAdminRequests'), requestData);
+      const docRef = await addDoc(collection(firestore, 'superAdminRequests'), requestData);
+      console.log('✅ 슬퍼 관리자 신청 성공! Doc ID:', docRef.id);
       
       alert('최고관리자 신청이 완료되었습니다. 시스템 관리자의 검토 후 승인됩니다.');
       router.push('/dashboard');
     } catch (error) {
-      console.error('신청 실패:', error);
+      console.error('❌ 슬퍼 관리자 신청 실패:', error);
+      console.error('에러 상세:', error instanceof Error ? error.message : error);
       alert('신청에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);

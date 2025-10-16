@@ -37,22 +37,21 @@ export default function ClubOwnerRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!firestore || !user) {
+    if (!firestore) {
       toast({
         variant: 'destructive',
-        title: '로그인 필요',
-        description: '로그인이 필요합니다.',
+        title: '오류 발생',
+        description: '잠시 후 다시 시도해주세요.',
       });
-      router.push('/login');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // ClubOwnerRequest 생성
+      // ClubOwnerRequest 생성 (비회원도 가능)
       const requestData: Omit<ClubOwnerRequest, 'id'> = {
-        userId: user.uid,
+        userId: user?.uid || '', // 로그인 안 했으면 빈 문자열
         name: formData.name,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
@@ -65,8 +64,11 @@ export default function ClubOwnerRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
 
+      console.log('📤 가입 신청 데이터:', requestData);
+
       // Firestore에 저장
-      await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
+      const docRef = await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
+      console.log('✅ 가입 신청 성공! Doc ID:', docRef.id);
       
       toast({
         title: '신청 완료',
@@ -74,7 +76,8 @@ export default function ClubOwnerRegisterPage() {
       });
       router.push('/dashboard');
     } catch (error) {
-      console.error('가입 신청 실패:', error);
+      console.error('❌ 가입 신청 실패:', error);
+      console.error('에러 상세:', error instanceof Error ? error.message : error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

@@ -43,13 +43,12 @@ export default function MemberRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!firestore || !user) {
+    if (!firestore) {
       toast({
         variant: 'destructive',
-        title: '로그인 필요',
-        description: '로그인이 필요합니다.',
+        title: '오류 발생',
+        description: '잠시 후 다시 시도해주세요.',
       });
-      router.push('/login');
       return;
     }
 
@@ -63,12 +62,13 @@ export default function MemberRegisterPage() {
           title: '클럽 선택 필요',
           description: '클럽을 선택해주세요.',
         });
+        setIsSubmitting(false);
         return;
       }
 
-      // MemberRequest 생성
+      // MemberRequest 생성 (비회원도 가능)
       const requestData: Omit<MemberRequest, 'id'> = {
-        userId: user.uid,
+        userId: user?.uid || '', // 로그인 안 했으면 빈 문자열
         name: formData.name,
         email: formData.email || undefined,
         phoneNumber: formData.phoneNumber || undefined,
@@ -82,8 +82,11 @@ export default function MemberRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
 
+      console.log('📤 회원 가입 신청 데이터:', requestData);
+
       // Firestore에 저장 (통합된 컬렉션 사용)
-      await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
+      const docRef = await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
+      console.log('✅ 회원 가입 신청 성공! Doc ID:', docRef.id);
       
       toast({
         title: '신청 완료',
@@ -91,7 +94,8 @@ export default function MemberRegisterPage() {
       });
       router.push('/dashboard');
     } catch (error) {
-      console.error('가입 신청 실패:', error);
+      console.error('❌ 회원 가입 신청 실패:', error);
+      console.error('에러 상세:', error instanceof Error ? error.message : error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
