@@ -81,9 +81,9 @@ export default function LoginPage() {
     } catch (error) {
       console.error('🔴 로그아웃 에러:', error);
     } finally {
-      console.log('🔴 페이지 완전 새로고침');
-      // router.push 대신 window.location.reload() 사용
-      window.location.reload();
+      console.log('🔴 홈으로 완전히 리다이렉트');
+      // 완전히 새로운 페이지로 이동 (캐시 무시)
+      window.location.href = '/login';
     }
   }, [auth]);
 
