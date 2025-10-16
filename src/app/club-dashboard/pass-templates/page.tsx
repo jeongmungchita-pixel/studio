@@ -321,7 +321,7 @@ export default function PassTemplatesPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>이용권 타입</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="타입 선택" />
@@ -343,7 +343,7 @@ export default function PassTemplatesPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>대상 회원</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="대상 선택" />
