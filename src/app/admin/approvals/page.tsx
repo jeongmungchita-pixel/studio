@@ -75,26 +75,18 @@ export default function AdminApprovalsPage() {
 
       console.log('🏢 새 클럽 생성:', newClub);
 
-      // 3. 사용자 프로필 업데이트 (이미 존재하는 경우) 또는 생성
-      // 비회원 가입인 경우(userId가 빈 문자열) 사용자 프로필은 나중에 로그인 시 생성됨
+      // 3. 사용자 프로필 승인 (status: approved + clubId 추가)
       if (request.userId && request.userId.trim() !== '') {
         const userRef = doc(firestore, 'users', request.userId);
-        batch.set(userRef, {
-          id: request.userId,
-          uid: request.userId,
-          email: request.email,
-          displayName: request.name,
-          phoneNumber: request.phoneNumber,
-          role: UserRole.CLUB_OWNER,
-          clubId: clubRef.id,
-          clubName: request.clubName,
+        batch.update(userRef, {
           status: 'approved',
+          clubId: clubRef.id,
           approvedBy: user.uid,
           approvedAt: new Date().toISOString(),
-        }, { merge: true });
-        console.log('👤 사용자 프로필 업데이트:', request.userId);
+        });
+        console.log('✅ 사용자 승인 완료:', request.userId);
       } else {
-        console.log('⚠️ 비회원 가입 - 사용자 프로필은 로그인 시 생성됩니다');
+        console.log('⚠️ userId 없음 - 구버전 요청');
       }
 
       await batch.commit();

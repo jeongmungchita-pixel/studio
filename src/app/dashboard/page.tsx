@@ -19,6 +19,12 @@ export default function DashboardPage() {
       return;
     }
 
+    // 승인 대기 중이면 pending 페이지로
+    if (user.status === 'pending') {
+      router.push('/pending-approval');
+      return;
+    }
+
     // 역할별 리다이렉트
     if (user.role === UserRole.SUPER_ADMIN) {
       router.push('/super-admin');
