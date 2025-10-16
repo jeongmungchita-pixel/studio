@@ -44,14 +44,20 @@ export default function SuperAdminApprovalsPage() {
         approvedAt: new Date().toISOString(),
       });
 
-      // 사용자 프로필 업데이트 (역할을 SUPER_ADMIN으로 변경)
-      const userRef = doc(firestore, 'users', request.userId);
-      await updateDoc(userRef, {
-        role: 'SUPER_ADMIN' as UserRole,
-        status: 'approved',
-        approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
-      });
+      // 사용자 프로필 업데이트 (이미 존재하는 경우)
+      // 비회원 가입인 경우 로그인 시 프로필 생성됨
+      if (request.userId && request.userId.trim() !== '') {
+        const userRef = doc(firestore, 'users', request.userId);
+        await updateDoc(userRef, {
+          role: 'SUPER_ADMIN' as UserRole,
+          status: 'approved',
+          approvedBy: user.uid,
+          approvedAt: new Date().toISOString(),
+        });
+        console.log('✅ 슬퍼 관리자 프로필 업데이트:', request.userId);
+      } else {
+        console.log('⚠️ 비회원 가입 - 로그인 시 프로필 생성됩니다');
+      }
 
       alert('최고 관리자로 승인되었습니다!');
     } catch (error) {
@@ -82,14 +88,19 @@ export default function SuperAdminApprovalsPage() {
         rejectionReason: reason,
       });
 
-      // 사용자 프로필 업데이트
-      const userRef = doc(firestore, 'users', request.userId);
-      await updateDoc(userRef, {
-        status: 'rejected',
-        rejectedBy: user.uid,
-        rejectedAt: new Date().toISOString(),
-        rejectionReason: reason,
-      });
+      // 사용자 프로필 업데이트 (이미 존재하는 경우)
+      if (request.userId && request.userId.trim() !== '') {
+        const userRef = doc(firestore, 'users', request.userId);
+        await updateDoc(userRef, {
+          status: 'rejected',
+          rejectedBy: user.uid,
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: reason,
+        });
+        console.log('✅ 슬퍼 관리자 거부 처리:', request.userId);
+      } else {
+        console.log('⚠️ 비회원 가입 - 프로필 업데이트 건너뛀기');
+      }
 
       alert('신청이 거부되었습니다.');
     } catch (error) {

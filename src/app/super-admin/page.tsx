@@ -123,16 +123,22 @@ export default function SuperAdminDashboard() {
       };
       const clubRef = await addDoc(collection(firestore, 'clubs'), clubData);
 
-      // 2. 사용자 프로필 업데이트 (역할을 CLUB_OWNER로, 상태를 approved로)
-      const userRef = doc(firestore, 'users', request.userId);
-      await updateDoc(userRef, {
-        role: UserRole.CLUB_OWNER,
-        status: 'approved',
-        clubId: clubRef.id,
-        clubName: request.clubName,
-        approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
-      });
+      // 2. 사용자 프로필 업데이트 (이미 존재하는 경우)
+      // 비회원 가입인 경우 로그인 시 프로필 생성됨
+      if (request.userId && request.userId.trim() !== '') {
+        const userRef = doc(firestore, 'users', request.userId);
+        await updateDoc(userRef, {
+          role: UserRole.CLUB_OWNER,
+          status: 'approved',
+          clubId: clubRef.id,
+          clubName: request.clubName,
+          approvedBy: user.uid,
+          approvedAt: new Date().toISOString(),
+        });
+        console.log('✅ 사용자 프로필 업데이트:', request.userId);
+      } else {
+        console.log('⚠️ 비회원 가입 - 로그인 시 프로필 생성됩니다');
+      }
 
       // 3. 신청 상태 업데이트
       const requestRef = doc(firestore, 'clubOwnerRequests', request.id);
@@ -167,14 +173,19 @@ export default function SuperAdminDashboard() {
       const request = clubOwnerRequests?.find(r => r.id === selectedRequestId);
       if (!request) return;
 
-      // 1. 사용자 프로필 업데이트
-      const userRef = doc(firestore, 'users', request.userId);
-      await updateDoc(userRef, {
-        status: 'rejected',
-        rejectedBy: user.uid,
-        rejectedAt: new Date().toISOString(),
-        rejectionReason,
-      });
+      // 1. 사용자 프로필 업데이트 (이미 존재하는 경우)
+      if (request.userId && request.userId.trim() !== '') {
+        const userRef = doc(firestore, 'users', request.userId);
+        await updateDoc(userRef, {
+          status: 'rejected',
+          rejectedBy: user.uid,
+          rejectedAt: new Date().toISOString(),
+          rejectionReason,
+        });
+        console.log('✅ 사용자 프로필 거부 처리:', request.userId);
+      } else {
+        console.log('⚠️ 비회원 가입 - 프로필 업데이트 건너뛰기');
+      }
 
       // 2. 신청 상태 업데이트
       const requestRef = doc(firestore, 'clubOwnerRequests', selectedRequestId);

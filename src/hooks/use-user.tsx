@@ -38,7 +38,8 @@ export function useUser(): UserHookResult {
               // 프로필이 없는 경우: 비회원 가입 승인 확인
               console.log('🔍 프로필 없음, 승인된 가입 신청 확인 중...');
               
-              let approvedRequest = null;
+              let approvedRequest: any = null;
+              let requestType: 'clubOwner' | 'superAdmin' | null = null;
               
               // clubOwnerRequests에서 승인된 요청 찾기
               try {
@@ -51,15 +52,36 @@ export function useUser(): UserHookResult {
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
                   approvedRequest = querySnapshot.docs[0].data();
+                  requestType = 'clubOwner';
                   console.log('✅ 승인된 클럽 오너 신청 발견:', approvedRequest);
                 }
               } catch (error) {
-                console.error('❌ 승인 요청 조회 오류:', error);
+                console.error('❌ 클럽 오너 승인 요청 조회 오류:', error);
+              }
+              
+              // clubOwner가 아니면 superAdminRequests 확인
+              if (!approvedRequest) {
+                try {
+                  const superAdminRequestsRef = collection(firestore, 'superAdminRequests');
+                  const q = query(
+                    superAdminRequestsRef,
+                    where('email', '==', firebaseUser.email),
+                    where('status', '==', 'approved')
+                  );
+                  const querySnapshot = await getDocs(q);
+                  if (!querySnapshot.empty) {
+                    approvedRequest = querySnapshot.docs[0].data();
+                    requestType = 'superAdmin';
+                    console.log('✅ 승인된 슈퍼 관리자 신청 발견:', approvedRequest);
+                  }
+                } catch (error) {
+                  console.error('❌ 슈퍼 관리자 승인 요청 조회 오류:', error);
+                }
               }
               
               let defaultProfile: UserProfile;
               
-              if (approvedRequest) {
+              if (approvedRequest && requestType === 'clubOwner') {
                 // 승인된 클럽 오너 신청이 있으면 CLUB_OWNER로 설정
                 // 클럽 ID 찾기
                 let clubId = '';
@@ -89,6 +111,20 @@ export function useUser(): UserHookResult {
                   status: 'approved',
                 };
                 console.log('🏢 클럽 오너 프로필 생성:', defaultProfile);
+              } else if (approvedRequest && requestType === 'superAdmin') {
+                // 승인된 슈퍼 관리자 신청이 있으면 SUPER_ADMIN으로 설정
+                defaultProfile = {
+                  id: firebaseUser.uid,
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  displayName: approvedRequest.name || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+                  phoneNumber: approvedRequest.phoneNumber,
+                  photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+                  role: UserRole.SUPER_ADMIN,
+                  provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+                  status: 'approved',
+                };
+                console.log('🛡️ 슈퍼 관리자 프로필 생성:', defaultProfile);
               } else {
                 // 승인된 요청이 없으면 기본 MEMBER
                 defaultProfile = {
