@@ -39,7 +39,7 @@ export function useUser(): UserHookResult {
               console.log('🔍 프로필 없음, 승인된 가입 신청 확인 중...');
               
               let approvedRequest: any = null;
-              let requestType: 'clubOwner' | 'superAdmin' | null = null;
+              let requestType: 'clubOwner' | 'superAdmin' | 'member' | null = null;
               
               // clubOwnerRequests에서 승인된 요청 찾기
               try {
@@ -76,6 +76,26 @@ export function useUser(): UserHookResult {
                   }
                 } catch (error) {
                   console.error('❌ 슈퍼 관리자 승인 요청 조회 오류:', error);
+                }
+              }
+              
+              // memberRegistrationRequests 확인 (일반 회원 가입)
+              if (!approvedRequest) {
+                try {
+                  const memberRequestsRef = collection(firestore, 'memberRegistrationRequests');
+                  const q = query(
+                    memberRequestsRef,
+                    where('email', '==', firebaseUser.email),
+                    where('status', '==', 'approved')
+                  );
+                  const querySnapshot = await getDocs(q);
+                  if (!querySnapshot.empty) {
+                    approvedRequest = querySnapshot.docs[0].data();
+                    requestType = 'member';
+                    console.log('✅ 승인된 일반 회원 신청 발견:', approvedRequest);
+                  }
+                } catch (error) {
+                  console.error('❌ 일반 회원 승인 요청 조회 오류:', error);
                 }
               }
               
@@ -125,6 +145,22 @@ export function useUser(): UserHookResult {
                   status: 'approved',
                 };
                 console.log('🛡️ 슈퍼 관리자 프로필 생성:', defaultProfile);
+              } else if (approvedRequest && requestType === 'member') {
+                // 승인된 일반 회원 신청이 있으면 MEMBER로 설정
+                defaultProfile = {
+                  id: firebaseUser.uid,
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  displayName: approvedRequest.name || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+                  phoneNumber: approvedRequest.phoneNumber,
+                  photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+                  role: UserRole.MEMBER,
+                  clubId: approvedRequest.clubId,
+                  clubName: approvedRequest.clubName,
+                  provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+                  status: 'approved',
+                };
+                console.log('👤 일반 회원 프로필 생성 (승인된 신청):', defaultProfile);
               } else {
                 // 승인된 요청이 없으면 기본 MEMBER
                 defaultProfile = {
