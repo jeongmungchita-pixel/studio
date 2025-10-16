@@ -15,27 +15,27 @@ export default function DashboardPage() {
     if (isUserLoading) return;
     
     if (!user) {
-      router.push('/login');
+      window.location.href = '/login';
       return;
     }
 
     // 승인 대기 중이면 pending 페이지로
     if (user.status === 'pending') {
-      router.push('/pending-approval');
+      window.location.href = '/pending-approval';
       return;
     }
 
-    // 역할별 리다이렉트
+    // 역할별 리다이렉트 (완전한 페이지 리로드)
     if (user.role === UserRole.SUPER_ADMIN) {
-      router.push('/super-admin');
+      window.location.href = '/super-admin';
     } else if (user.role === UserRole.FEDERATION_ADMIN) {
-      router.push('/admin');
+      window.location.href = '/admin';
     } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-      router.push('/club-dashboard');
+      window.location.href = '/club-dashboard';
     } else {
-      router.push('/my-profile');
+      window.location.href = '/my-profile';
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

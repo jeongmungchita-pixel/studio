@@ -100,19 +100,25 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userProfile = userDoc.data() as UserProfile;
         
-        // 역할에 따라 리다이렉트
+        // 승인 대기 중이면 pending 페이지로
+        if (userProfile.status === 'pending') {
+          window.location.href = '/pending-approval';
+          return;
+        }
+        
+        // 역할에 따라 리다이렉트 (완전한 페이지 리로드)
         if (userProfile.role === UserRole.SUPER_ADMIN) {
-          router.push('/super-admin');
+          window.location.href = '/super-admin';
         } else if (userProfile.role === UserRole.CLUB_OWNER || userProfile.role === UserRole.CLUB_MANAGER) {
-          router.push('/club-dashboard');
+          window.location.href = '/club-dashboard';
         } else if (userProfile.role === UserRole.FEDERATION_ADMIN) {
-          router.push('/admin');
+          window.location.href = '/admin';
         } else {
-          router.push('/my-profile');
+          window.location.href = '/my-profile';
         }
       } else {
         // 프로필이 없으면 기본 페이지로
-        router.push('/my-profile');
+        window.location.href = '/my-profile';
       }
     } catch (error: any) {
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
@@ -142,19 +148,25 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userProfile = userDoc.data() as UserProfile;
         
-        // 역할에 따라 리다이렉트
+        // 승인 대기 중이면 pending 페이지로
+        if (userProfile.status === 'pending') {
+          window.location.href = '/pending-approval';
+          return;
+        }
+        
+        // 역할에 따라 리다이렉트 (완전한 페이지 리로드)
         if (userProfile.role === UserRole.SUPER_ADMIN) {
-          router.push('/super-admin');
+          window.location.href = '/super-admin';
         } else if (userProfile.role === UserRole.CLUB_OWNER || userProfile.role === UserRole.CLUB_MANAGER) {
-          router.push('/club-dashboard');
+          window.location.href = '/club-dashboard';
         } else if (userProfile.role === UserRole.FEDERATION_ADMIN) {
-          router.push('/admin');
+          window.location.href = '/admin';
         } else {
-          router.push('/my-profile');
+          window.location.href = '/my-profile';
         }
       } else {
         // 프로필이 없으면 기본 페이지로
-        router.push('/my-profile');
+        window.location.href = '/my-profile';
       }
     } catch (error: any) {
       console.error(error);
@@ -188,14 +200,21 @@ export default function LoginPage() {
           <CardContent className="flex gap-4">
             <Button 
               onClick={() => {
+                // 승인 대기 중이면 pending 페이지로
+                if (user.status === 'pending') {
+                  window.location.href = '/pending-approval';
+                  return;
+                }
+                
+                // 역할에 따라 리다이렉트
                 if (user.role === UserRole.SUPER_ADMIN) {
-                  router.push('/super-admin');
+                  window.location.href = '/super-admin';
                 } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-                  router.push('/club-dashboard');
+                  window.location.href = '/club-dashboard';
                 } else if (user.role === UserRole.FEDERATION_ADMIN) {
-                  router.push('/admin');
+                  window.location.href = '/admin';
                 } else {
-                  router.push('/my-profile');
+                  window.location.href = '/my-profile';
                 }
               }}
               className="flex-1"
