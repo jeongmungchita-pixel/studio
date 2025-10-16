@@ -9,6 +9,7 @@ import { RequireRole } from '@/components/require-role';
 import { UserRole, Committee, CommitteeType } from '@/types';
 import { RoleBadge } from '@/components/role-badge';
 import { useFirestore, useCollection } from '@/firebase';
+import { ErrorFallback } from '@/components/error-fallback';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 
@@ -37,7 +38,12 @@ export default function CommitteesPage() {
     );
   }, [firestore]);
 
-  const { data: committees, isLoading } = useCollection<Committee>(committeesQuery);
+  const { data: committees, isLoading, error: committeesError } = useCollection<Committee>(committeesQuery);
+
+  // 에러 처리
+  if (committeesError) {
+    return <ErrorFallback error={committeesError} title="위원회 데이터 조회 오류" />;
+  }
 
   if (isLoading) {
     return (

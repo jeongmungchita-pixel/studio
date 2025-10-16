@@ -12,11 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, MapPin, Loader2, Building2, Mail } from 'lucide-react';
 import { useMemo } from 'react';
+import { usePageLoading } from '@/hooks/use-page-loading';
+import { ErrorFallback } from '@/components/error-fallback';
 
 export default function ClubsPage() {
   const firestore = useFirestore();
   
-  // 임시: 모든 클럽 조회 (status 확인용)
+  // 모든 클럽 조회
   const clubsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'clubs');
@@ -24,16 +26,34 @@ export default function ClubsPage() {
   const { data: clubs, isLoading: isClubsLoading, error: clubsError } = useCollection<Club>(clubsQuery);
   
   // 디버깅: 클럽 데이터 콘솔 출력
-  console.log('🔍 전체 클럽 데이터:', clubs);
-  console.log('📊 각 클럽의 status:', clubs?.map(c => ({ name: c.name, status: c.status })));
-  console.log('❌ 클럽 조회 에러:', clubsError);
+  console.log('🔍 전체 클럽 데이터:', {
+    count: clubs?.length,
+    clubs: clubs?.map(c => ({ id: c.id, name: c.name, status: c.status })),
+    error: clubsError
+  });
+  
+  // 에러 발생 시 콘솔에 상세 정보 출력
+  if (clubsError) {
+    console.error('❌ 클럽 조회 에러 상세:', {
+      message: clubsError.message,
+      code: 'code' in clubsError ? clubsError.code : 'unknown',
+      stack: clubsError.stack
+    });
+    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
+  }
 
   // 전체 회원 조회 (클럽별 회원 수 계산용)
   const membersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'members') : null),
     [firestore]
   );
-  const { data: allMembers, isLoading: isMembersLoading } = useCollection<Member>(membersCollection);
+  const { data: allMembers, isLoading: isMembersLoading, error: membersError } = useCollection<Member>(membersCollection);
+
+  // 회원 데이터 에러 처리
+  if (membersError) {
+    console.error('❌ 회원 조회 에러:', membersError);
+    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
+  }
 
   // 클럽별 회원 수 계산
   const clubMemberCounts = useMemo(() => {
@@ -47,7 +67,10 @@ export default function ClubsPage() {
     return counts;
   }, [allMembers]);
 
-  if (isClubsLoading || isMembersLoading) {
+  // 통합 로딩 체크
+  const isLoading = usePageLoading(isClubsLoading, isMembersLoading);
+  
+  if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

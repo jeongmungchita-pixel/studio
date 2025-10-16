@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ErrorFallback } from '@/components/error-fallback';
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,12 @@ export default function JudgesPage() {
     () => (firestore ? collection(firestore, 'judges') : null),
     [firestore]
   );
-  const { data: judges, isLoading } = useCollection<Judge>(judgesCollection);
+  const { data: judges, isLoading, error: judgesError } = useCollection<Judge>(judgesCollection);
+
+  // 에러 처리
+  if (judgesError) {
+    return <ErrorFallback error={judgesError} title="심판 데이터 조회 오류" />;
+  }
 
   const handleSubmit = async () => {
     if (!firestore) return;

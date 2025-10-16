@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { ErrorFallback } from '@/components/error-fallback';
 import { Loader2, Plus, Edit, Trash2, Users, Play, Square, Gavel } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -95,7 +96,12 @@ export default function AdminCompetitionsPage() {
       orderBy('competitionDate', 'desc')
     );
   }, [firestore]);
-  const { data: competitions, isLoading } = useCollection<GymnasticsCompetition>(competitionsQuery);
+  const { data: competitions, isLoading, error: competitionsError } = useCollection<GymnasticsCompetition>(competitionsQuery);
+
+  // 에러 처리
+  if (competitionsError) {
+    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
+  }
 
   // Fetch registrations for selected competition
   const registrationsQuery = useMemoFirebase(() => {
@@ -105,7 +111,12 @@ export default function AdminCompetitionsPage() {
       where('competitionId', '==', selectedCompetition.id)
     );
   }, [firestore, selectedCompetition?.id]);
-  const { data: registrations } = useCollection<CompetitionRegistration>(registrationsQuery);
+  const { data: registrations, error: registrationsError } = useCollection<CompetitionRegistration>(registrationsQuery);
+
+  // 참가 등록 에러 처리 (경고만 표시)
+  if (registrationsError) {
+    console.error('❌ 참가 등록 조회 오류:', registrationsError);
+  }
 
   const onSubmit = async (values: CompetitionFormValues) => {
     if (!firestore || !user || selectedEvents.length === 0) {

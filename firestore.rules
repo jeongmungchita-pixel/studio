@@ -62,20 +62,28 @@ service cloud.firestore {
     // ============================================
     
     match /users/{userId} {
-      // 자기 프로필 읽기: 본인 또는 관리자
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // 자기 프로필 읽기: 본인은 항상 가능 (순환 참조 방지)
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // 다른 사용자 프로필 읽기: 관리자만 (최적화: 한 번만 체크)
+      allow read: if isAuthenticated() && 
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'FEDERATION_ADMIN'];
       
       // 프로필 생성: 본인만
       allow create: if isAuthenticated() && request.auth.uid == userId;
       
-      // 프로필 수정: 본인 또는 관리자
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // 프로필 수정: 본인 또는 관리자 (최적화)
+      allow update: if isAuthenticated() && 
+                       (request.auth.uid == userId || 
+                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'FEDERATION_ADMIN']);
       
-      // 프로필 삭제: 관리자만
-      allow delete: if isAdmin();
+      // 프로필 삭제: 관리자만 (최적화)
+      allow delete: if isAuthenticated() && 
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'FEDERATION_ADMIN'];
       
-      // 전체 목록: 관리자만
-      allow list: if isAdmin();
+      // 전체 목록: 관리자만 (최적화)
+      allow list: if isAuthenticated() && 
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'FEDERATION_ADMIN'];
     }
 
     // ============================================
@@ -83,8 +91,22 @@ service cloud.firestore {
     // ============================================
     
     match /clubs/{clubId} {
-      // 임시: 테스트용 전체 권한 허용
-      allow read, write: if true;
+      // 읽기: 인증된 사용자 누구나 (모든 클럽 정보는 공개)
+      allow read: if isAuthenticated();
+      
+      // 생성: 관리자만 (클럽 등록 승인 후 생성)
+      allow create: if isAdmin();
+      
+      // 수정: 관리자 또는 해당 클럽 오너
+      allow update: if isAdmin() || 
+                       (isAuthenticated() && 
+                        resource.data.ownerId == request.auth.uid);
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+      
+      // 전체 목록 조회: 인증된 사용자 누구나
+      allow list: if isAuthenticated();
     }
 
     // ============================================

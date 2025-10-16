@@ -21,17 +21,46 @@ import type { Member, Club, Competition } from '@/types';
 import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/use-role';
+import { usePageLoading } from '@/hooks/use-page-loading';
+import { ErrorFallback } from '@/components/error-fallback';
 
 export default function FederationAdminDashboard() {
   const { user, isUserLoading } = useUser();
-  const { hasRole } = useRole();
+  const { hasRole, isFederationAdmin, isSuperAdmin } = useRole();
   const firestore = useFirestore();
   const router = useRouter();
 
-  // 권한 체크
-  if (!isUserLoading && user && !hasRole(UserRole.FEDERATION_ADMIN)) {
-    router.push('/dashboard');
-    return null;
+  // 디버깅: 사용자 정보 출력
+  console.log('🔍 Admin Dashboard - User:', {
+    user: user?.email,
+    role: user?.role,
+    isUserLoading,
+    isFederationAdmin,
+    isSuperAdmin,
+    hasRole: hasRole(UserRole.FEDERATION_ADMIN)
+  });
+
+  // 권한 체크: FEDERATION_ADMIN 또는 SUPER_ADMIN만 접근 가능
+  if (!isUserLoading && user) {
+    if (!isFederationAdmin && !isSuperAdmin) {
+      console.warn('⚠️ 권한 없음 - 리다이렉트:', user.email, user.role);
+      router.push('/dashboard');
+      return (
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
+    }
+  }
+  
+  // 로그인 안 됨
+  if (!isUserLoading && !user) {
+    router.push('/login');
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
   // 전체 회원 수
@@ -39,21 +68,45 @@ export default function FederationAdminDashboard() {
     () => (firestore ? collection(firestore, 'members') : null),
     [firestore]
   );
-  const { data: allMembers, isLoading: isMembersLoading } = useCollection<Member>(membersCollection);
+  const { data: allMembers, isLoading: isMembersLoading, error: membersError } = useCollection<Member>(membersCollection);
+  
+  // 디버깅: 회원 데이터
+  console.log('📊 Members:', { count: allMembers?.length, error: membersError });
+
+  // 에러 처리
+  if (membersError) {
+    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
+  }
 
   // 전체 클럽 수
   const clubsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'clubs') : null),
     [firestore]
   );
-  const { data: allClubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
+  const { data: allClubs, isLoading: isClubsLoading, error: clubsError } = useCollection<Club>(clubsCollection);
+  
+  // 디버깅: 클럽 데이터
+  console.log('🏢 Clubs:', { count: allClubs?.length, error: clubsError });
+
+  // 에러 처리
+  if (clubsError) {
+    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
+  }
 
   // 전체 대회
   const competitionsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'competitions') : null),
     [firestore]
   );
-  const { data: competitions, isLoading: isCompetitionsLoading } = useCollection<Competition>(competitionsCollection);
+  const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<Competition>(competitionsCollection);
+  
+  // 디버깅: 대회 데이터
+  console.log('🏆 Competitions:', { count: competitions?.length, error: competitionsError });
+
+  // 에러 처리
+  if (competitionsError) {
+    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
+  }
 
   // 위원회
   const committeesCollection = useMemoFirebase(
@@ -84,7 +137,16 @@ export default function FederationAdminDashboard() {
   }, [firestore]);
   const { data: recentClubs } = useCollection<Club>(recentClubsQuery);
 
-  if (isUserLoading || isMembersLoading || isClubsLoading || isCompetitionsLoading || isCommitteesLoading) {
+  // 통합 로딩 체크
+  const isLoading = usePageLoading(
+    isUserLoading,
+    isMembersLoading,
+    isClubsLoading,
+    isCompetitionsLoading,
+    isCommitteesLoading
+  );
+
+  if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

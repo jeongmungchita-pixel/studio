@@ -20,6 +20,7 @@ import { UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { ErrorFallback } from '@/components/error-fallback';
 
 export default function AdminUsersPage() {
   const { user, isUserLoading } = useUser();
@@ -31,7 +32,7 @@ export default function AdminUsersPage() {
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
-  const { data: users, isLoading: isUsersLoading } =
+  const { data: users, isLoading: isUsersLoading, error: usersError } =
     useCollection<UserProfile>(usersCollection);
 
   if (isUserLoading || !user) {
@@ -45,7 +46,16 @@ export default function AdminUsersPage() {
   // This page is for admins only
   if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.FEDERATION_ADMIN) {
     router.push('/dashboard');
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // 에러 처리
+  if (usersError) {
+    return <ErrorFallback error={usersError} title="사용자 데이터 조회 오류" />;
   }
 
   const handleApprove = async (userToApprove: UserProfile) => {
@@ -67,6 +77,7 @@ export default function AdminUsersPage() {
         contactEmail: userToApprove.email,
         contactPhoneNumber: userToApprove.phoneNumber || '',
         location: '미정', // Default location
+        status: 'approved', // 신규 클럽은 승인 상태로 생성
       };
       batch.set(clubRef, newClub);
 

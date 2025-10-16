@@ -6,6 +6,10 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ErrorFallback } from '@/components/error-fallback';
+import { MoreHorizontal, Loader2, Eye, Edit, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -14,9 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Loader2, Eye, Edit, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +55,12 @@ export default function MembersPage() {
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   const membersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
-  const { data: members, isLoading } = useCollection<Member>(membersCollection);
+  const { data: members, isLoading, error: membersError } = useCollection<Member>(membersCollection);
+
+  // 에러 처리
+  if (membersError) {
+    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
+  }
 
   const handleDelete = async () => {
     if (!firestore || !memberToDelete) return;

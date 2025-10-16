@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import { UserProfile, Club, UserRole } from '@/types';
 
 export interface UserHookResult {
-  user: (User & UserProfile & { clubId?: string }) | null;
+  user: (User & UserProfile & { clubId?: string; _profileError?: boolean }) | null;
   isUserLoading: boolean;
 }
 
@@ -58,16 +58,29 @@ export function useUser(): UserHookResult {
             // If the user has a clubName, find their clubId
             if (userProfileData.clubName && (
                 userProfileData.role === UserRole.CLUB_OWNER || 
-                userProfileData.role === UserRole.CLUB_MANAGER ||
-                userProfileData.role === UserRole.FEDERATION_ADMIN
+                userProfileData.role === UserRole.CLUB_MANAGER
             )) {
-                const clubsRef = collection(firestore, 'clubs');
-                const q = query(clubsRef, where("name", "==", userProfileData.clubName));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const clubDoc = querySnapshot.docs[0];
-                    userProfileData.clubId = clubDoc.id;
+                try {
+                    const clubsRef = collection(firestore, 'clubs');
+                    const q = query(clubsRef, where("name", "==", userProfileData.clubName));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const clubDoc = querySnapshot.docs[0];
+                        userProfileData.clubId = clubDoc.id;
+                        console.log('✅ clubId 조회 성공:', clubDoc.id);
+                    } else {
+                        console.warn('⚠️ clubName에 해당하는 클럽을 찾을 수 없습니다:', userProfileData.clubName);
+                    }
+                } catch (error) {
+                    console.error('❌ clubId 조회 중 오류:', error);
+                    // clubId 조회 실패해도 로그인은 계속 진행
                 }
+            }
+            
+            // FEDERATION_ADMIN은 clubId가 필요 없음 (전체 클럽 접근 가능)
+            if (userProfileData.role === UserRole.FEDERATION_ADMIN || 
+                userProfileData.role === UserRole.SUPER_ADMIN) {
+                console.log('✅ 관리자 로그인:', userProfileData.role);
             }
             
             setUser({ 
@@ -77,9 +90,38 @@ export function useUser(): UserHookResult {
             } as User & UserProfile & { clubId?: string });
 
         } catch (error) {
-            console.error("Error fetching user profile:", error);
-            // Handle error, maybe sign out user
-            setUser(null);
+            console.error("❌ 사용자 프로필 조회 오류:", error);
+            
+            // Firebase Auth 세션 유효성 체크
+            try {
+              await firebaseUser.reload(); // 세션 갱신 시도
+              
+              // 세션이 유효하면 기본 프로필 제공
+              const basicProfile: UserProfile = {
+                id: firebaseUser.uid,
+                uid: firebaseUser.uid,
+                email: firebaseUser.email!,
+                displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+                photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
+                role: UserRole.MEMBER,
+                provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+                status: 'pending',
+              };
+              
+              console.warn('⚠️ 프로필 조회 실패, 기본 프로필 사용');
+              setUser({ 
+                ...firebaseUser, 
+                ...basicProfile,
+                phoneNumber: firebaseUser.phoneNumber ?? undefined,
+                _profileError: true // 프로필 에러 플래그
+              } as User & UserProfile & { clubId?: string; _profileError?: boolean });
+              
+            } catch (reloadError) {
+              // 세션도 무효하면 로그아웃
+              console.error('❌ 세션 무효, 로그아웃 처리:', reloadError);
+              await signOut(auth);
+              setUser(null);
+            }
         }
       } else {
         // No user is signed in.
