@@ -9,22 +9,27 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Building2, UserPlus, Loader2 } from 'lucide-react';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { Users, Building2, UserPlus, Loader2, Lock } from 'lucide-react';
+import { useFirestore, useUser, useCollection, useAuth } from '@/firebase';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { MemberRequest, Club } from '@/types';
+import type { MemberRequest, Club, UserProfile } from '@/types';
+import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MemberRegisterPage() {
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    passwordConfirm: '',
     phoneNumber: '',
     clubId: '',
     familyType: 'individual' as 'individual' | 'parent' | 'child',
@@ -43,11 +48,30 @@ export default function MemberRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!firestore) {
+    if (!firestore || !auth) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
         description: '잠시 후 다시 시도해주세요.',
+      });
+      return;
+    }
+
+    // 비밀번호 확인
+    if (formData.password !== formData.passwordConfirm) {
+      toast({
+        variant: 'destructive',
+        title: '비밀번호 불일치',
+        description: '비밀번호가 일치하지 않습니다.',
+      });
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: '비밀번호 오류',
+        description: '비밀번호는 최소 6자 이상이어야 합니다.',
       });
       return;
     }
@@ -66,9 +90,37 @@ export default function MemberRegisterPage() {
         return;
       }
 
-      // MemberRequest 생성 (비회원도 가능)
+      console.log('📤 일반 회원 가입 시작...');
+
+      // 1. Firebase Auth 계정 생성
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const newUser = userCredential.user;
+      console.log('✅ Auth 계정 생성 완료:', newUser.uid);
+
+      // 2. users 프로필 생성 (status: pending)
+      const userProfile: UserProfile = {
+        id: newUser.uid,
+        uid: newUser.uid,
+        email: formData.email,
+        displayName: formData.name,
+        phoneNumber: formData.phoneNumber || undefined,
+        photoURL: `https://picsum.photos/seed/${newUser.uid}/40/40`,
+        role: UserRole.MEMBER,
+        clubId: formData.clubId,
+        clubName: selectedClub.name,
+        provider: 'email',
+        status: 'pending', // 승인 대기
+      };
+      await setDoc(doc(firestore, 'users', newUser.uid), userProfile);
+      console.log('✅ users 프로필 생성 완룼 (status: pending)');
+
+      // 3. memberRegistrationRequests 생성 (참고용)
       const requestData: Omit<MemberRequest, 'id'> = {
-        userId: user?.uid || '', // 로그인 안 했으면 빈 문자열
+        userId: newUser.uid,
         name: formData.name,
         email: formData.email || undefined,
         phoneNumber: formData.phoneNumber || undefined,
@@ -81,25 +133,30 @@ export default function MemberRegisterPage() {
         status: 'pending',
         requestedAt: new Date().toISOString(),
       };
-
-      console.log('📤 회원 가입 신청 데이터:', requestData);
-
-      // Firestore에 저장 (통합된 컬렉션 사용)
-      const docRef = await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
-      console.log('✅ 회원 가입 신청 성공! Doc ID:', docRef.id);
+      await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
+      console.log('✅ memberRegistrationRequests 생성 완료');
       
       toast({
-        title: '신청 완료',
-        description: '가입 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.',
+        title: '가입 완료!',
+        description: '계정이 생성되었습니다. 클럽 오너의 승인을 기다려주세요.',
       });
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('❌ 회원 가입 신청 실패:', error);
-      console.error('에러 상세:', error instanceof Error ? error.message : error);
+      
+      // 승인 대기 페이지로 이동
+      router.push('/pending-approval');
+    } catch (error: any) {
+      console.error('❌ 가입 실패:', error);
+      
+      let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = '이미 사용 중인 이메일입니다.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = '비밀번호가 너무 약합니다.';
+      }
+      
       toast({
         variant: 'destructive',
-        title: '오류 발생',
-        description: '가입 신청에 실패했습니다. 다시 시도해주세요.',
+        title: '가입 실패',
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
@@ -227,6 +284,37 @@ export default function MemberRegisterPage() {
               />
             </div>
 
+            {/* 비밀번호 */}
+            <div className="space-y-2">
+              <Label htmlFor="password">
+                <Lock className="h-4 w-4 inline mr-2" />
+                비밀번호 *
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="최소 6자 이상"
+                required
+                minLength={6}
+              />
+            </div>
+
+            {/* 비밀번호 확인 */}
+            <div className="space-y-2">
+              <Label htmlFor="passwordConfirm">비밀번호 확인 *</Label>
+              <Input
+                id="passwordConfirm"
+                type="password"
+                value={formData.passwordConfirm}
+                onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
+                placeholder="비밀번호 재입력"
+                required
+                minLength={6}
+              />
+            </div>
+
             {/* 생년월일 */}
             <div className="space-y-2">
               <Label htmlFor="birthDate">생년월일</Label>
@@ -252,8 +340,8 @@ export default function MemberRegisterPage() {
             {/* 안내 메시지 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>안내:</strong> 가입 신청 후 클럽 오너의 승인이 필요합니다. 
-                승인이 완료되면 이메일로 알림을 받게 됩니다.
+                <strong>안내:</strong> 가입 즉시 계정이 생성되며, 클럽 오너의 승인 후 모든 기능을 이용할 수 있습니다.
+                승인 전에는 "승인 대기중" 페이지가 표시됩니다.
               </p>
             </div>
 
@@ -269,10 +357,17 @@ export default function MemberRegisterPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !formData.name || !formData.email || !formData.clubId}
+                disabled={
+                  isSubmitting || 
+                  !formData.name || 
+                  !formData.email || 
+                  !formData.password ||
+                  !formData.passwordConfirm ||
+                  !formData.clubId
+                }
                 className="flex-1"
               >
-                {isSubmitting ? '신청 중...' : '가입 신청'}
+                {isSubmitting ? '가입 중...' : '가입하기'}
               </Button>
             </div>
           </form>

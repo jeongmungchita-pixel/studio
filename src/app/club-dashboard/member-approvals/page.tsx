@@ -199,7 +199,7 @@ export default function MemberApprovalsPage() {
     try {
       console.log('👉 일반 회원 승인 시작:', request);
 
-      // members 컬렉션에 생성
+      // 1. members 컬렉션에 생성
       await addDoc(collection(firestore, 'members'), {
         name: request.name,
         dateOfBirth: request.dateOfBirth,
@@ -215,10 +215,21 @@ export default function MemberApprovalsPage() {
         approvedBy: user.uid,
         approvedAt: new Date().toISOString(),
       });
-
       console.log('✅ members 컬렉션 생성 완료');
 
-      // 요청 상태 업데이트
+      // 2. users 프로필 승인 (status: approved)
+      if (request.userId && request.userId.trim() !== '') {
+        await updateDoc(doc(firestore, 'users', request.userId), {
+          status: 'approved',
+          approvedBy: user.uid,
+          approvedAt: new Date().toISOString(),
+        });
+        console.log('✅ users 프로필 승인 완료');
+      } else {
+        console.log('⚠️ userId 없음 - 구버전 요청');
+      }
+
+      // 3. memberRegistrationRequests 상태 업데이트
       if (request.id) {
         await updateDoc(doc(firestore, 'memberRegistrationRequests', request.id), {
           status: 'approved',
