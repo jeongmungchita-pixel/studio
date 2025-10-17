@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Building2, MapPin, Phone, Mail, Loader2, Shield, Lock } from 'lucide-react';
+import { Building2, Shield, Lock } from 'lucide-react';
 import { useFirestore, useUser, useAuth } from '@/firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import type { ClubOwnerRequest, UserProfile } from '@/types';
+import { ClubOwnerRequest, UserProfile } from '@/types';
 import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -73,7 +73,6 @@ export default function ClubOwnerRegisterPage() {
     setIsSubmitting(true);
 
     try {
-      console.log('📤 클럽 오너 가입 시작...');
 
       // 1. Firebase Auth 계정 생성
       const userCredential = await createUserWithEmailAndPassword(
@@ -82,7 +81,6 @@ export default function ClubOwnerRegisterPage() {
         formData.password
       );
       const newUser = userCredential.user;
-      console.log('✅ Auth 계정 생성 완료:', newUser.uid);
 
       // 2. users 프로필 생성 (status: pending)
       const userProfile: UserProfile = {
@@ -98,7 +96,6 @@ export default function ClubOwnerRegisterPage() {
         status: 'pending', // 승인 대기
       };
       await setDoc(doc(firestore, 'users', newUser.uid), userProfile);
-      console.log('✅ users 프로필 생성 완료 (status: pending)');
 
       // 3. clubOwnerRequests 생성 (참고용)
       const requestData: Omit<ClubOwnerRequest, 'id'> = {
@@ -115,7 +112,6 @@ export default function ClubOwnerRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
       await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
-      console.log('✅ clubOwnerRequests 생성 완료');
       
       toast({
         title: '가입 완료!',
@@ -124,8 +120,7 @@ export default function ClubOwnerRegisterPage() {
       
       // 승인 대기 페이지로 이동 (완전한 페이지 리로드)
       window.location.href = '/pending-approval';
-    } catch (error: any) {
-      console.error('❌ 가입 실패:', error);
+    } catch (error: unknown) {
       
       let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
       if (error.code === 'auth/email-already-in-use') {

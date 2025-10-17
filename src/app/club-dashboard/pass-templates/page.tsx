@@ -3,34 +3,18 @@ import { useState, useEffect } from 'react';
 export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, doc, writeBatch, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { PassTemplate } from '@/types';
+import { PassTemplate } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Edit, Trash2, User, Baby, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -128,19 +112,13 @@ export default function PassTemplatesPage() {
   };
 
   const onSubmit = async (values: TemplateFormValues) => {
-    console.log('✅ Form submitted with values:', values);
-    console.log('🔍 User:', user);
-    console.log('🔍 Firestore:', firestore);
-    console.log('🔍 ClubId:', user?.clubId);
     
     if (!firestore) {
-      console.error('❌ Firestore가 없습니다!');
       toast({ variant: 'destructive', title: '오류', description: 'Firestore가 초기화되지 않았습니다.' });
       return;
     }
     
     if (!user?.clubId) {
-      console.error('❌ ClubId가 없습니다!');
       toast({ variant: 'destructive', title: '오류', description: '클럽 정보를 찾을 수 없습니다.' });
       return;
     }
@@ -159,23 +137,17 @@ export default function PassTemplatesPage() {
       ...(values.attendableSessions !== undefined && { attendableSessions: values.attendableSessions }),
     };
 
-    console.log('💾 Saving template data:', templateData);
 
     try {
       if (editingTemplate) {
         // Update existing template
-        console.log('📝 수정 모드:', editingTemplate.id);
         const templateRef = doc(firestore, 'pass_templates', editingTemplate.id);
         await setDoc(templateRef, templateData, { merge: true });
-        console.log('✅ 수정 성공!');
         toast({ title: '템플릿 수정 완료', description: `'${values.name}' 이용권 정보가 업데이트되었습니다.` });
       } else {
         // Create new template
-        console.log('🆕 생성 모드');
         const newTemplateRef = doc(collection(firestore, 'pass_templates'));
-        console.log('📄 새 문서 ID:', newTemplateRef.id);
         await setDoc(newTemplateRef, { ...templateData, id: newTemplateRef.id });
-        console.log('✅ 생성 성공!');
         toast({ title: '템플릿 생성 완료', description: `'${values.name}' 이용권이 생성되었습니다.` });
       }
       setIsDialogOpen(false);
@@ -189,11 +161,7 @@ export default function PassTemplatesPage() {
         totalSessions: '' as any,
         attendableSessions: '' as any,
       });
-    } catch (error: any) {
-      console.error('❌ 저장 실패:', error);
-      console.error('❌ 에러 코드:', error.code);
-      console.error('❌ 에러 메시지:', error.message);
-      console.error('❌ 전체 에러:', error);
+    } catch (error: unknown) {
       toast({ 
         variant: 'destructive', 
         title: '저장 실패', 
@@ -210,7 +178,6 @@ export default function PassTemplatesPage() {
       await deleteDoc(doc(firestore, 'pass_templates', templateId));
       toast({ title: '삭제 완료', description: '이용권 템플릿이 삭제되었습니다.' });
     } catch (error) {
-      console.error('Error deleting template:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '삭제 중 오류가 발생했습니다.' });
     }
   };
@@ -445,7 +412,12 @@ export default function PassTemplatesPage() {
                   <DialogClose asChild>
                     <Button type="button" variant="outline">취소</Button>
                   </DialogClose>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    onClick={() => {
+                    }}
+                  >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     저장
                   </Button>

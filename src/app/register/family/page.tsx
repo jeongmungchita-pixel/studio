@@ -17,12 +17,9 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Users, Plus, Trash2, PenTool, CheckCircle2, AlertCircle,
-  ChevronRight, ChevronLeft, Loader2, Info, User, Baby
-} from 'lucide-react';
+import { Users, Plus, Trash2, PenTool, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Loader2, Info, User, Baby } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
-import type { Club, FamilyRegistrationRequest } from '@/types';
+import { Club, FamilyRegistrationRequest } from '@/types';
 
 interface ParentData {
   name: string;
@@ -82,7 +79,7 @@ export default function FamilyRegisterPage() {
   };
 
   const removeParent = (index: number) => setParents(parents.filter((_, i) => i !== index));
-  const updateParent = (index: number, field: keyof ParentData, value: any) => {
+  const updateParent = (index: number, field: keyof ParentData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
     const updated = [...parents];
     updated[index] = { ...updated[index], [field]: value };
     setParents(updated);
@@ -93,7 +90,7 @@ export default function FamilyRegisterPage() {
   };
 
   const removeChild = (index: number) => setChildren(children.filter((_, i) => i !== index));
-  const updateChild = (index: number, field: keyof ChildData, value: any) => {
+  const updateChild = (index: number, field: keyof ChildData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
     const updated = [...children];
     updated[index] = { ...updated[index], [field]: value };
     setChildren(updated);
@@ -225,7 +222,6 @@ export default function FamilyRegisterPage() {
       
       router.push('/register/success');
     } catch (error) {
-      console.error('가입 신청 실패:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '가입 신청에 실패했습니다. 다시 시도해주세요.' });
     } finally {
       setIsSubmitting(false);
@@ -531,7 +527,7 @@ export default function FamilyRegisterPage() {
                           <Label>관계 *</Label>
                           <Select 
                             value={externalGuardian.relation}
-                            onValueChange={(val: any) => setExternalGuardian({...externalGuardian, relation: val})}
+                            onValueChange={(val: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => setExternalGuardian({...externalGuardian, relation: val})}
                           >
                             <SelectTrigger>
                               <SelectValue />

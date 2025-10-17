@@ -1,0 +1,4477 @@
+{
+  "totalButtons": 329,
+  "connectedButtons": 0,
+  "brokenLinks": [],
+  "validRoutes": [
+    "/committees/new",
+    "/committees/${committee.id}",
+    "/committees/new",
+    "/members/${member.id}",
+    "/admin/clubs",
+    "/admin/members",
+    "/admin/competitions",
+    "/admin/committees",
+    "/admin/clubs",
+    "/admin/members",
+    "/admin/competitions",
+    "/admin/committees",
+    "/admin/judges",
+    "/admin/members",
+    "/members/${member.id}",
+    "/admin/clubs",
+    "/clubs/${club.id}",
+    "/admin/competitions",
+    "/admin/competitions",
+    "/club-dashboard/classes/${gymClass.id}",
+    "/committees",
+    "/committees",
+    "/committees",
+    "/committees",
+    "/committees/new",
+    "/committees/${committee.id}",
+    "/committees/new",
+    "/login",
+    "/login",
+    "/my-profile/add-child",
+    "/members/${child.id}",
+    "/my-profile/add-child",
+    "/",
+    "/register/adult",
+    "/register/family",
+    "/",
+    "/login",
+    "/super-admin",
+    "/system/super-admin-approvals",
+    "/my-profile",
+    "/club-dashboard/classes",
+    "/login",
+    "/pending-approval",
+    "/super-admin",
+    "/admin",
+    "/club-dashboard",
+    "/my-profile",
+    "/dashboard",
+    "/login",
+    "/pending-approval",
+    "/super-admin",
+    "/club-dashboard",
+    "/admin",
+    "/my-profile",
+    "/my-profile",
+    "/pending-approval",
+    "/super-admin",
+    "/club-dashboard",
+    "/admin",
+    "/my-profile",
+    "/my-profile",
+    "/pending-approval",
+    "/super-admin",
+    "/club-dashboard",
+    "/admin",
+    "/my-profile",
+    "/register",
+    "/register/club-owner",
+    "/dashboard",
+    "/dashboard",
+    "/my-profile",
+    "/competitions",
+    "/committees",
+    "/pending-approval",
+    "/pending-approval",
+    "/login",
+    "/pending-approval",
+    "/super-admin",
+    "/admin",
+    "/club-dashboard",
+    "/my-profile",
+    "/dashboard",
+    "/login",
+    "/pending-approval",
+    "/super-admin",
+    "/club-dashboard",
+    "/admin",
+    "/my-profile",
+    "/my-profile",
+    "/pending-approval",
+    "/super-admin",
+    "/club-dashboard",
+    "/admin",
+    "/my-profile",
+    "/my-profile",
+    "/pending-approval",
+    "/super-admin",
+    "/club-dashboard",
+    "/admin",
+    "/my-profile",
+    "/pending-approval",
+    "/pending-approval"
+  ],
+  "buttonsByType": {
+    "onClick": [
+      {
+        "file": "src/app/admin/committees/page.tsx",
+        "action": "router.push('/committees/new')",
+        "line": 69
+      },
+      {
+        "file": "src/app/admin/committees/page.tsx",
+        "action": "router.push(`/committees/${committee.id",
+        "line": 82
+      },
+      {
+        "file": "src/app/admin/committees/page.tsx",
+        "action": "router.push('/committees/new')",
+        "line": 129
+      },
+      {
+        "file": "src/app/admin/competitions/[competitionId]/scoring/page.tsx",
+        "action": "{\n                                const final = calculateFinalScore(registration.id);\n                                toast({\n                                  title: '점수 계산',\n                                  description: `최종 점수: ${final.toFixed(2)",
+        "line": 323
+      },
+      {
+        "file": "src/app/admin/competitions/[competitionId]/scoring/page.tsx",
+        "action": "handleSaveScore(registration)",
+        "line": 336
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "{\n          setEditingCompetition(null);\n          form.reset();\n          setSelectedEvents([]);\n          setIsDialogOpen(true);",
+        "line": 303
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleStatusChange(competition.id, 'registration_open')",
+        "line": 353
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleStatusChange(competition.id, 'registration_closed')",
+        "line": 363
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleStatusChange(competition.id, 'in_progress')",
+        "line": 371
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleStatusChange(competition.id, 'completed')",
+        "line": 392
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "setSelectedCompetition(competition)",
+        "line": 402
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "{\n                    setJudgeCompetition(competition);\n                    setJudgeDialogOpen(true);",
+        "line": 410
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleEdit(competition)",
+        "line": 421
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleDelete(competition.id)",
+        "line": 428
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "setIsDialogOpen(true)",
+        "line": 442
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "{\n                          setSelectedEvents(prev =>\n                            prev.includes(event.id)\n                              ? prev.filter(id => id !== event.id)\n                              : [...prev, event.id]\n                          );",
+        "line": 561
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "{\n                          setSelectedEvents(prev =>\n                            prev.includes(event.id)\n                              ? prev.filter(id => id !== event.id)\n                              : [...prev, event.id]\n                          );",
+        "line": 586
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "setIsDialogOpen(false)",
+        "line": 603
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleApproveRegistration(reg.id)",
+        "line": 652
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "handleRejectRegistration(reg.id)",
+        "line": 659
+      },
+      {
+        "file": "src/app/admin/competitions/page.tsx",
+        "action": "{\n              setJudgeDialogOpen(false);\n              setJudgeAssignments({",
+        "line": 750
+      },
+      {
+        "file": "src/app/admin/judges/page.tsx",
+        "action": "setDialogOpen(true)",
+        "line": 188
+      },
+      {
+        "file": "src/app/admin/judges/page.tsx",
+        "action": "handleEdit(judge)",
+        "line": 246
+      },
+      {
+        "file": "src/app/admin/judges/page.tsx",
+        "action": "handleDelete(judge.id)",
+        "line": 252
+      },
+      {
+        "file": "src/app/admin/judges/page.tsx",
+        "action": "toggleSpecialization(code)",
+        "line": 374
+      },
+      {
+        "file": "src/app/admin/members/page.tsx",
+        "action": "router.push(`/members/${member.id",
+        "line": 185
+      },
+      {
+        "file": "src/app/admin/members/page.tsx",
+        "action": "handleStatusChange(member, 'active')",
+        "line": 192
+      },
+      {
+        "file": "src/app/admin/members/page.tsx",
+        "action": "handleStatusChange(member, 'inactive')",
+        "line": 197
+      },
+      {
+        "file": "src/app/admin/members/page.tsx",
+        "action": "{\n                            setMemberToDelete(member);\n                            setDeleteDialogOpen(true);",
+        "line": 204
+      },
+      {
+        "file": "src/app/admin/members/page.tsx",
+        "action": "setMemberToDelete(null)",
+        "line": 234
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/clubs')",
+        "line": 178
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/members')",
+        "line": 191
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/competitions')",
+        "line": 204
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/committees')",
+        "line": 217
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/clubs')",
+        "line": 241
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/members')",
+        "line": 253
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/competitions')",
+        "line": 265
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/committees')",
+        "line": 277
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/judges')",
+        "line": 289
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/members')",
+        "line": 306
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push(`/members/${member.id",
+        "line": 317
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/clubs')",
+        "line": 346
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push(`/clubs/${club.id",
+        "line": 357
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/competitions')",
+        "line": 388
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "action": "router.push('/admin/competitions')",
+        "line": 398
+      },
+      {
+        "file": "src/app/admin/users/page.tsx",
+        "action": "handleApprove(u)",
+        "line": 199
+      },
+      {
+        "file": "src/app/admin/users/page.tsx",
+        "action": "handleDelete(u)",
+        "line": 205
+      },
+      {
+        "file": "src/app/admin/users/page.tsx",
+        "action": "handleDelete(u)",
+        "line": 214
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "togglePin(announcement)",
+        "line": 204
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "handleEdit(announcement)",
+        "line": 207
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "handleDelete(announcement.id)",
+        "line": 210
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "togglePin(announcement)",
+        "line": 251
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "handleEdit(announcement)",
+        "line": 254
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "handleDelete(announcement.id)",
+        "line": 257
+      },
+      {
+        "file": "src/app/club-dashboard/announcements/page.tsx",
+        "action": "setIsDialogOpen(false)",
+        "line": 360
+      },
+      {
+        "file": "src/app/club-dashboard/approvals/page.tsx",
+        "action": "handleRejectRenewal(request.id, '클럽 사정으로 거부')",
+        "line": 161
+      },
+      {
+        "file": "src/app/club-dashboard/approvals/page.tsx",
+        "action": "handleApproveRenewal(request)",
+        "line": 167
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "setViewMode('grid')",
+        "line": 175
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "setViewMode('calendar')",
+        "line": 183
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "handleClassClick(classItem)",
+        "line": 233
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "handleClassClick(classItem)",
+        "line": 259
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "handleAttendanceToggle(member.id, 'present')",
+        "line": 357
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "handleAttendanceToggle(member.id, 'absent')",
+        "line": 367
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "handleAttendanceToggle(member.id, 'excused')",
+        "line": 377
+      },
+      {
+        "file": "src/app/club-dashboard/class-status/page.tsx",
+        "action": "{\n                setSelectedClass(null);\n                setAttendanceStates({",
+        "line": 414
+      },
+      {
+        "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+        "action": "router.back()",
+        "line": 166
+      },
+      {
+        "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+        "action": "setIsAddMemberDialogOpen(true)",
+        "line": 199
+      },
+      {
+        "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+        "action": "handleRemoveMember(member.id)",
+        "line": 249
+      },
+      {
+        "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+        "action": "canJoin && toggleMemberSelection(member.id)",
+        "line": 314
+      },
+      {
+        "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+        "action": "{\n                setIsAddMemberDialogOpen(false);\n                setSelectedMemberIds([]);",
+        "line": 347
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "{\n                console.log('🧪 테스트 버튼 클릭됨!');\n                alert('테스트 버튼이 작동합니다!');",
+        "line": 327
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "{\n                console.log('🧪 폼 상태 테스트');\n                console.log('Form:', form);\n                console.log('Form values:', form.getValues());\n                console.log('Form errors:', form.formState.errors);\n                console.log('User:', user);\n                console.log('Firestore:', firestore);",
+        "line": 337
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "{\n                console.log('🧪 다이얼로그 열기 테스트');\n                setIsDialogOpen(true);",
+        "line": 351
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "handleOpenDialog(null)",
+        "line": 371
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "setCategoryFilter('all')",
+        "line": 385
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "setCategoryFilter('adult')",
+        "line": 393
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "setCategoryFilter('child')",
+        "line": 401
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "setCategoryFilter('general')",
+        "line": 409
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "router.push(`/club-dashboard/classes/${gymClass.id",
+        "line": 465
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "handleOpenDialog(gymClass)",
+        "line": 470
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "action": "setDeletingClass(gymClass)",
+        "line": 473
+      },
+      {
+        "file": "src/app/club-dashboard/coaches/page.tsx",
+        "action": "setIsDialogOpen(false)",
+        "line": 185
+      },
+      {
+        "file": "src/app/club-dashboard/coaches/page.tsx",
+        "action": "handleDelete(coach.uid)",
+        "line": 234
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "{\n          setEditingEvent(null);\n          form.reset();\n          setOptions([]);\n          setIsDialogOpen(true);",
+        "line": 200
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "setSelectedEvent(event)",
+        "line": 270
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "handleEdit(event)",
+        "line": 278
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "handleDelete(event.id)",
+        "line": 285
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "setIsDialogOpen(true)",
+        "line": 299
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "removeOption(index)",
+        "line": 495
+      },
+      {
+        "file": "src/app/club-dashboard/events/page.tsx",
+        "action": "setIsDialogOpen(false)",
+        "line": 511
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "setIsIncomeDialogOpen(true)",
+        "line": 351
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "{\n                            setSelectedIncome(income);\n                            setIsSplitDialogOpen(true);",
+        "line": 393
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "handleCancelSplit(income)",
+        "line": 405
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "handleDeleteIncome(income.id)",
+        "line": 413
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "setIsExpenseDialogOpen(true)",
+        "line": 428
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "handleDeleteExpense(expense.id)",
+        "line": 451
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "setIsIncomeDialogOpen(false)",
+        "line": 560
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "setIsExpenseDialogOpen(false)",
+        "line": 615
+      },
+      {
+        "file": "src/app/club-dashboard/finance/page.tsx",
+        "action": "setIsSplitDialogOpen(false)",
+        "line": 654
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/[testId]/evaluate/page.tsx",
+        "action": "handleEvaluate(reg)",
+        "line": 218
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/[testId]/evaluate/page.tsx",
+        "action": "setSelectedReg(null)",
+        "line": 310
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "{\n          setEditingTest(null);\n          form.reset();\n          setIsDialogOpen(true);",
+        "line": 193
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "handleStatusChange(test.id, 'registration_open')",
+        "line": 245
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "handleStatusChange(test.id, 'registration_closed')",
+        "line": 255
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "handleStatusChange(test.id, 'in_progress')",
+        "line": 263
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "handleStatusChange(test.id, 'completed')",
+        "line": 279
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "setSelectedTest(test)",
+        "line": 289
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "handleEdit(test)",
+        "line": 297
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "handleDelete(test.id)",
+        "line": 304
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "setIsDialogOpen(true)",
+        "line": 318
+      },
+      {
+        "file": "src/app/club-dashboard/level-tests/page.tsx",
+        "action": "setIsDialogOpen(false)",
+        "line": 435
+      },
+      {
+        "file": "src/app/club-dashboard/media/page.tsx",
+        "action": "{\n                  setSelectedMember(member);\n                  stopCamera();",
+        "line": 269
+      },
+      {
+        "file": "src/app/club-dashboard/media/page.tsx",
+        "action": "handleDelete(item.id)",
+        "line": 405
+      },
+      {
+        "file": "src/app/club-dashboard/member-approvals/page.tsx",
+        "action": "handleReject(request.id, 'member')",
+        "line": 419
+      },
+      {
+        "file": "src/app/club-dashboard/member-approvals/page.tsx",
+        "action": "handleApproveMember(request)",
+        "line": 427
+      },
+      {
+        "file": "src/app/club-dashboard/member-approvals/page.tsx",
+        "action": "handleReject(request.id, 'adult')",
+        "line": 483
+      },
+      {
+        "file": "src/app/club-dashboard/member-approvals/page.tsx",
+        "action": "handleApproveAdult(request)",
+        "line": 491
+      },
+      {
+        "file": "src/app/club-dashboard/member-approvals/page.tsx",
+        "action": "handleReject(request.id, 'family')",
+        "line": 575
+      },
+      {
+        "file": "src/app/club-dashboard/member-approvals/page.tsx",
+        "action": "handleApproveFamily(request)",
+        "line": 583
+      },
+      {
+        "file": "src/app/club-dashboard/messages/page.tsx",
+        "action": "setMessageType('sms')",
+        "line": 196
+      },
+      {
+        "file": "src/app/club-dashboard/messages/page.tsx",
+        "action": "setMessageType('lms')",
+        "line": 202
+      },
+      {
+        "file": "src/app/club-dashboard/messages/page.tsx",
+        "action": "setMessageType('kakao')",
+        "line": 208
+      },
+      {
+        "file": "src/app/club-dashboard/messages/page.tsx",
+        "action": "handleToggleMember(member.id)",
+        "line": 258
+      },
+      {
+        "file": "src/app/club-dashboard/page.tsx",
+        "action": "handleStatusChange(member.id, 'inactive')",
+        "line": 232
+      },
+      {
+        "file": "src/app/club-dashboard/page.tsx",
+        "action": "handleStatusChange(member.id, 'active')",
+        "line": 235
+      },
+      {
+        "file": "src/app/club-dashboard/page.tsx",
+        "action": "handleApproval(member.id, true)",
+        "line": 239
+      },
+      {
+        "file": "src/app/club-dashboard/page.tsx",
+        "action": "handleApproval(member.id, false)",
+        "line": 240
+      },
+      {
+        "file": "src/app/club-dashboard/pass-templates/page.tsx",
+        "action": "handleOpenDialog(null)",
+        "line": 226
+      },
+      {
+        "file": "src/app/club-dashboard/pass-templates/page.tsx",
+        "action": "handleOpenDialog(template)",
+        "line": 277
+      },
+      {
+        "file": "src/app/club-dashboard/pass-templates/page.tsx",
+        "action": "handleDelete(template.id)",
+        "line": 280
+      },
+      {
+        "file": "src/app/club-dashboard/pass-templates/page.tsx",
+        "action": "{\n                      console.log('🔘 이용권 저장 버튼 클릭됨');\n                      console.log('📊 폼 상태:', {\n                        isValid: form.formState.isValid,\n                        errors: form.formState.errors,\n                        values: form.getValues(),\n                        isSubmitting: isSubmitting",
+        "line": 451
+      },
+      {
+        "file": "src/app/club-dashboard/passes/page.tsx",
+        "action": "setSelectedMember(member)",
+        "line": 184
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "{ setTransactionType('income'); setTransactionCategory('other_income'); setIsAddTransactionOpen(true);",
+        "line": 408
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "{ setTransactionType('expense'); setTransactionCategory('other_expense'); setIsAddTransactionOpen(true);",
+        "line": 412
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "handleVerify(payment, true)",
+        "line": 595
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "handleVerify(payment, false)",
+        "line": 603
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "{\n                            setSelectedTransaction(transaction);\n                            setIsSplitDialogOpen(true);",
+        "line": 711
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "handleUndoSplit(transaction)",
+        "line": 724
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "setIsAddTransactionOpen(false)",
+        "line": 806
+      },
+      {
+        "file": "src/app/club-dashboard/payments/page.tsx",
+        "action": "setIsSplitDialogOpen(false)",
+        "line": 854
+      },
+      {
+        "file": "src/app/committees/[id]/page.tsx",
+        "action": "router.push('/committees')",
+        "line": 96
+      },
+      {
+        "file": "src/app/committees/[id]/page.tsx",
+        "action": "router.push('/committees')",
+        "line": 114
+      },
+      {
+        "file": "src/app/committees/new/page.tsx",
+        "action": "router.push('/committees')",
+        "line": 102
+      },
+      {
+        "file": "src/app/committees/new/page.tsx",
+        "action": "router.push('/committees')",
+        "line": 175
+      },
+      {
+        "file": "src/app/committees/page.tsx",
+        "action": "router.push('/committees/new')",
+        "line": 63
+      },
+      {
+        "file": "src/app/committees/page.tsx",
+        "action": "router.push(`/committees/${committee.id",
+        "line": 76
+      },
+      {
+        "file": "src/app/committees/page.tsx",
+        "action": "router.push('/committees/new')",
+        "line": 123
+      },
+      {
+        "file": "src/app/competitions/page.tsx",
+        "action": "handleApply(competition)",
+        "line": 251
+      },
+      {
+        "file": "src/app/competitions/page.tsx",
+        "action": "{\n                      setSelectedEvents(prev =>\n                        prev.includes(event.id)\n                          ? prev.filter(id => id !== event.id)\n                          : [...prev, event.id]\n                      );",
+        "line": 298
+      },
+      {
+        "file": "src/app/competitions/page.tsx",
+        "action": "setSelectedCompetition(null)",
+        "line": 335
+      },
+      {
+        "file": "src/app/error.tsx",
+        "action": "(window.location.href = '/dashboard')",
+        "line": 55
+      },
+      {
+        "file": "src/app/events/page.tsx",
+        "action": "setSelectedEvent(event)",
+        "line": 247
+      },
+      {
+        "file": "src/app/events/page.tsx",
+        "action": "setSelectedEvent(null)",
+        "line": 330
+      },
+      {
+        "file": "src/app/invite/[token]/page.tsx",
+        "action": "router.push('/login')",
+        "line": 123
+      },
+      {
+        "file": "src/app/invite/[token]/page.tsx",
+        "action": "router.push('/login')",
+        "line": 206
+      },
+      {
+        "file": "src/app/invite/accept/[token]/page.tsx",
+        "action": "setMode('signup')",
+        "line": 314
+      },
+      {
+        "file": "src/app/invite/accept/[token]/page.tsx",
+        "action": "setMode('login')",
+        "line": 324
+      },
+      {
+        "file": "src/app/level-tests/page.tsx",
+        "action": "handleApply(test)",
+        "line": 244
+      },
+      {
+        "file": "src/app/level-tests/page.tsx",
+        "action": "setSelectedLevel(level.name)",
+        "line": 284
+      },
+      {
+        "file": "src/app/level-tests/page.tsx",
+        "action": "setSelectedTest(null)",
+        "line": 304
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "action": "{\n                // 승인 대기 중이면 pending 페이지로\n                if (user.status === 'pending') {\n                  window.location.href = '/pending-approval';\n                  return;",
+        "line": 202
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "profilePhotoInputRef.current?.click()",
+        "line": 420
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "setIsRenewalDialogOpen(true)",
+        "line": 557
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "handleEditAttendance(att)",
+        "line": 626
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "handleDeleteAttendance(att.id)",
+        "line": 631
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "{\n                                        const element = document.getElementById('past-passes');\n                                        element?.scrollIntoView({ behavior: 'smooth'",
+        "line": 647
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "handleDeleteMedia(item.id)",
+        "line": 762
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "setEditingAttendance(null)",
+        "line": 854
+      },
+      {
+        "file": "src/app/members/[id]/member-profile-client.tsx",
+        "action": "handleRequestRenewal(template)",
+        "line": 885
+      },
+      {
+        "file": "src/app/my-profile/add-child/page.tsx",
+        "action": "removeChild(index)",
+        "line": 159
+      },
+      {
+        "file": "src/app/my-profile/add-child/page.tsx",
+        "action": "router.back()",
+        "line": 234
+      },
+      {
+        "file": "src/app/my-profile/add-family/page.tsx",
+        "action": "router.back()",
+        "line": 202
+      },
+      {
+        "file": "src/app/my-profile/add-family-member/page.tsx",
+        "action": "removeMember(index)",
+        "line": 246
+      },
+      {
+        "file": "src/app/my-profile/add-family-member/page.tsx",
+        "action": "removePhoto(index)",
+        "line": 269
+      },
+      {
+        "file": "src/app/my-profile/add-family-member/page.tsx",
+        "action": "router.back()",
+        "line": 386
+      },
+      {
+        "file": "src/app/my-profile/family/page.tsx",
+        "action": "router.push('/my-profile/add-child')",
+        "line": 65
+      },
+      {
+        "file": "src/app/my-profile/family/page.tsx",
+        "action": "router.push(`/members/${child.id",
+        "line": 153
+      },
+      {
+        "file": "src/app/my-profile/family/page.tsx",
+        "action": "router.push('/my-profile/add-child')",
+        "line": 172
+      },
+      {
+        "file": "src/app/my-profile/page.tsx",
+        "action": "openModal(member)",
+        "line": 207
+      },
+      {
+        "file": "src/app/my-profile/page.tsx",
+        "action": "setSelectedTemplate(template)",
+        "line": 242
+      },
+      {
+        "file": "src/app/not-found.tsx",
+        "action": "window.history.back()",
+        "line": 31
+      },
+      {
+        "file": "src/app/pending-approval/page.tsx",
+        "action": "router.push('/')",
+        "line": 107
+      },
+      {
+        "file": "src/app/profile-setup/page.tsx",
+        "action": "removeAdult(index)",
+        "line": 259
+      },
+      {
+        "file": "src/app/profile-setup/page.tsx",
+        "action": "adultFileInputRefs.current[index]?.click()",
+        "line": 350
+      },
+      {
+        "file": "src/app/profile-setup/page.tsx",
+        "action": "appendAdult({ name: '', dateOfBirth: '', gender: 'male'",
+        "line": 399
+      },
+      {
+        "file": "src/app/profile-setup/page.tsx",
+        "action": "removeChild(index)",
+        "line": 427
+      },
+      {
+        "file": "src/app/profile-setup/page.tsx",
+        "action": "childFileInputRefs.current[index]?.click()",
+        "line": 518
+      },
+      {
+        "file": "src/app/profile-setup/page.tsx",
+        "action": "appendChild({ name: '', dateOfBirth: '', gender: 'male'",
+        "line": 566
+      },
+      {
+        "file": "src/app/register/club-owner/page.tsx",
+        "action": "router.back()",
+        "line": 316
+      },
+      {
+        "file": "src/app/register/family/page.tsx",
+        "action": "removeParent(index)",
+        "line": 325
+      },
+      {
+        "file": "src/app/register/family/page.tsx",
+        "action": "removeChild(index)",
+        "line": 421
+      },
+      {
+        "file": "src/app/register/member/page.tsx",
+        "action": "router.back()",
+        "line": 353
+      },
+      {
+        "file": "src/app/register/page.tsx",
+        "action": "router.push('/register/adult')",
+        "line": 28
+      },
+      {
+        "file": "src/app/register/page.tsx",
+        "action": "router.push('/register/family')",
+        "line": 64
+      },
+      {
+        "file": "src/app/register/success/page.tsx",
+        "action": "router.push('/')",
+        "line": 36
+      },
+      {
+        "file": "src/app/register/super-admin/page.tsx",
+        "action": "router.back()",
+        "line": 225
+      },
+      {
+        "file": "src/app/setup/initial-admin/page.tsx",
+        "action": "router.push('/login')",
+        "line": 152
+      },
+      {
+        "file": "src/app/super-admin/invites/page.tsx",
+        "action": "router.push('/super-admin')",
+        "line": 222
+      },
+      {
+        "file": "src/app/super-admin/invites/page.tsx",
+        "action": "copyInviteLink(invite.inviteToken)",
+        "line": 299
+      },
+      {
+        "file": "src/app/super-admin/invites/page.tsx",
+        "action": "handleCancelInvite(invite.id)",
+        "line": 306
+      },
+      {
+        "file": "src/app/super-admin/invites/page.tsx",
+        "action": "handleDeleteInvite(invite.id)",
+        "line": 315
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "action": "setResetDialogOpen(true)",
+        "line": 354
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "action": "handleApproveClubOwner(request)",
+        "line": 522
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "action": "{\n                              setSelectedRequestId(request.id);\n                              setRejectDialogOpen(true);",
+        "line": 530
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "action": "router.push('/system/super-admin-approvals')",
+        "line": 632
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "action": "setRejectDialogOpen(false)",
+        "line": 657
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "action": "{\n                setResetDialogOpen(false);\n                setConfirmText('');",
+        "line": 705
+      },
+      {
+        "file": "src/components/approval-actions.tsx",
+        "action": "setShowRejectDialog(true)",
+        "line": 77
+      },
+      {
+        "file": "src/components/approval-actions.tsx",
+        "action": "setRejectionReason('')",
+        "line": 104
+      },
+      {
+        "file": "src/components/debug/firebase-debug.tsx",
+        "action": "setIsVisible(false)",
+        "line": 30
+      },
+      {
+        "file": "src/components/debug/firebase-debug.tsx",
+        "action": "{\n            console.log('🔍 Firebase Debug Info:');\n            console.log('Firestore:', firestore);\n            console.log('Auth:', auth);\n            console.log('User:', user);\n            console.log('User Loading:', isUserLoading);",
+        "line": 88
+      },
+      {
+        "file": "src/components/layout/global-search.tsx",
+        "action": "setOpen(true)",
+        "line": 84
+      },
+      {
+        "file": "src/components/layout/modern-layout.tsx",
+        "action": "router.push('/my-profile')",
+        "line": 167
+      },
+      {
+        "file": "src/components/layout/modern-nav.tsx",
+        "action": "handleNavigate(section.href)",
+        "line": 126
+      },
+      {
+        "file": "src/components/layout/modern-nav.tsx",
+        "action": "handleNavigate(subItem.href)",
+        "line": 148
+      },
+      {
+        "file": "src/components/layout/modern-nav.tsx",
+        "action": "handleNavigate(section.href)",
+        "line": 178
+      },
+      {
+        "file": "src/components/layout/top-nav.tsx",
+        "action": "router.push(section.basePath)",
+        "line": 119
+      },
+      {
+        "file": "src/components/media-gallery.tsx",
+        "action": "setSelectedMedia(item)",
+        "line": 94
+      },
+      {
+        "file": "src/components/media-gallery.tsx",
+        "action": "handleDownload(\n                    selectedMedia.mediaURL,\n                    `media_${selectedMedia.id",
+        "line": 188
+      },
+      {
+        "file": "src/components/media-upload.tsx",
+        "action": "fileInputRef.current?.click()",
+        "line": 100
+      },
+      {
+        "file": "src/components/media-upload.tsx",
+        "action": "cameraInputRef.current?.click()",
+        "line": 116
+      },
+      {
+        "file": "src/components/media-upload.tsx",
+        "action": "videoInputRef.current?.click()",
+        "line": 128
+      },
+      {
+        "file": "src/components/profile-photo-upload.tsx",
+        "action": "fileInputRef.current?.click()",
+        "line": 130
+      },
+      {
+        "file": "src/components/profile-photo-upload.tsx",
+        "action": "cameraInputRef.current?.click()",
+        "line": 145
+      }
+    ],
+    "href": [
+      {
+        "file": "src/app/club-dashboard/page.tsx",
+        "url": "/club-dashboard/classes",
+        "line": 399
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/login",
+        "line": 18
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/pending-approval",
+        "line": 24
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/super-admin",
+        "line": 30
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/admin",
+        "line": 32
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/club-dashboard",
+        "line": 34
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/my-profile",
+        "line": 36
+      },
+      {
+        "file": "src/app/error.tsx",
+        "url": "/dashboard",
+        "line": 55
+      },
+      {
+        "file": "src/app/layout.tsx",
+        "url": "https://fonts.googleapis.com",
+        "line": 26
+      },
+      {
+        "file": "src/app/layout.tsx",
+        "url": "https://fonts.gstatic.com",
+        "line": 29
+      },
+      {
+        "file": "src/app/layout.tsx",
+        "url": "https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+        "line": 33
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/login",
+        "line": 86
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/pending-approval",
+        "line": 105
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/super-admin",
+        "line": 111
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/club-dashboard",
+        "line": 113
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/admin",
+        "line": 115
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 117
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 121
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/pending-approval",
+        "line": 153
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/super-admin",
+        "line": 159
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/club-dashboard",
+        "line": 161
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/admin",
+        "line": 163
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 165
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 169
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/pending-approval",
+        "line": 205
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/super-admin",
+        "line": 211
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/club-dashboard",
+        "line": 213
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/admin",
+        "line": 215
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 217
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/register",
+        "line": 339
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/register/club-owner",
+        "line": 357
+      },
+      {
+        "file": "src/app/not-found.tsx",
+        "url": "/dashboard",
+        "line": 23
+      },
+      {
+        "file": "src/app/not-found.tsx",
+        "url": "/dashboard",
+        "line": 45
+      },
+      {
+        "file": "src/app/not-found.tsx",
+        "url": "/my-profile",
+        "line": 50
+      },
+      {
+        "file": "src/app/not-found.tsx",
+        "url": "/competitions",
+        "line": 55
+      },
+      {
+        "file": "src/app/not-found.tsx",
+        "url": "/committees",
+        "line": 60
+      },
+      {
+        "file": "src/app/register/club-owner/page.tsx",
+        "url": "/pending-approval",
+        "line": 126
+      },
+      {
+        "file": "src/app/register/member/page.tsx",
+        "url": "/pending-approval",
+        "line": 145
+      }
+    ],
+    "router": [
+      {
+        "file": "src/app/admin/committees/page.tsx",
+        "route": "/committees/new",
+        "line": 69
+      },
+      {
+        "file": "src/app/admin/committees/page.tsx",
+        "route": "/committees/${committee.id}",
+        "line": 82
+      },
+      {
+        "file": "src/app/admin/committees/page.tsx",
+        "route": "/committees/new",
+        "line": 129
+      },
+      {
+        "file": "src/app/admin/members/page.tsx",
+        "route": "/members/${member.id}",
+        "line": 185
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/clubs",
+        "line": 178
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/members",
+        "line": 191
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/competitions",
+        "line": 204
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/committees",
+        "line": 217
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/clubs",
+        "line": 241
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/members",
+        "line": 253
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/competitions",
+        "line": 265
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/committees",
+        "line": 277
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/judges",
+        "line": 289
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/members",
+        "line": 306
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/members/${member.id}",
+        "line": 317
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/clubs",
+        "line": 346
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/clubs/${club.id}",
+        "line": 357
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/competitions",
+        "line": 388
+      },
+      {
+        "file": "src/app/admin/page.tsx",
+        "route": "/admin/competitions",
+        "line": 398
+      },
+      {
+        "file": "src/app/club-dashboard/classes/page.tsx",
+        "route": "/club-dashboard/classes/${gymClass.id}",
+        "line": 465
+      },
+      {
+        "file": "src/app/committees/[id]/page.tsx",
+        "route": "/committees",
+        "line": 96
+      },
+      {
+        "file": "src/app/committees/[id]/page.tsx",
+        "route": "/committees",
+        "line": 114
+      },
+      {
+        "file": "src/app/committees/new/page.tsx",
+        "route": "/committees",
+        "line": 102
+      },
+      {
+        "file": "src/app/committees/new/page.tsx",
+        "route": "/committees",
+        "line": 175
+      },
+      {
+        "file": "src/app/committees/page.tsx",
+        "route": "/committees/new",
+        "line": 63
+      },
+      {
+        "file": "src/app/committees/page.tsx",
+        "route": "/committees/${committee.id}",
+        "line": 76
+      },
+      {
+        "file": "src/app/committees/page.tsx",
+        "route": "/committees/new",
+        "line": 123
+      },
+      {
+        "file": "src/app/invite/[token]/page.tsx",
+        "route": "/login",
+        "line": 123
+      },
+      {
+        "file": "src/app/invite/[token]/page.tsx",
+        "route": "/login",
+        "line": 206
+      },
+      {
+        "file": "src/app/my-profile/family/page.tsx",
+        "route": "/my-profile/add-child",
+        "line": 65
+      },
+      {
+        "file": "src/app/my-profile/family/page.tsx",
+        "route": "/members/${child.id}",
+        "line": 153
+      },
+      {
+        "file": "src/app/my-profile/family/page.tsx",
+        "route": "/my-profile/add-child",
+        "line": 172
+      },
+      {
+        "file": "src/app/pending-approval/page.tsx",
+        "route": "/",
+        "line": 107
+      },
+      {
+        "file": "src/app/register/page.tsx",
+        "route": "/register/adult",
+        "line": 28
+      },
+      {
+        "file": "src/app/register/page.tsx",
+        "route": "/register/family",
+        "line": 64
+      },
+      {
+        "file": "src/app/register/success/page.tsx",
+        "route": "/",
+        "line": 36
+      },
+      {
+        "file": "src/app/setup/initial-admin/page.tsx",
+        "route": "/login",
+        "line": 152
+      },
+      {
+        "file": "src/app/super-admin/invites/page.tsx",
+        "route": "/super-admin",
+        "line": 222
+      },
+      {
+        "file": "src/app/super-admin/page.tsx",
+        "route": "/system/super-admin-approvals",
+        "line": 632
+      },
+      {
+        "file": "src/components/layout/modern-layout.tsx",
+        "route": "/my-profile",
+        "line": 167
+      }
+    ],
+    "windowLocation": [
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/login",
+        "line": 18
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/pending-approval",
+        "line": 24
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/super-admin",
+        "line": 30
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/admin",
+        "line": 32
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/club-dashboard",
+        "line": 34
+      },
+      {
+        "file": "src/app/dashboard/page.tsx",
+        "url": "/my-profile",
+        "line": 36
+      },
+      {
+        "file": "src/app/error.tsx",
+        "url": "/dashboard",
+        "line": 55
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/login",
+        "line": 86
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/pending-approval",
+        "line": 105
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/super-admin",
+        "line": 111
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/club-dashboard",
+        "line": 113
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/admin",
+        "line": 115
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 117
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 121
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/pending-approval",
+        "line": 153
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/super-admin",
+        "line": 159
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/club-dashboard",
+        "line": 161
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/admin",
+        "line": 163
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 165
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 169
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/pending-approval",
+        "line": 205
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/super-admin",
+        "line": 211
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/club-dashboard",
+        "line": 213
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/admin",
+        "line": 215
+      },
+      {
+        "file": "src/app/login/page.tsx",
+        "url": "/my-profile",
+        "line": 217
+      },
+      {
+        "file": "src/app/register/club-owner/page.tsx",
+        "url": "/pending-approval",
+        "line": 126
+      },
+      {
+        "file": "src/app/register/member/page.tsx",
+        "url": "/pending-approval",
+        "line": 145
+      }
+    ]
+  },
+  "fileAnalysis": {
+    "src/ai/dev.ts": {
+      "path": "src/ai/dev.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/ai/genkit.ts": {
+      "path": "src/ai/genkit.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/approvals/page.tsx": {
+      "path": "src/app/admin/approvals/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/clubs/page.tsx": {
+      "path": "src/app/admin/clubs/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/committees/page.tsx": {
+      "path": "src/app/admin/committees/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/committees/new')",
+          "line": 69
+        },
+        {
+          "type": "onClick",
+          "action": "router.push(`/committees/${committee.id",
+          "line": 82
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/committees/new')",
+          "line": 129
+        },
+        {
+          "type": "router.push",
+          "route": "/committees/new",
+          "line": 69
+        },
+        {
+          "type": "router.push",
+          "route": "/committees/${committee.id}",
+          "line": 82
+        },
+        {
+          "type": "router.push",
+          "route": "/committees/new",
+          "line": 129
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/competitions/[competitionId]/scoring/page.tsx": {
+      "path": "src/app/admin/competitions/[competitionId]/scoring/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n                                const final = calculateFinalScore(registration.id);\n                                toast({\n                                  title: '점수 계산',\n                                  description: `최종 점수: ${final.toFixed(2)",
+          "line": 323
+        },
+        {
+          "type": "onClick",
+          "action": "handleSaveScore(registration)",
+          "line": 336
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/competitions/page.tsx": {
+      "path": "src/app/admin/competitions/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n          setEditingCompetition(null);\n          form.reset();\n          setSelectedEvents([]);\n          setIsDialogOpen(true);",
+          "line": 303
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(competition.id, 'registration_open')",
+          "line": 353
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(competition.id, 'registration_closed')",
+          "line": 363
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(competition.id, 'in_progress')",
+          "line": 371
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(competition.id, 'completed')",
+          "line": 392
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedCompetition(competition)",
+          "line": 402
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                    setJudgeCompetition(competition);\n                    setJudgeDialogOpen(true);",
+          "line": 410
+        },
+        {
+          "type": "onClick",
+          "action": "handleEdit(competition)",
+          "line": 421
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(competition.id)",
+          "line": 428
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(true)",
+          "line": 442
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                          setSelectedEvents(prev =>\n                            prev.includes(event.id)\n                              ? prev.filter(id => id !== event.id)\n                              : [...prev, event.id]\n                          );",
+          "line": 561
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                          setSelectedEvents(prev =>\n                            prev.includes(event.id)\n                              ? prev.filter(id => id !== event.id)\n                              : [...prev, event.id]\n                          );",
+          "line": 586
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(false)",
+          "line": 603
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproveRegistration(reg.id)",
+          "line": 652
+        },
+        {
+          "type": "onClick",
+          "action": "handleRejectRegistration(reg.id)",
+          "line": 659
+        },
+        {
+          "type": "onClick",
+          "action": "{\n              setJudgeDialogOpen(false);\n              setJudgeAssignments({",
+          "line": 750
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/judges/page.tsx": {
+      "path": "src/app/admin/judges/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setDialogOpen(true)",
+          "line": 188
+        },
+        {
+          "type": "onClick",
+          "action": "handleEdit(judge)",
+          "line": 246
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(judge.id)",
+          "line": 252
+        },
+        {
+          "type": "onClick",
+          "action": "toggleSpecialization(code)",
+          "line": 374
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/members/page.tsx": {
+      "path": "src/app/admin/members/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push(`/members/${member.id",
+          "line": 185
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(member, 'active')",
+          "line": 192
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(member, 'inactive')",
+          "line": 197
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                            setMemberToDelete(member);\n                            setDeleteDialogOpen(true);",
+          "line": 204
+        },
+        {
+          "type": "onClick",
+          "action": "setMemberToDelete(null)",
+          "line": 234
+        },
+        {
+          "type": "router.push",
+          "route": "/members/${member.id}",
+          "line": 185
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/page.tsx": {
+      "path": "src/app/admin/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/clubs')",
+          "line": 178
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/members')",
+          "line": 191
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/competitions')",
+          "line": 204
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/committees')",
+          "line": 217
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/clubs')",
+          "line": 241
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/members')",
+          "line": 253
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/competitions')",
+          "line": 265
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/committees')",
+          "line": 277
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/judges')",
+          "line": 289
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/members')",
+          "line": 306
+        },
+        {
+          "type": "onClick",
+          "action": "router.push(`/members/${member.id",
+          "line": 317
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/clubs')",
+          "line": 346
+        },
+        {
+          "type": "onClick",
+          "action": "router.push(`/clubs/${club.id",
+          "line": 357
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/competitions')",
+          "line": 388
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/admin/competitions')",
+          "line": 398
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/clubs",
+          "line": 178
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/members",
+          "line": 191
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/competitions",
+          "line": 204
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/committees",
+          "line": 217
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/clubs",
+          "line": 241
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/members",
+          "line": 253
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/competitions",
+          "line": 265
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/committees",
+          "line": 277
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/judges",
+          "line": 289
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/members",
+          "line": 306
+        },
+        {
+          "type": "router.push",
+          "route": "/members/${member.id}",
+          "line": 317
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/clubs",
+          "line": 346
+        },
+        {
+          "type": "router.push",
+          "route": "/clubs/${club.id}",
+          "line": 357
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/competitions",
+          "line": 388
+        },
+        {
+          "type": "router.push",
+          "route": "/admin/competitions",
+          "line": 398
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/admin/users/page.tsx": {
+      "path": "src/app/admin/users/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleApprove(u)",
+          "line": 199
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(u)",
+          "line": 205
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(u)",
+          "line": 214
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/announcements/page.tsx": {
+      "path": "src/app/announcements/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/api/admin/reset-firestore/route.ts": {
+      "path": "src/app/api/admin/reset-firestore/route.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/analytics/page.tsx": {
+      "path": "src/app/club-dashboard/analytics/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/announcements/page.tsx": {
+      "path": "src/app/club-dashboard/announcements/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "togglePin(announcement)",
+          "line": 204
+        },
+        {
+          "type": "onClick",
+          "action": "handleEdit(announcement)",
+          "line": 207
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(announcement.id)",
+          "line": 210
+        },
+        {
+          "type": "onClick",
+          "action": "togglePin(announcement)",
+          "line": 251
+        },
+        {
+          "type": "onClick",
+          "action": "handleEdit(announcement)",
+          "line": 254
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(announcement.id)",
+          "line": 257
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(false)",
+          "line": 360
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/approvals/page.tsx": {
+      "path": "src/app/club-dashboard/approvals/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleRejectRenewal(request.id, '클럽 사정으로 거부')",
+          "line": 161
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproveRenewal(request)",
+          "line": 167
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/class-status/page.tsx": {
+      "path": "src/app/club-dashboard/class-status/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setViewMode('grid')",
+          "line": 175
+        },
+        {
+          "type": "onClick",
+          "action": "setViewMode('calendar')",
+          "line": 183
+        },
+        {
+          "type": "onClick",
+          "action": "handleClassClick(classItem)",
+          "line": 233
+        },
+        {
+          "type": "onClick",
+          "action": "handleClassClick(classItem)",
+          "line": 259
+        },
+        {
+          "type": "onClick",
+          "action": "handleAttendanceToggle(member.id, 'present')",
+          "line": 357
+        },
+        {
+          "type": "onClick",
+          "action": "handleAttendanceToggle(member.id, 'absent')",
+          "line": 367
+        },
+        {
+          "type": "onClick",
+          "action": "handleAttendanceToggle(member.id, 'excused')",
+          "line": 377
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                setSelectedClass(null);\n                setAttendanceStates({",
+          "line": 414
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/classes/[id]/page.tsx": {
+      "path": "src/app/club-dashboard/classes/[id]/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 166
+        },
+        {
+          "type": "onClick",
+          "action": "setIsAddMemberDialogOpen(true)",
+          "line": 199
+        },
+        {
+          "type": "onClick",
+          "action": "handleRemoveMember(member.id)",
+          "line": 249
+        },
+        {
+          "type": "onClick",
+          "action": "canJoin && toggleMemberSelection(member.id)",
+          "line": 314
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                setIsAddMemberDialogOpen(false);\n                setSelectedMemberIds([]);",
+          "line": 347
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/classes/page.tsx": {
+      "path": "src/app/club-dashboard/classes/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n                console.log('🧪 테스트 버튼 클릭됨!');\n                alert('테스트 버튼이 작동합니다!');",
+          "line": 327
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                console.log('🧪 폼 상태 테스트');\n                console.log('Form:', form);\n                console.log('Form values:', form.getValues());\n                console.log('Form errors:', form.formState.errors);\n                console.log('User:', user);\n                console.log('Firestore:', firestore);",
+          "line": 337
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                console.log('🧪 다이얼로그 열기 테스트');\n                setIsDialogOpen(true);",
+          "line": 351
+        },
+        {
+          "type": "onClick",
+          "action": "handleOpenDialog(null)",
+          "line": 371
+        },
+        {
+          "type": "onClick",
+          "action": "setCategoryFilter('all')",
+          "line": 385
+        },
+        {
+          "type": "onClick",
+          "action": "setCategoryFilter('adult')",
+          "line": 393
+        },
+        {
+          "type": "onClick",
+          "action": "setCategoryFilter('child')",
+          "line": 401
+        },
+        {
+          "type": "onClick",
+          "action": "setCategoryFilter('general')",
+          "line": 409
+        },
+        {
+          "type": "onClick",
+          "action": "router.push(`/club-dashboard/classes/${gymClass.id",
+          "line": 465
+        },
+        {
+          "type": "onClick",
+          "action": "handleOpenDialog(gymClass)",
+          "line": 470
+        },
+        {
+          "type": "onClick",
+          "action": "setDeletingClass(gymClass)",
+          "line": 473
+        },
+        {
+          "type": "router.push",
+          "route": "/club-dashboard/classes/${gymClass.id}",
+          "line": 465
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/coaches/page.tsx": {
+      "path": "src/app/club-dashboard/coaches/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(false)",
+          "line": 185
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(coach.uid)",
+          "line": 234
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/events/page.tsx": {
+      "path": "src/app/club-dashboard/events/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n          setEditingEvent(null);\n          form.reset();\n          setOptions([]);\n          setIsDialogOpen(true);",
+          "line": 200
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedEvent(event)",
+          "line": 270
+        },
+        {
+          "type": "onClick",
+          "action": "handleEdit(event)",
+          "line": 278
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(event.id)",
+          "line": 285
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(true)",
+          "line": 299
+        },
+        {
+          "type": "onClick",
+          "action": "removeOption(index)",
+          "line": 495
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(false)",
+          "line": 511
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/finance/page.tsx": {
+      "path": "src/app/club-dashboard/finance/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setIsIncomeDialogOpen(true)",
+          "line": 351
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                            setSelectedIncome(income);\n                            setIsSplitDialogOpen(true);",
+          "line": 393
+        },
+        {
+          "type": "onClick",
+          "action": "handleCancelSplit(income)",
+          "line": 405
+        },
+        {
+          "type": "onClick",
+          "action": "handleDeleteIncome(income.id)",
+          "line": 413
+        },
+        {
+          "type": "onClick",
+          "action": "setIsExpenseDialogOpen(true)",
+          "line": 428
+        },
+        {
+          "type": "onClick",
+          "action": "handleDeleteExpense(expense.id)",
+          "line": 451
+        },
+        {
+          "type": "onClick",
+          "action": "setIsIncomeDialogOpen(false)",
+          "line": 560
+        },
+        {
+          "type": "onClick",
+          "action": "setIsExpenseDialogOpen(false)",
+          "line": 615
+        },
+        {
+          "type": "onClick",
+          "action": "setIsSplitDialogOpen(false)",
+          "line": 654
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/level-tests/[testId]/evaluate/page.tsx": {
+      "path": "src/app/club-dashboard/level-tests/[testId]/evaluate/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleEvaluate(reg)",
+          "line": 218
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedReg(null)",
+          "line": 310
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/level-tests/page.tsx": {
+      "path": "src/app/club-dashboard/level-tests/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n          setEditingTest(null);\n          form.reset();\n          setIsDialogOpen(true);",
+          "line": 193
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(test.id, 'registration_open')",
+          "line": 245
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(test.id, 'registration_closed')",
+          "line": 255
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(test.id, 'in_progress')",
+          "line": 263
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(test.id, 'completed')",
+          "line": 279
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedTest(test)",
+          "line": 289
+        },
+        {
+          "type": "onClick",
+          "action": "handleEdit(test)",
+          "line": 297
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(test.id)",
+          "line": 304
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(true)",
+          "line": 318
+        },
+        {
+          "type": "onClick",
+          "action": "setIsDialogOpen(false)",
+          "line": 435
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/media/page.tsx": {
+      "path": "src/app/club-dashboard/media/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n                  setSelectedMember(member);\n                  stopCamera();",
+          "line": 269
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(item.id)",
+          "line": 405
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/member-approvals/page.tsx": {
+      "path": "src/app/club-dashboard/member-approvals/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleReject(request.id, 'member')",
+          "line": 419
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproveMember(request)",
+          "line": 427
+        },
+        {
+          "type": "onClick",
+          "action": "handleReject(request.id, 'adult')",
+          "line": 483
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproveAdult(request)",
+          "line": 491
+        },
+        {
+          "type": "onClick",
+          "action": "handleReject(request.id, 'family')",
+          "line": 575
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproveFamily(request)",
+          "line": 583
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/messages/page.tsx": {
+      "path": "src/app/club-dashboard/messages/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setMessageType('sms')",
+          "line": 196
+        },
+        {
+          "type": "onClick",
+          "action": "setMessageType('lms')",
+          "line": 202
+        },
+        {
+          "type": "onClick",
+          "action": "setMessageType('kakao')",
+          "line": 208
+        },
+        {
+          "type": "onClick",
+          "action": "handleToggleMember(member.id)",
+          "line": 258
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/page.tsx": {
+      "path": "src/app/club-dashboard/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(member.id, 'inactive')",
+          "line": 232
+        },
+        {
+          "type": "onClick",
+          "action": "handleStatusChange(member.id, 'active')",
+          "line": 235
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproval(member.id, true)",
+          "line": 239
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproval(member.id, false)",
+          "line": 240
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/club-dashboard/classes",
+          "line": 399
+        }
+      ],
+      "issues": []
+    },
+    "src/app/club-dashboard/pass-templates/page.tsx": {
+      "path": "src/app/club-dashboard/pass-templates/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleOpenDialog(null)",
+          "line": 226
+        },
+        {
+          "type": "onClick",
+          "action": "handleOpenDialog(template)",
+          "line": 277
+        },
+        {
+          "type": "onClick",
+          "action": "handleDelete(template.id)",
+          "line": 280
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                      console.log('🔘 이용권 저장 버튼 클릭됨');\n                      console.log('📊 폼 상태:', {\n                        isValid: form.formState.isValid,\n                        errors: form.formState.errors,\n                        values: form.getValues(),\n                        isSubmitting: isSubmitting",
+          "line": 451
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/passes/page.tsx": {
+      "path": "src/app/club-dashboard/passes/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setSelectedMember(member)",
+          "line": 184
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/payments/page.tsx": {
+      "path": "src/app/club-dashboard/payments/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{ setTransactionType('income'); setTransactionCategory('other_income'); setIsAddTransactionOpen(true);",
+          "line": 408
+        },
+        {
+          "type": "onClick",
+          "action": "{ setTransactionType('expense'); setTransactionCategory('other_expense'); setIsAddTransactionOpen(true);",
+          "line": 412
+        },
+        {
+          "type": "onClick",
+          "action": "handleVerify(payment, true)",
+          "line": 595
+        },
+        {
+          "type": "onClick",
+          "action": "handleVerify(payment, false)",
+          "line": 603
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                            setSelectedTransaction(transaction);\n                            setIsSplitDialogOpen(true);",
+          "line": 711
+        },
+        {
+          "type": "onClick",
+          "action": "handleUndoSplit(transaction)",
+          "line": 724
+        },
+        {
+          "type": "onClick",
+          "action": "setIsAddTransactionOpen(false)",
+          "line": 806
+        },
+        {
+          "type": "onClick",
+          "action": "setIsSplitDialogOpen(false)",
+          "line": 854
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/club-dashboard/settings/page.tsx": {
+      "path": "src/app/club-dashboard/settings/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/clubs/[id]/club-details-client.tsx": {
+      "path": "src/app/clubs/[id]/club-details-client.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/clubs/[id]/page.tsx": {
+      "path": "src/app/clubs/[id]/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/clubs/page.tsx": {
+      "path": "src/app/clubs/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/committees/[id]/page.tsx": {
+      "path": "src/app/committees/[id]/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/committees')",
+          "line": 96
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/committees')",
+          "line": 114
+        },
+        {
+          "type": "router.push",
+          "route": "/committees",
+          "line": 96
+        },
+        {
+          "type": "router.push",
+          "route": "/committees",
+          "line": 114
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/committees/new/page.tsx": {
+      "path": "src/app/committees/new/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/committees')",
+          "line": 102
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/committees')",
+          "line": 175
+        },
+        {
+          "type": "router.push",
+          "route": "/committees",
+          "line": 102
+        },
+        {
+          "type": "router.push",
+          "route": "/committees",
+          "line": 175
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/committees/page.tsx": {
+      "path": "src/app/committees/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/committees/new')",
+          "line": 63
+        },
+        {
+          "type": "onClick",
+          "action": "router.push(`/committees/${committee.id",
+          "line": 76
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/committees/new')",
+          "line": 123
+        },
+        {
+          "type": "router.push",
+          "route": "/committees/new",
+          "line": 63
+        },
+        {
+          "type": "router.push",
+          "route": "/committees/${committee.id}",
+          "line": 76
+        },
+        {
+          "type": "router.push",
+          "route": "/committees/new",
+          "line": 123
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/competitions/[competitionId]/live/page.tsx": {
+      "path": "src/app/competitions/[competitionId]/live/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/competitions/page.tsx": {
+      "path": "src/app/competitions/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleApply(competition)",
+          "line": 251
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                      setSelectedEvents(prev =>\n                        prev.includes(event.id)\n                          ? prev.filter(id => id !== event.id)\n                          : [...prev, event.id]\n                      );",
+          "line": 298
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedCompetition(null)",
+          "line": 335
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/dashboard/page.tsx": {
+      "path": "src/app/dashboard/page.tsx",
+      "buttons": [
+        {
+          "type": "window.location",
+          "url": "/login",
+          "line": 18
+        },
+        {
+          "type": "window.location",
+          "url": "/pending-approval",
+          "line": 24
+        },
+        {
+          "type": "window.location",
+          "url": "/super-admin",
+          "line": 30
+        },
+        {
+          "type": "window.location",
+          "url": "/admin",
+          "line": 32
+        },
+        {
+          "type": "window.location",
+          "url": "/club-dashboard",
+          "line": 34
+        },
+        {
+          "type": "window.location",
+          "url": "/my-profile",
+          "line": 36
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/login",
+          "line": 18
+        },
+        {
+          "type": "href",
+          "url": "/pending-approval",
+          "line": 24
+        },
+        {
+          "type": "href",
+          "url": "/super-admin",
+          "line": 30
+        },
+        {
+          "type": "href",
+          "url": "/admin",
+          "line": 32
+        },
+        {
+          "type": "href",
+          "url": "/club-dashboard",
+          "line": 34
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 36
+        }
+      ],
+      "issues": []
+    },
+    "src/app/error.tsx": {
+      "path": "src/app/error.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "(window.location.href = '/dashboard')",
+          "line": 55
+        },
+        {
+          "type": "window.location",
+          "url": "/dashboard",
+          "line": 55
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/dashboard",
+          "line": 55
+        }
+      ],
+      "issues": []
+    },
+    "src/app/events/page.tsx": {
+      "path": "src/app/events/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setSelectedEvent(event)",
+          "line": 247
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedEvent(null)",
+          "line": 330
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/invite/[token]/page.tsx": {
+      "path": "src/app/invite/[token]/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/login')",
+          "line": 123
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/login')",
+          "line": 206
+        },
+        {
+          "type": "router.push",
+          "route": "/login",
+          "line": 123
+        },
+        {
+          "type": "router.push",
+          "route": "/login",
+          "line": 206
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/invite/accept/[token]/page.tsx": {
+      "path": "src/app/invite/accept/[token]/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setMode('signup')",
+          "line": 314
+        },
+        {
+          "type": "onClick",
+          "action": "setMode('login')",
+          "line": 324
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/layout-client.tsx": {
+      "path": "src/app/layout-client.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/layout.tsx": {
+      "path": "src/app/layout.tsx",
+      "buttons": [],
+      "links": [
+        {
+          "type": "href",
+          "url": "https://fonts.googleapis.com",
+          "line": 26
+        },
+        {
+          "type": "href",
+          "url": "https://fonts.gstatic.com",
+          "line": 29
+        },
+        {
+          "type": "href",
+          "url": "https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+          "line": 33
+        }
+      ],
+      "issues": []
+    },
+    "src/app/level-tests/page.tsx": {
+      "path": "src/app/level-tests/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleApply(test)",
+          "line": 244
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedLevel(level.name)",
+          "line": 284
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedTest(null)",
+          "line": 304
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/loading.tsx": {
+      "path": "src/app/loading.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/login/page.tsx": {
+      "path": "src/app/login/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "{\n                // 승인 대기 중이면 pending 페이지로\n                if (user.status === 'pending') {\n                  window.location.href = '/pending-approval';\n                  return;",
+          "line": 202
+        },
+        {
+          "type": "window.location",
+          "url": "/login",
+          "line": 86
+        },
+        {
+          "type": "window.location",
+          "url": "/pending-approval",
+          "line": 105
+        },
+        {
+          "type": "window.location",
+          "url": "/super-admin",
+          "line": 111
+        },
+        {
+          "type": "window.location",
+          "url": "/club-dashboard",
+          "line": 113
+        },
+        {
+          "type": "window.location",
+          "url": "/admin",
+          "line": 115
+        },
+        {
+          "type": "window.location",
+          "url": "/my-profile",
+          "line": 117
+        },
+        {
+          "type": "window.location",
+          "url": "/my-profile",
+          "line": 121
+        },
+        {
+          "type": "window.location",
+          "url": "/pending-approval",
+          "line": 153
+        },
+        {
+          "type": "window.location",
+          "url": "/super-admin",
+          "line": 159
+        },
+        {
+          "type": "window.location",
+          "url": "/club-dashboard",
+          "line": 161
+        },
+        {
+          "type": "window.location",
+          "url": "/admin",
+          "line": 163
+        },
+        {
+          "type": "window.location",
+          "url": "/my-profile",
+          "line": 165
+        },
+        {
+          "type": "window.location",
+          "url": "/my-profile",
+          "line": 169
+        },
+        {
+          "type": "window.location",
+          "url": "/pending-approval",
+          "line": 205
+        },
+        {
+          "type": "window.location",
+          "url": "/super-admin",
+          "line": 211
+        },
+        {
+          "type": "window.location",
+          "url": "/club-dashboard",
+          "line": 213
+        },
+        {
+          "type": "window.location",
+          "url": "/admin",
+          "line": 215
+        },
+        {
+          "type": "window.location",
+          "url": "/my-profile",
+          "line": 217
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/login",
+          "line": 86
+        },
+        {
+          "type": "href",
+          "url": "/pending-approval",
+          "line": 105
+        },
+        {
+          "type": "href",
+          "url": "/super-admin",
+          "line": 111
+        },
+        {
+          "type": "href",
+          "url": "/club-dashboard",
+          "line": 113
+        },
+        {
+          "type": "href",
+          "url": "/admin",
+          "line": 115
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 117
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 121
+        },
+        {
+          "type": "href",
+          "url": "/pending-approval",
+          "line": 153
+        },
+        {
+          "type": "href",
+          "url": "/super-admin",
+          "line": 159
+        },
+        {
+          "type": "href",
+          "url": "/club-dashboard",
+          "line": 161
+        },
+        {
+          "type": "href",
+          "url": "/admin",
+          "line": 163
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 165
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 169
+        },
+        {
+          "type": "href",
+          "url": "/pending-approval",
+          "line": 205
+        },
+        {
+          "type": "href",
+          "url": "/super-admin",
+          "line": 211
+        },
+        {
+          "type": "href",
+          "url": "/club-dashboard",
+          "line": 213
+        },
+        {
+          "type": "href",
+          "url": "/admin",
+          "line": 215
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 217
+        },
+        {
+          "type": "href",
+          "url": "/register",
+          "line": 339
+        },
+        {
+          "type": "href",
+          "url": "/register/club-owner",
+          "line": 357
+        }
+      ],
+      "issues": []
+    },
+    "src/app/members/[id]/member-profile-client.tsx": {
+      "path": "src/app/members/[id]/member-profile-client.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "profilePhotoInputRef.current?.click()",
+          "line": 420
+        },
+        {
+          "type": "onClick",
+          "action": "setIsRenewalDialogOpen(true)",
+          "line": 557
+        },
+        {
+          "type": "onClick",
+          "action": "handleEditAttendance(att)",
+          "line": 626
+        },
+        {
+          "type": "onClick",
+          "action": "handleDeleteAttendance(att.id)",
+          "line": 631
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                                        const element = document.getElementById('past-passes');\n                                        element?.scrollIntoView({ behavior: 'smooth'",
+          "line": 647
+        },
+        {
+          "type": "onClick",
+          "action": "handleDeleteMedia(item.id)",
+          "line": 762
+        },
+        {
+          "type": "onClick",
+          "action": "setEditingAttendance(null)",
+          "line": 854
+        },
+        {
+          "type": "onClick",
+          "action": "handleRequestRenewal(template)",
+          "line": 885
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/members/[id]/page.tsx": {
+      "path": "src/app/members/[id]/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/members/optimized-page.tsx": {
+      "path": "src/app/members/optimized-page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/members/page.tsx": {
+      "path": "src/app/members/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/members/paginated-page.tsx": {
+      "path": "src/app/members/paginated-page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/my-profile/add-child/page.tsx": {
+      "path": "src/app/my-profile/add-child/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "removeChild(index)",
+          "line": 159
+        },
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 234
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/my-profile/add-family/page.tsx": {
+      "path": "src/app/my-profile/add-family/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 202
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/my-profile/add-family-member/page.tsx": {
+      "path": "src/app/my-profile/add-family-member/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "removeMember(index)",
+          "line": 246
+        },
+        {
+          "type": "onClick",
+          "action": "removePhoto(index)",
+          "line": 269
+        },
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 386
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/my-profile/family/page.tsx": {
+      "path": "src/app/my-profile/family/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/my-profile/add-child')",
+          "line": 65
+        },
+        {
+          "type": "onClick",
+          "action": "router.push(`/members/${child.id",
+          "line": 153
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/my-profile/add-child')",
+          "line": 172
+        },
+        {
+          "type": "router.push",
+          "route": "/my-profile/add-child",
+          "line": 65
+        },
+        {
+          "type": "router.push",
+          "route": "/members/${child.id}",
+          "line": 153
+        },
+        {
+          "type": "router.push",
+          "route": "/my-profile/add-child",
+          "line": 172
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/my-profile/page.tsx": {
+      "path": "src/app/my-profile/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "openModal(member)",
+          "line": 207
+        },
+        {
+          "type": "onClick",
+          "action": "setSelectedTemplate(template)",
+          "line": 242
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/not-found.tsx": {
+      "path": "src/app/not-found.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "window.history.back()",
+          "line": 31
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/dashboard",
+          "line": 23
+        },
+        {
+          "type": "href",
+          "url": "/dashboard",
+          "line": 45
+        },
+        {
+          "type": "href",
+          "url": "/my-profile",
+          "line": 50
+        },
+        {
+          "type": "href",
+          "url": "/competitions",
+          "line": 55
+        },
+        {
+          "type": "href",
+          "url": "/committees",
+          "line": 60
+        }
+      ],
+      "issues": []
+    },
+    "src/app/page.tsx": {
+      "path": "src/app/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/pending-approval/page.tsx": {
+      "path": "src/app/pending-approval/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/')",
+          "line": 107
+        },
+        {
+          "type": "router.push",
+          "route": "/",
+          "line": 107
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/profile-setup/page.tsx": {
+      "path": "src/app/profile-setup/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "removeAdult(index)",
+          "line": 259
+        },
+        {
+          "type": "onClick",
+          "action": "adultFileInputRefs.current[index]?.click()",
+          "line": 350
+        },
+        {
+          "type": "onClick",
+          "action": "appendAdult({ name: '', dateOfBirth: '', gender: 'male'",
+          "line": 399
+        },
+        {
+          "type": "onClick",
+          "action": "removeChild(index)",
+          "line": 427
+        },
+        {
+          "type": "onClick",
+          "action": "childFileInputRefs.current[index]?.click()",
+          "line": 518
+        },
+        {
+          "type": "onClick",
+          "action": "appendChild({ name: '', dateOfBirth: '', gender: 'male'",
+          "line": 566
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/adult/cached-page.tsx": {
+      "path": "src/app/register/adult/cached-page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/adult/page.tsx": {
+      "path": "src/app/register/adult/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/club-owner/page.tsx": {
+      "path": "src/app/register/club-owner/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 316
+        },
+        {
+          "type": "window.location",
+          "url": "/pending-approval",
+          "line": 126
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/pending-approval",
+          "line": 126
+        }
+      ],
+      "issues": []
+    },
+    "src/app/register/family/page.tsx": {
+      "path": "src/app/register/family/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "removeParent(index)",
+          "line": 325
+        },
+        {
+          "type": "onClick",
+          "action": "removeChild(index)",
+          "line": 421
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/member/page.tsx": {
+      "path": "src/app/register/member/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 353
+        },
+        {
+          "type": "window.location",
+          "url": "/pending-approval",
+          "line": 145
+        }
+      ],
+      "links": [
+        {
+          "type": "href",
+          "url": "/pending-approval",
+          "line": 145
+        }
+      ],
+      "issues": []
+    },
+    "src/app/register/member-with-contract/page.tsx": {
+      "path": "src/app/register/member-with-contract/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/page.tsx": {
+      "path": "src/app/register/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/register/adult')",
+          "line": 28
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/register/family')",
+          "line": 64
+        },
+        {
+          "type": "router.push",
+          "route": "/register/adult",
+          "line": 28
+        },
+        {
+          "type": "router.push",
+          "route": "/register/family",
+          "line": 64
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/success/page.tsx": {
+      "path": "src/app/register/success/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/')",
+          "line": 36
+        },
+        {
+          "type": "router.push",
+          "route": "/",
+          "line": 36
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/register/super-admin/page.tsx": {
+      "path": "src/app/register/super-admin/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.back()",
+          "line": 225
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/route-config.ts": {
+      "path": "src/app/route-config.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/scoreboard/[competitionId]/page.tsx": {
+      "path": "src/app/scoreboard/[competitionId]/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/app/setup/initial-admin/page.tsx": {
+      "path": "src/app/setup/initial-admin/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/login')",
+          "line": 152
+        },
+        {
+          "type": "router.push",
+          "route": "/login",
+          "line": 152
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/super-admin/invites/page.tsx": {
+      "path": "src/app/super-admin/invites/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/super-admin')",
+          "line": 222
+        },
+        {
+          "type": "onClick",
+          "action": "copyInviteLink(invite.inviteToken)",
+          "line": 299
+        },
+        {
+          "type": "onClick",
+          "action": "handleCancelInvite(invite.id)",
+          "line": 306
+        },
+        {
+          "type": "onClick",
+          "action": "handleDeleteInvite(invite.id)",
+          "line": 315
+        },
+        {
+          "type": "router.push",
+          "route": "/super-admin",
+          "line": 222
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/super-admin/page.tsx": {
+      "path": "src/app/super-admin/page.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setResetDialogOpen(true)",
+          "line": 354
+        },
+        {
+          "type": "onClick",
+          "action": "handleApproveClubOwner(request)",
+          "line": 522
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                              setSelectedRequestId(request.id);\n                              setRejectDialogOpen(true);",
+          "line": 530
+        },
+        {
+          "type": "onClick",
+          "action": "router.push('/system/super-admin-approvals')",
+          "line": 632
+        },
+        {
+          "type": "onClick",
+          "action": "setRejectDialogOpen(false)",
+          "line": 657
+        },
+        {
+          "type": "onClick",
+          "action": "{\n                setResetDialogOpen(false);\n                setConfirmText('');",
+          "line": 705
+        },
+        {
+          "type": "router.push",
+          "route": "/system/super-admin-approvals",
+          "line": 632
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/app/system/super-admin-approvals/page.tsx": {
+      "path": "src/app/system/super-admin-approvals/page.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/FirebaseErrorListener.tsx": {
+      "path": "src/components/FirebaseErrorListener.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/approval-actions.tsx": {
+      "path": "src/components/approval-actions.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setShowRejectDialog(true)",
+          "line": 77
+        },
+        {
+          "type": "onClick",
+          "action": "setRejectionReason('')",
+          "line": 104
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/approval-status-badge.tsx": {
+      "path": "src/components/approval-status-badge.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/debug/firebase-debug.tsx": {
+      "path": "src/components/debug/firebase-debug.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setIsVisible(false)",
+          "line": 30
+        },
+        {
+          "type": "onClick",
+          "action": "{\n            console.log('🔍 Firebase Debug Info:');\n            console.log('Firestore:', firestore);\n            console.log('Auth:', auth);\n            console.log('User:', user);\n            console.log('User Loading:', isUserLoading);",
+          "line": 88
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/error-fallback.tsx": {
+      "path": "src/components/error-fallback.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/global-search.tsx": {
+      "path": "src/components/layout/global-search.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setOpen(true)",
+          "line": 84
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/header.tsx": {
+      "path": "src/components/layout/header.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/main-layout.tsx": {
+      "path": "src/components/layout/main-layout.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/modern-layout.tsx": {
+      "path": "src/components/layout/modern-layout.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push('/my-profile')",
+          "line": 167
+        },
+        {
+          "type": "router.push",
+          "route": "/my-profile",
+          "line": 167
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/modern-nav.tsx": {
+      "path": "src/components/layout/modern-nav.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "handleNavigate(section.href)",
+          "line": 126
+        },
+        {
+          "type": "onClick",
+          "action": "handleNavigate(subItem.href)",
+          "line": 148
+        },
+        {
+          "type": "onClick",
+          "action": "handleNavigate(section.href)",
+          "line": 178
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/sidebar.tsx": {
+      "path": "src/components/layout/sidebar.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/layout/top-nav.tsx": {
+      "path": "src/components/layout/top-nav.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "router.push(section.basePath)",
+          "line": 119
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/loading-spinner.tsx": {
+      "path": "src/components/loading-spinner.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/media-gallery.tsx": {
+      "path": "src/components/media-gallery.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "setSelectedMedia(item)",
+          "line": 94
+        },
+        {
+          "type": "onClick",
+          "action": "handleDownload(\n                    selectedMedia.mediaURL,\n                    `media_${selectedMedia.id",
+          "line": 188
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/media-upload.tsx": {
+      "path": "src/components/media-upload.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "fileInputRef.current?.click()",
+          "line": 100
+        },
+        {
+          "type": "onClick",
+          "action": "cameraInputRef.current?.click()",
+          "line": 116
+        },
+        {
+          "type": "onClick",
+          "action": "videoInputRef.current?.click()",
+          "line": 128
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/optimized-image.tsx": {
+      "path": "src/components/optimized-image.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/pending-approval-card.tsx": {
+      "path": "src/components/pending-approval-card.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/profile-photo-upload.tsx": {
+      "path": "src/components/profile-photo-upload.tsx",
+      "buttons": [
+        {
+          "type": "onClick",
+          "action": "fileInputRef.current?.click()",
+          "line": 130
+        },
+        {
+          "type": "onClick",
+          "action": "cameraInputRef.current?.click()",
+          "line": 145
+        }
+      ],
+      "links": [],
+      "issues": []
+    },
+    "src/components/require-role.tsx": {
+      "path": "src/components/require-role.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/role-badge.tsx": {
+      "path": "src/components/role-badge.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/role-selector.tsx": {
+      "path": "src/components/role-selector.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/accordion.tsx": {
+      "path": "src/components/ui/accordion.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/alert-dialog.tsx": {
+      "path": "src/components/ui/alert-dialog.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/alert.tsx": {
+      "path": "src/components/ui/alert.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/avatar.tsx": {
+      "path": "src/components/ui/avatar.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/badge.tsx": {
+      "path": "src/components/ui/badge.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/breadcrumb.tsx": {
+      "path": "src/components/ui/breadcrumb.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/button.tsx": {
+      "path": "src/components/ui/button.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/calendar.tsx": {
+      "path": "src/components/ui/calendar.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/card.tsx": {
+      "path": "src/components/ui/card.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/carousel.tsx": {
+      "path": "src/components/ui/carousel.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/chart.tsx": {
+      "path": "src/components/ui/chart.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/checkbox.tsx": {
+      "path": "src/components/ui/checkbox.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/collapsible.tsx": {
+      "path": "src/components/ui/collapsible.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/command.tsx": {
+      "path": "src/components/ui/command.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/dialog.tsx": {
+      "path": "src/components/ui/dialog.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/dropdown-menu.tsx": {
+      "path": "src/components/ui/dropdown-menu.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/form.tsx": {
+      "path": "src/components/ui/form.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/input.tsx": {
+      "path": "src/components/ui/input.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/label.tsx": {
+      "path": "src/components/ui/label.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/menubar.tsx": {
+      "path": "src/components/ui/menubar.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/page-header.tsx": {
+      "path": "src/components/ui/page-header.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/popover.tsx": {
+      "path": "src/components/ui/popover.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/progress.tsx": {
+      "path": "src/components/ui/progress.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/radio-group.tsx": {
+      "path": "src/components/ui/radio-group.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/scroll-area.tsx": {
+      "path": "src/components/ui/scroll-area.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/select.tsx": {
+      "path": "src/components/ui/select.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/separator.tsx": {
+      "path": "src/components/ui/separator.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/sheet.tsx": {
+      "path": "src/components/ui/sheet.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/sidebar.tsx": {
+      "path": "src/components/ui/sidebar.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/skeleton.tsx": {
+      "path": "src/components/ui/skeleton.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/slider.tsx": {
+      "path": "src/components/ui/slider.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/stat-card.tsx": {
+      "path": "src/components/ui/stat-card.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/switch.tsx": {
+      "path": "src/components/ui/switch.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/table.tsx": {
+      "path": "src/components/ui/table.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/tabs.tsx": {
+      "path": "src/components/ui/tabs.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/textarea.tsx": {
+      "path": "src/components/ui/textarea.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/toast.tsx": {
+      "path": "src/components/ui/toast.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/toaster.tsx": {
+      "path": "src/components/ui/toaster.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/components/ui/tooltip.tsx": {
+      "path": "src/components/ui/tooltip.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/admin.ts": {
+      "path": "src/firebase/admin.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/client-provider.tsx": {
+      "path": "src/firebase/client-provider.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/config.ts": {
+      "path": "src/firebase/config.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/error-emitter.ts": {
+      "path": "src/firebase/error-emitter.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/errors.ts": {
+      "path": "src/firebase/errors.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/firestore/use-collection.tsx": {
+      "path": "src/firebase/firestore/use-collection.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/firestore/use-doc.tsx": {
+      "path": "src/firebase/firestore/use-doc.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/index.ts": {
+      "path": "src/firebase/index.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/non-blocking-login.tsx": {
+      "path": "src/firebase/non-blocking-login.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/non-blocking-updates.tsx": {
+      "path": "src/firebase/non-blocking-updates.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/provider.tsx": {
+      "path": "src/firebase/provider.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/firebase/storage.ts": {
+      "path": "src/firebase/storage.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-cached-collection.tsx": {
+      "path": "src/hooks/use-cached-collection.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-clubs.tsx": {
+      "path": "src/hooks/use-clubs.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-mobile.tsx": {
+      "path": "src/hooks/use-mobile.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-page-loading.ts": {
+      "path": "src/hooks/use-page-loading.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-paginated-collection.tsx": {
+      "path": "src/hooks/use-paginated-collection.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-role.ts": {
+      "path": "src/hooks/use-role.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-toast.ts": {
+      "path": "src/hooks/use-toast.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/hooks/use-user.tsx": {
+      "path": "src/hooks/use-user.tsx",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/lib/data.ts": {
+      "path": "src/lib/data.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/lib/design-system.ts": {
+      "path": "src/lib/design-system.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/lib/member-utils.ts": {
+      "path": "src/lib/member-utils.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/lib/performance.ts": {
+      "path": "src/lib/performance.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/lib/placeholder-images.ts": {
+      "path": "src/lib/placeholder-images.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/lib/utils.ts": {
+      "path": "src/lib/utils.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    },
+    "src/types/index.ts": {
+      "path": "src/types/index.ts",
+      "buttons": [],
+      "links": [],
+      "issues": []
+    }
+  }
+}

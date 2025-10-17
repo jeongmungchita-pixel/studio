@@ -2,15 +2,14 @@
 
 export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ApprovalActions } from '@/components/approval-actions';
-import { Shield, User, Mail, Phone, Building2, Briefcase, FileText, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shield, Mail, Phone, Building2, Briefcase, FileText, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { SuperAdminRequest, UserRole } from '@/types';
+import { SuperAdminRequest, UserRole } from '@/types';
 
 
 export default function SuperAdminApprovalsPage() {
@@ -54,14 +53,11 @@ export default function SuperAdminApprovalsPage() {
           approvedBy: user.uid,
           approvedAt: new Date().toISOString(),
         });
-        console.log('✅ 슬퍼 관리자 프로필 업데이트:', request.userId);
       } else {
-        console.log('⚠️ 비회원 가입 - 로그인 시 프로필 생성됩니다');
       }
 
       alert('최고 관리자로 승인되었습니다!');
     } catch (error) {
-      console.error('승인 처리 중 오류:', error);
       alert('승인 처리 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);
@@ -97,14 +93,11 @@ export default function SuperAdminApprovalsPage() {
           rejectedAt: new Date().toISOString(),
           rejectionReason: reason,
         });
-        console.log('✅ 슬퍼 관리자 거부 처리:', request.userId);
       } else {
-        console.log('⚠️ 비회원 가입 - 프로필 업데이트 건너뛀기');
       }
 
       alert('신청이 거부되었습니다.');
     } catch (error) {
-      console.error('거부 처리 중 오류:', error);
       alert('거부 처리 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);

@@ -1,53 +1,9 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-} from '@/components/ui/sidebar';
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from '@/components/ui/collapsible';
-import {
-  LogOut,
-  Ticket,
-  Archive,
-  BookMarked,
-  CheckSquare,
-  Camera,
-  FileText,
-  Calendar,
-  BarChart3,
-  Settings,
-  UserPlus,
-  Home,
-  ArrowLeft,
-  User,
-  History,
-  Image as ImageIcon,
-  PartyPopper,
-  Trophy,
-  Award,
-  Bell,
-  TrendingUp,
-  MessageSquare,
-  CreditCard,
-  DollarSign,
-  ChevronDown,
-  Users,
-  Mail,
-  Building,
-  Gavel,
-} from 'lucide-react';
+import { SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { LogOut, Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, Home, ArrowLeft, PartyPopper, Trophy, Award, Bell, TrendingUp, MessageSquare, CreditCard, DollarSign, ChevronDown, Users, Mail, Building, Gavel } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { UserProfile, UserRole } from '@/types';

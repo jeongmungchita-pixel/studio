@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, increment, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { ClubEvent, EventRegistration } from '@/types';
+import { ClubEvent, EventRegistration } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar, DollarSign, Users, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
 
 const eventTypeLabels = {
   merchandise: '굿즈/티셔츠',
@@ -113,7 +111,6 @@ export default function MemberEventsPage() {
       setQuantity(1);
       setNotes('');
     } catch (error) {
-      console.error('Registration error:', error);
       toast({
         variant: 'destructive',
         title: '신청 실패',

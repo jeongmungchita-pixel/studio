@@ -3,9 +3,9 @@
 export const dynamic = 'force-dynamic';
 import { useState, use } from 'react';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymnasticsCompetition, CompetitionRegistration, GymnasticsScore } from '@/types';
+import { GymnasticsCompetition, CompetitionRegistration, GymnasticsScore } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,7 +104,7 @@ export default function ScoringPage({ params }: PageProps) {
       const deductions = parseFloat(score.deductions) || 0;
       const finalScore = Math.max(0, dFinal + eFinal - deductions);
 
-      const event = competition?.events.find(e => e.id === selectedEvent);
+      const event = competition?.events?.find(e => e.id === selectedEvent);
       
       const scoreRef = doc(collection(firestore, 'gymnastics_scores'));
       const scoreData: GymnasticsScore = {
@@ -113,26 +113,15 @@ export default function ScoringPage({ params }: PageProps) {
         scheduleId: '', // 추후 스케줄 ID 연결
         registrationId: registration.id,
         memberId: registration.memberId,
-        memberName: registration.memberName,
-        clubName: registration.clubName,
+        memberName: registration.memberName || '',
+        clubName: registration.clubName || '',
         eventId: selectedEvent,
         eventName: event?.name || '',
-        categoryId: '', // 추후 카테고리 연결
-        gender: registration.gender,
-        dScore: {
-          judge1: d1,
-          judge2: d2,
-          final: dFinal,
-        },
-        eScore: {
-          judge1: e1,
-          judge2: e2,
-          final: eFinal,
-        },
-        deductions: deductions > 0 ? [{ type: '감점', points: deductions }] : [],
-        finalScore,
+        difficulty: dFinal,
+        execution: eFinal,
+        penalty: deductions,
+        total: finalScore,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       };
 
       await setDoc(scoreRef, scoreData);
@@ -148,7 +137,6 @@ export default function ScoringPage({ params }: PageProps) {
       setScores(newScores);
 
     } catch (error) {
-      console.error('Score save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };
@@ -178,14 +166,14 @@ export default function ScoringPage({ params }: PageProps) {
 
       <Tabs value={selectedEvent} onValueChange={setSelectedEvent}>
         <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
-          {competition.events.map((event) => (
+          {(competition?.events || []).map((event: any) => (
             <TabsTrigger key={event.id} value={event.id}>
               {event.name}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {competition.events.map((event) => (
+        {(competition?.events || []).map((event: any) => (
           <TabsContent key={event.id} value={event.id} className="space-y-4">
             <Card>
               <CardHeader>
@@ -198,7 +186,7 @@ export default function ScoringPage({ params }: PageProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 {registrations
-                  ?.filter(reg => reg.registeredEvents.includes(event.id))
+                  ?.filter(reg => reg.registeredEvents?.includes(event.id))
                   .map((registration) => {
                     const regScore = scores[registration.id] || {
                       dScore1: '',
@@ -318,8 +306,6 @@ export default function ScoringPage({ params }: PageProps) {
 
                           <div className="flex justify-end gap-2">
                             <Button
-                              variant="outline"
-                              size="sm"
                               onClick={() => {
                                 const final = calculateFinalScore(registration.id);
                                 toast({
@@ -332,7 +318,6 @@ export default function ScoringPage({ params }: PageProps) {
                               계산
                             </Button>
                             <Button
-                              size="sm"
                               onClick={() => handleSaveScore(registration)}
                               disabled={!regScore.dScore1 || !regScore.eScore1}
                             >
@@ -345,7 +330,7 @@ export default function ScoringPage({ params }: PageProps) {
                     );
                   })}
 
-                {registrations?.filter(reg => reg.registeredEvents.includes(event.id)).length === 0 && (
+                {registrations?.filter(reg => reg.registeredEvents?.includes(event.id)).length === 0 && (
                   <p className="text-center text-muted-foreground py-8">
                     이 종목에 참가자가 없습니다
                   </p>

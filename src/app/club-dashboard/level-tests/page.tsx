@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { ClubLevelTest, TestLevel, EvaluationItem, LevelTestRegistration } from '@/types';
+import { ClubLevelTest, TestLevel, EvaluationItem, LevelTestRegistration } from '@/types';
 import { UserRole } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
@@ -127,7 +126,6 @@ export default function ClubLevelTestsPage() {
       form.reset();
       setEditingTest(null);
     } catch (error) {
-      console.error('Test save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };

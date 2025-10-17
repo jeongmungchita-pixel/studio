@@ -8,14 +8,14 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { Member } from '@/types';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useState } from 'react';
-import type { MessageHistory, MessageTemplate } from '@/types';
+import { MessageHistory } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, MessageSquare, Users, CheckCircle2 } from 'lucide-react';
+import { Loader2, Send, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -145,7 +145,6 @@ export default function MessagesPage() {
       setContent('');
       setSelectedMembers([]);
     } catch (error) {
-      console.error('Message send error:', error);
       toast({ variant: 'destructive', title: '발송 실패' });
     } finally {
       setIsSending(false);

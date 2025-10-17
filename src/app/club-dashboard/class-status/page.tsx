@@ -4,22 +4,15 @@ export const dynamic = 'force-dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymClass, Member, Attendance } from '@/types';
+import { GymClass, Member, Attendance } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Users, CheckCircle2, XCircle, MessageSquare, LayoutGrid, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Users, CheckCircle2, XCircle, MessageSquare, LayoutGrid, Calendar } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
 type AttendanceStatus = 'present' | 'absent' | 'excused' | null;
@@ -148,7 +141,6 @@ export default function ClassStatusPage() {
       setAttendanceStates({});
       setAttendanceNotes({});
     } catch (error) {
-      console.error('Error recording attendance:', error);
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 

@@ -55,7 +55,6 @@ export default function AddFamilyMemberPage() {
       });
       router.push('/my-profile/family');
     } catch (error) {
-      console.error('가족 회원 추가 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

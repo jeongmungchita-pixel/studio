@@ -45,7 +45,6 @@ export default function InitialAdminSetupPage() {
           setIsAllowed(false);
         }
       } catch (error) {
-        console.error('데이터베이스 확인 실패:', error);
         setIsAllowed(false);
       } finally {
         setIsChecking(false);
@@ -102,11 +101,9 @@ export default function InitialAdminSetupPage() {
         updatedAt: new Date().toISOString(),
       });
       
-      console.log('최초 관리자 생성 완료:', user.uid);
       alert(`최초 관리자가 생성되었습니다!\n이메일: ${formData.email}\n\n로그인해주세요.`);
       router.push('/login');
-    } catch (error: any) {
-      console.error('관리자 생성 실패:', error);
+    } catch (error: unknown) {
       
       let errorMessage = '관리자 생성에 실패했습니다.';
       if (error.code === 'auth/email-already-in-use') {

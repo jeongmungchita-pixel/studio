@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2, XCircle, Mail, Lock, User, Phone } from 'lucide-react';
+import { Loader2, CheckCircle2, Mail, User, Phone } from 'lucide-react';
 import { FederationAdminInvite, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -95,7 +95,6 @@ export default function FederationAdminSignupPage() {
         setDisplayName(inviteData.name);
         setPhoneNumber(inviteData.phoneNumber || '');
       } catch (error) {
-        console.error('초대 로드 실패:', error);
         toast({
           variant: 'destructive',
           title: '오류 발생',
@@ -171,8 +170,7 @@ export default function FederationAdminSignupPage() {
       setTimeout(() => {
         router.push('/admin');
       }, 1500);
-    } catch (error: any) {
-      console.error('회원가입 실패:', error);
+    } catch (error: unknown) {
       
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
       if (error.code === 'auth/email-already-in-use') {
@@ -247,8 +245,7 @@ export default function FederationAdminSignupPage() {
       setTimeout(() => {
         router.push('/admin');
       }, 1500);
-    } catch (error: any) {
-      console.error('로그인 실패:', error);
+    } catch (error: unknown) {
       
       let errorMessage = '로그인 중 오류가 발생했습니다.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {

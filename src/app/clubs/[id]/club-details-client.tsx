@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useCollection, useDoc, useFirestore } from '@/firebase';
-import type { Member, Club, Attendance, MemberPass } from '@/types';
+import { Member, Club, Attendance, MemberPass } from '@/types';
 import { collection, doc, query, where, writeBatch, runTransaction, getDocs } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,13 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { MapPin, Users, Phone, Mail, Edit, Loader2 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -98,7 +92,6 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
                 await batch.commit();
                 toast({ title: '이용권 만료 처리', description: `${passesToExpire}개의 기간 만료 이용권이 업데이트되었습니다.` });
             } catch (error) {
-                console.error("Error expiring passes:", error);
             }
         }
     };
@@ -180,8 +173,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
         title: '출석 상태 변경',
         description: `${member.name}님의 상태가 ${attendanceStatusTranslations[newStatus]}(으)로 업데이트되었습니다.`
       });
-    } catch (error: any) {
-        console.error("Transaction failed: ", error);
+    } catch (error: unknown) {
         toast({
             variant: "destructive",
             title: "오류 발생",

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymnasticsCompetition, CompetitionRegistration, Member } from '@/types';
+import { GymnasticsCompetition, CompetitionRegistration, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -117,7 +117,6 @@ export default function CompetitionsPage() {
       setSelectedCompetition(null);
       setSelectedEvents([]);
     } catch (error) {
-      console.error('Registration error:', error);
       toast({
         variant: 'destructive',
         title: '신청 실패',

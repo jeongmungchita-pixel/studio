@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import type { Member, MemberPass } from '@/types';
+import { Member, MemberPass } from '@/types';
 import { collection, query, where, writeBatch, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,15 +15,7 @@ import { Loader2, Ticket, User, Baby, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMemberCategoryLabel, getMemberCategoryColor, calculateAge } from '@/lib/member-utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 export default function ClubPassesPage() {
   const { user } = useUser();
@@ -109,7 +101,6 @@ export default function ClubPassesPage() {
       });
       setSelectedMember(null);
     } catch (error) {
-      console.error("Error issuing pass: ", error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

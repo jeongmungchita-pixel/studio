@@ -6,37 +6,13 @@ import { useState, useCallback } from 'react';
 export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import {
-  Auth,
-  GoogleAuthProvider,
-  User,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
@@ -67,21 +43,16 @@ export default function LoginPage() {
 
   // Force logout function - 컴포넌트 최상위에 위치
   const forceLogout = useCallback(async () => {
-    console.log('🔴 forceLogout 호출됨');
     // 먼저 스토리지 삭제
     localStorage.clear();
     sessionStorage.clear();
     
     try {
       if (auth) {
-        console.log('🔴 signOut 시도');
         await signOut(auth);
-        console.log('🔴 signOut 완료');
       }
     } catch (error) {
-      console.error('🔴 로그아웃 에러:', error);
     } finally {
-      console.log('🔴 홈으로 완전히 리다이렉트');
       // 완전히 새로운 페이지로 이동 (캐시 무시)
       window.location.href = '/login';
     }
@@ -120,7 +91,7 @@ export default function LoginPage() {
         // 프로필이 없으면 기본 페이지로
         window.location.href = '/my-profile';
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
@@ -168,8 +139,7 @@ export default function LoginPage() {
         // 프로필이 없으면 기본 페이지로
         window.location.href = '/my-profile';
       }
-    } catch (error: any) {
-      console.error(error);
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '로그인 실패',

@@ -1,14 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Query,
-  onSnapshot,
-  DocumentData,
-  FirestoreError,
-  QuerySnapshot,
-  CollectionReference,
-} from 'firebase/firestore';
+import { Query, onSnapshot, DocumentData, FirestoreError, QuerySnapshot, CollectionReference } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -96,7 +89,6 @@ export function useCollection<T = any>(
         }
 
         // Log the error but don't throw it globally during development
-        console.warn(`Firestore permission error on ${path}:`, error.message);
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',

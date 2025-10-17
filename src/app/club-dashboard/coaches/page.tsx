@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, UserPlus, Trash2, Edit } from 'lucide-react';
+import { Loader2, UserPlus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { UserProfile } from '@/types';
+import { UserProfile } from '@/types';
 import { UserRole } from '@/types';
 
 export default function CoachesPage() {
@@ -73,7 +73,6 @@ export default function CoachesPage() {
         role: UserRole.ASSISTANT_COACH,
       });
     } catch (error) {
-      console.error('Error creating coach request:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -94,7 +93,6 @@ export default function CoachesPage() {
         description: '코치 계정이 삭제되었습니다.',
       });
     } catch (error) {
-      console.error('Error deleting coach:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

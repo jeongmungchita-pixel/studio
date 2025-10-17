@@ -79,7 +79,6 @@ export default function InvitePage() {
 
         setInvite(inviteData);
       } catch (error) {
-        console.error('초대 로드 실패:', error);
         toast({
           variant: 'destructive',
           title: '오류 발생',

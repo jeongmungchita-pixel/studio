@@ -9,12 +9,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Building2, UserPlus, Loader2, Lock } from 'lucide-react';
+import { Building2, UserPlus, Loader2, Lock } from 'lucide-react';
 import { useFirestore, useUser, useCollection, useAuth } from '@/firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { MemberRequest, Club, UserProfile } from '@/types';
+import { MemberRequest, Club, UserProfile } from '@/types';
 import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -90,7 +90,6 @@ export default function MemberRegisterPage() {
         return;
       }
 
-      console.log('📤 일반 회원 가입 시작...');
 
       // 1. Firebase Auth 계정 생성
       const userCredential = await createUserWithEmailAndPassword(
@@ -99,7 +98,6 @@ export default function MemberRegisterPage() {
         formData.password
       );
       const newUser = userCredential.user;
-      console.log('✅ Auth 계정 생성 완료:', newUser.uid);
 
       // 2. users 프로필 생성 (status: pending)
       const userProfile: UserProfile = {
@@ -116,7 +114,6 @@ export default function MemberRegisterPage() {
         status: 'pending', // 승인 대기
       };
       await setDoc(doc(firestore, 'users', newUser.uid), userProfile);
-      console.log('✅ users 프로필 생성 완룼 (status: pending)');
 
       // 3. memberRegistrationRequests 생성 (참고용)
       const requestData: Omit<MemberRequest, 'id'> = {
@@ -134,7 +131,6 @@ export default function MemberRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
       await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
-      console.log('✅ memberRegistrationRequests 생성 완료');
       
       toast({
         title: '가입 완료!',
@@ -143,8 +139,7 @@ export default function MemberRegisterPage() {
       
       // 승인 대기 페이지로 이동 (완전한 페이지 리로드)
       window.location.href = '/pending-approval';
-    } catch (error: any) {
-      console.error('❌ 가입 실패:', error);
+    } catch (error: unknown) {
       
       let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
       if (error.code === 'auth/email-already-in-use') {

@@ -1,12 +1,11 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Club, Member } from '@/types';
+import { Club, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,35 +24,12 @@ export default function ClubsPage() {
   }, [firestore]);
   const { data: clubs, isLoading: isClubsLoading, error: clubsError } = useCollection<Club>(clubsQuery);
   
-  // 디버깅: 클럽 데이터 콘솔 출력
-  console.log('🔍 전체 클럽 데이터:', {
-    count: clubs?.length,
-    clubs: clubs?.map(c => ({ id: c.id, name: c.name, status: c.status })),
-    error: clubsError
-  });
-  
-  // 에러 발생 시 콘솔에 상세 정보 출력
-  if (clubsError) {
-    console.error('❌ 클럽 조회 에러 상세:', {
-      message: clubsError.message,
-      code: 'code' in clubsError ? clubsError.code : 'unknown',
-      stack: clubsError.stack
-    });
-    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
-  }
-
   // 전체 회원 조회 (클럽별 회원 수 계산용)
   const membersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'members') : null),
     [firestore]
   );
   const { data: allMembers, isLoading: isMembersLoading, error: membersError } = useCollection<Member>(membersCollection);
-
-  // 회원 데이터 에러 처리
-  if (membersError) {
-    console.error('❌ 회원 조회 에러:', membersError);
-    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
-  }
 
   // 클럽별 회원 수 계산
   const clubMemberCounts = useMemo(() => {
@@ -69,6 +45,15 @@ export default function ClubsPage() {
 
   // 통합 로딩 체크
   const isLoading = usePageLoading(isClubsLoading, isMembersLoading);
+
+  // 에러 처리
+  if (clubsError) {
+    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
+  }
+
+  if (membersError) {
+    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
+  }
   
   if (isLoading) {
     return (
@@ -89,7 +74,7 @@ export default function ClubsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-sm">
+          <Badge className="outline text-sm">
             <Building2 className="mr-1 h-3 w-3" />
             총 {clubs?.length || 0}개 클럽
           </Badge>
@@ -109,7 +94,7 @@ export default function ClubsPage() {
                   <CardTitle className="text-lg">{club.name}</CardTitle>
                   <div className="mt-1 flex items-center gap-1 text-sm text-slate-500">
                     <MapPin className="h-3 w-3" />
-                    {club.location || '위치 미등록'}
+                    {typeof club.location === 'string' ? club.location : '위치 미등록'}
                   </div>
                 </div>
               </div>
@@ -136,7 +121,7 @@ export default function ClubsPage() {
               <div className="pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">소속 회원</span>
-                  <Badge variant="secondary" className="font-semibold">
+                  <Badge className="secondary font-semibold">
                     {clubMemberCounts[club.id] || 0}명
                   </Badge>
                 </div>
@@ -145,7 +130,7 @@ export default function ClubsPage() {
             
             <CardFooter className="pt-3">
               <Link href={`/clubs/${club.id}`} className="w-full">
-                <Button variant="outline" size="sm" className="w-full">
+                <Button className="outline w-full">
                   상세보기
                 </Button>
               </Link>

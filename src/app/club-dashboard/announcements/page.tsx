@@ -5,14 +5,14 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Announcement } from '@/types';
+import { Announcement } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Pin, Bell, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Pin, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
@@ -120,7 +120,6 @@ export default function AnnouncementsPage() {
 
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Announcement save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSubmitting(false);

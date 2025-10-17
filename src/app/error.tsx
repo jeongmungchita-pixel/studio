@@ -14,7 +14,6 @@ export default function Error({
 }) {
   useEffect(() => {
     // 에러를 콘솔에 로깅
-    console.error('Application error:', error);
   }, [error]);
 
   return (

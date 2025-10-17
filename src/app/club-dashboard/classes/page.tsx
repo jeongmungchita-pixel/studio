@@ -3,48 +3,24 @@ import { useState, useEffect, useMemo } from 'react';
 export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymClass } from '@/types';
+import { GymClass } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby, Users as UsersIcon } from 'lucide-react';
+import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTargetCategoryLabel } from '@/lib/member-utils';
+import { FirebaseDebug } from '@/components/debug/firebase-debug';
 
 
 const classFormSchema = z.object({
@@ -69,6 +45,23 @@ export default function ClassesPage() {
   const [deletingClass, setDeletingClass] = useState<GymClass | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child' | 'general'>('all');
 
+  // 전역 에러 핸들러 추가
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
@@ -79,6 +72,14 @@ export default function ClassesPage() {
       targetCategory: 'all',
     },
   });
+
+  // 컴포넌트 마운트 시 디버깅 정보
+  useEffect(() => {
+  }, []);
+
+  // 사용자나 firestore 상태 변경 시 로깅
+  useEffect(() => {
+  }, [user, firestore]);
 
   const classesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.clubId) return null;
@@ -136,23 +137,54 @@ export default function ClassesPage() {
   };
 
   const onSubmit = async (values: ClassFormValues) => {
-    console.log('=== 클래스 생성 시작 ===');
-    console.log('입력값:', values);
-    console.log('firestore:', !!firestore);
-    console.log('user.clubId:', user?.clubId);
     
-    if (!firestore || !user?.clubId) {
-      console.error('Firebase 또는 클럽 정보 없음');
-      toast({ variant: 'destructive', title: '오류', description: 'Firebase 또는 클럽 정보가 없습니다.' });
+    // 강제로 Firebase 재초기화 시도
+    if (!firestore) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Firebase 연결 오류', 
+        description: 'Firebase 연결에 문제가 있습니다. 페이지를 새로고침 후 다시 시도해주세요.' 
+      });
+      return;
+    }
+    
+    if (!user) {
+      toast({ 
+        variant: 'destructive', 
+        title: '로그인 필요', 
+        description: '로그인이 필요합니다. 다시 로그인해주세요.' 
+      });
+      return;
+    }
+    
+    if (!user.clubId) {
+      toast({ 
+        variant: 'destructive', 
+        title: '클럽 정보 없음', 
+        description: '클럽 정보를 찾을 수 없습니다. 관리자에게 문의하세요.' 
+      });
       return;
     }
     
     setIsSubmitting(true);
+    
+    // 추가 검증: Firestore 연결 테스트
+    try {
+      const testRef = doc(firestore, 'test', 'connection');
+      // 실제로 읽기 시도하지 않고 reference만 생성해서 연결 확인
+    } catch (error) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Firebase 연결 실패', 
+        description: 'Firebase 연결에 문제가 있습니다.' 
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       if (editingClass) {
         // Update existing class
-        console.log('클래스 수정 모드');
         const classRef = doc(firestore, 'classes', editingClass.id);
         
         const updatedData: Partial<GymClass> = {
@@ -163,11 +195,9 @@ export default function ClassesPage() {
           targetCategory: values.targetCategory,
         };
         await setDoc(classRef, updatedData, { merge: true });
-        console.log('클래스 수정 완료');
-        toast({ title: '클래스 수정 완료', description: `'${values.name}' 클래스 정보가 업데이트되었습니다.` });
+        toast({ title: '클래스 수정 완료', description: `'${values.name}' 클래스가 수정되었습니다.` });
       } else {
         // Create new class
-        console.log('새 클래스 생성 모드');
         const newClassRef = doc(collection(firestore, 'classes'));
         
         const classData: GymClass = {
@@ -180,17 +210,30 @@ export default function ClassesPage() {
             targetCategory: values.targetCategory,
             memberIds: [],
         };
-        console.log('생성할 클래스 데이터:', classData);
         await setDoc(newClassRef, classData);
-        console.log('클래스 생성 완료');
         toast({ title: '클래스 생성 완료', description: `'${values.name}' 클래스가 생성되었습니다.` });
       }
+      
       setIsDialogOpen(false);
       form.reset();
-    } catch (error) {
-      console.error('=== 클래스 저장 에러 ===');
-      console.error('에러 상세:', error);
-      toast({ variant: 'destructive', title: '오류 발생', description: '저장 중 오류가 발생했습니다.' });
+      setEditingClass(null);
+      
+    } catch (error: unknown) {
+      
+      let errorMessage = '저장 중 오류가 발생했습니다.';
+      if (error?.code === 'permission-denied') {
+        errorMessage = '권한이 없습니다. 관리자에게 문의하세요.';
+      } else if (error?.code === 'unavailable') {
+        errorMessage = 'Firebase 서비스에 연결할 수 없습니다. 네트워크를 확인해주세요.';
+      } else if (error?.message) {
+        errorMessage = `오류: ${error.message}`;
+      }
+      
+      toast({ 
+        variant: 'destructive', 
+        title: '저장 실패', 
+        description: errorMessage 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -203,7 +246,6 @@ export default function ClassesPage() {
       toast({ title: '삭제 완료', description: `'${deletingClass.name}' 클래스가 삭제되었습니다.` });
       setDeletingClass(null);
     } catch (error) {
-      console.error('Error deleting class:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '삭제 중 오류가 발생했습니다.' });
     }
   };
@@ -211,6 +253,39 @@ export default function ClassesPage() {
 
   return (
     <main className="flex-1 p-6 space-y-6">
+        {/* 디버깅용 테스트 버튼 */}
+        <div className="bg-yellow-100 p-4 rounded-lg border border-yellow-300">
+          <h3 className="font-bold text-yellow-800 mb-2">🔧 디버깅 테스트</h3>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => {
+                alert('테스트 버튼이 작동합니다!');
+              }}
+              variant="outline"
+              size="sm"
+            >
+              기본 클릭 테스트
+            </Button>
+            <Button 
+              onClick={() => {
+              }}
+              variant="outline"
+              size="sm"
+            >
+              상태 확인
+            </Button>
+            <Button 
+              onClick={() => {
+                setIsDialogOpen(true);
+              }}
+              variant="outline"
+              size="sm"
+            >
+              다이얼로그 열기
+            </Button>
+          </div>
+        </div>
+        
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
@@ -363,14 +438,22 @@ export default function ClassesPage() {
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((values) => {
-                console.log('폼 제출 이벤트 발생');
-                console.log('현재 폼 값:', values);
-                console.log('폼 에러:', form.formState.errors);
-                onSubmit(values);
-              }, (errors) => {
-                console.log('폼 검증 실패:', errors);
-              })} className="space-y-4 py-4">
+              <form 
+                onSubmit={(e) => {
+                  
+                  // React Hook Form의 handleSubmit 호출
+                  form.handleSubmit((values) => {
+                    onSubmit(values);
+                  }, (errors) => {
+                    toast({ 
+                      variant: 'destructive', 
+                      title: '입력 오류', 
+                      description: '모든 필수 필드를 올바르게 입력해주세요.' 
+                    });
+                  })(e);
+                }}
+                className="space-y-4 py-4"
+              >
                 <FormField
                   control={form.control}
                   name="name"
@@ -475,9 +558,23 @@ export default function ClassesPage() {
                     <Button type="button" variant="outline">취소</Button>
                   </DialogClose>
                   <Button 
-                    type="submit" 
+                    type="button"
                     disabled={isSubmitting}
-                    onClick={() => console.log('저장 버튼 클릭됨')}
+                    onClick={async (e) => {
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      
+                      // 수동으로 폼 검증 및 제출
+                      const isValid = await form.trigger();
+                      
+                      if (isValid) {
+                        const values = form.getValues();
+                        await onSubmit(values as any);
+                      } else {
+                      }
+                    }}
                   >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     저장
@@ -507,6 +604,8 @@ export default function ClassesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        
+        <FirebaseDebug />
     </main>
   );
 }

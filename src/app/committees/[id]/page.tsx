@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Edit, Trash2, Users, Calendar } from 'lucide-react';
 import { UserRole, CommitteeType } from '@/types';
-import type { Committee, UserProfile } from '@/types';
+import { Committee, UserProfile } from '@/types';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -71,7 +71,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
       });
       router.push('/committees');
     } catch (error) {
-      console.error('삭제 오류:', error);
       toast({
         variant: 'destructive',
         title: '삭제 실패',

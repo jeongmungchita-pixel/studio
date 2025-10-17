@@ -5,17 +5,10 @@ import { useCollection, useUser } from '@/firebase';
 import { collection, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { UserProfile, Club } from '@/types';
+import { UserProfile, Club } from '@/types';
 import { UserRole } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -91,7 +84,6 @@ export default function AdminUsersPage() {
         description: `${userToApprove.clubName} 클럽이 생성되고 ${userToApprove.displayName} 님의 계정이 승인되었습니다.`,
       });
     } catch (error) {
-      console.error('Error approving user and creating club:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -118,7 +110,6 @@ export default function AdminUsersPage() {
         description: `${userToDelete.displayName} 님의 계정이 삭제되었습니다.`,
       });
     } catch (error) {
-      console.error('Error deleting user:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -196,21 +187,19 @@ export default function AdminUsersPage() {
                     <TableCell className="space-x-2">
                       {(u.role === UserRole.CLUB_OWNER || u.role === UserRole.CLUB_MANAGER) && u.status === 'pending' ? (
                         <>
-                          <Button size="sm" onClick={() => handleApprove(u)}>
+                          <Button size="default" onClick={() => handleApprove(u)}>
                             승인
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
+                          <Button size="default"
+                            
                             onClick={() => handleDelete(u)}
                           >
                             거절
                           </Button>
                         </>
                       ) : u.uid !== user.uid ? ( // Do not show delete button for the current admin's own account
-                        <Button
-                          size="sm"
-                          variant="destructive"
+                        <Button size="default"
+                          
                           onClick={() => handleDelete(u)}
                         >
                           삭제

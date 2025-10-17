@@ -4,39 +4,25 @@ import { useMemo, useState, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser, useDoc, useCollection, useFirestore, useStorage, uploadImage } from '@/firebase';
-import type { Member, MemberPass, Attendance, MediaItem, UserProfile, PassTemplate, PassRenewalRequest } from '@/types';
+import { Member, MemberPass, Attendance, MediaItem, UserProfile, PassTemplate, PassRenewalRequest } from '@/types';
 import { UserRole } from '@/types';
 import { doc, collection, query, where, orderBy, writeBatch, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { differenceInYears, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Calendar, GitCompareArrows, History, Upload, Image as ImageIcon, Camera, File, Video, Phone, Mail, MapPin, Users as UsersIcon, CreditCard, Edit, Trash2, Baby } from 'lucide-react';
-import { canUsePassTemplate, calculateAge, getMemberCategoryLabel, getTargetCategoryLabel } from '@/lib/member-utils';
-import Link from 'next/link';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import { Loader2, User, Calendar, History, Upload, Image, Camera, File, Phone, Mail, CreditCard, Edit, Trash2, Baby } from 'lucide-react';
+import { canUsePassTemplate, getMemberCategoryLabel, getTargetCategoryLabel } from '@/lib/member-utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
@@ -170,7 +156,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
           videoRef.current.srcObject = stream;
         }
       } catch (error) {
-        console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
       }
     };
@@ -215,7 +200,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
       
       toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
     } catch (error) {
-      console.error("Media upload failed: ", error);
       toast({ variant: 'destructive', title: '업로드 실패', description: '미디어 업로드 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
@@ -247,7 +231,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
       
       setEditingAttendance(null);
     } catch (error) {
-      console.error('Attendance update error:', error);
       toast({
         variant: 'destructive',
         title: '수정 실패',
@@ -268,7 +251,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
         description: '출석 기록이 삭제되었습니다.',
       });
     } catch (error) {
-      console.error('Attendance delete error:', error);
       toast({
         variant: 'destructive',
         title: '삭제 실패',
@@ -291,7 +273,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
       
       toast({ title: '업로드 성공', description: '프로필 사진이 업데이트되었습니다.' });
     } catch (error) {
-      console.error("Profile photo upload failed: ", error);
       toast({ variant: 'destructive', title: '업로드 실패', description: '프로필 사진 업로드 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
@@ -338,7 +319,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
 
       toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
     } catch (error) {
-      console.error("Media upload failed: ", error);
       toast({ variant: 'destructive', title: '업로드 실패', description: '미디어 업로드 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
@@ -352,7 +332,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
       await deleteDoc(doc(firestore, 'media', mediaId));
       toast({ title: '삭제 완료', description: '미디어가 삭제되었습니다.' });
     } catch (error) {
-      console.error('Error deleting media:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '미디어 삭제 중 오류가 발생했습니다.' });
     }
   };
@@ -380,7 +359,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
       });
       setIsRenewalDialogOpen(false);
     } catch (error) {
-      console.error('Error requesting renewal:', error);
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 

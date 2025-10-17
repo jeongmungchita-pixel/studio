@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
-import { UserPlus, AlertCircle, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { UserPlus, AlertCircle, Upload, X } from 'lucide-react';
 import { useFirestore, useStorage } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -71,7 +71,7 @@ export default function AddFamilyMemberPage() {
     setMembers(members.filter((_, i) => i !== index));
   };
 
-  const updateMember = (index: number, field: keyof FamilyMember, value: any) => {
+  const updateMember = (index: number, field: keyof FamilyMember, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
     const updated = [...members];
     updated[index] = { ...updated[index], [field]: value };
     setMembers(updated);
@@ -172,7 +172,6 @@ export default function AddFamilyMemberPage() {
       });
       router.push('/my-profile/family');
     } catch (error) {
-      console.error('가족 구성원 추가 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

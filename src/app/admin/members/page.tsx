@@ -9,34 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ErrorFallback } from '@/components/error-fallback';
-import { MoreHorizontal, Loader2, Eye, Edit, Trash2 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { Member } from '@/types';
+import { MoreHorizontal, Loader2, Eye, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Member } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -74,7 +51,6 @@ export default function MembersPage() {
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
     } catch (error) {
-      console.error('삭제 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -96,7 +72,6 @@ export default function MembersPage() {
         description: `${member.name}님의 상태가 ${statusTranslations[newStatus]}(으)로 변경되었습니다.`,
       });
     } catch (error) {
-      console.error('상태 변경 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -175,7 +150,7 @@ export default function MembersPage() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <Button aria-haspopup="true" size="icon" >
                           <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">메뉴 열기</span>
                         </Button>

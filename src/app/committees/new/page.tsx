@@ -11,17 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { UserRole, CommitteeType } from '@/types';
-import type { Committee } from '@/types';
+import { Committee } from '@/types';
 
 const committeeTypeLabels: Record<CommitteeType, string> = {
   COMPETITION: '대회',
@@ -69,7 +63,6 @@ export default function NewCommitteePage() {
 
       router.push('/committees');
     } catch (error) {
-      console.error('위원회 생성 오류:', error);
       toast({
         variant: 'destructive',
         title: '생성 실패',

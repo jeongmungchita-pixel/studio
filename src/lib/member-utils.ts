@@ -2,7 +2,7 @@
  * 회원 관리 유틸리티 함수
  */
 
-import type { Member, PassTemplate, GymClass } from '@/types';
+import { Member, PassTemplate, GymClass } from '@/types';
 
 /**
  * 생년월일로 나이 계산

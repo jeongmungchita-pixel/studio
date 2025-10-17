@@ -77,7 +77,6 @@ export default function ClubApprovalsPage() {
 
       toast({ title: '승인 완료', description: `${request.memberName}님의 이용권이 활성화되었습니다.` });
     } catch (error) {
-      console.error('Error approving renewal:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '승인 중 오류가 발생했습니다.' });
     }
   };
@@ -93,7 +92,6 @@ export default function ClubApprovalsPage() {
 
       toast({ title: '거부 완료', description: '이용권 갱신 요청이 거부되었습니다.' });
     } catch (error) {
-      console.error('Error rejecting renewal:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '거부 중 오류가 발생했습니다.' });
     }
   };

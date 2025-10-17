@@ -5,12 +5,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useStorage, uploadImage } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Member, MediaItem } from '@/types';
+import { Member, MediaItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, X, Image as ImageIcon, Video } from 'lucide-react';
+import { Loader2, Camera, X, Image, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 
@@ -79,7 +79,6 @@ export default function MediaManagementPage() {
       setMediaRecorder(recorder);
       setIsCameraOpen(true);
     } catch (error) {
-      console.error('Camera error:', error);
       toast({
         variant: 'destructive',
         title: '카메라 오류',
@@ -149,7 +148,6 @@ export default function MediaManagementPage() {
       
       setRecordedChunks([]);
     } catch (error) {
-      console.error('Video upload error:', error);
       toast({
         variant: 'destructive',
         title: '저장 실패',
@@ -205,7 +203,6 @@ export default function MediaManagementPage() {
         description: `${selectedMember.name}의 사진이 저장되었습니다.`
       });
     } catch (error) {
-      console.error('Photo upload error:', error);
       toast({
         variant: 'destructive',
         title: '저장 실패',
@@ -223,7 +220,6 @@ export default function MediaManagementPage() {
       await deleteDoc(doc(firestore, 'media', mediaId));
       toast({ title: '삭제 완료', description: '미디어가 삭제되었습니다.' });
     } catch (error) {
-      console.error('Delete error:', error);
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };

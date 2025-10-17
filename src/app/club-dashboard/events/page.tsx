@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { ClubEvent, EventRegistration, EventOption } from '@/types';
+import { ClubEvent, EventRegistration, EventOption } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -132,7 +131,6 @@ export default function ClubEventsPage() {
       setOptions([]);
       setEditingEvent(null);
     } catch (error) {
-      console.error('Event save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };

@@ -5,12 +5,12 @@ import { useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Payment, ClubBankAccount, Member, FinancialTransaction, TransactionType, TransactionCategory } from '@/types';
+import { Payment, Member, FinancialTransaction, TransactionType, TransactionCategory } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle2, XCircle, Clock, DollarSign, CreditCard, User, Baby, Users, Plus, TrendingUp, TrendingDown, Split, Undo2 } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, DollarSign, CreditCard, User, Baby, Users, TrendingUp, TrendingDown, Split, Undo2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -163,7 +163,6 @@ export default function PaymentsPage() {
 
       setSelectedPayment(null);
     } catch (error) {
-      console.error('Payment verify error:', error);
       toast({ variant: 'destructive', title: '처리 실패' });
     } finally {
       setIsProcessing(false);
@@ -209,7 +208,6 @@ export default function PaymentsPage() {
       setTransactionDate(new Date().toISOString().split('T')[0]);
       setIsAddTransactionOpen(false);
     } catch (error) {
-      console.error('Add transaction error:', error);
       toast({ variant: 'destructive', title: '등록 실패' });
     } finally {
       setIsProcessing(false);
@@ -277,7 +275,6 @@ export default function PaymentsPage() {
       setSelectedTransaction(null);
       setSplitMonths('1');
     } catch (error) {
-      console.error('Split transaction error:', error);
       toast({ variant: 'destructive', title: '분할 실패' });
     } finally {
       setIsProcessing(false);
@@ -323,7 +320,6 @@ export default function PaymentsPage() {
         description: '분할이 취소되고 원본 거래가 복원되었습니다.',
       });
     } catch (error) {
-      console.error('Undo split error:', error);
       toast({ variant: 'destructive', title: '되돌리기 실패' });
     } finally {
       setIsProcessing(false);

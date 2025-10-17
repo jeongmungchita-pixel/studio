@@ -1,24 +1,12 @@
 'use client';
 
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  Building, 
-  Trophy, 
-  Award,
-  Loader2,
-  ArrowRight,
-  TrendingUp,
-  Calendar,
-  UserPlus,
-  Building2,
-} from 'lucide-react';
-import type { Member, Club, Competition } from '@/types';
-import { UserRole } from '@/types';
+import { Users, Building, Trophy, Award, Loader2, ArrowRight, TrendingUp, Calendar, UserPlus, Building2 } from 'lucide-react';
+import { Member, Club, Competition } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/use-role';
 import { usePageLoading } from '@/hooks/use-page-loading';
@@ -31,19 +19,10 @@ export default function FederationAdminDashboard() {
   const router = useRouter();
 
   // 디버깅: 사용자 정보 출력
-  console.log('🔍 Admin Dashboard - User:', {
-    user: user?.email,
-    role: user?.role,
-    isUserLoading,
-    isFederationAdmin,
-    isSuperAdmin,
-    hasRole: hasRole(UserRole.FEDERATION_ADMIN)
-  });
 
   // 권한 체크: FEDERATION_ADMIN 또는 SUPER_ADMIN만 접근 가능
   if (!isUserLoading && user) {
     if (!isFederationAdmin && !isSuperAdmin) {
-      console.warn('⚠️ 권한 없음 - 리다이렉트:', user.email, user.role);
       router.push('/dashboard');
       return (
         <div className="flex min-h-screen items-center justify-center">
@@ -71,7 +50,6 @@ export default function FederationAdminDashboard() {
   const { data: allMembers, isLoading: isMembersLoading, error: membersError } = useCollection<Member>(membersCollection);
   
   // 디버깅: 회원 데이터
-  console.log('📊 Members:', { count: allMembers?.length, error: membersError });
 
   // 에러 처리
   if (membersError) {
@@ -86,7 +64,6 @@ export default function FederationAdminDashboard() {
   const { data: allClubs, isLoading: isClubsLoading, error: clubsError } = useCollection<Club>(clubsCollection);
   
   // 디버깅: 클럽 데이터
-  console.log('🏢 Clubs:', { count: allClubs?.length, error: clubsError });
 
   // 에러 처리
   if (clubsError) {
@@ -101,7 +78,6 @@ export default function FederationAdminDashboard() {
   const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<Competition>(competitionsCollection);
   
   // 디버깅: 대회 데이터
-  console.log('🏆 Competitions:', { count: competitions?.length, error: competitionsError });
 
   // 에러 처리
   if (competitionsError) {

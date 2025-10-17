@@ -4,18 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
 import { useRole } from '@/hooks/use-role';
-import {
-  LayoutDashboard,
-  Users,
-  Building,
-  Trophy,
-  ClipboardList,
-  UserCog,
-  Shield,
-  User as UserIcon,
-  Settings,
-  ChevronRight,
-} from 'lucide-react';
+import { LayoutDashboard, Building, Trophy, ClipboardList, Shield, ChevronRight } from 'lucide-react';
 
 interface NavSection {
   id: string;

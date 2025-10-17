@@ -16,17 +16,9 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  User, 
-  PenTool, 
-  CheckCircle2, 
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft,
-  Loader2
-} from 'lucide-react';
+import { User, PenTool, CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
-import type { Club, AdultRegistrationRequest } from '@/types';
+import { Club, AdultRegistrationRequest } from '@/types';
 
 interface FormData {
   clubId: string;
@@ -71,7 +63,7 @@ export default function AdultRegisterPage() {
   );
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
 
-  const updateFormData = (field: keyof FormData, value: any) => {
+  const updateFormData = (field: keyof FormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -215,7 +207,6 @@ export default function AdultRegisterPage() {
       
       router.push('/register/success');
     } catch (error) {
-      console.error('가입 신청 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

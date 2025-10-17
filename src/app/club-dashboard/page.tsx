@@ -5,16 +5,16 @@ import { useMemo, useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Member, MemberPass, GymClass } from '@/types';
+import { Member, GymClass } from '@/types';
 import { UserRole } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Users, CreditCard, BookMarked, TrendingUp, Search, Clock, Users2, User, Baby } from 'lucide-react';
+import { Loader2, Users, BookMarked, Search, Clock, Users2, User, Baby } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
@@ -132,7 +132,6 @@ export default function ClubDashboardPage() {
             toast({ title: '승인 완료', description: '요청이 승인되었습니다.' });
 
         } catch (error) {
-            console.error(error);
             toast({ variant: 'destructive', title: '오류', description: '승인 처리 중 오류가 발생했습니다.' });
         }
     };

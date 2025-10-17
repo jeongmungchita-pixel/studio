@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { ClubLevelTest, LevelTestRegistration, Member, MemberLevel } from '@/types';
+import { ClubLevelTest, LevelTestRegistration, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -104,7 +104,6 @@ export default function LevelTestsPage() {
       setSelectedTest(null);
       setSelectedLevel('');
     } catch (error) {
-      console.error('Registration error:', error);
       toast({
         variant: 'destructive',
         title: '신청 실패',

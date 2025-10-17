@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PendingApprovalCard } from '@/components/pending-approval-card';
 import { RequireRole } from '@/components/require-role';
-import { UserRole, ApprovalRequest, ClubOwnerRequest, Club } from '@/types';
-import { Shield, Users, Building2, Trophy, Loader2 } from 'lucide-react';
+import { UserRole, ClubOwnerRequest, Club } from '@/types';
+import { Shield, Building2, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, query, where, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,11 +28,10 @@ export default function AdminApprovalsPage() {
 
   const { data: clubOwnerRequests, isLoading } = useCollection<ClubOwnerRequest>(clubOwnerRequestsQuery);
 
-  console.log('📊 클럽 오너 신청:', clubOwnerRequests);
 
   // 클럽 오너 신청만 있음
   const clubOwnerApprovals = clubOwnerRequests || [];
-  const federationAdminApprovals: any[] = []; // 추후 구현
+  const federationAdminApprovals: unknown[] = []; // 추후 구현
 
   const handleApprove = async (requestId: string) => {
     if (!firestore || !user) return;
@@ -48,7 +47,6 @@ export default function AdminApprovalsPage() {
         return;
       }
 
-      console.log('👉 승인 처리 시작:', request);
 
       const batch = writeBatch(firestore);
 
@@ -65,15 +63,24 @@ export default function AdminApprovalsPage() {
       const newClub: Club = {
         id: clubRef.id,
         name: request.clubName,
+        description: '',
+        address: typeof request.clubAddress === 'string' ? request.clubAddress : `${request.clubAddress.latitude}, ${request.clubAddress.longitude}`,
+        phoneNumber: request.phoneNumber,
+        email: request.email,
+        ownerId: request.userId,
+        ownerName: request.name,
         contactName: request.name,
         contactEmail: request.email,
         contactPhoneNumber: request.phoneNumber,
-        location: request.clubAddress,
-        status: 'approved',
+        status: 'active',
+        facilities: [],
+        capacity: 0,
+        operatingHours: {},
+        location: typeof request.clubAddress === 'string' ? undefined : request.clubAddress,
+        createdAt: new Date().toISOString(),
       };
       batch.set(clubRef, newClub);
 
-      console.log('🏢 새 클럽 생성:', newClub);
 
       // 3. 사용자 프로필 승인 (status: approved + clubId 추가)
       if (request.userId && request.userId.trim() !== '') {
@@ -84,21 +91,17 @@ export default function AdminApprovalsPage() {
           approvedBy: user.uid,
           approvedAt: new Date().toISOString(),
         });
-        console.log('✅ 사용자 승인 완료:', request.userId);
       } else {
-        console.log('⚠️ userId 없음 - 구버전 요청');
       }
 
       await batch.commit();
 
-      console.log('✅ 승인 완료!');
 
       toast({
         title: '승인 완료',
         description: `${request.name}님의 클럽 오너 신청이 승인되었습니다.`,
       });
     } catch (error) {
-      console.error('❌ 승인 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -122,14 +125,12 @@ export default function AdminApprovalsPage() {
         rejectionReason: reason,
       });
 
-      console.log('❌ 거부 완료:', requestId);
 
       toast({
         title: '거부 완료',
         description: `${request.name}님의 요청이 거부되었습니다.`,
       });
     } catch (error) {
-      console.error('❌ 거부 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -242,10 +243,10 @@ export default function AdminApprovalsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               {federationAdminApprovals.map((approval) => (
                 <PendingApprovalCard
-                  key={approval.userId}
-                  {...approval}
-                  onApprove={() => handleApprove(approval.userId)}
-                  onReject={(reason) => handleReject(approval.userId, reason)}
+                  key={(approval as any).userId}
+                  {...(approval as any)}
+                  onApprove={() => handleApprove((approval as any).userId)}
+                  onReject={(reason) => handleReject((approval as any).userId, reason)}
                 />
               ))}
             </div>

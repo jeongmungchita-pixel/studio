@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { UserCheck, Users, User, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import type { AdultRegistrationRequest, FamilyRegistrationRequest, MemberRequest } from '@/types';
+import { AdultRegistrationRequest, FamilyRegistrationRequest, MemberRequest } from '@/types';
 
 export default function MemberApprovalsPage() {
   const { user } = useUser();
@@ -89,7 +89,6 @@ export default function MemberApprovalsPage() {
         description: `${request.name}님의 가입이 승인되었습니다.`,
       });
     } catch (error) {
-      console.error('승인 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -180,7 +179,6 @@ export default function MemberApprovalsPage() {
         description: `${message.join(' + ')} 가입이 승인되었습니다.`,
       });
     } catch (error) {
-      console.error('승인 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -197,7 +195,6 @@ export default function MemberApprovalsPage() {
     setIsProcessing(true);
 
     try {
-      console.log('👉 일반 회원 승인 시작:', request);
 
       // 1. members 컬렉션에 생성
       await addDoc(collection(firestore, 'members'), {
@@ -215,7 +212,6 @@ export default function MemberApprovalsPage() {
         approvedBy: user.uid,
         approvedAt: new Date().toISOString(),
       });
-      console.log('✅ members 컬렉션 생성 완료');
 
       // 2. users 프로필 승인 (status: approved)
       if (request.userId && request.userId.trim() !== '') {
@@ -224,9 +220,7 @@ export default function MemberApprovalsPage() {
           approvedBy: user.uid,
           approvedAt: new Date().toISOString(),
         });
-        console.log('✅ users 프로필 승인 완료');
       } else {
-        console.log('⚠️ userId 없음 - 구버전 요청');
       }
 
       // 3. memberRegistrationRequests 상태 업데이트
@@ -238,14 +232,12 @@ export default function MemberApprovalsPage() {
         });
       }
 
-      console.log('✅ 승인 완료!');
 
       toast({
         title: '승인 완료',
         description: `${request.name}님의 가입이 승인되었습니다.`,
       });
     } catch (error) {
-      console.error('❌ 승인 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -277,7 +269,6 @@ export default function MemberApprovalsPage() {
         description: '가입 신청이 거절되었습니다.',
       });
     } catch (error) {
-      console.error('거절 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

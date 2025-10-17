@@ -11,37 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Shield, 
-  Building2, 
-  Users, 
-  Loader2, 
-  CheckCircle, 
-  XCircle,
-  UserPlus,
-  Mail,
-  Phone,
-  Clock,
-  TrendingUp,
-  Activity,
-  AlertCircle,
-  ArrowRight,
-  Sparkles,
-  Trash2,
-  AlertTriangle
-} from 'lucide-react';
-import { UserRole, UserProfile, ClubOwnerRequest, Club } from '@/types';
+import { Shield, Building2, Users, Loader2, CheckCircle, XCircle, UserPlus, Mail, Phone, Activity, Trash2, AlertTriangle } from 'lucide-react';
+import { UserRole, ClubOwnerRequest, Club } from '@/types';
 import { useRouter } from 'next/navigation';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SuperAdminDashboard() {
@@ -68,9 +42,6 @@ export default function SuperAdminDashboard() {
   const { data: clubOwnerRequests, isLoading: isRequestsLoading } = useCollection<ClubOwnerRequest>(clubOwnerRequestsQuery);
   
   // 디버깅 로그
-  console.log('🔍 clubOwnerRequests:', clubOwnerRequests);
-  console.log('🔍 isRequestsLoading:', isRequestsLoading);
-  console.log('🔍 firestore:', firestore);
 
   // 최고 관리자 신청 목록
   const superAdminRequestsQuery = useMemoFirebase(() => {
@@ -135,9 +106,7 @@ export default function SuperAdminDashboard() {
           approvedBy: user.uid,
           approvedAt: new Date().toISOString(),
         });
-        console.log('✅ 사용자 프로필 업데이트:', request.userId);
       } else {
-        console.log('⚠️ 비회원 가입 - 로그인 시 프로필 생성됩니다');
       }
 
       // 3. 신청 상태 업데이트
@@ -153,7 +122,6 @@ export default function SuperAdminDashboard() {
         description: `${request.clubName} 클럽이 승인되었습니다!`,
       });
     } catch (error) {
-      console.error('승인 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -182,9 +150,7 @@ export default function SuperAdminDashboard() {
           rejectedAt: new Date().toISOString(),
           rejectionReason,
         });
-        console.log('✅ 사용자 프로필 거부 처리:', request.userId);
       } else {
-        console.log('⚠️ 비회원 가입 - 프로필 업데이트 건너뛰기');
       }
 
       // 2. 신청 상태 업데이트
@@ -204,7 +170,6 @@ export default function SuperAdminDashboard() {
       setRejectionReason('');
       setSelectedRequestId(null);
     } catch (error) {
-      console.error('거부 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -256,7 +221,6 @@ export default function SuperAdminDashboard() {
       
       setFederationAdminForm({ email: '', name: '', phoneNumber: '' });
     } catch (error) {
-      console.error('임명 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -316,7 +280,6 @@ export default function SuperAdminDashboard() {
       }, 1500);
 
     } catch (error) {
-      console.error('초기화 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

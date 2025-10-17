@@ -5,7 +5,7 @@ import { use, useEffect, useState } from 'react';
 import { useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymnasticsCompetition, CompetitionSchedule, GymnasticsScore } from '@/types';
+import { GymnasticsCompetition, CompetitionSchedule, GymnasticsScore } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy } from 'lucide-react';

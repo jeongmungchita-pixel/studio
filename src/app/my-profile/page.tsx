@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import type { Member, MemberPass, PassTemplate } from '@/types';
+import { Member, MemberPass, PassTemplate } from '@/types';
 import { collection, query, where, doc, writeBatch, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -13,15 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Ticket, History, CreditCard, Landmark, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
@@ -96,7 +88,6 @@ export default function MyProfilePage() {
       setSelectedMember(null);
       setSelectedTemplate(null);
     } catch (error) {
-      console.error("Error requesting pass: ", error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

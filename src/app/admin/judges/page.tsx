@@ -11,29 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ErrorFallback } from '@/components/error-fallback';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Edit, Trash2, Gavel } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -116,7 +96,6 @@ export default function JudgesPage() {
       }
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving judge:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '심판 정보 저장에 실패했습니다.' });
     }
   };
@@ -128,7 +107,6 @@ export default function JudgesPage() {
       await deleteDoc(doc(firestore, 'judges', judgeId));
       toast({ title: '심판 삭제 완료' });
     } catch (error) {
-      console.error('Error deleting judge:', error);
       toast({ variant: 'destructive', title: '오류 발생', description: '심판 삭제에 실패했습니다.' });
     }
   };
@@ -224,7 +202,7 @@ export default function JudgesPage() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {judge.specialization.map((app) => (
-                          <Badge key={app} variant="outline" className="text-xs">
+                          <Badge key={app}  className="text-xs">
                             {apparatusLabels[app]}
                           </Badge>
                         ))}
@@ -243,12 +221,11 @@ export default function JudgesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(judge)}>
+                        <Button size="default"  onClick={() => handleEdit(judge)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
+                        <Button size="default"
+                          
                           onClick={() => handleDelete(judge.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -366,11 +343,10 @@ export default function JudgesPage() {
               <Label>전문 종목</Label>
               <div className="grid grid-cols-4 gap-2">
                 {Object.entries(apparatusLabels).map(([code, label]) => (
-                  <Button
-                    key={code}
+                  <Button key={code}
                     type="button"
                     variant={formData.specialization.includes(code) ? 'default' : 'outline'}
-                    size="sm"
+                    size="default"
                     onClick={() => toggleSpecialization(code)}
                   >
                     {label}
@@ -381,7 +357,7 @@ export default function JudgesPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
+            <Button  onClick={handleCloseDialog}>
               취소
             </Button>
             <Button onClick={handleSubmit} disabled={!formData.name || !formData.email}>

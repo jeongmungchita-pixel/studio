@@ -1,22 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useRole } from '@/hooks/use-role';
 import { UserRole } from '@/types';
-import { Loader2, Menu, X, Search, Bell, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Loader2, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { RoleBadge } from '@/components/role-badge';
 import { ModernNav } from '@/components/layout/modern-nav';
 import { GlobalSearch } from '@/components/layout/global-search';
@@ -52,13 +44,11 @@ export function ModernLayout({ children }: ModernLayoutProps) {
     } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
       // Club owners should not access federation admin pages
       if (pathname === '/dashboard' || pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
-        console.log('Club owner trying to access admin page, redirecting to /club-dashboard');
         router.push('/club-dashboard');
       }
     } else if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.FEDERATION_ADMIN) {
       // Admins should not access club dashboard
       if (pathname.startsWith('/club-dashboard')) {
-        console.log('Admin trying to access club dashboard, redirecting to /admin');
         router.push('/admin');
       }
       // Redirect /dashboard to /admin for federation admins

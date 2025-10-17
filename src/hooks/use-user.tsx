@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
-import { UserProfile, Club, UserRole } from '@/types';
+import { UserProfile, UserRole } from '@/types';
 
 export interface UserHookResult {
   user: (User & UserProfile & { clubId?: string; _profileError?: boolean }) | null;
@@ -36,7 +36,6 @@ export function useUser(): UserHookResult {
               userProfileData = userSnap.data() as UserProfile;
             } else {
               // 프로필이 없는 경우: 비회원 가입 승인 확인
-              console.log('🔍 프로필 없음, 승인된 가입 신청 확인 중...');
               
               let approvedRequest: any = null;
               let requestType: 'clubOwner' | 'superAdmin' | 'member' | null = null;
@@ -53,10 +52,8 @@ export function useUser(): UserHookResult {
                 if (!querySnapshot.empty) {
                   approvedRequest = querySnapshot.docs[0].data();
                   requestType = 'clubOwner';
-                  console.log('✅ 승인된 클럽 오너 신청 발견:', approvedRequest);
                 }
               } catch (error) {
-                console.error('❌ 클럽 오너 승인 요청 조회 오류:', error);
               }
               
               // clubOwner가 아니면 superAdminRequests 확인
@@ -72,10 +69,8 @@ export function useUser(): UserHookResult {
                   if (!querySnapshot.empty) {
                     approvedRequest = querySnapshot.docs[0].data();
                     requestType = 'superAdmin';
-                    console.log('✅ 승인된 슈퍼 관리자 신청 발견:', approvedRequest);
                   }
                 } catch (error) {
-                  console.error('❌ 슈퍼 관리자 승인 요청 조회 오류:', error);
                 }
               }
               
@@ -92,10 +87,8 @@ export function useUser(): UserHookResult {
                   if (!querySnapshot.empty) {
                     approvedRequest = querySnapshot.docs[0].data();
                     requestType = 'member';
-                    console.log('✅ 승인된 일반 회원 신청 발견:', approvedRequest);
                   }
                 } catch (error) {
-                  console.error('❌ 일반 회원 승인 요청 조회 오류:', error);
                 }
               }
               
@@ -111,10 +104,8 @@ export function useUser(): UserHookResult {
                   const clubSnapshot = await getDocs(clubQuery);
                   if (!clubSnapshot.empty) {
                     clubId = clubSnapshot.docs[0].id;
-                    console.log('✅ 클럽 ID 찾음:', clubId);
                   }
                 } catch (error) {
-                  console.error('❌ 클럽 ID 조회 오류:', error);
                 }
                 
                 defaultProfile = {
@@ -130,7 +121,6 @@ export function useUser(): UserHookResult {
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
                 };
-                console.log('🏢 클럽 오너 프로필 생성:', defaultProfile);
               } else if (approvedRequest && requestType === 'superAdmin') {
                 // 승인된 슈퍼 관리자 신청이 있으면 SUPER_ADMIN으로 설정
                 defaultProfile = {
@@ -144,7 +134,6 @@ export function useUser(): UserHookResult {
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
                 };
-                console.log('🛡️ 슈퍼 관리자 프로필 생성:', defaultProfile);
               } else if (approvedRequest && requestType === 'member') {
                 // 승인된 일반 회원 신청이 있으면 MEMBER로 설정
                 defaultProfile = {
@@ -160,7 +149,6 @@ export function useUser(): UserHookResult {
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
                 };
-                console.log('👤 일반 회원 프로필 생성 (승인된 신청):', defaultProfile);
               } else {
                 // 승인된 요청이 없으면 기본 MEMBER
                 defaultProfile = {
@@ -173,7 +161,6 @@ export function useUser(): UserHookResult {
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
                 };
-                console.log('👤 기본 회원 프로필 생성:', defaultProfile);
               }
               
               // Firestore에 저장
@@ -193,12 +180,9 @@ export function useUser(): UserHookResult {
                     if (!querySnapshot.empty) {
                         const clubDoc = querySnapshot.docs[0];
                         userProfileData.clubId = clubDoc.id;
-                        console.log('✅ clubId 조회 성공:', clubDoc.id);
                     } else {
-                        console.warn('⚠️ clubName에 해당하는 클럽을 찾을 수 없습니다:', userProfileData.clubName);
                     }
                 } catch (error) {
-                    console.error('❌ clubId 조회 중 오류:', error);
                     // clubId 조회 실패해도 로그인은 계속 진행
                 }
             }
@@ -206,7 +190,6 @@ export function useUser(): UserHookResult {
             // FEDERATION_ADMIN은 clubId가 필요 없음 (전체 클럽 접근 가능)
             if (userProfileData.role === UserRole.FEDERATION_ADMIN || 
                 userProfileData.role === UserRole.SUPER_ADMIN) {
-                console.log('✅ 관리자 로그인:', userProfileData.role);
             }
             
             setUser({ 
@@ -216,7 +199,6 @@ export function useUser(): UserHookResult {
             } as User & UserProfile & { clubId?: string });
 
         } catch (error) {
-            console.error("❌ 사용자 프로필 조회 오류:", error);
             
             // Firebase Auth 세션 유효성 체크
             try {
@@ -234,7 +216,6 @@ export function useUser(): UserHookResult {
                 status: 'pending',
               };
               
-              console.warn('⚠️ 프로필 조회 실패, 기본 프로필 사용');
               setUser({ 
                 ...firebaseUser, 
                 ...basicProfile,
@@ -244,7 +225,6 @@ export function useUser(): UserHookResult {
               
             } catch (reloadError) {
               // 세션도 무효하면 로그아웃
-              console.error('❌ 세션 무효, 로그아웃 처리:', reloadError);
               await signOut(auth);
               setUser(null);
             }

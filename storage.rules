@@ -1,0 +1,229 @@
+/**
+ * @file Firebase Storage Security Rules for KGF Nexus
+ * @description Domain-based file access control
+ * 
+ * Storage Structure (aligned with domain architecture):
+ * - /users/{userId}/profile/* - User profile images (Auth domain)
+ * - /members/{memberId}/* - Member documents and media (Member domain)
+ * - /clubs/{clubId}/* - Club logos and documents (Club domain)
+ * - /events/{eventId}/* - Event photos and documents (Club domain)
+ * - /classes/{classId}/* - Class materials (Club domain)
+ * - /financial/{clubId}/* - Financial documents (Business domain)
+ * - /public/* - Public assets accessible to all
+ */
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ============================================
+    // 🔧 Helper Functions
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             getUserData().role in ['SUPER_ADMIN', 'FEDERATION_ADMIN'];
+    }
+    
+    function isClubStaff() {
+      return isAuthenticated() && 
+             getUserData().role in ['CLUB_OWNER', 'CLUB_MANAGER', 'COACH'];
+    }
+    
+    function belongsToClub(clubId) {
+      return isAuthenticated() && getUserData().clubId == clubId;
+    }
+    
+    function isOwnerOrAdmin(userId) {
+      return isAuthenticated() && 
+             (request.auth.uid == userId || isAdmin());
+    }
+
+    // ============================================
+    // 👤 User Profile Images (Auth Domain)
+    // ============================================
+    
+    match /users/{userId}/profile/{fileName} {
+      // 읽기: 인증된 사용자 누구나 (프로필 이미지는 공개)
+      allow read: if isAuthenticated();
+      
+      // 쓰기: 본인 또는 관리자
+      allow write: if isOwnerOrAdmin(userId);
+      
+      // 삭제: 본인 또는 관리자
+      allow delete: if isOwnerOrAdmin(userId);
+    }
+
+    // ============================================
+    // 👥 Member Files (Member Domain)
+    // ============================================
+    
+    match /members/{memberId}/{allPaths=**} {
+      // 읽기: 관리자, 클럽 스태프, 본인
+      allow read: if isAdmin() || 
+                     isClubStaff() || 
+                     (isAuthenticated() && 
+                      firestore.get(/databases/(default)/documents/members/$(memberId)).data.userId == request.auth.uid);
+      
+      // 쓰기: 관리자 또는 클럽 스태프
+      allow write: if isAdmin() || isClubStaff();
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 🏢 Club Files (Club Domain)
+    // ============================================
+    
+    match /clubs/{clubId}/{allPaths=**} {
+      // 읽기: 인증된 사용자 (클럽 정보는 공개)
+      allow read: if isAuthenticated();
+      
+      // 쓰기: 관리자 또는 해당 클럽 스태프
+      allow write: if isAdmin() || 
+                      (isClubStaff() && belongsToClub(clubId));
+      
+      // 삭제: 관리자 또는 해당 클럽 오너
+      allow delete: if isAdmin() || 
+                       (isAuthenticated() && 
+                        getUserData().role == 'CLUB_OWNER' && 
+                        belongsToClub(clubId));
+    }
+
+    // ============================================
+    // 🎉 Event Files (Club Domain)
+    // ============================================
+    
+    match /events/{eventId}/{allPaths=**} {
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 쓰기: 관리자 또는 클럽 스태프
+      allow write: if isAdmin() || isClubStaff();
+      
+      // 삭제: 관리자 또는 클럽 스태프
+      allow delete: if isAdmin() || isClubStaff();
+    }
+
+    // ============================================
+    // 📚 Class Files (Club Domain)
+    // ============================================
+    
+    match /classes/{classId}/{allPaths=**} {
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 쓰기: 관리자 또는 클럽 스태프
+      allow write: if isAdmin() || isClubStaff();
+      
+      // 삭제: 관리자 또는 클럽 스태프
+      allow delete: if isAdmin() || isClubStaff();
+    }
+
+    // ============================================
+    // 💰 Financial Documents (Business Domain)
+    // ============================================
+    
+    match /financial/{clubId}/{allPaths=**} {
+      // 읽기: 관리자 또는 해당 클럽 스태프
+      allow read: if isAdmin() || 
+                     (isClubStaff() && belongsToClub(clubId));
+      
+      // 쓰기: 관리자 또는 해당 클럽 스태프
+      allow write: if isAdmin() || 
+                      (isClubStaff() && belongsToClub(clubId));
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 📋 Registration Documents
+    // ============================================
+    
+    match /registrations/{requestId}/{allPaths=**} {
+      // 읽기: 관리자 또는 클럽 스태프
+      allow read: if isAdmin() || isClubStaff();
+      
+      // 쓰기: 누구나 (가입 신청 시 서류 업로드)
+      allow write: if true;
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 🏆 Competition Files
+    // ============================================
+    
+    match /competitions/{competitionId}/{allPaths=**} {
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 쓰기: 관리자만
+      allow write: if isAdmin();
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 📝 Level Test Files
+    // ============================================
+    
+    match /level_tests/{testId}/{allPaths=**} {
+      // 읽기: 인증된 사용자
+      allow read: if isAuthenticated();
+      
+      // 쓰기: 관리자 또는 클럽 스태프
+      allow write: if isAdmin() || isClubStaff();
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 🌐 Public Assets
+    // ============================================
+    
+    match /public/{allPaths=**} {
+      // 읽기: 누구나 (공개 자산)
+      allow read: if true;
+      
+      // 쓰기: 관리자만
+      allow write: if isAdmin();
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 📱 App Assets (로고, 아이콘 등)
+    // ============================================
+    
+    match /app/{allPaths=**} {
+      // 읽기: 누구나
+      allow read: if true;
+      
+      // 쓰기: 관리자만
+      allow write: if isAdmin();
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // 🚫 Deny all other access
+    // ============================================
+    
+    // 명시되지 않은 모든 접근 차단
+  }
+}

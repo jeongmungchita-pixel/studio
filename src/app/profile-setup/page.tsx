@@ -3,38 +3,18 @@
 export const dynamic = 'force-dynamic';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useCollection, useFirebase, useUser, uploadImage } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { Club, Member, UserProfile } from '@/types';
+import { Club, Member, UserProfile } from '@/types';
 import { useMemoFirebase } from '@/firebase/provider';
 import { ChangeEvent, useRef, useState } from 'react';
 import Image from 'next/image';
@@ -194,7 +174,6 @@ export default function ProfileSetupPage() {
       router.push('/dashboard');
 
     } catch (error) {
-      console.error('Error setting up profile:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

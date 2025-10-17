@@ -14,7 +14,7 @@ interface PendingApprovalCardProps {
   requestedRole: UserRole;
   clubName?: string;
   phoneNumber?: string;
-  clubAddress?: string;
+  clubAddress?: string | { latitude: number; longitude: number; };
   familyType?: 'individual' | 'parent' | 'child';
   requestedAt: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -88,7 +88,12 @@ export function PendingApprovalCard({
           {clubAddress && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>{clubAddress}</span>
+              <span>
+                {typeof clubAddress === 'string' 
+                  ? clubAddress 
+                  : `${clubAddress.latitude}, ${clubAddress.longitude}`
+                }
+              </span>
             </div>
           )}
           

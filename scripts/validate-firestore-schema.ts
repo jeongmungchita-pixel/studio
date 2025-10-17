@@ -124,17 +124,18 @@ async function validateCollection(collectionName: string): Promise<ValidationIss
     }
 
     // 3. Enum 값 체크
-    if (schema.enums) {
+    if ('enums' in schema && schema.enums) {
       for (const [field, allowedValues] of Object.entries(schema.enums)) {
         if (field in data && data[field] !== null && data[field] !== undefined) {
-          if (!allowedValues.includes(data[field])) {
+          const allowedValuesArray = Array.isArray(allowedValues) ? allowedValues : [];
+          if (!allowedValuesArray.includes(data[field])) {
             issues.push({
               collection: collectionName,
               documentId: doc.id,
               field,
               issue: '잘못된 enum 값',
               currentValue: data[field],
-              suggestion: `허용된 값: ${allowedValues.join(', ')}`
+              suggestion: `허용된 값: ${allowedValuesArray.join(', ')}`
             });
           }
         }

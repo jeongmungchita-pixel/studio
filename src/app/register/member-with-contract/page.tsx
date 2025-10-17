@@ -13,15 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  FileText, 
-  UserCheck, 
-  PenTool, 
-  CheckCircle2, 
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft
-} from 'lucide-react';
+import { PenTool, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 
 type GuardianRelation = 'parent' | 'grandparent' | 'legal_guardian' | 'other';
@@ -93,7 +85,7 @@ export default function MemberWithContractPage() {
     return age < 19;
   };
 
-  const updateFormData = (field: keyof MemberFormData, value: any) => {
+  const updateFormData = (field: keyof MemberFormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       
@@ -241,7 +233,6 @@ export default function MemberWithContractPage() {
       // 완료 페이지로 이동
       router.push('/register/success');
     } catch (error) {
-      console.error('가입 신청 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { Shield, AlertTriangle } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
-import type { SuperAdminRequest } from '@/types';
+import { SuperAdminRequest } from '@/types';
 
 export default function SuperAdminRegisterPage() {
   const router = useRouter();
@@ -53,17 +53,13 @@ export default function SuperAdminRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
 
-      console.log('📤 슬퍼 관리자 신청 데이터:', requestData);
 
       // Firestore에 저장
       const docRef = await addDoc(collection(firestore, 'superAdminRequests'), requestData);
-      console.log('✅ 슬퍼 관리자 신청 성공! Doc ID:', docRef.id);
       
       alert('최고관리자 신청이 완료되었습니다. 시스템 관리자의 검토 후 승인됩니다.');
       router.push('/dashboard');
     } catch (error) {
-      console.error('❌ 슬퍼 관리자 신청 실패:', error);
-      console.error('에러 상세:', error instanceof Error ? error.message : error);
       alert('신청에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);

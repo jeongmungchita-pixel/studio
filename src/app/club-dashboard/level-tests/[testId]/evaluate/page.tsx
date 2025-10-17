@@ -5,7 +5,7 @@ import { use, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { ClubLevelTest, LevelTestRegistration, LevelTestScore, Member } from '@/types';
+import { ClubLevelTest, LevelTestRegistration, LevelTestScore } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -149,7 +149,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
       setItemScores({});
       setNotes('');
     } catch (error) {
-      console.error('Score save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSubmitting(false);

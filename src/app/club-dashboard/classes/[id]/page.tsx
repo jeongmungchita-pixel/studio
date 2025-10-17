@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymClass, Member } from '@/types';
+import { GymClass, Member } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,13 +14,7 @@ import { Loader2, ArrowLeft, UserPlus, UserMinus, Users, User, Baby, AlertTriang
 import { differenceInYears } from 'date-fns';
 import { canJoinClass, calculateAge, getMemberCategoryLabel, getMemberCategoryColor } from '@/lib/member-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -94,7 +88,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       setIsAddMemberDialogOpen(false);
       setSelectedMemberIds([]);
     } catch (error) {
-      console.error('Error adding members:', error);
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 
@@ -119,7 +112,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
         description: '회원이 클래스에서 제거되었습니다.' 
       });
     } catch (error) {
-      console.error('Error removing member:', error);
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 

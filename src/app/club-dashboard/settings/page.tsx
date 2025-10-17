@@ -3,9 +3,9 @@
 export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { ClubBankAccount, NaverCloudConfig } from '@/types';
+import { ClubBankAccount, NaverCloudConfig } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,7 +88,6 @@ export default function ClubSettingsPage() {
 
       toast({ title: '계좌 정보 저장 완료' });
     } catch (error) {
-      console.error('Bank account save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSavingBank(false);
@@ -119,7 +118,6 @@ export default function ClubSettingsPage() {
 
       toast({ title: '네이버 클라우드 설정 저장 완료' });
     } catch (error) {
-      console.error('Naver config save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSavingNaver(false);

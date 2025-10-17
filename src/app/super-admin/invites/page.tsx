@@ -9,15 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Loader2, Mail, Phone, Calendar, CheckCircle2, XCircle, Clock, Copy, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, Mail, Phone, Calendar, XCircle, Clock, Copy, Trash2 } from 'lucide-react';
 import { FederationAdminInvite, UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -96,7 +89,6 @@ export default function InvitesManagementPage() {
         description: '초대가 취소되었습니다.',
       });
     } catch (error) {
-      console.error('초대 취소 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -118,7 +110,6 @@ export default function InvitesManagementPage() {
         description: '초대가 삭제되었습니다.',
       });
     } catch (error) {
-      console.error('초대 삭제 실패:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',

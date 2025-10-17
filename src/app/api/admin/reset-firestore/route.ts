@@ -101,7 +101,6 @@ async function deleteAuthUsers(superAdminUid: string | null): Promise<number> {
     for (const userRecord of listUsersResult.users) {
       // 최상위 관리자는 건너뛰기
       if (superAdminUid && userRecord.uid === superAdminUid) {
-        console.log(`  ⏭️  최상위 관리자 보존: ${userRecord.email}`);
         continue;
       }
       
@@ -114,7 +113,6 @@ async function deleteAuthUsers(superAdminUid: string | null): Promise<number> {
       deletedCount += deleteResult.successCount;
       
       if (deleteResult.failureCount > 0) {
-        console.error(`  ⚠️  ${deleteResult.failureCount}명 삭제 실패`);
       }
     }
 
@@ -160,7 +158,6 @@ export async function POST(request: NextRequest) {
         const deletedCount = await deleteCollection(collectionName);
         results[collectionName] = deletedCount;
       } catch (error) {
-        console.error(`${collectionName} 삭제 실패:`, error);
         results[collectionName] = -1;
       }
     }
@@ -170,7 +167,6 @@ export async function POST(request: NextRequest) {
       const deletedCount = await deleteCollection('users', superAdminUid);
       results['users'] = deletedCount;
     } catch (error) {
-      console.error('users 삭제 실패:', error);
       results['users'] = -1;
     }
 
@@ -180,7 +176,6 @@ export async function POST(request: NextRequest) {
       deletedAuthUsers = await deleteAuthUsers(superAdminUid);
       results['auth_users'] = deletedAuthUsers;
     } catch (error) {
-      console.error('Auth 사용자 삭제 실패:', error);
       results['auth_users'] = -1;
     }
 
@@ -199,7 +194,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Firestore 초기화 오류:', error);
     return NextResponse.json(
       { error: '초기화 중 오류가 발생했습니다.' },
       { status: 500 }

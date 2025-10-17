@@ -5,9 +5,9 @@ import { useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Member, Attendance, MemberPass, Payment } from '@/types';
+import { Member, Attendance, MemberPass } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Users, TrendingUp, DollarSign, Calendar, Award, UserCheck } from 'lucide-react';
+import { Loader2, Users, TrendingUp, Calendar, Award, UserCheck } from 'lucide-react';
 import { startOfMonth, endOfMonth, differenceInYears } from 'date-fns';
 
 export default function AnalyticsPage() {

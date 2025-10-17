@@ -1,0 +1,4315 @@
+{
+  "navigationButtons": [
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 69,
+      "context": "DERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <Plus",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 82,
+      "context": "shadow cursor-pointer\" onClick={() => router.push(`/committees/${committee.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 129,
+      "context": "TION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 69,
+      "context": "le={UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 82,
+      "context": "-lg transition-shadow cursor-pointer\" onClick={() => router.push(`/committees/${committe",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 129,
+      "context": "UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/members/page.tsx",
+      "line": 185,
+      "context": "<DropdownMenuItem onClick={() => router.push(`/members/${member.id}`)}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/members/page.tsx",
+      "line": 185,
+      "context": "uLabel> <DropdownMenuItem onClick={() => router.push(`/members/${member.id}`",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/admin/page.tsx",
+      "line": 47,
+      "context": "⚠️ 권한 없음 - 리다이렉트:', user.email, user.role); router.push('/dashboard'); return (",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/admin/page.tsx",
+      "line": 58,
+      "context": "// 로그인 안 됨 if (!isUserLoading && !user) { router.push('/login'); return ( <div cla",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 178,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/clubs')}> <CardConte",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 191,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/members')}> <CardCon",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 204,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/competitions')}> <Ca",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 217,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/committees')}> <Card",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 241,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/clubs')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 253,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/members')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 265,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/competitions')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 277,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/committees')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/judges",
+      "file": "src/app/admin/page.tsx",
+      "line": 289,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/judges')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 306,
+      "context": "<Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/members')}> 전체 보",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 317,
+      "context": "ursor-pointer\" onClick={() => router.push(`/members/${member.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 346,
+      "context": "<Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/clubs')}> 전체 보기",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/clubs/${club.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 357,
+      "context": "ursor-pointer\" onClick={() => router.push(`/clubs/${club.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 388,
+      "context": "<Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/competitions')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 398,
+      "context": "cursor-pointer\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 178,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/clubs')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 191,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/members')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 204,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 217,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/committees')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 241,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/clubs')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 253,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/members')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 265,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 277,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/judges",
+      "file": "src/app/admin/page.tsx",
+      "line": 289,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/judges')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 306,
+      "context": "le> <Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/members')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 317,
+      "context": "sition-colors cursor-pointer\" onClick={() => router.push(`/members/${member.id}`",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 346,
+      "context": "le> <Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/clubs')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/clubs/${club.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 357,
+      "context": "sition-colors cursor-pointer\" onClick={() => router.push(`/clubs/${club.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 388,
+      "context": "le> <Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 398,
+      "context": "ansition-colors cursor-pointer\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/admin/users/page.tsx",
+      "line": 48,
+      "context": "&& user.role !== UserRole.FEDERATION_ADMIN) { router.push('/dashboard'); return ( <div",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/club-dashboard/classes/${gymClass.id}",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 465,
+      "context": "=\"icon\" onClick={() => router.push(`/club-dashboard/classes/${gymClass.id",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/club-dashboard/classes/${gymClass.id}",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 465,
+      "context": "size=\"icon\" onClick={() => router.push(`/club-dashboard/classe",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 72,
+      "context": "description: '위원회가 삭제되었습니다.', }); router.push('/committees'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 96,
+      "context": "를 찾을 수 없습니다</h2> <Button onClick={() => router.push('/committees')}> 목록으로 돌아가기",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 114,
+      "context": "size=\"icon\" onClick={() => router.push('/committees')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 96,
+      "context": "-bold mb-2\">위원회를 찾을 수 없습니다</h2> <Button onClick={() => router.push('/committees')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 114,
+      "context": "riant=\"ghost\" size=\"icon\" onClick={() => router.push('/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 70,
+      "context": "${formData.name} 위원회가 생성되었습니다.`, }); router.push('/committees'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 92,
+      "context": "|| user.role !== UserRole.FEDERATION_ADMIN) { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 102,
+      "context": "t\" size=\"icon\" onClick={() => router.push('/committees')} > <A",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 175,
+      "context": "variant=\"outline\" onClick={() => router.push('/committees')} disabl",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 102,
+      "context": "variant=\"ghost\" size=\"icon\" onClick={() => router.push('/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 175,
+      "context": "variant=\"outline\" onClick={() => router.push('/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 63,
+      "context": "DERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <Plus",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/committees/page.tsx",
+      "line": 76,
+      "context": "shadow cursor-pointer\" onClick={() => router.push(`/committees/${committee.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 123,
+      "context": "TION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 63,
+      "context": "le={UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/committees/page.tsx",
+      "line": 76,
+      "context": "-lg transition-shadow cursor-pointer\" onClick={() => router.push(`/committees/${committe",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 123,
+      "context": "UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/login",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 18,
+      "context": "sUserLoading) return; if (!user) { window.location.href = '/login'; return;",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 24,
+      "context": "g 페이지로 if (user.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 30,
+      "context": "if (user.role === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin'; } else",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 32,
+      "context": "(user.role === UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; } else if (us",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 34,
+      "context": "R || user.role === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard'; } el",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 36,
+      "context": "tion.href = '/club-dashboard'; } else { window.location.href = '/my-profile'; } }, [",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/dashboard",
+      "file": "src/app/error.tsx",
+      "line": 55,
+      "context": "variant=\"outline\" onClick={() => (window.location.href = '/dashboard')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/invite/accept/${token}",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 98,
+      "context": "페이지로 이동 const handleAcceptInvite = () => { router.push(`/invite/accept/${token}`); }; if",
+      "category": "navigation",
+      "isValid": false
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 123,
+      "context": "<CardContent> <Button onClick={() => router.push('/login')} className=\"w-full\">",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 206,
+      "context": "*/} <Button onClick={() => router.push('/login')} variant=\"outli",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 123,
+      "context": "ader> <CardContent> <Button onClick={() => router.push('/login')} className=\"w",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 206,
+      "context": "{/* 취소 버튼 */} <Button onClick={() => router.push('/login')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 51,
+      "context": "ion: '유효하지 않은 초대 링크입니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 64,
+      "context": "ion: '이 초대는 이미 사용되었습니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 74,
+      "context": "ption: '초대 기간이 만료되었습니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 89,
+      "context": "ption: '초대 기간이 만료되었습니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 104,
+      "context": "'초대 정보를 불러오는 중 오류가 발생했습니다.', }); router.push('/login'); } finally { s",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 172,
+      "context": "// 대시보드로 이동 setTimeout(() => { router.push('/admin'); }, 1500); } catch",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 248,
+      "context": "니다.', }); setTimeout(() => { router.push('/admin'); }, 1500); } catch",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/register",
+      "file": "src/app/login/page.tsx",
+      "line": 339,
+      "context": "계정이 없으신가요? </p> <Link href=\"/register\" className=\"block\">",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/register/club-owner",
+      "file": "src/app/login/page.tsx",
+      "line": 357,
+      "context": "클럽 관리자이신가요? </p> <Link href=\"/register/club-owner\" className=\"block",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/login",
+      "file": "src/app/login/page.tsx",
+      "line": 86,
+      "context": "히 리다이렉트'); // 완전히 새로운 페이지로 이동 (캐시 무시) window.location.href = '/login'; } }, [auth]",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/login/page.tsx",
+      "line": 105,
+      "context": "if (userProfile.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/login/page.tsx",
+      "line": 111,
+      "context": "rofile.role === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin'; } e",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/login/page.tsx",
+      "line": 113,
+      "context": "ofile.role === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/login/page.tsx",
+      "line": 115,
+      "context": "e.role === UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; } else {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 117,
+      "context": "ation.href = '/admin'; } else { window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 121,
+      "context": "} else { // 프로필이 없으면 기본 페이지로 window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/login/page.tsx",
+      "line": 153,
+      "context": "if (userProfile.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/login/page.tsx",
+      "line": 159,
+      "context": "rofile.role === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin'; } e",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/login/page.tsx",
+      "line": 161,
+      "context": "ofile.role === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/login/page.tsx",
+      "line": 163,
+      "context": "e.role === UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; } else {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 165,
+      "context": "ation.href = '/admin'; } else { window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 169,
+      "context": "} else { // 프로필이 없으면 기본 페이지로 window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/login/page.tsx",
+      "line": 205,
+      "context": "f (user.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/login/page.tsx",
+      "line": 211,
+      "context": "ole === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/login/page.tsx",
+      "line": 213,
+      "context": "le === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/login/page.tsx",
+      "line": 215,
+      "context": "== UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 217,
+      "context": "dmin'; } else { window.location.href = '/my-profile';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/family",
+      "file": "src/app/my-profile/add-child/page.tsx",
+      "line": 86,
+      "context": "children.length}명의 자녀가 추가되었습니다!`, }); router.push('/my-profile/family'); } catch (er",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/family",
+      "file": "src/app/my-profile/add-family/page.tsx",
+      "line": 56,
+      "context": "신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.', }); router.push('/my-profile/family'); } catch (er",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/family",
+      "file": "src/app/my-profile/add-family-member/page.tsx",
+      "line": 173,
+      "context": "bers.length}명의 가족 구성원이 추가되었습니다!`, }); router.push('/my-profile/family'); } catch (er",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 65,
+      "context": "/p> </div> <Button onClick={() => router.push('/my-profile/add-child')}> <",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/members/${child.id}",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 153,
+      "context": "size=\"sm\" onClick={() => router.push(`/members/${child.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 172,
+      "context": "</p> <Button onClick={() => router.push('/my-profile/add-child')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 65,
+      "context": "하세요 </p> </div> <Button onClick={() => router.push('/my-profile/add-child'",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/members/${child.id}",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 153,
+      "context": "size=\"sm\" onClick={() => router.push(`/members/${child.id}`)",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 172,
+      "context": "권을 관리하세요 </p> <Button onClick={() => router.push('/my-profile/add-child'",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/dashboard",
+      "file": "src/app/not-found.tsx",
+      "line": 23,
+      "context": "<div className=\"flex flex-col gap-2\"> <Link href=\"/dashboard\" className=\"w-full\">",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/dashboard",
+      "file": "src/app/not-found.tsx",
+      "line": 45,
+      "context": "xt-slate-600\"> <li> <Link href=\"/dashboard\" className=\"hover:text-blue",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/my-profile",
+      "file": "src/app/not-found.tsx",
+      "line": 50,
+      "context": "</li> <li> <Link href=\"/my-profile\" className=\"hover:text-blu",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/competitions",
+      "file": "src/app/not-found.tsx",
+      "line": 55,
+      "context": "</li> <li> <Link href=\"/competitions\" className=\"hover:text-b",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/committees",
+      "file": "src/app/not-found.tsx",
+      "line": 60,
+      "context": "</li> <li> <Link href=\"/committees\" className=\"hover:text-blu",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 20,
+      "context": "UserLoading && user?.status === 'approved') { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 33,
+      "context": "description: '다시 로그인해주세요.', }); router.push('/login'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 107,
+      "context": "variant=\"outline\" onClick={() => router.push('/')} className=\"w-full\"",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 107,
+      "context": "ton variant=\"outline\" onClick={() => router.push('/')} cla",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/profile-setup/page.tsx",
+      "line": 194,
+      "context": "'정보가 저장되었으며, 클럽 관리자의 승인을 기다립니다.', }); router.push('/dashboard'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/pending-approval",
+      "file": "src/app/register/adult/cached-page.tsx",
+      "line": 131,
+      "context": "신청이 성공적으로 제출되었습니다. 승인을 기다려주세요.', }); router.push('/pending-approval'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/success",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 216,
+      "context": "다려주세요. 승인 완료 시 연락드리겠습니다.', }); router.push('/register/success'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/register/club-owner/page.tsx",
+      "line": 126,
+      "context": "// 승인 대기 페이지로 이동 (완전한 페이지 리로드) window.location.href = '/pending-approval'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/success",
+      "file": "src/app/register/family/page.tsx",
+      "line": 226,
+      "context": "완료되었습니다. 클럽의 승인을 기다려주세요.`, }); router.push('/register/success'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/register/member/page.tsx",
+      "line": 145,
+      "context": "// 승인 대기 페이지로 이동 (완전한 페이지 리로드) window.location.href = '/pending-approval'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/success",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 242,
+      "context": "인을 기다려주세요.', }); // 완료 페이지로 이동 router.push('/register/success'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/adult",
+      "file": "src/app/register/page.tsx",
+      "line": 28,
+      "context": "hover:border-primary\" onClick={() => router.push('/register/adult')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/family",
+      "file": "src/app/register/page.tsx",
+      "line": 64,
+      "context": "r-primary/50 relative\" onClick={() => router.push('/register/family')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/register/adult",
+      "file": "src/app/register/page.tsx",
+      "line": 28,
+      "context": "transition-all hover:border-primary\" onClick={() => router.push('/register/adult')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/register/family",
+      "file": "src/app/register/page.tsx",
+      "line": 64,
+      "context": "border-2 border-primary/50 relative\" onClick={() => router.push('/register/family')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/",
+      "file": "src/app/register/success/page.tsx",
+      "line": 36,
+      "context": "<Button onClick={() => router.push('/')} className=\"w-full\"",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/",
+      "file": "src/app/register/success/page.tsx",
+      "line": 36,
+      "context": "me=\"space-y-2\"> <Button onClick={() => router.push('/')} cla",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/register/super-admin/page.tsx",
+      "line": 63,
+      "context": "'최고관리자 신청이 완료되었습니다. 시스템 관리자의 검토 후 승인됩니다.'); router.push('/dashboard'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/setup/initial-admin/page.tsx",
+      "line": 107,
+      "context": "습니다!\\n이메일: ${formData.email}\\n\\n로그인해주세요.`); router.push('/login'); } catch (error: any) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/setup/initial-admin/page.tsx",
+      "line": 152,
+      "context": "</p> <Button onClick={() => router.push('/login')}> 로그인 페이지로",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/login",
+      "file": "src/app/setup/initial-admin/page.tsx",
+      "line": 152,
+      "context": "에만 사용 가능합니다. </p> <Button onClick={() => router.push('/login')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/super-admin/invites/page.tsx",
+      "line": 70,
+      "context": "user || user.role !== UserRole.SUPER_ADMIN) { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/super-admin",
+      "file": "src/app/super-admin/invites/page.tsx",
+      "line": 222,
+      "context": "</div> <Button onClick={() => router.push('/super-admin')}> 새 초대 보",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/super-admin",
+      "file": "src/app/super-admin/invites/page.tsx",
+      "line": 222,
+      "context": "scription> </div> <Button onClick={() => router.push('/super-admin')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 102,
+      "context": "user || user.role !== UserRole.SUPER_ADMIN) { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/super-admin/invites",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 255,
+      "context": ".`, }); // 초대 관리 페이지로 이동 router.push('/super-admin/invites');",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/system/super-admin-approvals",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 632,
+      "context": "ter mt-4\"> <Button onClick={() => router.push('/system/super-admin-approvals')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/system/super-admin-approvals",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 632,
+      "context": "lex justify-center mt-4\"> <Button onClick={() => router.push('/system/super-admin-ap",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 29,
+      "context": "includes(pathname) && !isRegisterPath) { router.push('/login'); } return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 38,
+      "context": "in if (pathname !== '/login') { router.push('/login'); } } else if (us",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/club-dashboard",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 43,
+      "context": "|| pathname.startsWith('/super-admin')) { router.push('/club-dashboard'); } } else",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 48,
+      "context": "pathname.startsWith('/club-dashboard')) { router.push('/admin'); } // Redirect /",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 52,
+      "context": "ns if (pathname === '/dashboard') { router.push('/admin'); } } }, [user,",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 42,
+      "context": "&& pathname !== '/setup/initial-admin') { router.push('/login'); } return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 50,
+      "context": "ng') { if (pathname !== '/login') { router.push('/login'); } } else if (user",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/club-dashboard",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 56,
+      "context": "n page, redirecting to /club-dashboard'); router.push('/club-dashboard'); } } else",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 62,
+      "context": "club dashboard, redirecting to /admin'); router.push('/admin'); } // Redirect /",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 66,
+      "context": "ns if (pathname === '/dashboard') { router.push('/admin'); } } }, [user, i",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 74,
+      "context": "if (auth) { await signOut(auth); router.push('/login'); } }; if (isUserLoa",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 167,
+      "context": "<DropdownMenuItem onClick={() => router.push('/my-profile')}> <Se",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/my-profile",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 167,
+      "context": "enuSeparator /> <DropdownMenuItem onClick={() => router.push('/my-profile')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/sidebar.tsx",
+      "line": 355,
+      "context": "if(auth) { await signOut(auth); router.push('/login'); } } // 서브메뉴가 없으면 사",
+      "category": "navigation",
+      "isValid": true
+    }
+  ],
+  "actionButtons": [
+    {
+      "type": "onClick->function",
+      "target": "async",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 647,
+      "context": "disabled={isSubmitting} onClick={async (e) => { cons",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addOption",
+      "file": "src/app/club-dashboard/events/page.tsx",
+      "line": 476,
+      "context": "<Button type=\"button\" size=\"sm\" variant=\"outline\" onClick={addOption}> <Plus cla",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "startCamera",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 295,
+      "context": "ber && !isCameraOpen && ( <Button onClick={startCamera}> <Camera c",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "stopCamera",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 301,
+      "context": "& ( <Button variant=\"destructive\" onClick={stopCamera}> <X classNa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "takePhoto",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 329,
+      "context": "4\"> <Button onClick={takePhoto} disabled={",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "isRecording",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 348,
+      "context": "<Button onClick={isRecording ? stopRecording : startRecord",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "reset",
+      "file": "src/app/error.tsx",
+      "line": 49,
+      "context": "ssName=\"flex flex-col gap-2\"> <Button onClick={reset} className=\"w-full\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "forceLogout",
+      "file": "src/app/login/page.tsx",
+      "line": 226,
+      "context": "on variant=\"outline\" onClick={forceLogout} className=\"fle",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 94,
+      "context": "데이터를 불러오는 중 오류가 발생했습니다.</p> <Button onClick={refresh} variant=\"outline\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 120,
+      "context": "Name=\"flex items-center gap-2\"> <Button onClick={refresh} variant=\"outline\" size=\"sm\" disa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadPreviousPage",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 229,
+      "context": "size=\"sm\" onClick={loadPreviousPage} dis",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadNextPage",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 238,
+      "context": "size=\"sm\" onClick={loadNextPage} disable",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 92,
+      "context": "데이터를 불러오는 중 오류가 발생했습니다.</p> <Button onClick={refresh} variant=\"outline\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 114,
+      "context": "Name=\"flex items-center gap-2\"> <Button onClick={refresh} variant=\"outline\" size=\"sm\" disa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadPreviousPage",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 206,
+      "context": "size=\"sm\" onClick={loadPreviousPage} dis",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadNextPage",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 215,
+      "context": "size=\"sm\" onClick={loadNextPage} disable",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addChild",
+      "file": "src/app/my-profile/add-child/page.tsx",
+      "line": 222,
+      "context": "on\" variant=\"outline\" onClick={addChild} className=\"w-full",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addMember",
+      "file": "src/app/my-profile/add-family-member/page.tsx",
+      "line": 374,
+      "context": "on\" variant=\"outline\" onClick={addMember} className=\"w-ful",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refreshClubs",
+      "file": "src/app/register/adult/cached-page.tsx",
+      "line": 151,
+      "context": "데이터를 불러오는 중 오류가 발생했습니다.</p> <Button onClick={refreshClubs} variant=\"outline\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refreshClubs",
+      "file": "src/app/register/adult/cached-page.tsx",
+      "line": 186,
+      "context": ")} <Button onClick={refreshClubs} variant=\"g",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "clearSignature",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 423,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={clearSignature}> 다시 작",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addParent",
+      "file": "src/app/register/family/page.tsx",
+      "line": 304,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={addParent}> <Plus c",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addChild",
+      "file": "src/app/register/family/page.tsx",
+      "line": 401,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={addChild}> <Plus clas",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "clearSignature",
+      "file": "src/app/register/family/page.tsx",
+      "line": 664,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={clearSignature}> 다시 작",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "clearSignature",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 533,
+      "context": "ne\" size=\"sm\" onClick={clearSignature} classNa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "prevStep",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 554,
+      "context": "variant=\"outline\" onClick={prevStep} className=\"flex",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "nextStep",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 565,
+      "context": "ton type=\"button\" onClick={nextStep} className=\"flex",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "onRetry",
+      "file": "src/components/error-fallback.tsx",
+      "line": 41,
+      "context": "</div> {onRetry && ( <Button onClick={onRetry} variant=\"outline\" size=\"sm\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "onAddClick",
+      "file": "src/components/layout/header.tsx",
+      "line": 69,
+      "context": "/> {showAddButton && ( <Button onClick={onAddClick}> <PlusCircle clas",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "scrollPrev",
+      "file": "src/components/ui/carousel.tsx",
+      "line": 216,
+      "context": "me )} disabled={!canScrollPrev} onClick={scrollPrev} {...props} >",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "scrollNext",
+      "file": "src/components/ui/carousel.tsx",
+      "line": 245,
+      "context": "me )} disabled={!canScrollNext} onClick={scrollNext} {...props} >",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "toggleSidebar",
+      "file": "src/components/ui/sidebar.tsx",
+      "line": 300,
+      "context": "-label=\"Toggle Sidebar\" tabIndex={-1} onClick={toggleSidebar} title=\"Toggle Sideba",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "onClick",
+      "file": "src/components/ui/stat-card.tsx",
+      "line": 75,
+      "context": "& 'cursor-pointer hover:scale-105' )} onClick={onClick} > <CardHeader classNam",
+      "category": "action",
+      "isValid": true
+    }
+  ],
+  "formButtons": [
+    {
+      "type": "onClick->function",
+      "target": "handleClick",
+      "file": "src/__tests__/components/ui/button.test.tsx",
+      "line": 12,
+      "context": "const handleClick = jest.fn(); render(<Button onClick={handleClick}>Click me</Button>);",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleClick",
+      "file": "src/__tests__/components/ui/button.test.tsx",
+      "line": 20,
+      "context": "dleClick = jest.fn(); render(<Button disabled onClick={handleClick}>Click me</Button>);",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSaveJudgeAssignments",
+      "file": "src/app/admin/competitions/page.tsx",
+      "line": 756,
+      "context": "취소 </Button> <Button onClick={handleSaveJudgeAssignments}>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCloseDialog",
+      "file": "src/app/admin/judges/page.tsx",
+      "line": 384,
+      "context": "alogFooter> <Button variant=\"outline\" onClick={handleCloseDialog}> 취소",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/admin/judges/page.tsx",
+      "line": 387,
+      "context": "취소 </Button> <Button onClick={handleSubmit} disabled={!formData.name ||",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleDelete",
+      "file": "src/app/admin/members/page.tsx",
+      "line": 237,
+      "context": "AlertDialogCancel> <AlertDialogAction onClick={handleDelete} className=\"bg-destructive t",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCreate",
+      "file": "src/app/club-dashboard/announcements/page.tsx",
+      "line": 171,
+      "context": "회원들에게 소식을 전하세요</p> </div> <Button onClick={handleCreate}> <Plus className=",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCreate",
+      "file": "src/app/club-dashboard/announcements/page.tsx",
+      "line": 275,
+      "context": "ound mb-4\">등록된 공지사항이 없습니다</p> <Button onClick={handleCreate}> <Plus classN",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/club-dashboard/announcements/page.tsx",
+      "line": 363,
+      "context": "취소 </Button> <Button onClick={handleSubmit} disabled={isSubmitting || !",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmitAllAttendance",
+      "file": "src/app/club-dashboard/class-status/page.tsx",
+      "line": 424,
+      "context": "</Button> <Button onClick={handleSubmitAllAttendance}",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddMembers",
+      "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+      "line": 355,
+      "context": "</Button> <Button onClick={handleAddMembers} disabled=",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleDelete",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 700,
+      "context": "ertDialogCancel> <AlertDialogAction onClick={handleDelete} className=\"bg-destructive t",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddIncome",
+      "file": "src/app/club-dashboard/finance/page.tsx",
+      "line": 563,
+      "context": "취소 </Button> <Button onClick={handleAddIncome}>추가</Button> </",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddExpense",
+      "file": "src/app/club-dashboard/finance/page.tsx",
+      "line": 618,
+      "context": "취소 </Button> <Button onClick={handleAddExpense}>추가</Button> <",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSplitIncome",
+      "file": "src/app/club-dashboard/finance/page.tsx",
+      "line": 657,
+      "context": "취소 </Button> <Button onClick={handleSplitIncome}>분할하기</Button>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/club-dashboard/level-tests/[testId]/evaluate/page.tsx",
+      "line": 314,
+      "context": "</Button> <Button onClick={handleSubmit} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSelectAll",
+      "file": "src/app/club-dashboard/messages/page.tsx",
+      "line": 248,
+      "context": "<label className=\"font-semibold cursor-pointer\" onClick={handleSelectAll}> 전체 선택",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSend",
+      "file": "src/app/club-dashboard/messages/page.tsx",
+      "line": 273,
+      "context": "</div> <Button onClick={handleSend} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleIssuePass",
+      "file": "src/app/club-dashboard/passes/page.tsx",
+      "line": 263,
+      "context": "n> </DialogClose> <Button onClick={handleIssuePass} disabled={isIssuing}>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddTransaction",
+      "file": "src/app/club-dashboard/payments/page.tsx",
+      "line": 809,
+      "context": "취소 </Button> <Button onClick={handleAddTransaction} disabled={isProcess",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSplitTransaction",
+      "file": "src/app/club-dashboard/payments/page.tsx",
+      "line": 857,
+      "context": "취소 </Button> <Button onClick={handleSplitTransaction} disabled={isProce",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSaveBankAccount",
+      "file": "src/app/club-dashboard/settings/page.tsx",
+      "line": 193,
+      "context": "</div> )} <Button onClick={handleSaveBankAccount} disabled={isSaving",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSaveNaverConfig",
+      "file": "src/app/club-dashboard/settings/page.tsx",
+      "line": 300,
+      "context": "</div> )} <Button onClick={handleSaveNaverConfig} disabled={isSaving",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleDelete",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 134,
+      "context": "<Button variant=\"destructive\" size=\"sm\" onClick={handleDelete}> <Trash2 classN",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/competitions/page.tsx",
+      "line": 339,
+      "context": "</Button> <Button onClick={handleSubmit} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleApply",
+      "file": "src/app/events/page.tsx",
+      "line": 333,
+      "context": "취소 </Button> <Button onClick={handleApply} disabled={isSubmitting}>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAcceptInvite",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 196,
+      "context": "{/* 초대 수락 버튼 */} <Button onClick={handleAcceptInvite} classNam",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/level-tests/page.tsx",
+      "line": 308,
+      "context": "</Button> <Button onClick={handleSubmit} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleGoogleSignIn",
+      "file": "src/app/login/page.tsx",
+      "line": 317,
+      "context": "0 font-medium transition-colors\" onClick={handleGoogleSignIn} disa",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCapturePhoto",
+      "file": "src/app/members/[id]/member-profile-client.tsx",
+      "line": 814,
+      "context": "e\">취소</Button></DialogClose> <Button onClick={handleCapturePhoto} disabled={!hasCameraP",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleUpdateAttendance",
+      "file": "src/app/members/[id]/member-profile-client.tsx",
+      "line": 857,
+      "context": "취소 </Button> <Button onClick={handleUpdateAttendance}> 저장",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleRequestPass",
+      "file": "src/app/my-profile/page.tsx",
+      "line": 292,
+      "context": "n> </DialogClose> <Button onClick={handleRequestPass} disabled={isSubmitting",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 114,
+      "context": "utton variant=\"ghost\" onClick={handleLogout} className=\"w-",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handlePrev",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 444,
+      "context": "variant=\"outline\" onClick={handlePrev} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleNext",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 453,
+      "context": ")} <Button onClick={handleNext} disabled={isSub",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handlePrev",
+      "file": "src/app/register/family/page.tsx",
+      "line": 686,
+      "context": "> 1 && ( <Button variant=\"outline\" onClick={handlePrev} disabled={isSubmitting} class",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleNext",
+      "file": "src/app/register/family/page.tsx",
+      "line": 691,
+      "context": "</Button> )} <Button onClick={handleNext} disabled={isSubmitting} class",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 574,
+      "context": "ton type=\"button\" onClick={handleSubmit} disabled={i",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleRejectClubOwner",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 662,
+      "context": "variant=\"destructive\" onClick={handleRejectClubOwner} disa",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleResetFirestore",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 715,
+      "context": "variant=\"destructive\" onClick={handleResetFirestore} disab",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleApprove",
+      "file": "src/components/approval-actions.tsx",
+      "line": 64,
+      "context": "div className=\"flex gap-2\"> <Button onClick={handleApprove} disabled={disabled",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleReject",
+      "file": "src/components/approval-actions.tsx",
+      "line": 108,
+      "context": "cel> <AlertDialogAction onClick={handleReject} disabled={isR",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 172,
+      "context": "enuSeparator /> <DropdownMenuItem onClick={handleLogout} className=\"text-red-600\">",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/components/layout/sidebar.tsx",
+      "line": 376,
+      "context": "SidebarMenuItem> <SidebarMenuButton onClick={handleLogout} tooltip='로그아웃'>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/components/layout/sidebar.tsx",
+      "line": 528,
+      "context": "<SidebarMenuItem> <SidebarMenuButton onClick={handleLogout} tooltip='로그아웃'>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleRemovePhoto",
+      "file": "src/components/profile-photo-upload.tsx",
+      "line": 116,
+      "context": "-top-2 -right-2 h-8 w-8 rounded-full\" onClick={handleRemovePhoto} disabled={",
+      "category": "form",
+      "isValid": true
+    }
+  ],
+  "modalButtons": [],
+  "brokenConnections": [
+    {
+      "type": "router.push",
+      "target": "/invite/accept/${token}",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 98,
+      "context": "페이지로 이동 const handleAcceptInvite = () => { router.push(`/invite/accept/${token}`); }; if",
+      "category": "navigation",
+      "isValid": false
+    }
+  ],
+  "workingConnections": [
+    {
+      "type": "onClick->function",
+      "target": "handleClick",
+      "file": "src/__tests__/components/ui/button.test.tsx",
+      "line": 12,
+      "context": "const handleClick = jest.fn(); render(<Button onClick={handleClick}>Click me</Button>);",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleClick",
+      "file": "src/__tests__/components/ui/button.test.tsx",
+      "line": 20,
+      "context": "dleClick = jest.fn(); render(<Button disabled onClick={handleClick}>Click me</Button>);",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 69,
+      "context": "DERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <Plus",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 82,
+      "context": "shadow cursor-pointer\" onClick={() => router.push(`/committees/${committee.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 129,
+      "context": "TION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 69,
+      "context": "le={UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 82,
+      "context": "-lg transition-shadow cursor-pointer\" onClick={() => router.push(`/committees/${committe",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/admin/committees/page.tsx",
+      "line": 129,
+      "context": "UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSaveJudgeAssignments",
+      "file": "src/app/admin/competitions/page.tsx",
+      "line": 756,
+      "context": "취소 </Button> <Button onClick={handleSaveJudgeAssignments}>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCloseDialog",
+      "file": "src/app/admin/judges/page.tsx",
+      "line": 384,
+      "context": "alogFooter> <Button variant=\"outline\" onClick={handleCloseDialog}> 취소",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/admin/judges/page.tsx",
+      "line": 387,
+      "context": "취소 </Button> <Button onClick={handleSubmit} disabled={!formData.name ||",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/members/page.tsx",
+      "line": 185,
+      "context": "<DropdownMenuItem onClick={() => router.push(`/members/${member.id}`)}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/members/page.tsx",
+      "line": 185,
+      "context": "uLabel> <DropdownMenuItem onClick={() => router.push(`/members/${member.id}`",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleDelete",
+      "file": "src/app/admin/members/page.tsx",
+      "line": 237,
+      "context": "AlertDialogCancel> <AlertDialogAction onClick={handleDelete} className=\"bg-destructive t",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/admin/page.tsx",
+      "line": 47,
+      "context": "⚠️ 권한 없음 - 리다이렉트:', user.email, user.role); router.push('/dashboard'); return (",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/admin/page.tsx",
+      "line": 58,
+      "context": "// 로그인 안 됨 if (!isUserLoading && !user) { router.push('/login'); return ( <div cla",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 178,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/clubs')}> <CardConte",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 191,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/members')}> <CardCon",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 204,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/competitions')}> <Ca",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 217,
+      "context": "transition-shadow cursor-pointer\" onClick={() => router.push('/admin/committees')}> <Card",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 241,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/clubs')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 253,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/members')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 265,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/competitions')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 277,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/committees')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/judges",
+      "file": "src/app/admin/page.tsx",
+      "line": 289,
+      "context": "y-start h-auto py-4\" onClick={() => router.push('/admin/judges')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 306,
+      "context": "<Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/members')}> 전체 보",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 317,
+      "context": "ursor-pointer\" onClick={() => router.push(`/members/${member.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 346,
+      "context": "<Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/clubs')}> 전체 보기",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/clubs/${club.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 357,
+      "context": "ursor-pointer\" onClick={() => router.push(`/clubs/${club.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 388,
+      "context": "<Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/competitions')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 398,
+      "context": "cursor-pointer\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 178,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/clubs')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 191,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/members')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 204,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 217,
+      "context": "hover:shadow-md transition-shadow cursor-pointer\" onClick={() => router.push('/admin/committees')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 241,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/clubs')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 253,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/members')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 265,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/committees",
+      "file": "src/app/admin/page.tsx",
+      "line": 277,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/judges",
+      "file": "src/app/admin/page.tsx",
+      "line": 289,
+      "context": "assName=\"justify-start h-auto py-4\" onClick={() => router.push('/admin/judges')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/members",
+      "file": "src/app/admin/page.tsx",
+      "line": 306,
+      "context": "le> <Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/members')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/members/${member.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 317,
+      "context": "sition-colors cursor-pointer\" onClick={() => router.push(`/members/${member.id}`",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/clubs",
+      "file": "src/app/admin/page.tsx",
+      "line": 346,
+      "context": "le> <Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/clubs')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/clubs/${club.id}",
+      "file": "src/app/admin/page.tsx",
+      "line": 357,
+      "context": "sition-colors cursor-pointer\" onClick={() => router.push(`/clubs/${club.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 388,
+      "context": "le> <Button variant=\"ghost\" size=\"sm\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/admin/competitions",
+      "file": "src/app/admin/page.tsx",
+      "line": 398,
+      "context": "ansition-colors cursor-pointer\" onClick={() => router.push('/admin/competitions')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/admin/users/page.tsx",
+      "line": 48,
+      "context": "&& user.role !== UserRole.FEDERATION_ADMIN) { router.push('/dashboard'); return ( <div",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCreate",
+      "file": "src/app/club-dashboard/announcements/page.tsx",
+      "line": 171,
+      "context": "회원들에게 소식을 전하세요</p> </div> <Button onClick={handleCreate}> <Plus className=",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCreate",
+      "file": "src/app/club-dashboard/announcements/page.tsx",
+      "line": 275,
+      "context": "ound mb-4\">등록된 공지사항이 없습니다</p> <Button onClick={handleCreate}> <Plus classN",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/club-dashboard/announcements/page.tsx",
+      "line": 363,
+      "context": "취소 </Button> <Button onClick={handleSubmit} disabled={isSubmitting || !",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmitAllAttendance",
+      "file": "src/app/club-dashboard/class-status/page.tsx",
+      "line": 424,
+      "context": "</Button> <Button onClick={handleSubmitAllAttendance}",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddMembers",
+      "file": "src/app/club-dashboard/classes/[id]/page.tsx",
+      "line": 355,
+      "context": "</Button> <Button onClick={handleAddMembers} disabled=",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/club-dashboard/classes/${gymClass.id}",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 465,
+      "context": "=\"icon\" onClick={() => router.push(`/club-dashboard/classes/${gymClass.id",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/club-dashboard/classes/${gymClass.id}",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 465,
+      "context": "size=\"icon\" onClick={() => router.push(`/club-dashboard/classe",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "async",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 647,
+      "context": "disabled={isSubmitting} onClick={async (e) => { cons",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleDelete",
+      "file": "src/app/club-dashboard/classes/page.tsx",
+      "line": 700,
+      "context": "ertDialogCancel> <AlertDialogAction onClick={handleDelete} className=\"bg-destructive t",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addOption",
+      "file": "src/app/club-dashboard/events/page.tsx",
+      "line": 476,
+      "context": "<Button type=\"button\" size=\"sm\" variant=\"outline\" onClick={addOption}> <Plus cla",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddIncome",
+      "file": "src/app/club-dashboard/finance/page.tsx",
+      "line": 563,
+      "context": "취소 </Button> <Button onClick={handleAddIncome}>추가</Button> </",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddExpense",
+      "file": "src/app/club-dashboard/finance/page.tsx",
+      "line": 618,
+      "context": "취소 </Button> <Button onClick={handleAddExpense}>추가</Button> <",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSplitIncome",
+      "file": "src/app/club-dashboard/finance/page.tsx",
+      "line": 657,
+      "context": "취소 </Button> <Button onClick={handleSplitIncome}>분할하기</Button>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/club-dashboard/level-tests/[testId]/evaluate/page.tsx",
+      "line": 314,
+      "context": "</Button> <Button onClick={handleSubmit} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "startCamera",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 295,
+      "context": "ber && !isCameraOpen && ( <Button onClick={startCamera}> <Camera c",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "stopCamera",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 301,
+      "context": "& ( <Button variant=\"destructive\" onClick={stopCamera}> <X classNa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "takePhoto",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 329,
+      "context": "4\"> <Button onClick={takePhoto} disabled={",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "isRecording",
+      "file": "src/app/club-dashboard/media/page.tsx",
+      "line": 348,
+      "context": "<Button onClick={isRecording ? stopRecording : startRecord",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSelectAll",
+      "file": "src/app/club-dashboard/messages/page.tsx",
+      "line": 248,
+      "context": "<label className=\"font-semibold cursor-pointer\" onClick={handleSelectAll}> 전체 선택",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSend",
+      "file": "src/app/club-dashboard/messages/page.tsx",
+      "line": 273,
+      "context": "</div> <Button onClick={handleSend} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleIssuePass",
+      "file": "src/app/club-dashboard/passes/page.tsx",
+      "line": 263,
+      "context": "n> </DialogClose> <Button onClick={handleIssuePass} disabled={isIssuing}>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAddTransaction",
+      "file": "src/app/club-dashboard/payments/page.tsx",
+      "line": 809,
+      "context": "취소 </Button> <Button onClick={handleAddTransaction} disabled={isProcess",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSplitTransaction",
+      "file": "src/app/club-dashboard/payments/page.tsx",
+      "line": 857,
+      "context": "취소 </Button> <Button onClick={handleSplitTransaction} disabled={isProce",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSaveBankAccount",
+      "file": "src/app/club-dashboard/settings/page.tsx",
+      "line": 193,
+      "context": "</div> )} <Button onClick={handleSaveBankAccount} disabled={isSaving",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSaveNaverConfig",
+      "file": "src/app/club-dashboard/settings/page.tsx",
+      "line": 300,
+      "context": "</div> )} <Button onClick={handleSaveNaverConfig} disabled={isSaving",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 72,
+      "context": "description: '위원회가 삭제되었습니다.', }); router.push('/committees'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 96,
+      "context": "를 찾을 수 없습니다</h2> <Button onClick={() => router.push('/committees')}> 목록으로 돌아가기",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 114,
+      "context": "size=\"icon\" onClick={() => router.push('/committees')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 96,
+      "context": "-bold mb-2\">위원회를 찾을 수 없습니다</h2> <Button onClick={() => router.push('/committees')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 114,
+      "context": "riant=\"ghost\" size=\"icon\" onClick={() => router.push('/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleDelete",
+      "file": "src/app/committees/[id]/page.tsx",
+      "line": 134,
+      "context": "<Button variant=\"destructive\" size=\"sm\" onClick={handleDelete}> <Trash2 classN",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 70,
+      "context": "${formData.name} 위원회가 생성되었습니다.`, }); router.push('/committees'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 92,
+      "context": "|| user.role !== UserRole.FEDERATION_ADMIN) { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 102,
+      "context": "t\" size=\"icon\" onClick={() => router.push('/committees')} > <A",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 175,
+      "context": "variant=\"outline\" onClick={() => router.push('/committees')} disabl",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 102,
+      "context": "variant=\"ghost\" size=\"icon\" onClick={() => router.push('/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees",
+      "file": "src/app/committees/new/page.tsx",
+      "line": 175,
+      "context": "variant=\"outline\" onClick={() => router.push('/committees')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 63,
+      "context": "DERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <Plus",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/committees/page.tsx",
+      "line": 76,
+      "context": "shadow cursor-pointer\" onClick={() => router.push(`/committees/${committee.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 123,
+      "context": "TION_ADMIN}> <Button onClick={() => router.push('/committees/new')}> <",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 63,
+      "context": "le={UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/${committee.id}",
+      "file": "src/app/committees/page.tsx",
+      "line": 76,
+      "context": "-lg transition-shadow cursor-pointer\" onClick={() => router.push(`/committees/${committe",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/committees/new",
+      "file": "src/app/committees/page.tsx",
+      "line": 123,
+      "context": "UserRole.FEDERATION_ADMIN}> <Button onClick={() => router.push('/committees/new')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/competitions/page.tsx",
+      "line": 339,
+      "context": "</Button> <Button onClick={handleSubmit} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/login",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 18,
+      "context": "sUserLoading) return; if (!user) { window.location.href = '/login'; return;",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 24,
+      "context": "g 페이지로 if (user.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 30,
+      "context": "if (user.role === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin'; } else",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 32,
+      "context": "(user.role === UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; } else if (us",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 34,
+      "context": "R || user.role === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard'; } el",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/dashboard/page.tsx",
+      "line": 36,
+      "context": "tion.href = '/club-dashboard'; } else { window.location.href = '/my-profile'; } }, [",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/dashboard",
+      "file": "src/app/error.tsx",
+      "line": 55,
+      "context": "variant=\"outline\" onClick={() => (window.location.href = '/dashboard')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "reset",
+      "file": "src/app/error.tsx",
+      "line": 49,
+      "context": "ssName=\"flex flex-col gap-2\"> <Button onClick={reset} className=\"w-full\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleApply",
+      "file": "src/app/events/page.tsx",
+      "line": 333,
+      "context": "취소 </Button> <Button onClick={handleApply} disabled={isSubmitting}>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 123,
+      "context": "<CardContent> <Button onClick={() => router.push('/login')} className=\"w-full\">",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 206,
+      "context": "*/} <Button onClick={() => router.push('/login')} variant=\"outli",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 123,
+      "context": "ader> <CardContent> <Button onClick={() => router.push('/login')} className=\"w",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/login",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 206,
+      "context": "{/* 취소 버튼 */} <Button onClick={() => router.push('/login')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleAcceptInvite",
+      "file": "src/app/invite/[token]/page.tsx",
+      "line": 196,
+      "context": "{/* 초대 수락 버튼 */} <Button onClick={handleAcceptInvite} classNam",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 51,
+      "context": "ion: '유효하지 않은 초대 링크입니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 64,
+      "context": "ion: '이 초대는 이미 사용되었습니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 74,
+      "context": "ption: '초대 기간이 만료되었습니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 89,
+      "context": "ption: '초대 기간이 만료되었습니다.', }); router.push('/login'); return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 104,
+      "context": "'초대 정보를 불러오는 중 오류가 발생했습니다.', }); router.push('/login'); } finally { s",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 172,
+      "context": "// 대시보드로 이동 setTimeout(() => { router.push('/admin'); }, 1500); } catch",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/app/invite/accept/[token]/page.tsx",
+      "line": 248,
+      "context": "니다.', }); setTimeout(() => { router.push('/admin'); }, 1500); } catch",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/level-tests/page.tsx",
+      "line": 308,
+      "context": "</Button> <Button onClick={handleSubmit} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/register",
+      "file": "src/app/login/page.tsx",
+      "line": 339,
+      "context": "계정이 없으신가요? </p> <Link href=\"/register\" className=\"block\">",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/register/club-owner",
+      "file": "src/app/login/page.tsx",
+      "line": 357,
+      "context": "클럽 관리자이신가요? </p> <Link href=\"/register/club-owner\" className=\"block",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/login",
+      "file": "src/app/login/page.tsx",
+      "line": 86,
+      "context": "히 리다이렉트'); // 완전히 새로운 페이지로 이동 (캐시 무시) window.location.href = '/login'; } }, [auth]",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/login/page.tsx",
+      "line": 105,
+      "context": "if (userProfile.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/login/page.tsx",
+      "line": 111,
+      "context": "rofile.role === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin'; } e",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/login/page.tsx",
+      "line": 113,
+      "context": "ofile.role === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/login/page.tsx",
+      "line": 115,
+      "context": "e.role === UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; } else {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 117,
+      "context": "ation.href = '/admin'; } else { window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 121,
+      "context": "} else { // 프로필이 없으면 기본 페이지로 window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/login/page.tsx",
+      "line": 153,
+      "context": "if (userProfile.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/login/page.tsx",
+      "line": 159,
+      "context": "rofile.role === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin'; } e",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/login/page.tsx",
+      "line": 161,
+      "context": "ofile.role === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/login/page.tsx",
+      "line": 163,
+      "context": "e.role === UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; } else {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 165,
+      "context": "ation.href = '/admin'; } else { window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 169,
+      "context": "} else { // 프로필이 없으면 기본 페이지로 window.location.href = '/my-profile'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/login/page.tsx",
+      "line": 205,
+      "context": "f (user.status === 'pending') { window.location.href = '/pending-approval';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/super-admin",
+      "file": "src/app/login/page.tsx",
+      "line": 211,
+      "context": "ole === UserRole.SUPER_ADMIN) { window.location.href = '/super-admin';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/club-dashboard",
+      "file": "src/app/login/page.tsx",
+      "line": 213,
+      "context": "le === UserRole.CLUB_MANAGER) { window.location.href = '/club-dashboard';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/admin",
+      "file": "src/app/login/page.tsx",
+      "line": 215,
+      "context": "== UserRole.FEDERATION_ADMIN) { window.location.href = '/admin'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/my-profile",
+      "file": "src/app/login/page.tsx",
+      "line": 217,
+      "context": "dmin'; } else { window.location.href = '/my-profile';",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "forceLogout",
+      "file": "src/app/login/page.tsx",
+      "line": 226,
+      "context": "on variant=\"outline\" onClick={forceLogout} className=\"fle",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleGoogleSignIn",
+      "file": "src/app/login/page.tsx",
+      "line": 317,
+      "context": "0 font-medium transition-colors\" onClick={handleGoogleSignIn} disa",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleCapturePhoto",
+      "file": "src/app/members/[id]/member-profile-client.tsx",
+      "line": 814,
+      "context": "e\">취소</Button></DialogClose> <Button onClick={handleCapturePhoto} disabled={!hasCameraP",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleUpdateAttendance",
+      "file": "src/app/members/[id]/member-profile-client.tsx",
+      "line": 857,
+      "context": "취소 </Button> <Button onClick={handleUpdateAttendance}> 저장",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 94,
+      "context": "데이터를 불러오는 중 오류가 발생했습니다.</p> <Button onClick={refresh} variant=\"outline\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 120,
+      "context": "Name=\"flex items-center gap-2\"> <Button onClick={refresh} variant=\"outline\" size=\"sm\" disa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadPreviousPage",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 229,
+      "context": "size=\"sm\" onClick={loadPreviousPage} dis",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadNextPage",
+      "file": "src/app/members/optimized-page.tsx",
+      "line": 238,
+      "context": "size=\"sm\" onClick={loadNextPage} disable",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 92,
+      "context": "데이터를 불러오는 중 오류가 발생했습니다.</p> <Button onClick={refresh} variant=\"outline\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refresh",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 114,
+      "context": "Name=\"flex items-center gap-2\"> <Button onClick={refresh} variant=\"outline\" size=\"sm\" disa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadPreviousPage",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 206,
+      "context": "size=\"sm\" onClick={loadPreviousPage} dis",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "loadNextPage",
+      "file": "src/app/members/paginated-page.tsx",
+      "line": 215,
+      "context": "size=\"sm\" onClick={loadNextPage} disable",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/family",
+      "file": "src/app/my-profile/add-child/page.tsx",
+      "line": 86,
+      "context": "children.length}명의 자녀가 추가되었습니다!`, }); router.push('/my-profile/family'); } catch (er",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addChild",
+      "file": "src/app/my-profile/add-child/page.tsx",
+      "line": 222,
+      "context": "on\" variant=\"outline\" onClick={addChild} className=\"w-full",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/family",
+      "file": "src/app/my-profile/add-family/page.tsx",
+      "line": 56,
+      "context": "신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.', }); router.push('/my-profile/family'); } catch (er",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/family",
+      "file": "src/app/my-profile/add-family-member/page.tsx",
+      "line": 173,
+      "context": "bers.length}명의 가족 구성원이 추가되었습니다!`, }); router.push('/my-profile/family'); } catch (er",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addMember",
+      "file": "src/app/my-profile/add-family-member/page.tsx",
+      "line": 374,
+      "context": "on\" variant=\"outline\" onClick={addMember} className=\"w-ful",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 65,
+      "context": "/p> </div> <Button onClick={() => router.push('/my-profile/add-child')}> <",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/members/${child.id}",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 153,
+      "context": "size=\"sm\" onClick={() => router.push(`/members/${child.id}`)}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 172,
+      "context": "</p> <Button onClick={() => router.push('/my-profile/add-child')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 65,
+      "context": "하세요 </p> </div> <Button onClick={() => router.push('/my-profile/add-child'",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/members/${child.id}",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 153,
+      "context": "size=\"sm\" onClick={() => router.push(`/members/${child.id}`)",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/my-profile/add-child",
+      "file": "src/app/my-profile/family/page.tsx",
+      "line": 172,
+      "context": "권을 관리하세요 </p> <Button onClick={() => router.push('/my-profile/add-child'",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleRequestPass",
+      "file": "src/app/my-profile/page.tsx",
+      "line": 292,
+      "context": "n> </DialogClose> <Button onClick={handleRequestPass} disabled={isSubmitting",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/dashboard",
+      "file": "src/app/not-found.tsx",
+      "line": 23,
+      "context": "<div className=\"flex flex-col gap-2\"> <Link href=\"/dashboard\" className=\"w-full\">",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/dashboard",
+      "file": "src/app/not-found.tsx",
+      "line": 45,
+      "context": "xt-slate-600\"> <li> <Link href=\"/dashboard\" className=\"hover:text-blue",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/my-profile",
+      "file": "src/app/not-found.tsx",
+      "line": 50,
+      "context": "</li> <li> <Link href=\"/my-profile\" className=\"hover:text-blu",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/competitions",
+      "file": "src/app/not-found.tsx",
+      "line": 55,
+      "context": "</li> <li> <Link href=\"/competitions\" className=\"hover:text-b",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "Link",
+      "target": "/committees",
+      "file": "src/app/not-found.tsx",
+      "line": 60,
+      "context": "</li> <li> <Link href=\"/committees\" className=\"hover:text-blu",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 20,
+      "context": "UserLoading && user?.status === 'approved') { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 33,
+      "context": "description: '다시 로그인해주세요.', }); router.push('/login'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 107,
+      "context": "variant=\"outline\" onClick={() => router.push('/')} className=\"w-full\"",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 107,
+      "context": "ton variant=\"outline\" onClick={() => router.push('/')} cla",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/app/pending-approval/page.tsx",
+      "line": 114,
+      "context": "utton variant=\"ghost\" onClick={handleLogout} className=\"w-",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/profile-setup/page.tsx",
+      "line": 194,
+      "context": "'정보가 저장되었으며, 클럽 관리자의 승인을 기다립니다.', }); router.push('/dashboard'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/pending-approval",
+      "file": "src/app/register/adult/cached-page.tsx",
+      "line": 131,
+      "context": "신청이 성공적으로 제출되었습니다. 승인을 기다려주세요.', }); router.push('/pending-approval'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refreshClubs",
+      "file": "src/app/register/adult/cached-page.tsx",
+      "line": 151,
+      "context": "데이터를 불러오는 중 오류가 발생했습니다.</p> <Button onClick={refreshClubs} variant=\"outline\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "refreshClubs",
+      "file": "src/app/register/adult/cached-page.tsx",
+      "line": 186,
+      "context": ")} <Button onClick={refreshClubs} variant=\"g",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/success",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 216,
+      "context": "다려주세요. 승인 완료 시 연락드리겠습니다.', }); router.push('/register/success'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "clearSignature",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 423,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={clearSignature}> 다시 작",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handlePrev",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 444,
+      "context": "variant=\"outline\" onClick={handlePrev} disabled={isS",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleNext",
+      "file": "src/app/register/adult/page.tsx",
+      "line": 453,
+      "context": ")} <Button onClick={handleNext} disabled={isSub",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/register/club-owner/page.tsx",
+      "line": 126,
+      "context": "// 승인 대기 페이지로 이동 (완전한 페이지 리로드) window.location.href = '/pending-approval'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/success",
+      "file": "src/app/register/family/page.tsx",
+      "line": 226,
+      "context": "완료되었습니다. 클럽의 승인을 기다려주세요.`, }); router.push('/register/success'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addParent",
+      "file": "src/app/register/family/page.tsx",
+      "line": 304,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={addParent}> <Plus c",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "addChild",
+      "file": "src/app/register/family/page.tsx",
+      "line": 401,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={addChild}> <Plus clas",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "clearSignature",
+      "file": "src/app/register/family/page.tsx",
+      "line": 664,
+      "context": "<Button variant=\"outline\" size=\"sm\" onClick={clearSignature}> 다시 작",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handlePrev",
+      "file": "src/app/register/family/page.tsx",
+      "line": 686,
+      "context": "> 1 && ( <Button variant=\"outline\" onClick={handlePrev} disabled={isSubmitting} class",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleNext",
+      "file": "src/app/register/family/page.tsx",
+      "line": 691,
+      "context": "</Button> )} <Button onClick={handleNext} disabled={isSubmitting} class",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "window.location",
+      "target": "/pending-approval",
+      "file": "src/app/register/member/page.tsx",
+      "line": 145,
+      "context": "// 승인 대기 페이지로 이동 (완전한 페이지 리로드) window.location.href = '/pending-approval'; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/success",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 242,
+      "context": "인을 기다려주세요.', }); // 완료 페이지로 이동 router.push('/register/success'); } catch (err",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "clearSignature",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 533,
+      "context": "ne\" size=\"sm\" onClick={clearSignature} classNa",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "prevStep",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 554,
+      "context": "variant=\"outline\" onClick={prevStep} className=\"flex",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "nextStep",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 565,
+      "context": "ton type=\"button\" onClick={nextStep} className=\"flex",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleSubmit",
+      "file": "src/app/register/member-with-contract/page.tsx",
+      "line": 574,
+      "context": "ton type=\"button\" onClick={handleSubmit} disabled={i",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/adult",
+      "file": "src/app/register/page.tsx",
+      "line": 28,
+      "context": "hover:border-primary\" onClick={() => router.push('/register/adult')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/register/family",
+      "file": "src/app/register/page.tsx",
+      "line": 64,
+      "context": "r-primary/50 relative\" onClick={() => router.push('/register/family')} >",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/register/adult",
+      "file": "src/app/register/page.tsx",
+      "line": 28,
+      "context": "transition-all hover:border-primary\" onClick={() => router.push('/register/adult')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/register/family",
+      "file": "src/app/register/page.tsx",
+      "line": 64,
+      "context": "border-2 border-primary/50 relative\" onClick={() => router.push('/register/family')}",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/",
+      "file": "src/app/register/success/page.tsx",
+      "line": 36,
+      "context": "<Button onClick={() => router.push('/')} className=\"w-full\"",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/",
+      "file": "src/app/register/success/page.tsx",
+      "line": 36,
+      "context": "me=\"space-y-2\"> <Button onClick={() => router.push('/')} cla",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/register/super-admin/page.tsx",
+      "line": 63,
+      "context": "'최고관리자 신청이 완료되었습니다. 시스템 관리자의 검토 후 승인됩니다.'); router.push('/dashboard'); } catch (error) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/setup/initial-admin/page.tsx",
+      "line": 107,
+      "context": "습니다!\\n이메일: ${formData.email}\\n\\n로그인해주세요.`); router.push('/login'); } catch (error: any) {",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/app/setup/initial-admin/page.tsx",
+      "line": 152,
+      "context": "</p> <Button onClick={() => router.push('/login')}> 로그인 페이지로",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/login",
+      "file": "src/app/setup/initial-admin/page.tsx",
+      "line": 152,
+      "context": "에만 사용 가능합니다. </p> <Button onClick={() => router.push('/login')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/super-admin/invites/page.tsx",
+      "line": 70,
+      "context": "user || user.role !== UserRole.SUPER_ADMIN) { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/super-admin",
+      "file": "src/app/super-admin/invites/page.tsx",
+      "line": 222,
+      "context": "</div> <Button onClick={() => router.push('/super-admin')}> 새 초대 보",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/super-admin",
+      "file": "src/app/super-admin/invites/page.tsx",
+      "line": 222,
+      "context": "scription> </div> <Button onClick={() => router.push('/super-admin')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/dashboard",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 102,
+      "context": "user || user.role !== UserRole.SUPER_ADMIN) { router.push('/dashboard'); return null; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/super-admin/invites",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 255,
+      "context": ".`, }); // 초대 관리 페이지로 이동 router.push('/super-admin/invites');",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/system/super-admin-approvals",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 632,
+      "context": "ter mt-4\"> <Button onClick={() => router.push('/system/super-admin-approvals')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/system/super-admin-approvals",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 632,
+      "context": "lex justify-center mt-4\"> <Button onClick={() => router.push('/system/super-admin-ap",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleRejectClubOwner",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 662,
+      "context": "variant=\"destructive\" onClick={handleRejectClubOwner} disa",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleResetFirestore",
+      "file": "src/app/super-admin/page.tsx",
+      "line": 715,
+      "context": "variant=\"destructive\" onClick={handleResetFirestore} disab",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleApprove",
+      "file": "src/components/approval-actions.tsx",
+      "line": 64,
+      "context": "div className=\"flex gap-2\"> <Button onClick={handleApprove} disabled={disabled",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleReject",
+      "file": "src/components/approval-actions.tsx",
+      "line": 108,
+      "context": "cel> <AlertDialogAction onClick={handleReject} disabled={isR",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "onRetry",
+      "file": "src/components/error-fallback.tsx",
+      "line": 41,
+      "context": "</div> {onRetry && ( <Button onClick={onRetry} variant=\"outline\" size=\"sm\">",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "onAddClick",
+      "file": "src/components/layout/header.tsx",
+      "line": 69,
+      "context": "/> {showAddButton && ( <Button onClick={onAddClick}> <PlusCircle clas",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 29,
+      "context": "includes(pathname) && !isRegisterPath) { router.push('/login'); } return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 38,
+      "context": "in if (pathname !== '/login') { router.push('/login'); } } else if (us",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/club-dashboard",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 43,
+      "context": "|| pathname.startsWith('/super-admin')) { router.push('/club-dashboard'); } } else",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 48,
+      "context": "pathname.startsWith('/club-dashboard')) { router.push('/admin'); } // Redirect /",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/main-layout.tsx",
+      "line": 52,
+      "context": "ns if (pathname === '/dashboard') { router.push('/admin'); } } }, [user,",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 42,
+      "context": "&& pathname !== '/setup/initial-admin') { router.push('/login'); } return; }",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 50,
+      "context": "ng') { if (pathname !== '/login') { router.push('/login'); } } else if (user",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/club-dashboard",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 56,
+      "context": "n page, redirecting to /club-dashboard'); router.push('/club-dashboard'); } } else",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 62,
+      "context": "club dashboard, redirecting to /admin'); router.push('/admin'); } // Redirect /",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/admin",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 66,
+      "context": "ns if (pathname === '/dashboard') { router.push('/admin'); } } }, [user, i",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 74,
+      "context": "if (auth) { await signOut(auth); router.push('/login'); } }; if (isUserLoa",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/my-profile",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 167,
+      "context": "<DropdownMenuItem onClick={() => router.push('/my-profile')}> <Se",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->router",
+      "target": "/my-profile",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 167,
+      "context": "enuSeparator /> <DropdownMenuItem onClick={() => router.push('/my-profile')}>",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/components/layout/modern-layout.tsx",
+      "line": 172,
+      "context": "enuSeparator /> <DropdownMenuItem onClick={handleLogout} className=\"text-red-600\">",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "router.push",
+      "target": "/login",
+      "file": "src/components/layout/sidebar.tsx",
+      "line": 355,
+      "context": "if(auth) { await signOut(auth); router.push('/login'); } } // 서브메뉴가 없으면 사",
+      "category": "navigation",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/components/layout/sidebar.tsx",
+      "line": 376,
+      "context": "SidebarMenuItem> <SidebarMenuButton onClick={handleLogout} tooltip='로그아웃'>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleLogout",
+      "file": "src/components/layout/sidebar.tsx",
+      "line": 528,
+      "context": "<SidebarMenuItem> <SidebarMenuButton onClick={handleLogout} tooltip='로그아웃'>",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "handleRemovePhoto",
+      "file": "src/components/profile-photo-upload.tsx",
+      "line": 116,
+      "context": "-top-2 -right-2 h-8 w-8 rounded-full\" onClick={handleRemovePhoto} disabled={",
+      "category": "form",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "scrollPrev",
+      "file": "src/components/ui/carousel.tsx",
+      "line": 216,
+      "context": "me )} disabled={!canScrollPrev} onClick={scrollPrev} {...props} >",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "scrollNext",
+      "file": "src/components/ui/carousel.tsx",
+      "line": 245,
+      "context": "me )} disabled={!canScrollNext} onClick={scrollNext} {...props} >",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "toggleSidebar",
+      "file": "src/components/ui/sidebar.tsx",
+      "line": 300,
+      "context": "-label=\"Toggle Sidebar\" tabIndex={-1} onClick={toggleSidebar} title=\"Toggle Sideba",
+      "category": "action",
+      "isValid": true
+    },
+    {
+      "type": "onClick->function",
+      "target": "onClick",
+      "file": "src/components/ui/stat-card.tsx",
+      "line": 75,
+      "context": "& 'cursor-pointer hover:scale-105' )} onClick={onClick} > <CardHeader classNam",
+      "category": "action",
+      "isValid": true
+    }
+  ],
+  "summary": {
+    "total": 234,
+    "working": 233,
+    "broken": 1,
+    "byCategory": {
+      "form": {
+        "total": 46,
+        "working": 46,
+        "broken": 0
+      },
+      "navigation": {
+        "total": 155,
+        "working": 154,
+        "broken": 1
+      },
+      "action": {
+        "total": 33,
+        "working": 33,
+        "broken": 0
+      }
+    }
+  },
+  "validRoutes": [
+    "/",
+    "/admin",
+    "/admin/approvals",
+    "/admin/clubs",
+    "/admin/committees",
+    "/admin/competitions",
+    "/admin/competitions/competitionId/scoring",
+    "/admin/judges",
+    "/admin/members",
+    "/admin/users",
+    "/announcements",
+    "/club-dashboard",
+    "/club-dashboard/analytics",
+    "/club-dashboard/announcements",
+    "/club-dashboard/approvals",
+    "/club-dashboard/class-status",
+    "/club-dashboard/classes",
+    "/club-dashboard/classes/id",
+    "/club-dashboard/coaches",
+    "/club-dashboard/events",
+    "/club-dashboard/finance",
+    "/club-dashboard/level-tests",
+    "/club-dashboard/level-tests/testId/evaluate",
+    "/club-dashboard/media",
+    "/club-dashboard/member-approvals",
+    "/club-dashboard/messages",
+    "/club-dashboard/pass-templates",
+    "/club-dashboard/passes",
+    "/club-dashboard/payments",
+    "/club-dashboard/settings",
+    "/clubs",
+    "/clubs/id",
+    "/committees",
+    "/committees/id",
+    "/committees/new",
+    "/competitions",
+    "/competitions/competitionId/live",
+    "/dashboard",
+    "/events",
+    "/invite/accept/token",
+    "/invite/token",
+    "/level-tests",
+    "/login",
+    "/members",
+    "/members/id",
+    "/my-profile",
+    "/my-profile/add-child",
+    "/my-profile/add-family",
+    "/my-profile/add-family-member",
+    "/my-profile/family",
+    "/pending-approval",
+    "/profile-setup",
+    "/register",
+    "/register/adult",
+    "/register/club-owner",
+    "/register/family",
+    "/register/member",
+    "/register/member-with-contract",
+    "/register/success",
+    "/register/super-admin",
+    "/scoreboard/competitionId",
+    "/setup/initial-admin",
+    "/super-admin",
+    "/super-admin/invites",
+    "/system/super-admin-approvals"
+  ],
+  "timestamp": "2025-10-17T08:27:34.796Z"
+}

@@ -32,7 +32,6 @@ export default function PendingApprovalPage() {
       });
       router.push('/login');
     } catch (error) {
-      console.error('로그아웃 실패:', error);
     }
   };
 

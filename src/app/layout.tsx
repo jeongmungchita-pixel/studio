@@ -1,5 +1,4 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import { Metadata } from 'next';
 import { RootLayoutClient } from './layout-client';
 
 // Force dynamic rendering for all pages - THIS WORKS IN SERVER COMPONENTS

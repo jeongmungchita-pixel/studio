@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { GymnasticsCompetition, GymnasticsEvent, CompetitionCategory, CompetitionRegistration } from '@/types';
+import { GymnasticsCompetition, GymnasticsEvent, CompetitionCategory, CompetitionRegistration } from '@/types';
 import { UserRole } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
@@ -98,11 +97,6 @@ export default function AdminCompetitionsPage() {
   }, [firestore]);
   const { data: competitions, isLoading, error: competitionsError } = useCollection<GymnasticsCompetition>(competitionsQuery);
 
-  // 에러 처리
-  if (competitionsError) {
-    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
-  }
-
   // Fetch registrations for selected competition
   const registrationsQuery = useMemoFirebase(() => {
     if (!firestore || !selectedCompetition) return null;
@@ -113,9 +107,13 @@ export default function AdminCompetitionsPage() {
   }, [firestore, selectedCompetition?.id]);
   const { data: registrations, error: registrationsError } = useCollection<CompetitionRegistration>(registrationsQuery);
 
+  // 에러 처리
+  if (competitionsError) {
+    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
+  }
+
   // 참가 등록 에러 처리 (경고만 표시)
   if (registrationsError) {
-    console.error('❌ 참가 등록 조회 오류:', registrationsError);
   }
 
   const onSubmit = async (values: CompetitionFormValues) => {
@@ -157,6 +155,8 @@ export default function AdminCompetitionsPage() {
         const competitionData: GymnasticsCompetition = {
           ...values,
           id: compRef.id,
+          name: values.title || '',
+          title: values.title,
           events,
           categories,
           genderSeparate: true,
@@ -174,7 +174,6 @@ export default function AdminCompetitionsPage() {
       setSelectedEvents([]);
       setEditingCompetition(null);
     } catch (error) {
-      console.error('Competition save error:', error);
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };
@@ -272,7 +271,6 @@ export default function AdminCompetitionsPage() {
       setJudgeDialogOpen(false);
       setJudgeAssignments({});
     } catch (error) {
-      console.error('Judge assignment error:', error);
       toast({ variant: 'destructive', title: '배정 실패', description: '심판 배정 중 오류가 발생했습니다.' });
     }
   };
@@ -349,7 +347,6 @@ export default function AdminCompetitionsPage() {
               <div className="flex flex-wrap gap-2 pt-2">
                 {competition.status === 'draft' && (
                   <Button
-                    size="sm"
                     onClick={() => handleStatusChange(competition.id, 'registration_open')}
                   >
                     <Play className="h-4 w-4 mr-1" />
@@ -358,8 +355,7 @@ export default function AdminCompetitionsPage() {
                 )}
                 {competition.status === 'registration_open' && (
                   <Button
-                    size="sm"
-                    variant="outline"
+                    className="outline "
                     onClick={() => handleStatusChange(competition.id, 'registration_closed')}
                   >
                     신청 마감
@@ -367,7 +363,6 @@ export default function AdminCompetitionsPage() {
                 )}
                 {competition.status === 'registration_closed' && (
                   <Button
-                    size="sm"
                     onClick={() => handleStatusChange(competition.id, 'in_progress')}
                   >
                     <Play className="h-4 w-4 mr-1" />
@@ -377,18 +372,17 @@ export default function AdminCompetitionsPage() {
                 {competition.status === 'in_progress' && (
                   <>
                     <Link href={`/admin/competitions/${competition.id}/scoring`}>
-                      <Button size="sm" variant="default">
+                      <Button className="default ">
                         점수 입력
                       </Button>
                     </Link>
                     <Link href={`/scoreboard/${competition.id}`}>
-                      <Button size="sm" variant="outline">
+                      <Button className="outline ">
                         전광판
                       </Button>
                     </Link>
                     <Button
-                      size="sm"
-                      variant="destructive"
+                      className="destructive "
                       onClick={() => handleStatusChange(competition.id, 'completed')}
                     >
                       <Square className="h-4 w-4 mr-1" />
@@ -397,16 +391,14 @@ export default function AdminCompetitionsPage() {
                   </>
                 )}
                 <Button
-                  size="sm"
-                  variant="outline"
+                  className="outline "
                   onClick={() => setSelectedCompetition(competition)}
                 >
                   <Users className="h-4 w-4 mr-1" />
                   참가자
                 </Button>
                 <Button
-                  size="sm"
-                  variant="outline"
+                  className="outline "
                   onClick={() => {
                     setJudgeCompetition(competition);
                     setJudgeDialogOpen(true);
@@ -416,15 +408,13 @@ export default function AdminCompetitionsPage() {
                   심판
                 </Button>
                 <Button
-                  size="sm"
-                  variant="outline"
+                  className="outline "
                   onClick={() => handleEdit(competition)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
-                  size="sm"
-                  variant="destructive"
+                  className="destructive "
                   onClick={() => handleDelete(competition.id)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -600,7 +590,7 @@ export default function AdminCompetitionsPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" className="outline " onClick={() => setIsDialogOpen(false)}>
                   취소
                 </Button>
                 <Button type="submit">
@@ -648,14 +638,12 @@ export default function AdminCompetitionsPage() {
                     {reg.status === 'pending' && (
                       <>
                         <Button
-                          size="sm"
                           onClick={() => handleApproveRegistration(reg.id)}
                         >
                           승인
                         </Button>
                         <Button
-                          size="sm"
-                          variant="destructive"
+                          className="destructive "
                           onClick={() => handleRejectRegistration(reg.id)}
                         >
                           거부
@@ -747,7 +735,7 @@ export default function AdminCompetitionsPage() {
             })}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
+            <Button className="outline " onClick={() => {
               setJudgeDialogOpen(false);
               setJudgeAssignments({});
             }}>

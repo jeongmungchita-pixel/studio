@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
-import { Users, UserPlus, Calendar, User, Mail, Phone, Loader2 } from 'lucide-react';
+import { Users, UserPlus, User, Mail, Phone, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Member } from '@/types';
+import { Member } from '@/types';
 
 export default function FamilyManagementPage() {
   const router = useRouter();

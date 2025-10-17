@@ -1,21 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Users, Building, Trophy, FileText, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useFirestore, useCollection } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
-import type { Member, Club, Competition } from '@/types';
+import { Member, Club, Competition } from '@/types';
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);

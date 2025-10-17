@@ -1,13 +1,20 @@
 /**
  * @file Firebase Security Rules for KGF Nexus (Production)
- * @description Role-based access control
+ * @description Role-based access control with domain-based architecture
  * 
- * Roles:
- * - SUPER_ADMIN: Full access
+ * Roles (defined in /src/constants/roles.ts):
+ * - SUPER_ADMIN: Full system access
  * - FEDERATION_ADMIN: Federation-wide access
- * - CLUB_OWNER: Own club access
- * - CLUB_MANAGER: Own club access
- * - MEMBER: Own data access
+ * - CLUB_OWNER: Own club management access
+ * - CLUB_MANAGER: Own club operational access
+ * - COACH: Class and member management
+ * - MEMBER: Own data access only
+ * 
+ * Domain Structure:
+ * - Auth: Authentication and user management
+ * - Member: Member data and operations
+ * - Club: Club data and operations
+ * - Business: Financial and administrative data
  */
 rules_version = '2';
 service cloud.firestore {
@@ -41,8 +48,12 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().role == 'CLUB_MANAGER';
     }
     
+    function isCoach() {
+      return isAuthenticated() && getUserData().role == 'COACH';
+    }
+    
     function isClubStaff() {
-      return isClubOwner() || isClubManager();
+      return isClubOwner() || isClubManager() || isCoach();
     }
     
     function isMember() {
@@ -110,12 +121,33 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 👥 Members Collection
+    // 👥 Members Collection (Domain: Member)
     // ============================================
     
     match /members/{memberId} {
-      // 임시: 테스트용 전체 권한 허용
-      allow read, write: if isAuthenticated();
+      // 읽기: 관리자, 클럽 스태프, 본인
+      allow read: if isAdmin() || 
+                     isClubStaff() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // 생성: 관리자 또는 클럽 스태프 (회원 등록 승인 후)
+      allow create: if isAdmin() || isClubStaff();
+      
+      // 수정: 관리자, 클럽 스태프, 본인 (제한적)
+      allow update: if isAdmin() || 
+                       isClubStaff() || 
+                       (isAuthenticated() && 
+                        resource.data.userId == request.auth.uid && 
+                        // 본인은 개인정보만 수정 가능
+                        !('status' in request.resource.data.diff(resource.data).affectedKeys()) &&
+                        !('level' in request.resource.data.diff(resource.data).affectedKeys()) &&
+                        !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+      
+      // 목록 조회: 관리자 또는 클럽 스태프
+      allow list: if isAdmin() || isClubStaff();
     }
 
     // ============================================
@@ -231,7 +263,7 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 🎫 Passes & Attendance
+    // 🎫 Passes & Attendance (Domain: Member)
     // ============================================
     
     match /member_passes/{passId} {
@@ -251,7 +283,7 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 📚 Classes & Templates
+    // 📚 Classes & Templates (Domain: Club)
     // ============================================
     
     match /gym_classes/{classId} {
@@ -279,7 +311,7 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 💰 Financial Collections
+    // 💰 Financial Collections (Domain: Business)
     // ============================================
     
     match /payments/{paymentId} {
@@ -310,7 +342,7 @@ service cloud.firestore {
     }
 
     // ============================================
-    // 📢 Announcements & Messages
+    // 📢 Announcements & Messages (Domain: Business)
     // ============================================
     
     match /announcements/{announcementId} {
