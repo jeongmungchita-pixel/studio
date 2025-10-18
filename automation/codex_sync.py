@@ -11,7 +11,7 @@ from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 STUDIO_DIR = os.getcwd()
-BEFS_URL = "http://127.0.0.1:8766"
+BEFS_URL = "http://127.0.0.1:8765"
 
 def get_git_diff(repo_path=STUDIO_DIR, max_lines=100):
     """최근 Git diff 가져오기"""

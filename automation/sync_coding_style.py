@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 STUDIO_DIR = os.getcwd()
-BEFS_URL = "http://127.0.0.1:8766"
+BEFS_URL = "http://127.0.0.1:8765"
 
 def extract_coding_patterns():
     """프로젝트에서 코딩 패턴 추출"""
