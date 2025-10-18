@@ -1,5 +1,6 @@
 'use client';
 
+import type { ComponentType } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
@@ -9,7 +10,7 @@ import { LayoutDashboard, Users, Building, Trophy, ClipboardList, UserCog, Shiel
 interface NavSection {
   id: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   basePath: string;
   roles: UserRole[];
 }

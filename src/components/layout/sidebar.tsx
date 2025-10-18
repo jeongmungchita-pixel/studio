@@ -1,4 +1,5 @@
 'use client';
+import type { ComponentType } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from '@/components/ui/sidebar';
@@ -11,7 +12,7 @@ import { UserProfile, UserRole } from '@/types';
 interface SubMenuItem {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   section: string; // 어느 섹션의 서브메뉴인지
   group?: string; // 그룹 (main, operations, finance, system 등)
   roles: UserRole[];
