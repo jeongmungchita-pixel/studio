@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Calendar, History, Upload, Image, Camera, File, Phone, Mail, CreditCard, Edit, Trash2, Baby } from 'lucide-react';
+import { Loader2, User, Calendar, History, Upload, Image as ImageIcon, Camera, File, Phone, Mail, CreditCard, Edit, Trash2, Baby, Users as UsersIcon } from 'lucide-react';
 import { canUsePassTemplate, getMemberCategoryLabel, getTargetCategoryLabel } from '@/lib/member-utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
