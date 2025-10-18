@@ -1,0 +1,112 @@
+[
+  {
+    "index": 0,
+    "macro_name": "K1 - Windsurf 실행",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/windsurf_start.py"
+      }
+    ]
+  },
+  {
+    "index": 1,
+    "macro_name": "K2 - BEFS Agent 시작",
+    "keys": [
+      {
+        "action": "COMMAND_LINE", 
+        "command": "python3 ~/automation/befs_start.py"
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "macro_name": "K3 - BEFS 상태 확인",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/befs_status.py"
+      }
+    ]
+  },
+  {
+    "index": 3,
+    "macro_name": "K4 - Tasks 목록",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/befs_tasks.py"
+      }
+    ]
+  },
+  {
+    "index": 4,
+    "macro_name": "K5 - Skills 목록",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/befs_skills.py"
+      }
+    ]
+  },
+  {
+    "index": 5,
+    "macro_name": "K6 - BEFS 재시작",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/befs_restart.py"
+      }
+    ]
+  },
+  {
+    "index": 6,
+    "macro_name": "다이얼 Push Top - 키맵 보기",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/show_keymap.py"
+      }
+    ]
+  },
+  {
+    "index": 6,
+    "macro_name": "K7 - 메모리 백업",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/memory_backup.py"
+      }
+    ]
+  },
+  {
+    "index": 7,
+    "macro_name": "K8 - 백업 목록",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/memory_list.py"
+      }
+    ]
+  },
+  {
+    "index": 8,
+    "macro_name": "K9 - 백업 복원",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/memory_restore.py"
+      }
+    ]
+  },
+  {
+    "index": 9,
+    "macro_name": "다이얼 Push Bottom - BEFS 종료",
+    "keys": [
+      {
+        "action": "COMMAND_LINE",
+        "command": "python3 ~/automation/befs_stop.py"
+      }
+    ]
+  }
+]

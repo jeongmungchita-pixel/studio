@@ -38,8 +38,14 @@ describe('Form Helpers', () => {
 
   describe('createFormValidator', () => {
     const rules = {
-      name: (value: string) => value ? null : 'Name is required',
-      email: (value: string) => value.includes('@') ? null : 'Invalid email'
+      name: (value: unknown) =>
+        typeof value === 'string' && value
+          ? null
+          : 'Name is required',
+      email: (value: unknown) =>
+        typeof value === 'string' && value.includes('@')
+          ? null
+          : 'Invalid email'
     };
 
     it('should validate field correctly', () => {

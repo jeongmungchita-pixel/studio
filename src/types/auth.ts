@@ -80,17 +80,23 @@ export function canManageUser(managerRole: UserRole, targetRole: UserRole): bool
 
 // 사용자 프로필 타입
 export interface UserProfile {
+  id?: string;
   uid: string;
   email: string;
   displayName: string;
   photoURL?: string;
   phoneNumber?: string;
   role: UserRole;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'approved' | 'rejected';
   provider: 'email' | 'google';
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
   lastLoginAt?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
   
   // 클럽 관련 (클럽 오너/매니저인 경우)
   clubId?: string;

@@ -15,6 +15,7 @@ export type MemberCategory = 'adult' | 'child';
 // 회원 기본 정보
 export interface Member {
   id: string;
+  userId?: string;
   name: string;
   dateOfBirth?: string; // ISO 8601 date string
   gender?: 'male' | 'female';
@@ -24,9 +25,15 @@ export interface Member {
   clubName?: string; // 비정규화 - 클럽 이름 (조인 방지)
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[]; // 부모 Member ID 배열
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianRelation?: string;
   photoURL?: string;
   activePassId?: string; // ID of the current MemberPass
   memberCategory?: MemberCategory; // 회원 분류
+  memberType?: 'individual' | 'family';
+  familyRole?: 'parent' | 'child';
+  grade?: string;
   createdAt: string;
   updatedAt?: string;
   
@@ -81,47 +88,103 @@ export interface MemberRegistrationRequest {
   rejectionReason?: string;
 }
 
-// 가족 등록 요청
-export interface FamilyRegistrationRequest {
+export interface MemberRequest {
   id: string;
-  
-  // 부모 정보
-  parents: {
-    name: string;
-    email: string;
-    phoneNumber: string;
-    dateOfBirth?: string;
-    gender?: 'male' | 'female';
-  }[];
-  
-  // 자녀 정보
-  children: {
-    name: string;
-    dateOfBirth: string;
-    gender: 'male' | 'female';
-    medicalConditions?: string;
-  }[];
-  
-  // 클럽 정보
+  userId?: string;
+  name: string;
+  email?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female';
   clubId: string;
-  clubName: string;
-  
-  // 추가 정보
-  emergencyContact: string;
-  emergencyPhone: string;
-  familyMedicalHistory?: string;
-  
-  // 동의서
-  agreementSigned: boolean;
-  agreementSignedAt?: string;
-  agreementSignature?: string;
-  
-  // 상태
+  clubName?: string;
+  memberType?: 'individual' | 'family';
+  familyRole?: 'parent' | 'child';
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: string;
-  processedAt?: string;
-  processedBy?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
   rejectionReason?: string;
+  createdMemberId?: string;
+}
+
+export interface AdultRegistrationRequest {
+  id: string;
+  clubId: string;
+  clubName: string;
+  requestType: 'adult';
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female';
+  phoneNumber: string;
+  email?: string;
+  agreements: {
+    personal: boolean;
+    terms: boolean;
+    safety: boolean;
+    portrait: boolean;
+    agreedAt: string;
+  };
+  signature: string;
+  signedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  createdMemberId?: string;
+}
+
+export interface FamilyParent {
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female';
+  phoneNumber: string;
+  email?: string;
+}
+
+export interface FamilyChild {
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female';
+  grade?: string;
+}
+
+export interface ExternalGuardian {
+  name: string;
+  phoneNumber: string;
+  relation: 'parent' | 'grandparent' | 'legal_guardian' | 'other';
+}
+
+export interface FamilyRegistrationRequest {
+  id: string;
+  clubId: string;
+  clubName: string;
+  requestType: 'family';
+  parents: FamilyParent[];
+  children: FamilyChild[];
+  externalGuardian?: ExternalGuardian;
+  agreements: {
+    personal: boolean;
+    terms: boolean;
+    safety: boolean;
+    portrait: boolean;
+    agreedAt: string;
+  };
+  signature: string;
+  signedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  createdMemberIds?: string[];
 }
 
 // 회원 레벨 시스템

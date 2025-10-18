@@ -1,0 +1,10 @@
+{
+  "apiKey": "AIzaSyBvEbj1c7MOG514ZU_dQ6cIhyLQ4Codi3k",
+  "authDomain": "befs-automation.firebaseapp.com",
+  "databaseURL": "https://befs-automation-default-rtdb.firebaseio.com",
+  "projectId": "befs-automation",
+  "storageBucket": "befs-automation.firebasestorage.app",
+  "messagingSenderId": "35223768391",
+  "appId": "1:35223768391:web:d653833ec13e8b0fd21062",
+  "namespace": "app_studio_8990"
+}

@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Income, Expense, Payment } from '@/types';
+import { Income, Expense, Payment, IncomeSplitAllocation } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,9 @@ const expenseCategories = {
   marketing: '마케팅',
   maintenance: '유지보수',
   other: '기타',
-};
+} as const;
+
+type ExpenseCategoryKey = keyof typeof expenseCategories;
 
 export default function FinancePage() {
   const { user } = useUser();
@@ -89,8 +91,9 @@ export default function FinancePage() {
 
   // Calculate monthly data
   const monthlyData = useMemo(() => {
-    const monthStart = startOfMonth(new Date(selectedMonth));
-    const monthEnd = endOfMonth(new Date(selectedMonth));
+    const monthReference = new Date(`${selectedMonth}-01T00:00:00`);
+    const monthStart = startOfMonth(monthReference);
+    const monthEnd = endOfMonth(monthReference);
 
     // Filter incomes for selected month
     const monthIncomes = incomes?.filter(income => {
@@ -207,15 +210,15 @@ export default function FinancePage() {
   const handleSplitIncome = async () => {
     if (!firestore || !selectedIncome || !splitMonths) return;
 
-    const months = parseInt(splitMonths);
-    if (months < 2 || months > 24) {
+    const months = Number.parseInt(splitMonths, 10);
+    if (!Number.isFinite(months) || months < 2 || months > 24) {
       toast({ variant: 'destructive', title: '2~24개월 사이로 입력하세요' });
       return;
     }
 
     try {
       const monthlyAmount = selectedIncome.amount / months;
-      const allocations = [];
+      const allocations: IncomeSplitAllocation[] = [];
       const startDate = new Date(selectedIncome.date);
 
       for (let i = 0; i < months; i++) {
@@ -437,7 +440,9 @@ export default function FinancePage() {
                   <div className="flex-1">
                     <p className="font-semibold">{expense.description}</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(expense.date), 'PPP', { locale: ko })} · {expenseCategories[expense.category]}
+                      {format(new Date(expense.date), 'PPP', { locale: ko })} · {
+                        expenseCategories[expense.category as ExpenseCategoryKey] ?? expense.category
+                      }
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -472,7 +477,7 @@ export default function FinancePage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{category}</span>
                       <span className="text-green-600 font-semibold">
-                        {amount.toLocaleString()}원 ({((amount / monthlyData.totalIncome) * 100).toFixed(1)}%)
+                        {amount.toLocaleString()}원 ({monthlyData.totalIncome > 0 ? ((amount / monthlyData.totalIncome) * 100).toFixed(1) : '0.0'}%)
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
@@ -497,7 +502,7 @@ export default function FinancePage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{expenseCategories[category as keyof typeof expenseCategories]}</span>
                       <span className="text-red-600 font-semibold">
-                        {amount.toLocaleString()}원 ({((amount / monthlyData.totalExpense) * 100).toFixed(1)}%)
+                        {amount.toLocaleString()}원 ({monthlyData.totalExpense > 0 ? ((amount / monthlyData.totalExpense) * 100).toFixed(1) : '0.0'}%)
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">

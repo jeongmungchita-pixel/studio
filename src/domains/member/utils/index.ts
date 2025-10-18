@@ -4,7 +4,7 @@
 // 👤 회원 도메인 유틸리티
 // ============================================
 
-import { Member, MemberCategory } from '@/types/member';
+import { Member } from '@/types/member';
 
 /**
  * 나이 계산
@@ -141,6 +141,86 @@ export function formatMemberName(member: Member): string {
   return `${member.name} (${genderText}, ${categoryText})`;
 }
 
+export interface MemberStatsSummary {
+  total: number;
+  active: number;
+  pending: number;
+  inactive: number;
+  activeRate: number;
+  adults: number;
+  children: number;
+  ageDistribution: Array<{ group: string; count: number; percentage: number }>;
+}
+
+export function calculateMemberStats(members: Member[]): MemberStatsSummary {
+  const total = members.length;
+  const active = members.filter(member => member.status === 'active').length;
+  const pending = members.filter(member => member.status === 'pending').length;
+  const inactive = members.filter(member => member.status === 'inactive').length;
+
+  const adults = members.filter(member => member.memberCategory === 'adult').length;
+  const children = members.filter(member => member.memberCategory === 'child').length;
+
+  const ageGroups = [
+    { label: '유아', min: 0, max: 6 },
+    { label: '아동', min: 7, max: 12 },
+    { label: '청소년', min: 13, max: 18 },
+    { label: '성인', min: 19, max: 64 },
+    { label: '시니어', min: 65, max: 200 },
+  ];
+
+  const ageDistribution = ageGroups.map(group => {
+    const count = members.reduce((acc, member) => {
+      if (!member.dateOfBirth) return acc;
+      const age = calculateAge(member.dateOfBirth);
+      if (age >= group.min && age <= group.max) {
+        return acc + 1;
+      }
+      return acc;
+    }, 0);
+
+    const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+    return { group: group.label, count, percentage };
+  });
+
+  return {
+    total,
+    active,
+    pending,
+    inactive,
+    activeRate: total > 0 ? Math.round((active / total) * 100) : 0,
+    adults,
+    children,
+    ageDistribution,
+  };
+}
+
+const MEMBER_STATUS_META: Record<Member['status'], { label: string; badge: string; dot: string }> = {
+  active: {
+    label: '활동중',
+    badge: 'border-green-200 bg-green-100 text-green-800',
+    dot: 'bg-green-500',
+  },
+  pending: {
+    label: '승인 대기',
+    badge: 'border-yellow-200 bg-yellow-100 text-yellow-800',
+    dot: 'bg-yellow-500',
+  },
+  inactive: {
+    label: '비활동',
+    badge: 'border-gray-200 bg-gray-100 text-gray-700',
+    dot: 'bg-gray-400',
+  },
+};
+
+export function getMemberStatusLabel(status: Member['status']): string {
+  return MEMBER_STATUS_META[status]?.label ?? status;
+}
+
+export function getMemberStatusColor(status: Member['status']): { badge: string; dot: string } {
+  return MEMBER_STATUS_META[status] ?? MEMBER_STATUS_META.inactive;
+}
+
 /**
  * 이메일 유효성 검사
  */
@@ -155,4 +235,26 @@ export function isValidEmail(email: string): boolean {
 export function isValidPhoneNumber(phone: string): boolean {
   const phoneRegex = /^(01[016789]|02|0[3-9][0-9])-?[0-9]{3,4}-?[0-9]{4}$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
+}
+
+export function getMemberCategory(member: Member): 'adult' | 'child' {
+  if (member.memberCategory) {
+    return member.memberCategory;
+  }
+
+  if (member.dateOfBirth) {
+    return calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child';
+  }
+
+  return 'adult';
+}
+
+export function getMemberCategoryLabel(category: 'adult' | 'child'): string {
+  return category === 'adult' ? '성인' : '아동';
+}
+
+export function getMemberCategoryColor(category: 'adult' | 'child'): { badge: string } {
+  return category === 'adult'
+    ? { badge: 'bg-blue-100 text-blue-800' }
+    : { badge: 'bg-purple-100 text-purple-800' };
 }

@@ -15,10 +15,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Edit, Trash2, Users, Calendar, DollarSign } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
+import { useForm, ControllerRenderProps } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { z } from 'zod';
 
 const eventFormSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요'),
@@ -36,7 +37,7 @@ const eventFormSchema = z.object({
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
-const eventTypeLabels = {
+const eventTypeLabels: Record<EventFormValues['eventType'], string> = {
   merchandise: '굿즈/티셔츠',
   uniform: '유니폼',
   special_class: '특강/캠프',
@@ -45,12 +46,35 @@ const eventTypeLabels = {
   other: '기타',
 };
 
-const statusLabels = {
+const statusLabels: Record<ClubEvent['status'], string> = {
+  draft: '초안',
+  published: '공개',
+  'registration-open': '신청중',
+  'registration-closed': '신청 마감',
+  'in-progress': '진행중',
+  completed: '완료',
+  cancelled: '취소',
   upcoming: '예정',
   open: '신청중',
   closed: '마감',
-  completed: '완료',
-  cancelled: '취소',
+};
+
+const createDefaultFormValues = (): EventFormValues => {
+  const today = new Date();
+  const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  return {
+    title: '',
+    description: '',
+    eventType: 'merchandise',
+    price: 0,
+    priceUnit: 'per_item',
+    registrationStart: today.toISOString().split('T')[0],
+    registrationEnd: weekLater.toISOString().split('T')[0],
+    eventDate: undefined,
+    minParticipants: undefined,
+    maxParticipants: undefined,
+    allowMultipleQuantity: true,
+  };
 };
 
 export default function ClubEventsPage() {
@@ -65,16 +89,7 @@ export default function ClubEventsPage() {
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      eventType: 'merchandise',
-      price: 0,
-      priceUnit: 'per_item',
-      registrationStart: new Date().toISOString().split('T')[0],
-      registrationEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      allowMultipleQuantity: true,
-    },
+    defaultValues: createDefaultFormValues(),
   });
 
   // Fetch events
@@ -102,32 +117,53 @@ export default function ClubEventsPage() {
     if (!firestore || !user?.clubId) return;
 
     try {
+      const timestamp = new Date().toISOString();
       if (editingEvent) {
-        // Update
-        await updateDoc(doc(firestore, 'events', editingEvent.id), {
-          ...values,
+        const updatePayload: Partial<ClubEvent> = {
+          title: values.title,
+          description: values.description,
+          eventType: values.eventType,
+          price: values.price,
+          priceUnit: values.priceUnit,
+          registrationStart: values.registrationStart,
+          registrationEnd: values.registrationEnd,
+          eventDate: values.eventDate ?? null,
+          minParticipants: values.minParticipants ?? null,
+          maxParticipants: values.maxParticipants ?? null,
+          allowMultipleQuantity: values.allowMultipleQuantity,
           options,
-          updatedAt: new Date().toISOString(),
-        });
+          updatedAt: timestamp,
+        };
+        await updateDoc(doc(firestore, 'events', editingEvent.id), updatePayload);
         toast({ title: '이벤트 수정 완료' });
       } else {
-        // Create
         const eventRef = doc(collection(firestore, 'events'));
         const eventData: ClubEvent = {
-          ...values,
           id: eventRef.id,
           clubId: user.clubId,
+          clubName: user.clubName,
+          title: values.title,
+          description: values.description,
+          eventType: values.eventType,
+          price: values.price,
+          priceUnit: values.priceUnit,
+          registrationStart: values.registrationStart,
+          registrationEnd: values.registrationEnd,
+          eventDate: values.eventDate,
+          minParticipants: values.minParticipants,
+          maxParticipants: values.maxParticipants,
+          allowMultipleQuantity: values.allowMultipleQuantity,
           currentParticipants: 0,
           options,
           status: 'upcoming',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: timestamp,
+          updatedAt: timestamp,
         };
         await setDoc(eventRef, eventData);
         toast({ title: '이벤트 생성 완료' });
       }
       setIsDialogOpen(false);
-      form.reset();
+      form.reset(createDefaultFormValues());
       setOptions([]);
       setEditingEvent(null);
     } catch (error) {
@@ -140,17 +176,17 @@ export default function ClubEventsPage() {
     form.reset({
       title: event.title,
       description: event.description,
-      eventType: event.eventType,
-      price: event.price,
-      priceUnit: event.priceUnit,
-      registrationStart: event.registrationStart.split('T')[0],
-      registrationEnd: event.registrationEnd.split('T')[0],
-      eventDate: event.eventDate?.split('T')[0],
-      minParticipants: event.minParticipants,
-      maxParticipants: event.maxParticipants,
-      allowMultipleQuantity: event.allowMultipleQuantity,
+      eventType: event.eventType ?? 'event',
+      price: event.price ?? 0,
+      priceUnit: event.priceUnit ?? 'per_item',
+      registrationStart: event.registrationStart ? event.registrationStart.split('T')[0] : new Date().toISOString().split('T')[0],
+      registrationEnd: event.registrationEnd ? event.registrationEnd.split('T')[0] : new Date().toISOString().split('T')[0],
+      eventDate: event.eventDate ? event.eventDate.split('T')[0] : undefined,
+      minParticipants: event.minParticipants ?? undefined,
+      maxParticipants: event.maxParticipants ?? undefined,
+      allowMultipleQuantity: event.allowMultipleQuantity ?? true,
     });
-    setOptions(event.options || []);
+    setOptions(event.options ?? []);
     setIsDialogOpen(true);
   };
 
@@ -165,17 +201,19 @@ export default function ClubEventsPage() {
   };
 
   const addOption = () => {
-    setOptions([...options, { id: Date.now().toString(), name: '', values: [], required: false }]);
+    setOptions((prev) => [...prev, { id: Date.now().toString(), name: '', values: [], required: false }]);
   };
 
-  const updateOption = (index: number, field: keyof EventOption, value: string | string[] | boolean) => {
-    const newOptions = [...options];
-    newOptions[index] = { ...newOptions[index], [field]: value };
-    setOptions(newOptions);
+  const updateOption = <K extends keyof EventOption>(index: number, field: K, value: EventOption[K]) => {
+    setOptions((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
   };
 
   const removeOption = (index: number) => {
-    setOptions(options.filter((_, i) => i !== index));
+    setOptions((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (areEventsLoading) {
@@ -197,7 +235,7 @@ export default function ClubEventsPage() {
         </div>
         <Button onClick={() => {
           setEditingEvent(null);
-          form.reset();
+          form.reset(createDefaultFormValues());
           setOptions([]);
           setIsDialogOpen(true);
         }}>
@@ -208,19 +246,31 @@ export default function ClubEventsPage() {
 
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events?.map((event) => (
+        {events?.map((event) => {
+          const eventTypeKey: EventFormValues['eventType'] = (event.eventType as EventFormValues['eventType']) ?? 'event';
+          const eventStatus = event.status ?? 'upcoming';
+          const price = event.price ?? 0;
+          const priceUnit = event.priceUnit ?? 'per_item';
+          const registrationEndDate = event.registrationEnd ? new Date(event.registrationEnd) : null;
+          const registrationEndDisplay = registrationEndDate && !Number.isNaN(registrationEndDate.getTime())
+            ? format(registrationEndDate, 'MM/dd', { locale: ko })
+            : '미정';
+          const statusVariant =
+            eventStatus === 'cancelled' || eventStatus === 'closed' || eventStatus === 'registration-closed'
+              ? 'destructive'
+              : eventStatus === 'open' || eventStatus === 'registration-open' || eventStatus === 'upcoming'
+              ? 'default'
+              : 'secondary';
+
+          return (
           <Card key={event.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge>{eventTypeLabels[event.eventType]}</Badge>
-                    <Badge variant={
-                      event.status === 'open' ? 'default' :
-                      event.status === 'closed' ? 'destructive' :
-                      'secondary'
-                    }>
-                      {statusLabels[event.status]}
+                    <Badge>{eventTypeLabels[eventTypeKey]}</Badge>
+                    <Badge variant={statusVariant}>
+                      {statusLabels[eventStatus] ?? '상태 미정'}
                     </Badge>
                   </div>
                   <CardTitle className="text-lg">{event.title}</CardTitle>
@@ -237,8 +287,8 @@ export default function ClubEventsPage() {
                   가격
                 </span>
                 <span className="font-semibold">
-                  {event.price.toLocaleString()}원
-                  {event.priceUnit === 'per_person' ? '/인' : '/개'}
+                  {price.toLocaleString()}원
+                  {priceUnit === 'per_person' ? '/인' : '/개'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -247,7 +297,7 @@ export default function ClubEventsPage() {
                   신청자
                 </span>
                 <span className="font-semibold">
-                  {event.currentParticipants}
+                  {event.currentParticipants ?? 0}
                   {event.maxParticipants && `/${event.maxParticipants}`}명
                 </span>
               </div>
@@ -257,7 +307,7 @@ export default function ClubEventsPage() {
                   신청 마감
                 </span>
                 <span className="font-semibold">
-                  {format(new Date(event.registrationEnd), 'MM/dd', { locale: ko })}
+                  {registrationEndDisplay}
                 </span>
               </div>
               <div className="flex gap-2 pt-2">
@@ -287,7 +337,8 @@ export default function ClubEventsPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {(!events || events.length === 0) && (
@@ -303,7 +354,17 @@ export default function ClubEventsPage() {
       )}
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open: boolean) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setEditingEvent(null);
+            setOptions([]);
+            form.reset(createDefaultFormValues());
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingEvent ? '이벤트 수정' : '새 이벤트 생성'}</DialogTitle>
@@ -313,10 +374,10 @@ export default function ClubEventsPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+              <FormField<EventFormValues, 'title'>
                 control={form.control}
                 name="title"
-                render={({ field }) => (
+                render={({ field }: { field: ControllerRenderProps<EventFormValues, 'title'> }) => (
                   <FormItem>
                     <FormLabel>제목</FormLabel>
                     <FormControl>
@@ -327,10 +388,10 @@ export default function ClubEventsPage() {
                 )}
               />
               
-              <FormField
+              <FormField<EventFormValues, 'description'>
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: { field: ControllerRenderProps<EventFormValues, 'description'> }) => (
                   <FormItem>
                     <FormLabel>설명</FormLabel>
                     <FormControl>
@@ -342,10 +403,10 @@ export default function ClubEventsPage() {
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <FormField<EventFormValues, 'eventType'>
                   control={form.control}
                   name="eventType"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<EventFormValues, 'eventType'> }) => (
                     <FormItem>
                       <FormLabel>이벤트 종류</FormLabel>
                       <FormControl>
@@ -360,10 +421,10 @@ export default function ClubEventsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<EventFormValues, 'priceUnit'>
                   control={form.control}
                   name="priceUnit"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<EventFormValues, 'priceUnit'> }) => (
                     <FormItem>
                       <FormLabel>가격 단위</FormLabel>
                       <FormControl>
@@ -378,10 +439,10 @@ export default function ClubEventsPage() {
                 />
               </div>
 
-              <FormField
+              <FormField<EventFormValues, 'price'>
                 control={form.control}
                 name="price"
-                render={({ field }) => (
+                render={({ field }: { field: ControllerRenderProps<EventFormValues, 'price'> }) => (
                   <FormItem>
                     <FormLabel>가격 (원)</FormLabel>
                     <FormControl>
@@ -398,10 +459,10 @@ export default function ClubEventsPage() {
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <FormField<EventFormValues, 'registrationStart'>
                   control={form.control}
                   name="registrationStart"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<EventFormValues, 'registrationStart'> }) => (
                     <FormItem>
                       <FormLabel>신청 시작일</FormLabel>
                       <FormControl>
@@ -412,10 +473,10 @@ export default function ClubEventsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<EventFormValues, 'registrationEnd'>
                   control={form.control}
                   name="registrationEnd"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<EventFormValues, 'registrationEnd'> }) => (
                     <FormItem>
                       <FormLabel>신청 마감일</FormLabel>
                       <FormControl>
@@ -428,10 +489,10 @@ export default function ClubEventsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <FormField<EventFormValues, 'minParticipants'>
                   control={form.control}
                   name="minParticipants"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<EventFormValues, 'minParticipants'> }) => (
                     <FormItem>
                       <FormLabel>최소 인원 (선택)</FormLabel>
                       <FormControl>
@@ -447,10 +508,10 @@ export default function ClubEventsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<EventFormValues, 'maxParticipants'>
                   control={form.control}
                   name="maxParticipants"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<EventFormValues, 'maxParticipants'> }) => (
                     <FormItem>
                       <FormLabel>최대 인원 (선택)</FormLabel>
                       <FormControl>
@@ -498,7 +559,13 @@ export default function ClubEventsPage() {
                       <Input
                         placeholder="값 (쉼표로 구분, 예: S,M,L,XL)"
                         value={option.values.join(',')}
-                        onChange={(e) => updateOption(index, 'values', e.target.value.split(',').map(v => v.trim()))}
+                        onChange={(e) => {
+                          const values = e.target.value
+                            .split(',')
+                            .map((v) => v.trim())
+                            .filter((v) => v.length > 0);
+                          updateOption(index, 'values', values);
+                        }}
                       />
                     </div>
                   </Card>
@@ -519,7 +586,9 @@ export default function ClubEventsPage() {
       </Dialog>
 
       {/* Registrations Dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+      <Dialog open={!!selectedEvent} onOpenChange={(open: boolean) => {
+        if (!open) setSelectedEvent(null);
+      }}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selectedEvent?.title} - 신청자 목록</DialogTitle>
@@ -534,19 +603,30 @@ export default function ClubEventsPage() {
                   <div>
                     <p className="font-semibold">{reg.memberName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {Object.entries(reg.selectedOptions).map(([key, value]) => `${key}: ${value}`).join(', ')}
+                      {reg.selectedOptions
+                        ? Object.entries(reg.selectedOptions).map(([key, value]) => `${key}: ${value}`).join(', ')
+                        : '선택 옵션 없음'}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      수량: {reg.quantity}개 | 총액: {reg.totalPrice.toLocaleString()}원
+                      수량: {(reg.quantity ?? 1).toLocaleString()}개 | 총액: {reg.totalPrice != null ? `${reg.totalPrice.toLocaleString()}원` : '미정'}
                     </p>
                   </div>
                   <Badge variant={
-                    reg.paymentStatus === 'paid' ? 'default' :
-                    reg.paymentStatus === 'cancelled' ? 'destructive' :
-                    'secondary'
+                    reg.paymentStatus === 'paid'
+                      ? 'default'
+                      : reg.paymentStatus === 'cancelled'
+                      ? 'destructive'
+                      : reg.paymentStatus === 'refunded'
+                      ? 'secondary'
+                      : 'secondary'
                   }>
-                    {reg.paymentStatus === 'paid' ? '결제완료' :
-                     reg.paymentStatus === 'cancelled' ? '취소' : '대기중'}
+                    {reg.paymentStatus === 'paid'
+                      ? '결제완료'
+                      : reg.paymentStatus === 'cancelled'
+                      ? '취소'
+                      : reg.paymentStatus === 'refunded'
+                      ? '환불'
+                      : '대기중'}
                   </Badge>
                 </div>
               </Card>

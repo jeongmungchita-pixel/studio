@@ -1,12 +1,13 @@
 'use client';
+
 import { useState, useEffect, useMemo } from 'react';
 export const dynamic = 'force-dynamic';
-import { useForm } from 'react-hook-form';
+import { useForm, ControllerRenderProps } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { GymClass } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby, Users } from 'lucide-react';
+import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,15 +35,55 @@ const classFormSchema = z.object({
 type ClassFormValues = z.infer<typeof classFormSchema>;
 const daysOfWeek: Array<ClassFormValues['dayOfWeek']> = ['월', '화', '수', '목', '금', '토', '일'];
 
+type ClubClassRecord = {
+  id: string;
+  clubId: string;
+  name: string;
+  dayOfWeek?: ClassFormValues['dayOfWeek'];
+  time?: string;
+  capacity?: number;
+  targetCategory?: 'adult' | 'child' | 'all';
+  memberIds?: string[];
+  maxCapacity?: number;
+  schedule?: {
+    dayOfWeek: number;
+    startTime: string;
+    endTime?: string;
+  }[];
+  ageRange?: {
+    min?: number;
+    max?: number;
+  };
+};
+
+const DAY_ORDER: Record<ClassFormValues['dayOfWeek'], number> = {
+  '월': 0,
+  '화': 1,
+  '수': 2,
+  '목': 3,
+  '금': 4,
+  '토': 5,
+  '일': 6,
+};
+
+const getClassDayLabel = (gymClass: ClubClassRecord): string => gymClass.dayOfWeek ?? '미정';
+
+const getClassTimeLabel = (gymClass: ClubClassRecord): string => gymClass.time ?? '시간 미정';
+
+const getClassCapacity = (gymClass: ClubClassRecord): number =>
+  typeof gymClass.capacity === 'number' ? gymClass.capacity : 0;
+
+const getMemberCount = (gymClass: ClubClassRecord): number => gymClass.memberIds?.length ?? 0;
+
 export default function ClassesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingClass, setEditingClass] = useState<GymClass | null>(null);
+  const [editingClass, setEditingClass] = useState<ClubClassRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingClass, setDeletingClass] = useState<GymClass | null>(null);
+  const [deletingClass, setDeletingClass] = useState<ClubClassRecord | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child' | 'general'>('all');
 
   // 전역 에러 핸들러 추가
@@ -85,43 +126,46 @@ export default function ClassesPage() {
     if (!firestore || !user?.clubId) return null;
     return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
   }, [firestore, user?.clubId]);
-  const { data: classes, isLoading } = useCollection<GymClass>(classesQuery);
+  const { data: classes, isLoading } = useCollection<ClubClassRecord>(classesQuery);
 
   // Filter and sort classes
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
-    
+
     let filtered = classes;
-    
+
     // Apply category filter
     if (categoryFilter !== 'all') {
       if (categoryFilter === 'general') {
-        filtered = filtered.filter(c => !c.targetCategory || c.targetCategory === 'all');
+        filtered = filtered.filter((c) => !c.targetCategory || c.targetCategory === 'all');
       } else {
-        filtered = filtered.filter(c => c.targetCategory === categoryFilter);
+        filtered = filtered.filter((c) => c.targetCategory === categoryFilter);
       }
     }
-    
+
     // Sort by day of week and time
-    const dayOrder = {'월': 0, '화': 1, '수': 2, '목': 3, '금': 4, '토': 5, '일': 6};
-    return filtered.sort((a, b) => {
-      const dayDiff = dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
+    return [...filtered].sort((a, b) => {
+      const dayA = getClassDayLabel(a);
+      const dayB = getClassDayLabel(b);
+      const dayDiff = (DAY_ORDER[dayA as ClassFormValues['dayOfWeek']] ?? 7) - (DAY_ORDER[dayB as ClassFormValues['dayOfWeek']] ?? 7);
       if (dayDiff !== 0) return dayDiff;
-      return a.time.localeCompare(b.time);
+      const timeA = getClassTimeLabel(a);
+      const timeB = getClassTimeLabel(b);
+      return timeA.localeCompare(timeB);
     });
   }, [classes, categoryFilter]);
 
-  const handleOpenDialog = (gymClass: GymClass | null = null) => {
+  const handleOpenDialog = (gymClass: ClubClassRecord | null = null) => {
     setEditingClass(gymClass);
     
     // Reset form with proper values
     if (gymClass) {
       form.reset({
         name: gymClass.name,
-        dayOfWeek: gymClass.dayOfWeek,
-        time: gymClass.time,
-        capacity: gymClass.capacity,
-        targetCategory: gymClass.targetCategory || 'all',
+        dayOfWeek: gymClass.dayOfWeek ?? '월',
+        time: gymClass.time ?? '14:00',
+        capacity: gymClass.capacity ?? 10,
+        targetCategory: gymClass.targetCategory ?? 'all',
       });
     } else {
       form.reset({
@@ -187,12 +231,20 @@ export default function ClassesPage() {
         // Update existing class
         const classRef = doc(firestore, 'classes', editingClass.id);
         
-        const updatedData: Partial<GymClass> = {
+        const updatedData: Partial<ClubClassRecord> = {
           name: values.name,
           dayOfWeek: values.dayOfWeek,
           time: values.time,
           capacity: values.capacity,
           targetCategory: values.targetCategory,
+          maxCapacity: values.capacity,
+          schedule: [
+            {
+              dayOfWeek: DAY_ORDER[values.dayOfWeek],
+              startTime: values.time,
+              endTime: values.time,
+            },
+          ],
         };
         await setDoc(classRef, updatedData, { merge: true });
         toast({ title: '클래스 수정 완료', description: `'${values.name}' 클래스가 수정되었습니다.` });
@@ -200,7 +252,7 @@ export default function ClassesPage() {
         // Create new class
         const newClassRef = doc(collection(firestore, 'classes'));
         
-        const classData: GymClass = {
+        const classData: ClubClassRecord = {
             id: newClassRef.id,
             clubId: user.clubId,
             name: values.name,
@@ -209,6 +261,14 @@ export default function ClassesPage() {
             capacity: values.capacity,
             targetCategory: values.targetCategory,
             memberIds: [],
+            maxCapacity: values.capacity,
+            schedule: [
+              {
+                dayOfWeek: DAY_ORDER[values.dayOfWeek],
+                startTime: values.time,
+                endTime: values.time,
+              },
+            ],
         };
         await setDoc(newClassRef, classData);
         toast({ title: '클래스 생성 완료', description: `'${values.name}' 클래스가 생성되었습니다.` });
@@ -219,16 +279,18 @@ export default function ClassesPage() {
       setEditingClass(null);
       
     } catch (error: unknown) {
-      
       let errorMessage = '저장 중 오류가 발생했습니다.';
-      if (error?.code === 'permission-denied') {
-        errorMessage = '권한이 없습니다. 관리자에게 문의하세요.';
-      } else if (error?.code === 'unavailable') {
-        errorMessage = 'Firebase 서비스에 연결할 수 없습니다. 네트워크를 확인해주세요.';
-      } else if (error?.message) {
-        errorMessage = `오류: ${error.message}`;
+      if (typeof error === 'object' && error !== null) {
+        const maybeFirebaseError = error as { code?: string; message?: string };
+        if (maybeFirebaseError.code === 'permission-denied') {
+          errorMessage = '권한이 없습니다. 관리자에게 문의하세요.';
+        } else if (maybeFirebaseError.code === 'unavailable') {
+          errorMessage = 'Firebase 서비스에 연결할 수 없습니다. 네트워크를 확인해주세요.';
+        } else if (maybeFirebaseError.message) {
+          errorMessage = `오류: ${maybeFirebaseError.message}`;
+        }
       }
-      
+
       toast({ 
         variant: 'destructive', 
         title: '저장 실패', 
@@ -310,7 +372,7 @@ export default function ClassesPage() {
                 size="sm"
                 onClick={() => setCategoryFilter('all')}
               >
-                <UsersIcon className="mr-2 h-4 w-4" />
+                <Users className="mr-2 h-4 w-4" />
                 전체 ({classes?.length || 0})
               </Button>
               <Button
@@ -334,7 +396,7 @@ export default function ClassesPage() {
                 size="sm"
                 onClick={() => setCategoryFilter('general')}
               >
-                <UsersIcon className="mr-2 h-4 w-4" />
+                <Users className="mr-2 h-4 w-4" />
                 일반 ({classes?.filter(c => !c.targetCategory || c.targetCategory === 'all').length || 0})
               </Button>
             </div>
@@ -369,7 +431,7 @@ export default function ClassesPage() {
                           }>
                             {gymClass.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
                             {gymClass.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
-                            {gymClass.targetCategory === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
+                            {gymClass.targetCategory === 'all' && <Users className="inline h-3 w-3 mr-1" />}
                             {getTargetCategoryLabel(gymClass.targetCategory)}
                           </Badge>
                           {gymClass.ageRange && (gymClass.ageRange.min || gymClass.ageRange.max) && (
@@ -381,9 +443,9 @@ export default function ClassesPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{gymClass.dayOfWeek}</TableCell>
-                      <TableCell>{gymClass.time}</TableCell>
-                      <TableCell>{gymClass.memberIds.length} / {gymClass.capacity}</TableCell>
+                      <TableCell>{getClassDayLabel(gymClass)}</TableCell>
+                      <TableCell>{getClassTimeLabel(gymClass)}</TableCell>
+                      <TableCell>{getMemberCount(gymClass)} / {getClassCapacity(gymClass)}</TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button 
                           variant="outline" 
@@ -415,7 +477,7 @@ export default function ClassesPage() {
 
         <Dialog 
           open={isDialogOpen} 
-          onOpenChange={(open) => {
+          onOpenChange={(open: boolean) => {
             setIsDialogOpen(open);
               if (!open) {
               // Reset form when dialog closes
@@ -454,10 +516,10 @@ export default function ClassesPage() {
                 }}
                 className="space-y-4 py-4"
               >
-                <FormField
+                <FormField<ClassFormValues, 'name'>
                   control={form.control}
                   name="name"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<ClassFormValues, 'name'> }) => (
                     <FormItem>
                       <FormLabel>클래스 이름</FormLabel>
                       <FormControl>
@@ -468,10 +530,10 @@ export default function ClassesPage() {
                   )}
                 />
                 <div className="grid grid-cols-2 gap-4">
-                    <FormField
+                    <FormField<ClassFormValues, 'dayOfWeek'>
                     control={form.control}
                     name="dayOfWeek"
-                    render={({ field }) => (
+                    render={({ field }: { field: ControllerRenderProps<ClassFormValues, 'dayOfWeek'> }) => (
                         <FormItem>
                         <FormLabel>요일</FormLabel>
                         <FormControl>
@@ -488,10 +550,10 @@ export default function ClassesPage() {
                         </FormItem>
                     )}
                     />
-                     <FormField
+                     <FormField<ClassFormValues, 'time'>
                         control={form.control}
                         name="time"
-                        render={({ field }) => (
+                        render={({ field }: { field: ControllerRenderProps<ClassFormValues, 'time'> }) => (
                         <FormItem>
                             <FormLabel>시작 시간</FormLabel>
                             <FormControl>
@@ -502,10 +564,10 @@ export default function ClassesPage() {
                         )}
                     />
                 </div>
-                 <FormField
+                 <FormField<ClassFormValues, 'capacity'>
                     control={form.control}
                     name="capacity"
-                    render={({ field }) => (
+                    render={({ field }: { field: ControllerRenderProps<ClassFormValues, 'capacity'> }) => (
                       <FormItem>
                         <FormLabel>정원</FormLabel>
                         <FormControl>
@@ -521,10 +583,10 @@ export default function ClassesPage() {
                     )}
                   />
                   
-                  <FormField
+                  <FormField<ClassFormValues, 'targetCategory'>
                     control={form.control}
                     name="targetCategory"
-                    render={({ field }) => (
+                    render={({ field }: { field: ControllerRenderProps<ClassFormValues, 'targetCategory'> }) => (
                       <FormItem>
                         <FormLabel>대상 회원</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
@@ -543,7 +605,7 @@ export default function ClassesPage() {
                               주니어 전용
                             </SelectItem>
                             <SelectItem value="all">
-                              <UsersIcon className="inline h-4 w-4 mr-2" />
+                              <Users className="inline h-4 w-4 mr-2" />
                               전체 (성인+주니어)
                             </SelectItem>
                           </SelectContent>
@@ -586,7 +648,7 @@ export default function ClassesPage() {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deletingClass} onOpenChange={(open) => !open && setDeletingClass(null)}>
+        <AlertDialog open={!!deletingClass} onOpenChange={(open: boolean) => !open && setDeletingClass(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>클래스 삭제 확인</AlertDialogTitle>

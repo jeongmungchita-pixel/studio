@@ -102,14 +102,11 @@ class Logger {
       switch (entry.level) {
         case LogLevel.DEBUG:
         case LogLevel.INFO:
-          console.log(formatted);
           break;
         case LogLevel.WARN:
-          console.warn(formatted);
           break;
         case LogLevel.ERROR:
         case LogLevel.CRITICAL:
-          console.error(formatted);
           break;
       }
     }
@@ -130,7 +127,6 @@ class Logger {
     // 현재는 시뮬레이션
     if (entry.level >= LogLevel.ERROR) {
       // 에러 레벨 이상은 즉시 알림
-      console.error('🚨 CRITICAL LOG:', this.formatLog(entry));
     }
   }
 

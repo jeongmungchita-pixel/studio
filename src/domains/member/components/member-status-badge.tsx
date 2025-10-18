@@ -20,7 +20,7 @@ export function MemberStatusBadge({
   status,
   variant = 'default',
   size = 'md',
-  className
+  className = '',
 }: MemberStatusBadgeProps) {
   const statusColors = getMemberStatusColor(status);
   const statusLabel = getMemberStatusLabel(status);

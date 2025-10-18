@@ -16,8 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Edit, Trash2, Users, Play, Square } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
+import { useForm, ControllerRenderProps } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
@@ -47,13 +48,32 @@ const testFormSchema = z.object({
 
 type TestFormValues = z.infer<typeof testFormSchema>;
 
-const statusLabels = {
+const statusLabels: Record<ClubLevelTest['status'], string> = {
   draft: '준비중',
   registration_open: '신청중',
   registration_closed: '신청마감',
   in_progress: '진행중',
   completed: '완료',
+  'registration-open': '신청중',
+  'registration-closed': '신청마감',
+  'in-progress': '진행중',
 };
+
+const createDefaultValues = (): TestFormValues => {
+  const today = new Date();
+  const twoWeeksLater = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+  const threeWeeksLater = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
+  return {
+    title: '',
+    description: '',
+    registrationStart: today.toISOString().split('T')[0],
+    registrationEnd: twoWeeksLater.toISOString().split('T')[0],
+    testDate: threeWeeksLater.toISOString().split('T')[0],
+  };
+};
+
+const isRegistrationOpen = (status: ClubLevelTest['status']) =>
+  status === 'registration_open' || status === 'registration-open';
 
 export default function ClubLevelTestsPage() {
   const { user } = useUser();
@@ -66,13 +86,7 @@ export default function ClubLevelTestsPage() {
 
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      registrationStart: new Date().toISOString().split('T')[0],
-      registrationEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      testDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    },
+    defaultValues: createDefaultValues(),
   });
 
   // Fetch level tests
@@ -101,20 +115,29 @@ export default function ClubLevelTestsPage() {
 
     try {
       if (editingTest) {
-        await updateDoc(doc(firestore, 'level_tests', editingTest.id), {
-          ...values,
+        const updatePayload: Partial<ClubLevelTest> = {
+          title: values.title,
+          description: values.description,
+          registrationStart: values.registrationStart,
+          registrationEnd: values.registrationEnd,
+          testDate: values.testDate,
           updatedAt: new Date().toISOString(),
-        });
+        };
+        await updateDoc(doc(firestore, 'level_tests', editingTest.id), updatePayload);
         toast({ title: '레벨테스트 수정 완료' });
       } else {
         const testRef = doc(collection(firestore, 'level_tests'));
         const testData: ClubLevelTest = {
-          ...values,
           id: testRef.id,
           clubId: user.clubId,
           levels: DEFAULT_LEVELS,
           evaluationItems: DEFAULT_ITEMS,
           status: 'draft',
+          title: values.title,
+          description: values.description,
+          registrationStart: values.registrationStart,
+          registrationEnd: values.registrationEnd,
+          testDate: values.testDate,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -123,7 +146,7 @@ export default function ClubLevelTestsPage() {
       }
 
       setIsDialogOpen(false);
-      form.reset();
+      form.reset(createDefaultValues());
       setEditingTest(null);
     } catch (error) {
       toast({ variant: 'destructive', title: '저장 실패' });
@@ -190,7 +213,7 @@ export default function ClubLevelTestsPage() {
         </div>
         <Button onClick={() => {
           setEditingTest(null);
-          form.reset();
+          form.reset(createDefaultValues());
           setIsDialogOpen(true);
         }}>
           <Plus className="mr-2 h-4 w-4" />
@@ -204,12 +227,18 @@ export default function ClubLevelTestsPage() {
           <Card key={test.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between mb-2">
-                <Badge variant={
-                  test.status === 'registration_open' ? 'default' :
-                  test.status === 'in_progress' ? 'secondary' :
-                  'outline'
-                }>
-                  {statusLabels[test.status]}
+                <Badge
+                  variant={
+                    isRegistrationOpen(test.status)
+                      ? 'default'
+                      : test.status === 'in_progress' || test.status === 'in-progress'
+                      ? 'secondary'
+                      : test.status === 'completed'
+                      ? 'outline'
+                      : 'secondary'
+                  }
+                >
+                  {statusLabels[test.status] ?? '상태 미정'}
                 </Badge>
               </div>
               <CardTitle className="text-lg">{test.title}</CardTitle>
@@ -246,7 +275,7 @@ export default function ClubLevelTestsPage() {
                     신청 시작
                   </Button>
                 )}
-                {test.status === 'registration_open' && (
+                {isRegistrationOpen(test.status) && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -255,7 +284,7 @@ export default function ClubLevelTestsPage() {
                     신청 마감
                   </Button>
                 )}
-                {test.status === 'registration_closed' && (
+                {(test.status === 'registration_closed' || test.status === 'registration-closed') && (
                   <Button
                     size="sm"
                     onClick={() => handleStatusChange(test.id, 'in_progress')}
@@ -264,7 +293,7 @@ export default function ClubLevelTestsPage() {
                     테스트 시작
                   </Button>
                 )}
-                {test.status === 'in_progress' && (
+                {(test.status === 'in_progress' || test.status === 'in-progress') && (
                   <>
                     <Link href={`/club-dashboard/level-tests/${test.id}/evaluate`}>
                       <Button size="sm">
@@ -322,7 +351,16 @@ export default function ClubLevelTestsPage() {
       )}
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open: boolean) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setEditingTest(null);
+            form.reset(createDefaultValues());
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingTest ? '레벨테스트 수정' : '새 레벨테스트 생성'}</DialogTitle>
@@ -332,10 +370,10 @@ export default function ClubLevelTestsPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+              <FormField<TestFormValues, 'title'>
                 control={form.control}
                 name="title"
-                render={({ field }) => (
+                render={({ field }: { field: ControllerRenderProps<TestFormValues, 'title'> }) => (
                   <FormItem>
                     <FormLabel>제목</FormLabel>
                     <FormControl>
@@ -346,10 +384,10 @@ export default function ClubLevelTestsPage() {
                 )}
               />
 
-              <FormField
+              <FormField<TestFormValues, 'description'>
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: { field: ControllerRenderProps<TestFormValues, 'description'> }) => (
                   <FormItem>
                     <FormLabel>설명</FormLabel>
                     <FormControl>
@@ -361,10 +399,10 @@ export default function ClubLevelTestsPage() {
               />
 
               <div className="grid grid-cols-3 gap-4">
-                <FormField
+                <FormField<TestFormValues, 'registrationStart'>
                   control={form.control}
                   name="registrationStart"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<TestFormValues, 'registrationStart'> }) => (
                     <FormItem>
                       <FormLabel>신청 시작일</FormLabel>
                       <FormControl>
@@ -375,10 +413,10 @@ export default function ClubLevelTestsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<TestFormValues, 'registrationEnd'>
                   control={form.control}
                   name="registrationEnd"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<TestFormValues, 'registrationEnd'> }) => (
                     <FormItem>
                       <FormLabel>신청 마감일</FormLabel>
                       <FormControl>
@@ -389,10 +427,10 @@ export default function ClubLevelTestsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<TestFormValues, 'testDate'>
                   control={form.control}
                   name="testDate"
-                  render={({ field }) => (
+                  render={({ field }: { field: ControllerRenderProps<TestFormValues, 'testDate'> }) => (
                     <FormItem>
                       <FormLabel>테스트 날짜</FormLabel>
                       <FormControl>
@@ -443,7 +481,12 @@ export default function ClubLevelTestsPage() {
       </Dialog>
 
       {/* Registrations Dialog */}
-      <Dialog open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
+      <Dialog
+        open={!!selectedTest}
+        onOpenChange={(open: boolean) => {
+          if (!open) setSelectedTest(null);
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedTest?.title} - 참가자 목록</DialogTitle>
@@ -461,12 +504,30 @@ export default function ClubLevelTestsPage() {
                       현재: {reg.currentLevel || '없음'} → 목표: {reg.targetLevel}
                     </p>
                   </div>
-                  <Badge variant={
-                    reg.status === 'approved' ? 'default' :
-                    reg.status === 'rejected' ? 'destructive' :
-                    'secondary'
-                  }>
-                    {reg.status === 'approved' ? '승인' : reg.status === 'rejected' ? '거절' : '대기'}
+                  <Badge
+                    variant={
+                      reg.status === 'approved'
+                        ? 'default'
+                        : reg.status === 'cancelled' || reg.status === 'failed'
+                        ? 'destructive'
+                        : 'secondary'
+                    }
+                  >
+                    {reg.status === 'approved'
+                      ? '승인'
+                      : reg.status === 'cancelled'
+                      ? '취소'
+                      : reg.status === 'failed'
+                      ? '실패'
+                      : reg.status === 'tested'
+                      ? '평가완료'
+                      : reg.status === 'passed'
+                      ? '합격'
+                      : reg.status === 'absent'
+                      ? '불참'
+                      : reg.status === 'pending'
+                      ? '대기'
+                      : '등록됨'}
                   </Badge>
                 </div>
               </Card>

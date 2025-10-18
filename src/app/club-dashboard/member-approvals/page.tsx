@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, doc, writeBatch } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { UserCheck, Users, User, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { AdultRegistrationRequest, FamilyRegistrationRequest, MemberRequest } from '@/types';
+import { AdultRegistrationRequest, FamilyRegistrationRequest, MemberRequest, UserRole } from '@/types';
+import { RequireAnyRole } from '@/components/require-role';
 
 export default function MemberApprovalsPage() {
   const { user } = useUser();
@@ -61,28 +62,36 @@ export default function MemberApprovalsPage() {
     setIsProcessing(true);
 
     try {
-      // members 컬렉션에 생성
-      await addDoc(collection(firestore, 'members'), {
+      const nowIso = new Date().toISOString();
+      const memberRef = doc(collection(firestore, 'members'));
+      const requestRef = doc(firestore, 'adultRegistrationRequests', request.id);
+      const batch = writeBatch(firestore);
+
+      batch.set(memberRef, {
+        id: memberRef.id,
         name: request.name,
         dateOfBirth: request.birthDate,
         gender: request.gender,
         phoneNumber: request.phoneNumber,
         email: request.email,
         clubId: request.clubId,
+        clubName: request.clubName,
         memberCategory: 'adult',
         memberType: 'individual',
         status: 'active',
-        createdAt: new Date().toISOString(),
+        createdAt: nowIso,
         approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
+        approvedAt: nowIso,
       });
 
-      // 요청 상태 업데이트
-      await updateDoc(doc(firestore, 'adultRegistrationRequests', request.id), {
+      batch.update(requestRef, {
         status: 'approved',
         approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
+        approvedAt: nowIso,
+        createdMemberId: memberRef.id,
       });
+
+      await batch.commit();
 
       toast({
         title: '승인 완료',
@@ -107,6 +116,8 @@ export default function MemberApprovalsPage() {
     try {
       const batch = writeBatch(firestore);
       const parentMemberIds: string[] = [];
+      const childMemberIds: string[] = [];
+      const nowIso = new Date().toISOString();
 
       // 1. 부모들 생성
       for (const parent of request.parents) {
@@ -121,19 +132,21 @@ export default function MemberApprovalsPage() {
           phoneNumber: parent.phoneNumber,
           email: parent.email,
           clubId: request.clubId,
+          clubName: request.clubName,
           memberCategory: 'adult',
           memberType: 'family',
           familyRole: 'parent',
           status: 'active',
-          createdAt: new Date().toISOString(),
+          createdAt: nowIso,
           approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
+          approvedAt: nowIso,
         });
       }
 
       // 2. 자녀들 생성
       for (const child of request.children) {
         const childRef = doc(collection(firestore, 'members'));
+        childMemberIds.push(childRef.id);
 
         batch.set(childRef, {
           id: childRef.id,
@@ -142,6 +155,7 @@ export default function MemberApprovalsPage() {
           gender: child.gender,
           grade: child.grade,
           clubId: request.clubId,
+          clubName: request.clubName,
           memberCategory: 'child',
           memberType: 'family',
           familyRole: 'child',
@@ -154,9 +168,9 @@ export default function MemberApprovalsPage() {
             : request.externalGuardian?.phoneNumber,
           guardianRelation: request.externalGuardian?.relation,
           status: 'active',
-          createdAt: new Date().toISOString(),
+          createdAt: nowIso,
           approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
+          approvedAt: nowIso,
         });
       }
 
@@ -164,8 +178,8 @@ export default function MemberApprovalsPage() {
       batch.update(doc(firestore, 'familyRegistrationRequests', request.id), {
         status: 'approved',
         approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
-        createdMemberIds: [...parentMemberIds],
+        approvedAt: nowIso,
+        createdMemberIds: [...parentMemberIds, ...childMemberIds],
       });
 
       await batch.commit();
@@ -195,43 +209,47 @@ export default function MemberApprovalsPage() {
     setIsProcessing(true);
 
     try {
+      const nowIso = new Date().toISOString();
+      const memberCategory = request.familyRole === 'child' ? 'child' : 'adult';
+      const memberRef = doc(collection(firestore, 'members'));
+      const registrationRef = doc(firestore, 'memberRegistrationRequests', request.id);
+      const batch = writeBatch(firestore);
 
-      // 1. members 컬렉션에 생성
-      await addDoc(collection(firestore, 'members'), {
+      batch.set(memberRef, {
+        id: memberRef.id,
+        userId: request.userId || undefined,
         name: request.name,
         dateOfBirth: request.dateOfBirth,
         gender: request.gender,
         phoneNumber: request.phoneNumber,
         email: request.email,
         clubId: request.clubId,
-        memberCategory: 'adult', // 기본값
+        clubName: request.clubName,
+        memberCategory,
         memberType: request.memberType || 'individual',
         familyRole: request.familyRole,
         status: 'active',
-        createdAt: new Date().toISOString(),
+        createdAt: nowIso,
         approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
+        approvedAt: nowIso,
       });
 
-      // 2. users 프로필 승인 (status: approved)
+      batch.update(registrationRef, {
+        status: 'approved',
+        approvedBy: user.uid,
+        approvedAt: nowIso,
+        createdMemberId: memberRef.id,
+      });
+
       if (request.userId && request.userId.trim() !== '') {
-        await updateDoc(doc(firestore, 'users', request.userId), {
+        batch.update(doc(firestore, 'users', request.userId), {
           status: 'approved',
           approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
-        });
-      } else {
-      }
-
-      // 3. memberRegistrationRequests 상태 업데이트
-      if (request.id) {
-        await updateDoc(doc(firestore, 'memberRegistrationRequests', request.id), {
-          status: 'approved',
-          approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
+          approvedAt: nowIso,
         });
       }
 
+      await batch.commit();
 
       toast({
         title: '승인 완료',
@@ -258,11 +276,36 @@ export default function MemberApprovalsPage() {
         type === 'adult' ? 'adultRegistrationRequests' : 
         type === 'family' ? 'familyRegistrationRequests' :
         'memberRegistrationRequests';
-      await updateDoc(doc(firestore, collectionName, requestId), {
+      const requestRef = doc(firestore, collectionName, requestId);
+      const request =
+        type === 'adult'
+          ? adultRequests?.find(r => r.id === requestId)
+          : type === 'family'
+            ? familyRequests?.find(r => r.id === requestId)
+            : memberRequests?.find(r => r.id === requestId);
+
+      if (!request) {
+        throw new Error('요청을 찾을 수 없습니다.');
+      }
+
+      const batch = writeBatch(firestore);
+
+      batch.update(requestRef, {
         status: 'rejected',
         rejectedBy: user.uid,
         rejectedAt: new Date().toISOString(),
+        rejectionReason: 'Rejected by club administrator',
       });
+
+      if (type === 'member' && 'userId' in request && request.userId) {
+        batch.update(doc(firestore, 'users', request.userId), {
+          status: 'rejected',
+          rejectedBy: user.uid,
+          rejectedAt: new Date().toISOString(),
+        });
+      }
+
+      await batch.commit();
 
       toast({
         title: '거절 완료',
@@ -288,7 +331,8 @@ export default function MemberApprovalsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <RequireAnyRole roles={[UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER]}>
+      <div className="p-8 space-y-6">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
@@ -592,6 +636,7 @@ export default function MemberApprovalsPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </RequireAnyRole>
   );
 }

@@ -120,6 +120,8 @@ export function useUser(): UserHookResult {
                   clubName: approvedRequest.clubName,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
+                  createdAt: new Date().toISOString(),
+                  approvedAt: new Date().toISOString(),
                 };
               } else if (approvedRequest && requestType === 'superAdmin') {
                 // 승인된 슈퍼 관리자 신청이 있으면 SUPER_ADMIN으로 설정
@@ -133,6 +135,8 @@ export function useUser(): UserHookResult {
                   role: UserRole.SUPER_ADMIN,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
+                  createdAt: new Date().toISOString(),
+                  approvedAt: new Date().toISOString(),
                 };
               } else if (approvedRequest && requestType === 'member') {
                 // 승인된 일반 회원 신청이 있으면 MEMBER로 설정
@@ -148,6 +152,8 @@ export function useUser(): UserHookResult {
                   clubName: approvedRequest.clubName,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
+                  createdAt: new Date().toISOString(),
+                  approvedAt: new Date().toISOString(),
                 };
               } else {
                 // 승인된 요청이 없으면 기본 MEMBER
@@ -160,6 +166,7 @@ export function useUser(): UserHookResult {
                   role: UserRole.MEMBER,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                   status: 'approved',
+                  createdAt: new Date().toISOString(),
                 };
               }
               
@@ -214,6 +221,7 @@ export function useUser(): UserHookResult {
                 role: UserRole.MEMBER,
                 provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                 status: 'pending',
+                createdAt: new Date().toISOString(),
               };
               
               setUser({ 

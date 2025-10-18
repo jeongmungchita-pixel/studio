@@ -95,6 +95,13 @@ export interface ClubRegistrationRequest {
   rejectionReason?: string;
 }
 
+export interface EventOption {
+  id: string;
+  name: string;
+  values: string[];
+  required?: boolean;
+}
+
 // 체조 수업
 export interface GymClass {
   id: string;
@@ -121,6 +128,12 @@ export interface GymClass {
     endTime: string; // HH:MM
   }[];
   
+  // 레거시 필드 (일부 UI 호환용)
+  dayOfWeek?: string; // 예: '월', '화'
+  time?: string; // 예: '18:00 ~ 19:30'
+  capacity?: number;
+  memberIds?: string[];
+
   // 담당 코치
   coachId: string;
   coachName: string;
@@ -187,39 +200,46 @@ export interface ClubEvent {
   title: string;
   description: string;
   clubId: string;
-  clubName: string;
-  
+  clubName?: string;
+
   // 이벤트 정보
-  type: 'competition' | 'workshop' | 'performance' | 'social' | 'training';
-  startDate: string;
-  endDate: string;
-  location: string;
-  
+  type?: 'competition' | 'workshop' | 'performance' | 'social' | 'training';
+  eventType: 'merchandise' | 'uniform' | 'special_class' | 'competition' | 'event' | 'other';
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+  eventDate?: string | null;
+  price?: number;
+  priceUnit?: 'per_person' | 'per_item';
+
   // 등록 정보
-  maxParticipants?: number;
+  maxParticipants?: number | null;
   currentParticipants: number;
-  registrationStart: string;
-  registrationEnd: string;
+  registrationStart?: string;
+  registrationEnd?: string;
   registrationFee?: number;
-  
+  minParticipants?: number | null;
+  allowMultipleQuantity?: boolean;
+  options?: EventOption[] | null;
+
   // 대상
-  targetAudience: string[]; // 예: ['beginner', 'intermediate']
+  targetAudience?: string[]; // 예: ['beginner', 'intermediate']
   ageRestrictions?: {
     minAge?: number;
     maxAge?: number;
   };
-  
+
   // 상태
-  status: 'draft' | 'published' | 'registration-open' | 'registration-closed' | 'in-progress' | 'completed' | 'cancelled';
-  
+  status: 'draft' | 'published' | 'registration-open' | 'registration-closed' | 'in-progress' | 'completed' | 'cancelled' | 'upcoming' | 'open' | 'closed';
+
   // 미디어
   posterURL?: string;
   images?: string[];
-  
+
   // 주최자
-  organizerId: string;
-  organizerName: string;
-  
+  organizerId?: string;
+  organizerName?: string;
+
   // 메타데이터
   createdAt: string;
   updatedAt?: string;
@@ -239,10 +259,14 @@ export interface EventRegistration {
   status: 'registered' | 'waitlist' | 'cancelled' | 'attended' | 'no-show';
   
   // 결제 정보
-  paymentStatus?: 'pending' | 'paid' | 'refunded';
+  paymentStatus?: 'pending' | 'paid' | 'refunded' | 'cancelled';
   paymentAmount?: number;
   paymentDate?: string;
-  
+  quantity?: number;
+  totalPrice?: number | null;
+  selectedOptions?: Record<string, string> | null;
+  allowMultipleQuantity?: boolean;
+
   // 추가 정보
   notes?: string;
   emergencyContact?: string;

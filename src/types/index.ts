@@ -16,6 +16,12 @@ export * from './club';
 // 비즈니스 로직 시스템
 export * from './business';
 
+// BEFS Hybrid Agent API
+export * from './befs';
+
+// 공지사항 시스템
+export * from './announcement';
+
 // 레거시 호환성을 위한 재export
 export { UserRole, Gender, CommitteeType } from './auth';
 export { type MemberCategory } from './member';

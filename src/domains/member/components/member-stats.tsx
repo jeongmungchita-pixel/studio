@@ -22,7 +22,7 @@ export function MemberStats({
   members,
   variant = 'cards',
   showAgeDistribution = true,
-  className
+  className = '',
 }: MemberStatsProps) {
   const stats = calculateMemberStats(members);
 

@@ -17,11 +17,12 @@ import { ErrorFallback } from '@/components/error-fallback';
 import { Loader2, Plus, Edit, Trash2, Users, Play, Square, Gavel } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
+import { useForm, ControllerRenderProps } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
+import { z } from 'zod';
 
 const MALE_EVENTS = [
   { id: 'FX', name: '마루운동', code: 'FX', gender: 'male' as const },
@@ -50,13 +51,19 @@ const competitionFormSchema = z.object({
 
 type CompetitionFormValues = z.infer<typeof competitionFormSchema>;
 
-const statusLabels = {
+type FormFieldRenderProps<Name extends keyof CompetitionFormValues> = {
+  field: ControllerRenderProps<CompetitionFormValues, Name>;
+};
+
+const statusLabels: Record<string, string> = {
   draft: '준비중',
   registration_open: '신청중',
   registration_closed: '신청마감',
   in_progress: '진행중',
   completed: '완료',
   cancelled: '취소',
+  open: '진행예정',
+  closed: '마감',
 };
 
 export default function AdminCompetitionsPage() {
@@ -183,12 +190,12 @@ export default function AdminCompetitionsPage() {
     form.reset({
       title: competition.title,
       description: competition.description,
-      registrationStart: competition.registrationStart.split('T')[0],
-      registrationEnd: competition.registrationEnd.split('T')[0],
-      competitionDate: competition.competitionDate.split('T')[0],
+      registrationStart: competition.registrationStart ? competition.registrationStart.split('T')[0] : '',
+      registrationEnd: competition.registrationEnd ? competition.registrationEnd.split('T')[0] : '',
+      competitionDate: competition.competitionDate ? competition.competitionDate.split('T')[0] : '',
       venue: competition.venue,
     });
-    setSelectedEvents(competition.events.map(e => e.id));
+    setSelectedEvents(competition.events?.map(e => e.id) ?? []);
     setIsDialogOpen(true);
   };
 
@@ -245,8 +252,9 @@ export default function AdminCompetitionsPage() {
     if (!firestore || !judgeCompetition) return;
     
     try {
+      const events = judgeCompetition.events ?? [];
       // competition_schedules 컬렉션에 심판 배정 저장
-      for (const event of judgeCompetition.events) {
+      for (const event of events) {
         const assignment = judgeAssignments[event.id];
         if (!assignment) continue;
 
@@ -315,12 +323,16 @@ export default function AdminCompetitionsPage() {
           <Card key={competition.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between mb-2">
-                <Badge variant={
-                  competition.status === 'registration_open' ? 'default' :
-                  competition.status === 'in_progress' ? 'secondary' :
-                  'outline'
-                }>
-                  {statusLabels[competition.status]}
+                <Badge
+                  variant={
+                    competition.status === 'registration_open'
+                      ? 'default'
+                      : competition.status === 'in_progress'
+                      ? 'secondary'
+                      : 'outline'
+                  }
+                >
+                  {statusLabels[competition.status] ?? competition.status}
                 </Badge>
               </div>
               <CardTitle className="text-lg">{competition.title}</CardTitle>
@@ -331,17 +343,27 @@ export default function AdminCompetitionsPage() {
             <CardContent className="space-y-3">
               <div className="text-sm">
                 <p className="text-muted-foreground">시합일</p>
-                <p className="font-semibold">{format(new Date(competition.competitionDate), 'PPP', { locale: ko })}</p>
+                <p className="font-semibold">
+                  {competition.competitionDate
+                    ? format(new Date(competition.competitionDate), 'PPP', { locale: ko })
+                    : '미정'}
+                </p>
               </div>
               <div className="text-sm">
                 <p className="text-muted-foreground">신청 기간</p>
                 <p className="font-semibold">
-                  {format(new Date(competition.registrationStart), 'M/d')} ~ {format(new Date(competition.registrationEnd), 'M/d')}
+                  {competition.registrationStart
+                    ? format(new Date(competition.registrationStart), 'M/d')
+                    : '-'}
+                  {' ~ '}
+                  {competition.registrationEnd
+                    ? format(new Date(competition.registrationEnd), 'M/d')
+                    : '-'}
                 </p>
               </div>
               <div className="text-sm">
                 <p className="text-muted-foreground">종목</p>
-                <p className="font-semibold">{competition.events.length}개</p>
+                <p className="font-semibold">{competition.events?.length ?? 0}개</p>
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
@@ -355,7 +377,7 @@ export default function AdminCompetitionsPage() {
                 )}
                 {competition.status === 'registration_open' && (
                   <Button
-                    className="outline "
+                    variant="outline"
                     onClick={() => handleStatusChange(competition.id, 'registration_closed')}
                   >
                     신청 마감
@@ -372,17 +394,17 @@ export default function AdminCompetitionsPage() {
                 {competition.status === 'in_progress' && (
                   <>
                     <Link href={`/admin/competitions/${competition.id}/scoring`}>
-                      <Button className="default ">
+                      <Button>
                         점수 입력
                       </Button>
                     </Link>
                     <Link href={`/scoreboard/${competition.id}`}>
-                      <Button className="outline ">
+                      <Button variant="outline">
                         전광판
                       </Button>
                     </Link>
                     <Button
-                      className="destructive "
+                      variant="destructive"
                       onClick={() => handleStatusChange(competition.id, 'completed')}
                     >
                       <Square className="h-4 w-4 mr-1" />
@@ -391,14 +413,14 @@ export default function AdminCompetitionsPage() {
                   </>
                 )}
                 <Button
-                  className="outline "
+                  variant="outline"
                   onClick={() => setSelectedCompetition(competition)}
                 >
                   <Users className="h-4 w-4 mr-1" />
                   참가자
                 </Button>
                 <Button
-                  className="outline "
+                  variant="outline"
                   onClick={() => {
                     setJudgeCompetition(competition);
                     setJudgeDialogOpen(true);
@@ -408,13 +430,13 @@ export default function AdminCompetitionsPage() {
                   심판
                 </Button>
                 <Button
-                  className="outline "
+                  variant="outline"
                   onClick={() => handleEdit(competition)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
-                  className="destructive "
+                  variant="destructive"
                   onClick={() => handleDelete(competition.id)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -448,10 +470,10 @@ export default function AdminCompetitionsPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+              <FormField<CompetitionFormValues, 'title'>
                 control={form.control}
                 name="title"
-                render={({ field }) => (
+                render={({ field }: FormFieldRenderProps<'title'>) => (
                   <FormItem>
                     <FormLabel>제목</FormLabel>
                     <FormControl>
@@ -462,10 +484,10 @@ export default function AdminCompetitionsPage() {
                 )}
               />
 
-              <FormField
+              <FormField<CompetitionFormValues, 'description'>
                 control={form.control}
                 name="description"
-                render={({ field }) => (
+                render={({ field }: FormFieldRenderProps<'description'>) => (
                   <FormItem>
                     <FormLabel>설명</FormLabel>
                     <FormControl>
@@ -477,10 +499,10 @@ export default function AdminCompetitionsPage() {
               />
 
               <div className="grid grid-cols-3 gap-4">
-                <FormField
+                <FormField<CompetitionFormValues, 'registrationStart'>
                   control={form.control}
                   name="registrationStart"
-                  render={({ field }) => (
+                  render={({ field }: FormFieldRenderProps<'registrationStart'>) => (
                     <FormItem>
                       <FormLabel>신청 시작일</FormLabel>
                       <FormControl>
@@ -491,10 +513,10 @@ export default function AdminCompetitionsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<CompetitionFormValues, 'registrationEnd'>
                   control={form.control}
                   name="registrationEnd"
-                  render={({ field }) => (
+                  render={({ field }: FormFieldRenderProps<'registrationEnd'>) => (
                     <FormItem>
                       <FormLabel>신청 마감일</FormLabel>
                       <FormControl>
@@ -505,10 +527,10 @@ export default function AdminCompetitionsPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<CompetitionFormValues, 'competitionDate'>
                   control={form.control}
                   name="competitionDate"
-                  render={({ field }) => (
+                  render={({ field }: FormFieldRenderProps<'competitionDate'>) => (
                     <FormItem>
                       <FormLabel>시합 날짜</FormLabel>
                       <FormControl>
@@ -520,10 +542,10 @@ export default function AdminCompetitionsPage() {
                 />
               </div>
 
-              <FormField
+              <FormField<CompetitionFormValues, 'venue'>
                 control={form.control}
                 name="venue"
-                render={({ field }) => (
+                render={({ field }: FormFieldRenderProps<'venue'>) => (
                   <FormItem>
                     <FormLabel>장소 (선택)</FormLabel>
                     <FormControl>
@@ -590,7 +612,7 @@ export default function AdminCompetitionsPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" className="outline " onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   취소
                 </Button>
                 <Button type="submit">
@@ -603,7 +625,14 @@ export default function AdminCompetitionsPage() {
       </Dialog>
 
       {/* Registrations Dialog */}
-      <Dialog open={!!selectedCompetition} onOpenChange={() => setSelectedCompetition(null)}>
+      <Dialog
+        open={Boolean(selectedCompetition)}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            setSelectedCompetition(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedCompetition?.title} - 참가자 목록</DialogTitle>
@@ -612,19 +641,27 @@ export default function AdminCompetitionsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            {registrations?.map((reg) => (
+            {registrations?.map((reg) => {
+              const orderedEvents = selectedCompetition?.events ?? [];
+              const eventIds = reg.registeredEvents ?? reg.events ?? [];
+              const eventNames = eventIds
+                .map(eventId => orderedEvents.find(ev => ev.id === eventId)?.name ?? eventId)
+                .join(', ');
+
+              return (
               <Card key={reg.id} className="p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1">
                     <p className="font-semibold">{reg.memberName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {reg.clubName} | {reg.gender === 'male' ? '남자' : '여자'} | {reg.age}세
+                      {reg.clubName} |
+                      {' '}
+                      {reg.gender === 'male' ? '남자' : reg.gender === 'female' ? '여자' : '미정'}
+                      {' '}
+                      {reg.age ? `${reg.age}세` : ''}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      종목: {reg.registeredEvents.map(e => {
-                        const event = selectedCompetition?.events.find(ev => ev.id === e);
-                        return event?.name || e;
-                      }).join(', ')}
+                      종목: {eventNames || '미정'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -635,25 +672,26 @@ export default function AdminCompetitionsPage() {
                     }>
                       {reg.status === 'approved' ? '승인' : reg.status === 'rejected' ? '거절' : '대기'}
                     </Badge>
-                    {reg.status === 'pending' && (
-                      <>
-                        <Button
-                          onClick={() => handleApproveRegistration(reg.id)}
-                        >
-                          승인
-                        </Button>
-                        <Button
-                          className="destructive "
-                          onClick={() => handleRejectRegistration(reg.id)}
-                        >
-                          거부
-                        </Button>
-                      </>
+                      {reg.status === 'pending' && (
+                        <>
+                          <Button
+                            onClick={() => handleApproveRegistration(reg.id)}
+                          >
+                            승인
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleRejectRegistration(reg.id)}
+                          >
+                            거부
+                          </Button>
+                        </>
                     )}
                   </div>
                 </div>
               </Card>
-            ))}
+            );
+            })}
             {(!registrations || registrations.length === 0) && (
               <p className="text-center text-muted-foreground py-8">
                 아직 신청자가 없습니다
@@ -664,7 +702,16 @@ export default function AdminCompetitionsPage() {
       </Dialog>
 
       {/* Judge Management Dialog */}
-      <Dialog open={judgeDialogOpen} onOpenChange={setJudgeDialogOpen}>
+      <Dialog
+        open={judgeDialogOpen}
+        onOpenChange={(open: boolean) => {
+          setJudgeDialogOpen(open);
+          if (!open) {
+            setJudgeCompetition(null);
+            setJudgeAssignments({});
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{judgeCompetition?.title} - 심판 배정</DialogTitle>
@@ -673,7 +720,7 @@ export default function AdminCompetitionsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {judgeCompetition?.events.map((event, eventIndex) => {
+            {(judgeCompetition?.events ?? []).map((event) => {
               const assignment = judgeAssignments[event.id] || { dJudges: ['', ''], eJudges: ['', '', '', ''] };
               
               return (
@@ -696,12 +743,18 @@ export default function AdminCompetitionsPage() {
                             placeholder={`D${idx + 1} 심판 이름`}
                             value={assignment.dJudges[idx] || ''}
                             onChange={(e) => {
-                              const newAssignments = { ...judgeAssignments };
-                              if (!newAssignments[event.id]) {
-                                newAssignments[event.id] = { dJudges: ['', ''], eJudges: ['', '', '', ''] };
-                              }
-                              newAssignments[event.id].dJudges[idx] = e.target.value;
-                              setJudgeAssignments(newAssignments);
+                              const value = e.target.value;
+                              setJudgeAssignments(prev => {
+                                const next = { ...prev };
+                                const current = next[event.id] || { dJudges: ['', ''], eJudges: ['', '', '', ''] };
+                                const updated = {
+                                  dJudges: [...current.dJudges],
+                                  eJudges: [...current.eJudges],
+                                };
+                                updated.dJudges[idx] = value;
+                                next[event.id] = updated;
+                                return next;
+                              });
                             }}
                           />
                         ))}
@@ -718,12 +771,18 @@ export default function AdminCompetitionsPage() {
                             placeholder={`E${idx + 1} 심판 이름`}
                             value={assignment.eJudges[idx] || ''}
                             onChange={(e) => {
-                              const newAssignments = { ...judgeAssignments };
-                              if (!newAssignments[event.id]) {
-                                newAssignments[event.id] = { dJudges: ['', ''], eJudges: ['', '', '', ''] };
-                              }
-                              newAssignments[event.id].eJudges[idx] = e.target.value;
-                              setJudgeAssignments(newAssignments);
+                              const value = e.target.value;
+                              setJudgeAssignments(prev => {
+                                const next = { ...prev };
+                                const current = next[event.id] || { dJudges: ['', ''], eJudges: ['', '', '', ''] };
+                                const updated = {
+                                  dJudges: [...current.dJudges],
+                                  eJudges: [...current.eJudges],
+                                };
+                                updated.eJudges[idx] = value;
+                                next[event.id] = updated;
+                                return next;
+                              });
                             }}
                           />
                         ))}

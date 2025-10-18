@@ -1,0 +1,36 @@
+# ~/.windsurf/workspace.rules (project-level)
+workspace:
+  name: BEFS-HYBRID
+  description: Local memory API integration
+
+commands:
+  - name: startend
+    description: "최근 요약 불러와 세션 복원"
+    run:
+      - http:
+          method: GET
+          url: http://127.0.0.1:8765/summary?limit=1
+
+  - name: backupnow
+    description: "현재 세션 요약을 메모리에 저장"
+    run:
+      - http:
+          method: POST
+          url: http://127.0.0.1:8765/summary
+          body:
+            session_id: "${workspace.session_id}"
+            summary: "${workspace.last_summary}"
+
+  - name: tasks
+    description: "태스크 목록 가져오기"
+    run:
+      - http:
+          method: GET
+          url: http://127.0.0.1:8765/tasks
+
+  - name: skills
+    description: "스킬 목록 가져오기"
+    run:
+      - http:
+          method: GET
+          url: http://127.0.0.1:8765/skills

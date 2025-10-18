@@ -1,0 +1,10 @@
+version: 1
+workflows:
+  - name: /backupnow
+    steps:
+      - http:
+          method: POST
+          url: http://127.0.0.1:8765/summary
+          body:
+            session_id: "${workspace.session_id}"
+            summary: "${workspace.last_summary}"

@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useMemo } from 'react';
 export const dynamic = 'force-dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
@@ -15,15 +16,44 @@ import { differenceInYears } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
-type AttendanceStatus = 'present' | 'absent' | 'excused' | null;
+type AttendanceStatus = 'present' | 'late' | 'absent' | 'excused' | null;
 
-const daysOfWeek = ['전체', '월', '화', '수', '목', '금', '토', '일'] as const;
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+const CALENDAR_LABELS = ['월', '화', '수', '목', '금', '토', '일'] as const;
+const FILTER_DAY_LABELS = ['전체', '월', '화', '수', '목', '금', '토', '일'] as const;
+
+const getPrimarySchedule = (classItem: GymClass) => classItem.schedule?.[0];
+
+const getClassDayLabel = (classItem: GymClass): string => {
+  if (classItem.dayOfWeek) return classItem.dayOfWeek;
+  const primary = getPrimarySchedule(classItem);
+  if (primary) {
+    return DAY_LABELS[primary.dayOfWeek] ?? '미정';
+  }
+  return '미정';
+};
+
+const getClassTimeLabel = (classItem: GymClass): string => {
+  if (classItem.time) return classItem.time;
+  const primary = getPrimarySchedule(classItem);
+  if (primary) {
+    const { startTime, endTime } = primary;
+    return `${startTime}${endTime ? ` ~ ${endTime}` : ''}`;
+  }
+  return '시간 미정';
+};
+
+const getClassCapacity = (classItem: GymClass): number => {
+  if (typeof classItem.capacity === 'number') return classItem.capacity;
+  if (typeof classItem.maxCapacity === 'number') return classItem.maxCapacity;
+  return 0;
+};
 
 export default function ClassStatusPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [selectedDay, setSelectedDay] = useState<typeof daysOfWeek[number]>('전체');
+  const [selectedDay, setSelectedDay] = useState<typeof FILTER_DAY_LABELS[number]>('전체');
   const [selectedClass, setSelectedClass] = useState<GymClass | null>(null);
   const [attendanceStates, setAttendanceStates] = useState<Record<string, AttendanceStatus>>({});
   const [attendanceNotes, setAttendanceNotes] = useState<Record<string, string>>({});
@@ -61,13 +91,15 @@ export default function ClassStatusPage() {
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
     if (selectedDay === '전체') return classes;
-    return classes.filter(cls => cls.dayOfWeek === selectedDay);
+    return classes.filter((cls) => getClassDayLabel(cls) === selectedDay);
   }, [classes, selectedDay]);
 
   // Get members for each class
   const getClassMembers = (classItem: GymClass) => {
     if (!allMembers) return [];
-    return allMembers.filter(member => classItem.memberIds.includes(member.id));
+    const memberIds = classItem.memberIds ?? [];
+    if (memberIds.length === 0) return [];
+    return allMembers.filter((member) => memberIds.includes(member.id));
   };
 
   const getMemberAge = (dateOfBirth?: string) => {
@@ -93,7 +125,8 @@ export default function ClassStatusPage() {
     // Initialize attendance states for all members
     const initialStates: Record<string, AttendanceStatus> = {};
     const initialNotes: Record<string, string> = {};
-    classItem.memberIds.forEach(memberId => {
+    const memberIds = classItem.memberIds ?? [];
+    memberIds.forEach((memberId) => {
       initialStates[memberId] = null;
       initialNotes[memberId] = '';
     });
@@ -114,17 +147,25 @@ export default function ClassStatusPage() {
 
     try {
       const attendancePromises = Object.entries(attendanceStates)
-        .filter(([_, status]) => status !== null)
+        .filter(([, status]) => status !== null)
         .map(async ([memberId, status]) => {
           const attendanceRef = doc(collection(firestore, 'attendance'));
-          const member = allMembers?.find(m => m.id === memberId);
+          const member = allMembers?.find((m) => m.id === memberId);
+          const now = new Date();
+          const isoNow = now.toISOString();
           const attendanceData: Attendance = {
             id: attendanceRef.id,
-            memberId: memberId,
+            memberId,
+            memberName: member?.name ?? '미확인 회원',
             clubId: user.clubId!,
-            date: new Date().toISOString(),
-            status: status as 'present' | 'absent' | 'excused',
-            passId: member?.activePassId || '',
+            classId: selectedClass.id,
+            className: selectedClass.name,
+            date: isoNow.split('T')[0],
+            checkInTime: isoNow,
+            status: status as NonNullable<AttendanceStatus>,
+            notes: attendanceNotes[memberId] || undefined,
+            recordedBy: user.uid ?? 'system',
+            createdAt: isoNow,
           };
           return setDoc(attendanceRef, attendanceData);
         });
@@ -174,16 +215,16 @@ export default function ClassStatusPage() {
             size="sm"
             onClick={() => setViewMode('calendar')}
           >
-            <CalendarIcon className="h-4 w-4 mr-2" />
+            <Calendar className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">캘린더</span>
           </Button>
         </div>
       </div>
 
       {/* Day Filter Tabs */}
-      <Tabs value={selectedDay} onValueChange={(value) => setSelectedDay(value as typeof daysOfWeek[number])}>
+      <Tabs value={selectedDay} onValueChange={(value) => setSelectedDay(value as typeof FILTER_DAY_LABELS[number])}>
         <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 gap-1">
-          {daysOfWeek.map((day) => (
+          {FILTER_DAY_LABELS.map((day) => (
             <TabsTrigger key={day} value={day} className="text-xs sm:text-sm">
               {day}
             </TabsTrigger>
@@ -205,8 +246,8 @@ export default function ClassStatusPage() {
       ) : viewMode === 'calendar' ? (
         /* Calendar View */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-          {['월', '화', '수', '목', '금', '토', '일'].map((day) => {
-            const dayClasses = classes?.filter(c => c.dayOfWeek === day) || [];
+          {CALENDAR_LABELS.map((day) => {
+            const dayClasses = classes?.filter((c) => getClassDayLabel(c) === day) || [];
             return (
               <Card key={day} className="min-h-[200px]">
                 <CardHeader className="pb-3">
@@ -225,10 +266,12 @@ export default function ClassStatusPage() {
                           onClick={() => handleClassClick(classItem)}
                         >
                           <p className="font-semibold text-sm">{classItem.name}</p>
-                          <p className="text-xs text-muted-foreground">{classItem.time}</p>
+                          <p className="text-xs text-muted-foreground">{getClassTimeLabel(classItem)}</p>
                           <div className="flex items-center gap-1 mt-1">
                             <Users className="h-3 w-3" />
-                            <span className="text-xs">{classMembers.length}/{classItem.capacity}</span>
+                            <span className="text-xs">
+                              {classMembers.length}/{getClassCapacity(classItem)}
+                            </span>
                           </div>
                         </div>
                       );
@@ -254,13 +297,13 @@ export default function ClassStatusPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xl">{classItem.name}</CardTitle>
                     <Badge variant="secondary" className="ml-2">
-                      {classItem.dayOfWeek}요일 {classItem.time}
+                      {getClassDayLabel(classItem)}요일 {getClassTimeLabel(classItem)}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                     <Users className="h-4 w-4" />
                     <span>
-                      {classMembers.length} / {classItem.capacity}명
+                      {classMembers.length} / {getClassCapacity(classItem)}명
                     </span>
                   </div>
                 </CardHeader>
@@ -300,14 +343,14 @@ export default function ClassStatusPage() {
       )}
 
       {/* Attendance Dialog */}
-      <Dialog open={!!selectedClass} onOpenChange={(open) => !open && setSelectedClass(null)}>
+      <Dialog open={!!selectedClass} onOpenChange={(open: boolean) => !open && setSelectedClass(null)}>
         <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-2xl">
               {selectedClass?.name} - 출석 체크
             </DialogTitle>
             <DialogDescription>
-              {selectedClass?.dayOfWeek}요일 {selectedClass?.time} | 각 회원의 출석 상태를 선택하세요
+              {selectedClass ? `${getClassDayLabel(selectedClass)}요일 ${getClassTimeLabel(selectedClass)}` : ''} | 각 회원의 출석 상태를 선택하세요
             </DialogDescription>
           </DialogHeader>
           
@@ -327,13 +370,19 @@ export default function ClassStatusPage() {
                           <h3 className="font-semibold text-lg">{member.name}</h3>
                           {hasAttendanceToday && (
                             <Badge variant={
-                              todayStatus === 'present' ? 'default' : 
-                              todayStatus === 'absent' ? 'destructive' : 
-                              'secondary'
+                              todayStatus === 'present'
+                                ? 'default'
+                                : todayStatus === 'absent'
+                                ? 'destructive'
+                                : 'secondary'
                             } className="text-xs">
-                              {todayStatus === 'present' ? '✓ 출석' : 
-                               todayStatus === 'absent' ? '✗ 결석' : 
-                               '📝 메모'}
+                              {todayStatus === 'present'
+                                ? '✓ 출석'
+                                : todayStatus === 'absent'
+                                ? '✗ 결석'
+                                : todayStatus === 'late'
+                                ? '⏰ 지각'
+                                : '📝 메모'}
                             </Badge>
                           )}
                         </div>

@@ -6,7 +6,7 @@ import { collection, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UserProfile, Club } from '@/types';
 import { UserRole } from '@/types';
@@ -57,20 +57,35 @@ export default function AdminUsersPage() {
     try {
       const batch = writeBatch(firestore);
 
-      // 1. Update user status to 'approved'
+      // 1. Update user status to 'active'
       const userRef = doc(firestore, 'users', userToApprove.uid);
-      batch.update(userRef, { status: 'approved' });
+      batch.update(userRef, {
+        status: 'active',
+        approvedAt: new Date().toISOString(),
+      });
 
       // 2. Create a new club document
       const clubRef = doc(collection(firestore, 'clubs'));
+      const nowIso = new Date().toISOString();
       const newClub: Club = {
         id: clubRef.id,
         name: userToApprove.clubName,
-        contactName: userToApprove.displayName,
+        description: '',
+        address: '',
+        phoneNumber: userToApprove.phoneNumber || '',
+        email: userToApprove.email,
+        website: undefined,
+        ownerId: userToApprove.uid,
+        ownerName: userToApprove.displayName || userToApprove.email,
+        contactName: userToApprove.displayName || userToApprove.email,
         contactEmail: userToApprove.email,
         contactPhoneNumber: userToApprove.phoneNumber || '',
-        location: '미정', // Default location
-        status: 'approved', // 신규 클럽은 승인 상태로 생성
+        status: 'active',
+        facilities: [],
+        capacity: 0,
+        operatingHours: {},
+        createdAt: nowIso,
+        updatedAt: nowIso,
       };
       batch.set(clubRef, newClub);
 
@@ -118,17 +133,27 @@ export default function AdminUsersPage() {
     }
   };
 
-  const getStatusVariant = (status: UserProfile['status']): 'default' | 'destructive' | 'secondary' => {
-    switch (status) {
-      case 'approved':
-        return 'default';
-      case 'pending':
-        return 'destructive';
-      case 'rejected':
-        return 'secondary';
-      default:
-        return 'secondary';
-    }
+  const STATUS_VARIANTS: Record<UserProfile['status'], BadgeProps['variant']> = {
+    active: 'default',
+    approved: 'default', // legacy value
+    pending: 'destructive',
+    rejected: 'secondary',
+    inactive: 'secondary',
+  };
+
+  const getStatusVariant = (status: UserProfile['status']): BadgeProps['variant'] => {
+    return STATUS_VARIANTS[status] ?? 'secondary';
+  };
+
+  const getStatusLabel = (status: UserProfile['status']): string => {
+    const labels: Record<UserProfile['status'], string> = {
+      active: '활성',
+      inactive: '비활성',
+      pending: '승인 대기',
+      approved: '승인 완료', // legacy value kept for backward compatibility
+      rejected: '거절됨',
+    };
+    return labels[status] ?? status;
   };
 
   const getRoleDisplayName = (role: UserProfile['role']) => {
@@ -181,7 +206,7 @@ export default function AdminUsersPage() {
                     <TableCell>{u.clubName || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(u.status)}>
-                        {u.status === 'pending' ? '승인 대기' : '승인됨'}
+                        {getStatusLabel(u.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="space-x-2">

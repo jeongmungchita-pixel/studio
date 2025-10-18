@@ -56,27 +56,39 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
 
   const handleEvaluate = (reg: LevelTestRegistration) => {
     setSelectedReg(reg);
-    setItemScores({});
-    setNotes('');
+    const existingScore = scores?.find((score) => score.registrationId === reg.id);
+    if (existingScore) {
+      const initialScores = existingScore.itemScores.reduce<Record<string, number>>((acc, item) => {
+        acc[item.itemId] = item.score;
+        return acc;
+      }, {});
+      setItemScores(initialScores);
+      setNotes(existingScore.notes ?? '');
+    } else {
+      setItemScores({});
+      setNotes('');
+    }
   };
 
   const calculateTotalScore = () => {
     if (!test) return 0;
-    return test.evaluationItems.reduce((sum, item) => {
-      return sum + (itemScores[item.id] || 0);
+    return test.evaluationItems.reduce<number>((sum, item) => {
+      const score = itemScores[item.id] ?? 0;
+      return sum + score;
     }, 0);
   };
 
   const calculatePercentage = () => {
     if (!test) return 0;
-    const maxTotal = test.evaluationItems.reduce((sum, item) => sum + item.maxScore, 0);
+    const maxTotal = test.evaluationItems.reduce<number>((sum, item) => sum + item.maxScore, 0);
+    if (maxTotal <= 0) return 0;
     return (calculateTotalScore() / maxTotal) * 100;
   };
 
   const determineLevel = () => {
     if (!test) return null;
     const percentage = calculatePercentage();
-    return test.levels.find(level => percentage >= level.minScore && percentage <= level.maxScore);
+    return test.levels.find((level) => percentage >= level.minScore && percentage <= level.maxScore) ?? null;
   };
 
   const handleSubmit = async () => {
@@ -90,6 +102,14 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
       toast({ variant: 'destructive', title: '점수를 확인하세요' });
       return;
     }
+
+    const targetLevel = test.levels.find(
+      (level) =>
+        level.id === selectedReg.targetLevel ||
+        level.code === selectedReg.targetLevel ||
+        level.name === selectedReg.targetLevel
+    );
+    const passThreshold = targetLevel?.minScore ?? achievedLevel.minScore;
 
     setIsSubmitting(true);
     try {
@@ -110,7 +130,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
         })),
         totalScore,
         percentage,
-        passed: percentage >= (test.levels.find(l => l.name === selectedReg.targetLevel)?.minScore || 0),
+        passed: percentage >= passThreshold,
         achievedLevel: achievedLevel.name,
         evaluatorId: user.uid,
         evaluatorName: user.displayName || user.email || '평가자',
@@ -121,7 +141,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
       await setDoc(scoreRef, scoreData);
 
       // Calculate rank for this level
-      const levelScores = scores?.filter(s => s.achievedLevel === achievedLevel.name) || [];
+      const levelScores = scores?.filter((s) => s.achievedLevel === achievedLevel.name) ?? [];
       const allScores = [...levelScores, scoreData].sort((a, b) => b.totalScore - a.totalScore);
       const rank = allScores.findIndex(s => s.id === scoreData.id) + 1;
 
@@ -156,7 +176,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
   };
 
   const hasScore = (regId: string) => {
-    return scores?.some(s => s.registrationId === regId);
+    return scores?.some((s) => s.registrationId === regId) ?? false;
   };
 
   if (!test) {

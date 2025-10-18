@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Member } from '@/types/member';
-import { filterMembers, sortMembers, getMemberCategory } from '../utils';
+import { sortMembers, getMemberCategory } from '../utils';
 import { Search, Filter, SortAsc, SortDesc, X } from 'lucide-react';
 
 // ============================================
@@ -39,7 +39,7 @@ export function MemberSearch({
   placeholder = "회원 이름, 이메일, 전화번호로 검색...",
   showFilters = true,
   showSort = true,
-  className
+  className = ''
 }: MemberSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({
@@ -65,7 +65,13 @@ export function MemberSearch({
 
     // 텍스트 검색
     if (searchTerm.trim()) {
-      result = filterMembers(result, searchTerm);
+      const term = searchTerm.toLowerCase();
+      result = result.filter(member => {
+        const nameMatch = member.name.toLowerCase().includes(term);
+        const emailMatch = member.email?.toLowerCase().includes(term);
+        const phoneMatch = member.phoneNumber?.toLowerCase().includes(term);
+        return nameMatch || emailMatch || phoneMatch;
+      });
     }
 
     // 상태 필터
@@ -164,7 +170,7 @@ export function MemberSearch({
           <div className="flex items-center gap-2">
             <Select
               value={sortOptions.field}
-              onValueChange={(value) => 
+              onValueChange={(value: string) => 
                 setSortOptions(prev => ({ ...prev, field: value as SortOptions['field'] }))
               }
             >
@@ -182,7 +188,7 @@ export function MemberSearch({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => 
+            onClick={() =>
                 setSortOptions(prev => ({ 
                   ...prev, 
                   direction: prev.direction === 'asc' ? 'desc' : 'asc' 
@@ -223,7 +229,7 @@ export function MemberSearch({
             <label className="text-sm font-medium mb-2 block">상태</label>
             <Select
               value={filters.status}
-              onValueChange={(value) => 
+              onValueChange={(value: string) => 
                 setFilters(prev => ({ ...prev, status: value as SearchFilters['status'] }))
               }
             >
@@ -243,7 +249,7 @@ export function MemberSearch({
             <label className="text-sm font-medium mb-2 block">카테고리</label>
             <Select
               value={filters.category}
-              onValueChange={(value) => 
+              onValueChange={(value: string) => 
                 setFilters(prev => ({ ...prev, category: value as SearchFilters['category'] }))
               }
             >
@@ -262,7 +268,7 @@ export function MemberSearch({
             <label className="text-sm font-medium mb-2 block">클럽</label>
             <Select
               value={filters.club}
-              onValueChange={(value) => 
+              onValueChange={(value: string) => 
                 setFilters(prev => ({ ...prev, club: value }))
               }
             >

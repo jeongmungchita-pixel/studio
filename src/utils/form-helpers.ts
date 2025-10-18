@@ -11,7 +11,7 @@ export function createArrayUpdater<T>(
 ) {
   return {
     // 아이템 업데이트
-    updateItem: (index: number, field: keyof T, value: any) => {
+    updateItem: <K extends keyof T>(index: number, field: K, value: T[K]) => {
       const updated = [...items];
       updated[index] = { ...updated[index], [field]: value };
       setItems(updated);
@@ -43,9 +43,16 @@ export function createArrayUpdater<T>(
 }
 
 // 폼 검증 헬퍼
-export function createFormValidator<T>(validationRules: Record<keyof T, (value: any) => string | null>) {
+type FieldValidator<TField> = (value: TField) => string | null;
+type UnknownValidator = (value: unknown) => string | null;
+
+type Validator<TField> = FieldValidator<TField> | UnknownValidator;
+
+export function createFormValidator<T>(validationRules: {
+  [K in keyof T]?: Validator<T[K]>;
+}) {
   return {
-    validateField: (field: keyof T, value: any): string | null => {
+    validateField: <K extends keyof T>(field: K, value: T[K]): string | null => {
       const rule = validationRules[field];
       return rule ? rule(value) : null;
     },
@@ -53,9 +60,28 @@ export function createFormValidator<T>(validationRules: Record<keyof T, (value: 
     validateForm: (data: T): Record<keyof T, string | null> => {
       const errors = {} as Record<keyof T, string | null>;
       
-      for (const field in validationRules) {
-        errors[field] = validationRules[field](data[field]);
-      }
+      (Object.keys(validationRules) as Array<keyof T>).forEach(field => {
+        const rule = validationRules[field];
+        errors[field] = rule ? rule(data[field]) : null;
+      });
+      
+      return errors;
+    },
+
+    validateWithUnknownValue: (field: keyof T, value: unknown): string | null => {
+      const rule = validationRules[field];
+      if (!rule) return null;
+      return rule(value as T[keyof T]);
+    },
+
+    validateFormWithUnknownData: (data: Partial<Record<keyof T, unknown>>): Record<keyof T, string | null> => {
+      const errors = {} as Record<keyof T, string | null>;
+      
+      (Object.keys(validationRules) as Array<keyof T>).forEach(field => {
+        const rule = validationRules[field];
+        const value = data[field];
+        errors[field] = rule ? rule(value as T[keyof T]) : null;
+      });
       
       return errors;
     },
@@ -68,51 +94,58 @@ export function createFormValidator<T>(validationRules: Record<keyof T, (value: 
 
 // 공통 검증 규칙들
 export const commonValidationRules = {
-  required: (value: any) => {
-    if (!value || (typeof value === 'string' && value.trim() === '')) {
+  required: (value: unknown) => {
+    if (value === null || value === undefined) {
       return '필수 입력 항목입니다.';
+    }
+    if (typeof value === 'string') {
+      return value.trim() === '' ? '필수 입력 항목입니다.' : null;
+    }
+    if (Array.isArray(value)) {
+      return value.length === 0 ? '필수 입력 항목입니다.' : null;
     }
     return null;
   },
 
-  email: (value: string) => {
-    if (!value) return null;
+  email: (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(value) ? null : '올바른 이메일 형식이 아닙니다.';
   },
 
-  phone: (value: string) => {
-    if (!value) return null;
+  phone: (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     const phoneRegex = /^01[0-9]-?[0-9]{4}-?[0-9]{4}$/;
-    return phoneRegex.test(value.replace(/-/g, '')) ? null : '올바른 전화번호 형식이 아닙니다.';
+    const normalized = value.replace(/-/g, '');
+    return phoneRegex.test(normalized) ? null : '올바른 전화번호 형식이 아닙니다.';
   },
 
-  minLength: (min: number) => (value: string) => {
-    if (!value) return null;
+  minLength: (min: number) => (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     return value.length >= min ? null : `최소 ${min}자 이상 입력해주세요.`;
   },
 
-  maxLength: (max: number) => (value: string) => {
-    if (!value) return null;
+  maxLength: (max: number) => (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     return value.length <= max ? null : `최대 ${max}자까지 입력 가능합니다.`;
   },
 
-  dateFormat: (value: string) => {
-    if (!value) return null;
+  dateFormat: (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     return dateRegex.test(value) ? null : '올바른 날짜 형식(YYYY-MM-DD)이 아닙니다.';
   },
 
-  futureDate: (value: string) => {
-    if (!value) return null;
+  futureDate: (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     const inputDate = new Date(value);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return inputDate >= today ? null : '오늘 이후의 날짜를 선택해주세요.';
   },
 
-  pastDate: (value: string) => {
-    if (!value) return null;
+  pastDate: (value: unknown) => {
+    if (typeof value !== 'string' || value.trim() === '') return null;
     const inputDate = new Date(value);
     const today = new Date();
     today.setHours(23, 59, 59, 999);

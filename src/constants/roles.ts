@@ -156,7 +156,7 @@ export function isAdminRole(role: UserRole): boolean {
  * @returns 클럽 관련 역할이면 true
  */
 export function isClubRole(role: UserRole): boolean {
-  return ROLE_GROUPS.CLUB_MANAGEMENT.includes(role as any) || ROLE_GROUPS.COACHING.includes(role as any);
+  return (ROLE_GROUPS.CLUB_MANAGEMENT as readonly UserRole[]).includes(role) || (ROLE_GROUPS.COACHING as readonly UserRole[]).includes(role);
 }
 
 // 역할 그룹
@@ -293,12 +293,12 @@ export const PERMISSIONS = {
 // 권한 체크 유틸리티
 export const roleUtils = {
   hasPermission: (userRole: UserRole, permission: keyof typeof PERMISSIONS): boolean => {
-    return PERMISSIONS[permission].includes(userRole as any);
+    return (PERMISSIONS[permission] as readonly UserRole[]).includes(userRole);
   },
   
   getRoleGroup: (role: UserRole): string | null => {
     for (const [groupName, roles] of Object.entries(ROLE_GROUPS)) {
-      if (roles.includes(role as any)) {
+      if ((roles as readonly UserRole[]).includes(role)) {
         return groupName.toLowerCase();
       }
     }
@@ -314,14 +314,14 @@ export const roleUtils = {
   },
   
   isAdminRole: (role: UserRole): boolean => {
-    return ROLE_GROUPS.ADMIN.includes(role as any);
+    return (ROLE_GROUPS.ADMIN as readonly UserRole[]).includes(role);
   },
   
   isClubRole: (role: UserRole): boolean => {
-    return ROLE_GROUPS.CLUB_MANAGEMENT.includes(role as any) || ROLE_GROUPS.COACHING.includes(role as any);
+    return (ROLE_GROUPS.CLUB_MANAGEMENT as readonly UserRole[]).includes(role) || (ROLE_GROUPS.COACHING as readonly UserRole[]).includes(role);
   },
   
   isMemberRole: (role: UserRole): boolean => {
-    return ROLE_GROUPS.MEMBERS.includes(role as any);
+    return (ROLE_GROUPS.MEMBERS as readonly UserRole[]).includes(role);
   },
 };

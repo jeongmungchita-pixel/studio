@@ -1,0 +1,5 @@
+visible: true
+name: backupnow
+description: 백업과 AI 요약을 한 번에 수행하는 통합 워크플로우입니다.
+steps:
+  - run: /Users/daewookjeong/windsurf-memory/backup_and_summary.sh

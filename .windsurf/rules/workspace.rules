@@ -1,0 +1,6 @@
+workspace:
+  name: BEFS-AI-AUTOMATION
+  description: Gymnastics automation + AI app workspace
+
+cascade:
+  activation_mode: always_on

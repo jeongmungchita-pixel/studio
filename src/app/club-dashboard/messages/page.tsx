@@ -311,7 +311,7 @@ export default function MessagesPage() {
                     <p className="text-sm text-green-600 font-semibold">
                       성공: {history.successCount}
                     </p>
-                    {history.failCount > 0 && (
+                    {(history.failCount ?? 0) > 0 && (
                       <p className="text-sm text-red-600 font-semibold">
                         실패: {history.failCount}
                       </p>

@@ -1,0 +1,11 @@
+version: 1
+events:
+  onSessionStart:
+    - run: osascript -e 'display notification "Cascade start hook" with title "Windsurf"'
+    - run: python3 /Users/daewookjeong/windsurf-memory/auto_restore.py --as-prompt
+  onSessionEnd:
+    - run: python3 /Users/daewookjeong/windsurf-memory/memory_auto_logger.py --stdin --backup
+    - run: osascript -e 'display notification "Cascade end hook" with title "Windsurf"'
+logging:
+  level: info
+  output: /Users/daewookjeong/windsurf-memory/cascade.log

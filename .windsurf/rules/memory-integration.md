@@ -1,12 +1,6 @@
 ---
-trigger: manual
+trigger: always_on
 ---
-
-# .windsurf/workspace.rules
-
-workspace:
-  name: BEFS-AI-AUTOMATION
-  description: Gymnastics automation + AI app workspace
 
 # ---------------------------------------------------------------------
 # 📁 1️⃣ 코드 구조 및 파일 규칙
@@ -30,7 +24,7 @@ structure:
     - .github/workflows/*
 
 # ---------------------------------------------------------------------
-# 🧠 2️⃣ AI 행동 정책 (Cascade와 연동됨)
+# 🧠 2️⃣ AI 행동 정책 (Cascade 연동 + Global Memory 사용)
 # ---------------------------------------------------------------------
 ai_policy:
   require_plan_before_edit: true
@@ -39,6 +33,16 @@ ai_policy:
   batch_mode_default: true
   confirm_before_deploy: true
   default_branch_protection: true
+
+  # 🔗 Memory 연동(전역 기억을 그대로 사용하되, 프로젝트에서 경로 덮어쓰기 가능)
+  memory_integration:
+    use_global_memory: true
+    override_path: ~/windsurf-memory
+    persist_session_notes: true
+    # 세션 시작/종료 안내(전역 규칙을 명시적으로 재강조)
+    session_routine:
+      start: "Prompt for today's goal (1 line)."
+      end: "Output a 3–5 line summary and remind to paste it into session-notes.md."
 
 # ---------------------------------------------------------------------
 # ⚙️ 3️⃣ 코드 품질 및 스타일
@@ -139,3 +143,6 @@ documentation:
   require_api_doc: true
   enforce_readme_at_root: true
   auto_generate_changelog: true
+
+On session start, run: /usr/local/bin/python3 /Users/daewookjeong/windsurf-memory/auto_restore.py --as-prompt
+On session end,   run: /usr/local/bin/python3 /Users/daewookjeong/windsurf-memory/memory_auto_logger.py --stdin --backup

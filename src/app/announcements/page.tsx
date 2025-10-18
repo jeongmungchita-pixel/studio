@@ -4,28 +4,30 @@ export const dynamic = 'force-dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Announcement, Member } from '@/types';
+import type { Announcement, AnnouncementType, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Pin, Bell, AlertCircle } from 'lucide-react';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Loader2, Pin, Bell, AlertCircle, type LucideIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-const typeLabels = {
+type BadgeVariant = NonNullable<BadgeProps['variant']>;
+
+const typeLabels: Record<AnnouncementType, string> = {
   general: '일반',
   important: '중요',
   event: '이벤트',
   emergency: '긴급',
 };
 
-const typeColors = {
+const typeColors: Record<AnnouncementType, BadgeVariant> = {
   general: 'default',
   important: 'secondary',
   event: 'outline',
   emergency: 'destructive',
-} as const;
+};
 
-const typeIcons = {
+const typeIcons: Record<AnnouncementType, LucideIcon> = {
   general: Bell,
   important: AlertCircle,
   event: Bell,
@@ -84,26 +86,27 @@ export default function MemberAnnouncementsPage() {
             고정된 공지
           </h2>
           {pinnedAnnouncements.map((announcement) => {
-            const Icon = typeIcons[announcement.type];
+            const announcementType = announcement.type ?? 'general';
+            const Icon = typeIcons[announcementType];
             return (
               <Card key={announcement.id} className="border-2 border-blue-500 hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-full ${
-                      announcement.type === 'emergency' ? 'bg-red-100' :
-                      announcement.type === 'important' ? 'bg-yellow-100' :
+                      announcementType === 'emergency' ? 'bg-red-100' :
+                      announcementType === 'important' ? 'bg-yellow-100' :
                       'bg-blue-100'
                     }`}>
                       <Icon className={`h-5 w-5 ${
-                        announcement.type === 'emergency' ? 'text-red-600' :
-                        announcement.type === 'important' ? 'text-yellow-600' :
+                        announcementType === 'emergency' ? 'text-red-600' :
+                        announcementType === 'important' ? 'text-yellow-600' :
                         'text-blue-600'
                       }`} />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant={typeColors[announcement.type]}>
-                          {typeLabels[announcement.type]}
+                        <Badge variant={typeColors[announcementType]}>
+                          {typeLabels[announcementType]}
                         </Badge>
                         <Pin className="h-4 w-4 text-blue-500" />
                       </div>
@@ -132,26 +135,27 @@ export default function MemberAnnouncementsPage() {
           </h2>
         )}
         {regularAnnouncements.map((announcement) => {
-          const Icon = typeIcons[announcement.type];
+          const announcementType = announcement.type ?? 'general';
+          const Icon = typeIcons[announcementType];
           return (
             <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-full ${
-                    announcement.type === 'emergency' ? 'bg-red-100' :
-                    announcement.type === 'important' ? 'bg-yellow-100' :
+                    announcementType === 'emergency' ? 'bg-red-100' :
+                    announcementType === 'important' ? 'bg-yellow-100' :
                     'bg-gray-100'
                   }`}>
                     <Icon className={`h-5 w-5 ${
-                      announcement.type === 'emergency' ? 'text-red-600' :
-                      announcement.type === 'important' ? 'text-yellow-600' :
+                      announcementType === 'emergency' ? 'text-red-600' :
+                      announcementType === 'important' ? 'text-yellow-600' :
                       'text-gray-600'
                     }`} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={typeColors[announcement.type]}>
-                        {typeLabels[announcement.type]}
+                      <Badge variant={typeColors[announcementType]}>
+                        {typeLabels[announcementType]}
                       </Badge>
                     </div>
                     <CardTitle className="text-lg">{announcement.title}</CardTitle>

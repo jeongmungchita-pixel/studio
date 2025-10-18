@@ -5,12 +5,12 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Announcement } from '@/types';
+import type { Announcement, AnnouncementAudience, AnnouncementType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Edit, Trash2, Pin, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -18,21 +18,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-const typeLabels = {
+type BadgeVariant = NonNullable<BadgeProps['variant']>;
+
+const typeLabels: Record<AnnouncementType, string> = {
   general: '일반',
   important: '중요',
   event: '이벤트',
   emergency: '긴급',
 };
 
-const typeColors = {
+const typeColors: Record<AnnouncementType, BadgeVariant> = {
   general: 'default',
   important: 'secondary',
   event: 'outline',
   emergency: 'destructive',
-} as const;
+};
 
-const audienceLabels = {
+const audienceLabels: Record<AnnouncementAudience, string> = {
   all: '전체',
   members: '회원',
   parents: '학부모',
@@ -78,14 +80,18 @@ export default function AnnouncementsPage() {
     setEditingAnnouncement(announcement);
     setTitle(announcement.title);
     setContent(announcement.content);
-    setType(announcement.type);
-    setTargetAudience(announcement.targetAudience);
+    setType(announcement.type ?? 'general');
+    setTargetAudience(announcement.targetAudience ?? 'all');
     setIsPinned(announcement.isPinned);
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async () => {
     if (!firestore || !user || !title || !content) return;
+    if (!user.clubId) {
+      toast({ variant: 'destructive', title: '클럽 정보를 확인할 수 없습니다.' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -149,6 +155,14 @@ export default function AnnouncementsPage() {
     }
   };
 
+  const handleTypeChange = (value: string) => {
+    setType(value as AnnouncementType);
+  };
+
+  const handleAudienceChange = (value: string) => {
+    setTargetAudience(value as AnnouncementAudience);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -180,23 +194,25 @@ export default function AnnouncementsPage() {
             <Pin className="h-5 w-5" />
             고정된 공지
           </h2>
-          {pinnedAnnouncements.map((announcement) => (
-            <Card key={announcement.id} className="border-2 border-blue-500">
+          {pinnedAnnouncements.map((announcement) => {
+            const authorName = announcement.createdByName || announcement.author || '관리자';
+            return (
+              <Card key={announcement.id} className="border-2 border-blue-500">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={typeColors[announcement.type]}>
-                        {typeLabels[announcement.type]}
+                      <Badge variant={typeColors[announcement.type ?? 'general']}>
+                        {typeLabels[announcement.type ?? 'general']}
                       </Badge>
                       <Badge variant="outline">
-                        {audienceLabels[announcement.targetAudience]}
+                        {audienceLabels[announcement.targetAudience ?? 'all']}
                       </Badge>
                       <Pin className="h-4 w-4 text-blue-500" />
                     </div>
                     <CardTitle className="text-xl">{announcement.title}</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {announcement.createdByName} · {format(new Date(announcement.createdAt), 'PPP', { locale: ko })}
+                      {authorName} · {format(new Date(announcement.createdAt), 'PPP', { locale: ko })}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -216,7 +232,8 @@ export default function AnnouncementsPage() {
                 <p className="whitespace-pre-wrap">{announcement.content}</p>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -228,22 +245,24 @@ export default function AnnouncementsPage() {
             일반 공지
           </h2>
         )}
-        {regularAnnouncements.map((announcement) => (
-          <Card key={announcement.id}>
+        {regularAnnouncements.map((announcement) => {
+          const authorName = announcement.createdByName || announcement.author || '관리자';
+          return (
+            <Card key={announcement.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={typeColors[announcement.type]}>
-                      {typeLabels[announcement.type]}
+                    <Badge variant={typeColors[announcement.type ?? 'general']}>
+                      {typeLabels[announcement.type ?? 'general']}
                     </Badge>
                     <Badge variant="outline">
-                      {audienceLabels[announcement.targetAudience]}
+                      {audienceLabels[announcement.targetAudience ?? 'all']}
                     </Badge>
                   </div>
                   <CardTitle className="text-lg">{announcement.title}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {announcement.createdByName} · {format(new Date(announcement.createdAt), 'PPP', { locale: ko })}
+                    {authorName} · {format(new Date(announcement.createdAt), 'PPP', { locale: ko })}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -258,12 +277,13 @@ export default function AnnouncementsPage() {
                   </Button>
                 </div>
               </div>
-            </CardHeader>
+              </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap">{announcement.content}</p>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {(!announcements || announcements.length === 0) && (
@@ -302,7 +322,7 @@ export default function AnnouncementsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">유형</label>
-                <Select value={type} onValueChange={(v) => setType(v as Announcement['type'])}>
+                <Select value={type} onValueChange={handleTypeChange}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -317,7 +337,7 @@ export default function AnnouncementsPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">대상</label>
-                <Select value={targetAudience} onValueChange={(v) => setTargetAudience(v as Announcement['targetAudience'])}>
+                <Select value={targetAudience} onValueChange={handleAudienceChange}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

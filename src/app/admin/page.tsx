@@ -6,7 +6,7 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Building, Trophy, Award, Loader2, ArrowRight, TrendingUp, Calendar, UserPlus, Building2 } from 'lucide-react';
-import { Member, Club, Competition } from '@/types';
+import { Member, Club, GymnasticsCompetition, Committee } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/use-role';
 import { usePageLoading } from '@/hooks/use-page-loading';
@@ -75,7 +75,7 @@ export default function FederationAdminDashboard() {
     () => (firestore ? collection(firestore, 'competitions') : null),
     [firestore]
   );
-  const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<Competition>(competitionsCollection);
+  const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<GymnasticsCompetition>(competitionsCollection);
   
   // 디버깅: 대회 데이터
 
@@ -89,7 +89,7 @@ export default function FederationAdminDashboard() {
     () => (firestore ? collection(firestore, 'committees') : null),
     [firestore]
   );
-  const { data: committees, isLoading: isCommitteesLoading } = useCollection(committeesCollection);
+  const { data: committees, isLoading: isCommitteesLoading } = useCollection<Committee>(committeesCollection);
 
   // 최근 가입 회원 (최근 5명)
   const recentMembersQuery = useMemoFirebase(() => {
@@ -132,12 +132,12 @@ export default function FederationAdminDashboard() {
 
   // 통계 계산
   const activeCompetitions = competitions?.filter(
-    (c) => c.status === 'ongoing'
-  ) || [];
+    (c) => c.status === 'in_progress' || c.status === 'registration_open'
+  ) ?? [];
 
   const activeClubs = allClubs?.filter(
-    (c) => c.status === 'approved'
-  ) || [];
+    (c) => c.status === 'active'
+  ) ?? [];
 
   return (
     <div className="p-8 space-y-6">
@@ -338,7 +338,7 @@ export default function FederationAdminDashboard() {
                       </div>
                       <div>
                         <p className="font-medium text-slate-900">{club.name}</p>
-                        <p className="text-sm text-slate-500">{club.location || '위치 미등록'}</p>
+                        <p className="text-sm text-slate-500">{club.address || '주소 미등록'}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -378,17 +378,17 @@ export default function FederationAdminDashboard() {
                       <Trophy className="h-5 w-5 text-yellow-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900">{comp.name}</p>
-                      <p className="text-sm text-slate-500">{comp.location}</p>
+                      <p className="font-medium text-slate-900">{comp.title || comp.name}</p>
+                      <p className="text-sm text-slate-500">{comp.venue || '장소 미정'}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-slate-900">
-                      {new Date(comp.startDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                      {comp.competitionDate ? new Date(comp.competitionDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '일자 미정'}
                     </p>
                     <p className="text-xs text-slate-500">
                       <Calendar className="inline h-3 w-3 mr-1" />
-                      {new Date(comp.startDate).toLocaleDateString('ko-KR')}
+                      {comp.competitionDate ? new Date(comp.competitionDate).toLocaleDateString('ko-KR') : '-'}
                     </p>
                   </div>
                 </div>

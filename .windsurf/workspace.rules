@@ -1,0 +1,20 @@
+workspace:
+  name: BEFS-AI-AUTOMATION
+  description: Gymnastics automation + AI app workspace
+
+cascade:
+  activation_mode: always_on
+
+ai_policy:
+  require_plan_before_edit: true
+  require_summary_before_commit: true
+  allow_auto_fix: false
+  batch_mode_default: true
+  confirm_before_deploy: true
+  default_branch_protection: true
+
+documentation:
+  require_function_docstring: true
+  require_api_doc: true
+  enforce_readme_at_root: true
+  auto_generate_changelog: true

@@ -137,16 +137,17 @@ export const isValidRoute = (path: string): boolean => {
   const allRoutes = Object.values(ROUTES).flat();
   const flatRoutes: string[] = [];
   
-  const flatten = (obj: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
-    Object.values(obj).forEach(value => {
-      if (typeof value === 'string') {
-        flatRoutes.push(value);
-      } else if (typeof value === 'object') {
-        flatten(value);
-      }
-    });
+  const flatten = (value: unknown): void => {
+    if (typeof value === 'string') {
+      flatRoutes.push(value);
+      return;
+    }
+
+    if (value && typeof value === 'object') {
+      Object.values(value as Record<string, unknown>).forEach(flatten);
+    }
   };
-  
+
   flatten(ROUTES);
   
   // 정확한 매치 또는 동적 라우트 매치

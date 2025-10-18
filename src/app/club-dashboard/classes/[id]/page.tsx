@@ -17,6 +17,33 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+
+const getClassDayLabel = (classData: GymClass): string => {
+  if (classData.dayOfWeek) return classData.dayOfWeek;
+  const schedule = classData.schedule?.[0];
+  if (schedule) {
+    return DAY_LABELS[schedule.dayOfWeek] ?? '미정';
+  }
+  return '미정';
+};
+
+const getClassTimeLabel = (classData: GymClass): string => {
+  if (classData.time) return classData.time;
+  const schedule = classData.schedule?.[0];
+  if (schedule) {
+    const { startTime, endTime } = schedule;
+    return `${startTime}${endTime ? ` ~ ${endTime}` : ''}`;
+  }
+  return '시간 미정';
+};
+
+const getClassCapacity = (classData: GymClass): number => {
+  if (typeof classData.capacity === 'number') return classData.capacity;
+  if (typeof classData.maxCapacity === 'number') return classData.maxCapacity;
+  return 0;
+};
+
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -41,14 +68,17 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
   // Get members in this class
   const classMembers = useMemo(() => {
     if (!allMembers || !classData) return [];
-    return allMembers.filter(member => classData.memberIds.includes(member.id));
+    const memberIds = classData.memberIds ?? [];
+    if (memberIds.length === 0) return [];
+    return allMembers.filter((member) => memberIds.includes(member.id));
   }, [allMembers, classData]);
 
   // Get available members (not in this class) with eligibility check
   const availableMembers = useMemo(() => {
     if (!allMembers || !classData) return [];
+    const memberIds = classData.memberIds ?? [];
     return allMembers
-      .filter(member => !classData.memberIds.includes(member.id))
+      .filter((member) => !memberIds.includes(member.id))
       .map(member => ({
         ...member,
         canJoin: canJoinClass(member, classData),
@@ -162,7 +192,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
           <h1 className="text-3xl font-bold text-slate-900">{classData.name}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="secondary">
-              {classData.dayOfWeek}요일 {classData.time}
+              {getClassDayLabel(classData)}요일 {getClassTimeLabel(classData)}
             </Badge>
             {classData.targetCategory && (
               <Badge variant={
@@ -184,7 +214,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
               </Badge>
             )}
             <span className="text-slate-600">
-              정원: {classMembers.length} / {classData.capacity}명
+              정원: {classMembers.length} / {getClassCapacity(classData)}명
             </span>
           </div>
         </div>

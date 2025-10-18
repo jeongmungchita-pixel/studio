@@ -173,6 +173,51 @@ export interface Payment {
   processedBy?: string;
 }
 
+// 재무 수입/지출
+export interface IncomeSplitAllocation {
+  month: string; // YYYY-MM
+  amount: number;
+  allocated: boolean;
+}
+
+export interface IncomeSplitInfo {
+  totalAmount: number;
+  months: number;
+  monthlyAmount: number;
+  startMonth: string; // YYYY-MM
+  allocations: IncomeSplitAllocation[];
+}
+
+export interface Income {
+  id: string;
+  clubId: string;
+  type: 'membership' | 'registration' | 'event' | 'sponsorship' | 'other';
+  category: string;
+  amount: number;
+  description: string;
+  date: string; // ISO string
+  isRecurring: boolean;
+  isSplit: boolean;
+  splitInfo?: IncomeSplitInfo | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Expense {
+  id: string;
+  clubId: string;
+  category: string;
+  amount: number;
+  description: string;
+  date: string; // ISO string
+  isRecurring: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
+  paymentMethod?: string;
+}
+
 // 재정 거래
 export interface FinancialTransaction {
   id: string;
@@ -215,47 +260,46 @@ export interface FinancialTransaction {
   recordedByName: string;
 }
 
-// 승급 심사
-export interface LevelTest {
+// 승급 심사 - 평가 항목
+export interface EvaluationItem {
   id: string;
   name: string;
   description?: string;
+  maxScore: number;
+  weight?: number;
+  order?: number;
+}
+
+// 승급 심사 - 레벨 정의
+export interface TestLevel {
+  id: string;
+  name: string;
+  code: string;
+  color: string;
+  minScore: number;
+  maxScore: number;
+  order: number;
+  icon?: string;
+  description?: string;
+}
+
+// 승급 심사 (클럽 전용)
+export interface ClubLevelTest {
+  id: string;
   clubId: string;
-  clubName: string;
-  
-  // 심사 정보
+  title: string;
+  description: string;
+  registrationStart: string;
+  registrationEnd: string;
   testDate: string;
-  registrationDeadline: string;
-  location: string;
-  
-  // 대상 레벨
-  fromLevel: string;
-  toLevel: string;
-  
-  // 심사 기준
-  criteria: {
-    skill: string;
-    description: string;
-    maxScore: number;
-  }[];
-  passingScore: number;
-  
-  // 심사위원
-  judgeIds: string[];
-  judgeNames: string[];
-  
-  // 등록 정보
+  location?: string;
+  levels: TestLevel[];
+  evaluationItems: EvaluationItem[];
+  status: 'draft' | 'registration_open' | 'registration_closed' | 'in_progress' | 'completed' | 'registration-open' | 'registration-closed' | 'in-progress';
   maxParticipants?: number;
-  currentParticipants: number;
-  registrationFee?: number;
-  
-  // 상태
-  status: 'draft' | 'registration-open' | 'registration-closed' | 'in-progress' | 'completed' | 'cancelled';
-  
-  // 메타데이터
+  currentParticipants?: number;
   createdAt: string;
   updatedAt?: string;
-  createdBy: string;
 }
 
 // 승급 심사 등록
@@ -273,7 +317,7 @@ export interface LevelTestRegistration {
   registeredAt: string;
   
   // 결과
-  status: 'registered' | 'tested' | 'passed' | 'failed' | 'absent' | 'cancelled';
+  status: 'registered' | 'approved' | 'pending' | 'tested' | 'passed' | 'failed' | 'absent' | 'cancelled';
   totalScore?: number;
   skillScores?: {
     skill: string;
@@ -296,20 +340,51 @@ export interface LevelTestRegistration {
   evaluatedBy?: string;
 }
 
+export interface LevelTestScore {
+  id: string;
+  testId: string;
+  registrationId: string;
+  memberId: string;
+  memberName: string;
+  targetLevel: string;
+  itemScores: {
+    itemId: string;
+    itemName: string;
+    score: number;
+    maxScore: number;
+  }[];
+  totalScore: number;
+  percentage: number;
+  passed: boolean;
+  achievedLevel: string;
+  evaluatorId: string;
+  evaluatorName: string;
+  notes?: string;
+  rank?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // 메시지 히스토리
+export interface MessageRecipient {
+  memberId: string;
+  memberName: string;
+  phone: string;
+  status: 'pending' | 'sent' | 'failed';
+}
+
 export interface MessageHistory {
   id: string;
   clubId: string;
   
   // 메시지 정보
-  type: 'sms' | 'email' | 'push' | 'in-app';
+  type: 'sms' | 'lms' | 'kakao' | 'email' | 'push' | 'in-app';
   subject?: string;
   content: string;
-  
-  // 수신자
-  recipientType: 'all' | 'members' | 'parents' | 'coaches' | 'specific';
+  recipients?: MessageRecipient[];
+  recipientType?: 'all' | 'members' | 'parents' | 'coaches' | 'specific';
   recipientIds?: string[];
-  recipientCount: number;
+  recipientCount?: number;
   
   // 발송 정보
   sentAt?: string;
@@ -317,9 +392,12 @@ export interface MessageHistory {
   sentByName: string;
   
   // 상태
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+  status?: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
   
   // 통계
+  totalCount?: number;
+  successCount?: number;
+  failCount?: number;
   deliveredCount?: number;
   readCount?: number;
   clickCount?: number;

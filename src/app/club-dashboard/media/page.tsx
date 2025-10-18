@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, X, Image, Video } from 'lucide-react';
+import { Loader2, Camera, X, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 export default function MediaManagementPage() {
   const { user } = useUser();
@@ -129,14 +129,20 @@ export default function MediaManagementPage() {
       
       // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));
+      const timestamp = new Date();
       const mediaData: MediaItem = {
         id: mediaRef.id,
         memberId: selectedMember.id,
+        memberName: selectedMember.name,
         clubId: user!.clubId!,
-        mediaType: 'video',
-        mediaURL: downloadURL,
-        uploadDate: new Date().toISOString(),
-        caption: `${selectedMember.name} - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`
+        type: 'video',
+        url: downloadURL,
+        uploadDate: timestamp.toISOString(),
+        uploadedBy: user?.uid ?? 'system',
+        uploadedByName: user?.displayName ?? user?.email ?? '관리자',
+        isPublic: false,
+        title: `${selectedMember.name} 영상`,
+        description: `${format(timestamp, 'yyyy-MM-dd HH:mm')} 촬영`
       };
       
       await setDoc(mediaRef, mediaData);
@@ -186,14 +192,20 @@ export default function MediaManagementPage() {
       
       // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));
+      const timestamp = new Date();
       const mediaData: MediaItem = {
         id: mediaRef.id,
         memberId: selectedMember.id,
+        memberName: selectedMember.name,
         clubId: user!.clubId!,
-        mediaType: 'image',
-        mediaURL: downloadURL,
-        uploadDate: new Date().toISOString(),
-        caption: `${selectedMember.name} - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`
+        type: 'photo',
+        url: downloadURL,
+        uploadDate: timestamp.toISOString(),
+        uploadedBy: user?.uid ?? 'system',
+        uploadedByName: user?.displayName ?? user?.email ?? '관리자',
+        isPublic: false,
+        title: `${selectedMember.name} 사진`,
+        description: `${format(timestamp, 'yyyy-MM-dd HH:mm')} 촬영`
       };
       
       await setDoc(mediaRef, mediaData);
@@ -267,7 +279,7 @@ export default function MediaManagementPage() {
                   stopCamera();
                 }}
               >
-                <Image
+                <NextImage
                   src={member.photoURL || `https://picsum.photos/seed/${member.id}/32/32`}
                   alt={member.name}
                   width={32}
@@ -354,7 +366,7 @@ export default function MediaManagementPage() {
                       </>
                     ) : (
                       <>
-                        <Video className="mr-2 h-4 w-4" />
+                        <VideoIcon className="mr-2 h-4 w-4" />
                         영상 녹화
                       </>
                     )}
@@ -373,25 +385,37 @@ export default function MediaManagementPage() {
               <div>
                 <h3 className="font-semibold mb-3">최근 미디어 ({mediaItems?.length || 0})</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {mediaItems?.slice(0, 6).map((item) => (
+                  {mediaItems?.slice(0, 6).map((item) => {
+                    const fallbackType = (item as unknown as { mediaType?: string }).mediaType;
+                    const mediaType: 'photo' | 'video' = item.type ?? (fallbackType === 'video' ? 'video' : 'photo');
+                    const mediaUrl = item.url ?? (item as unknown as { mediaURL?: string }).mediaURL ?? '';
+                    if (!mediaUrl) {
+                      return (
+                        <div key={item.id} className="relative group aspect-square flex items-center justify-center rounded-lg border border-dashed border-muted-foreground/40 text-xs text-muted-foreground">
+                          미디어 경로가 없습니다
+                        </div>
+                      );
+                    }
+
+                    return (
                     <div key={item.id} className="relative group aspect-square">
-                      {item.mediaType === 'image' ? (
-                        <Image
-                          src={item.mediaURL}
-                          alt={item.caption || ''}
+                      {mediaType === 'photo' ? (
+                        <NextImage
+                          src={mediaUrl}
+                          alt={item.title || item.description || ''}
                           fill
                           className="object-cover rounded-lg"
                         />
                       ) : (
                         <video
-                          src={item.mediaURL}
+                          src={mediaUrl}
                           className="w-full h-full object-cover rounded-lg"
                           controls
                         />
                       )}
                       <div className="absolute top-2 right-2">
-                        <Badge variant={item.mediaType === 'image' ? 'default' : 'secondary'}>
-                          {item.mediaType === 'image' ? '📷' : '🎥'}
+                        <Badge variant={mediaType === 'photo' ? 'default' : 'secondary'}>
+                          {mediaType === 'photo' ? '📷' : '🎥'}
                         </Badge>
                       </div>
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
@@ -405,11 +429,11 @@ export default function MediaManagementPage() {
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
                         <p className="text-xs text-white">
-                          {format(new Date(item.uploadDate), 'MM/dd HH:mm')}
+                          {item.uploadDate ? format(new Date(item.uploadDate), 'MM/dd HH:mm') : ''}
                         </p>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
                 {(!mediaItems || mediaItems.length === 0) && (
                   <p className="text-center text-muted-foreground py-8">

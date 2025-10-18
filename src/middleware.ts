@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 
 // Rate limiting을 위한 간단한 메모리 저장소
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
@@ -18,8 +18,30 @@ function addSecurityHeaders(response: NextResponse) {
 }
 
 // Rate Limiting 체크
+function getClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    const [first] = forwardedFor.split(',');
+    if (first) {
+      return first.trim();
+    }
+  }
+
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) {
+    return realIp;
+  }
+
+  const cfIp = request.headers.get('cf-connecting-ip');
+  if (cfIp) {
+    return cfIp;
+  }
+
+  return 'anonymous';
+}
+
 function checkRateLimit(request: NextRequest): boolean {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'anonymous';
+  const ip = getClientIp(request);
   const now = Date.now();
   const windowStart = now - RATE_LIMIT_WINDOW;
 

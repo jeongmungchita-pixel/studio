@@ -42,38 +42,62 @@ export default function ClubApprovalsPage() {
     if (!firestore) return;
 
     try {
-      const template = passTemplates?.find(t => t.id === request.passTemplateId);
+      const template = passTemplates?.find((t) => t.id === request.newTemplateId);
       if (!template) {
         toast({ variant: 'destructive', title: '오류', description: '이용권 템플릿을 찾을 수 없습니다.' });
         return;
       }
 
-      const now = new Date();
-      const endDate = template.durationDays ? addDays(now, template.durationDays) : undefined;
+      const approvedAt = new Date();
+      const startDate = request.requestedStartDate
+        ? new Date(request.requestedStartDate)
+        : approvedAt;
+      const endDate =
+        template.duration && template.duration > 0
+          ? addDays(startDate, template.duration)
+          : startDate;
 
       // 새 이용권 생성
       const newPassRef = doc(collection(firestore, 'member_passes'));
       const newPass: MemberPass = {
         id: newPassRef.id,
+        templateId: template.id,
+        templateName: template.name,
         memberId: request.memberId,
+        memberName: request.memberName,
         clubId: request.clubId,
-        passName: template.name,
-        passType: template.passType || 'unlimited',
-        startDate: now.toISOString(),
-        endDate: endDate?.toISOString(),
-        totalSessions: template.totalSessions,
-        attendableSessions: template.attendableSessions,
-        remainingSessions: template.totalSessions,
-        attendanceCount: 0,
+        type: template.type,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        remainingSessions:
+          template.type === 'session-based' ? template.sessionCount ?? undefined : undefined,
+        price: template.price,
+        paymentStatus: 'paid',
+        paymentMethod: request.paymentMethod,
         status: 'active',
+        usageCount: 0,
+        createdAt: approvedAt.toISOString(),
+        updatedAt: approvedAt.toISOString(),
+        approvedBy: user?.uid,
+        approvedAt: approvedAt.toISOString(),
       };
 
       await setDoc(newPassRef, newPass);
 
       // 요청 상태 업데이트
-      await updateDoc(doc(firestore, 'pass_renewal_requests', request.id), {
+      const approvalUpdate: Partial<PassRenewalRequest> & {
+        status: PassRenewalRequest['status'];
+        processedAt: string;
+        processedBy?: string;
+      } = {
         status: 'approved',
-      });
+        processedAt: approvedAt.toISOString(),
+      };
+      if (user?.uid) {
+        approvalUpdate.processedBy = user.uid;
+      }
+
+      await updateDoc(doc(firestore, 'pass_renewal_requests', request.id), approvalUpdate);
 
       toast({ title: '승인 완료', description: `${request.memberName}님의 이용권이 활성화되었습니다.` });
     } catch (error) {
@@ -85,10 +109,22 @@ export default function ClubApprovalsPage() {
     if (!firestore) return;
 
     try {
-      await updateDoc(doc(firestore, 'pass_renewal_requests', requestId), {
+      const rejectedAt = new Date().toISOString();
+      const rejectionUpdate: {
+        status: PassRenewalRequest['status'];
+        processedAt: string;
+        rejectionReason: string;
+        processedBy?: string;
+      } = {
         status: 'rejected',
+        processedAt: rejectedAt,
         rejectionReason: reason,
-      });
+      };
+      if (user?.uid) {
+        rejectionUpdate.processedBy = user.uid;
+      }
+
+      await updateDoc(doc(firestore, 'pass_renewal_requests', requestId), rejectionUpdate);
 
       toast({ title: '거부 완료', description: '이용권 갱신 요청이 거부되었습니다.' });
     } catch (error) {
@@ -134,14 +170,17 @@ export default function ClubApprovalsPage() {
         <div className="space-y-4">
             <div className="grid gap-4">
               {renewalRequests && renewalRequests.length > 0 ? (
-                renewalRequests.map((request) => (
+                renewalRequests.map((request) => {
+                  const template = passTemplates?.find((t) => t.id === request.newTemplateId);
+                  const templateName = template?.name ?? '이용권 템플릿';
+                  return (
                   <Card key={request.id}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
                           <CardTitle>{request.memberName}</CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {request.passTemplateName} 신청
+                            {templateName} 신청
                           </p>
                         </div>
                         <Badge variant="secondary">대기중</Badge>
@@ -170,7 +209,8 @@ export default function ClubApprovalsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                ))
+                );
+                })
               ) : (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">

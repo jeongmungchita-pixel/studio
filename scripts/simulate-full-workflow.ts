@@ -77,8 +77,20 @@ async function step1_RegisterClubOwner() {
   console.log('='.repeat(80));
 
   try {
-    // Auth 사용자 생성
+    // 기존 사용자 확인 및 삭제
     console.log('\n1️⃣  Firebase Auth 사용자 생성...');
+    try {
+      const existingUser = await auth.getUserByEmail(TEST_DATA.clubOwner.email);
+      console.log(`⚠️  기존 사용자 발견: ${existingUser.uid}, 삭제 중...`);
+      await auth.deleteUser(existingUser.uid);
+      console.log('✅ 기존 사용자 삭제 완료');
+    } catch (error: any) {
+      if (error.code !== 'auth/user-not-found') {
+        throw error;
+      }
+    }
+
+    // Auth 사용자 생성
     const userRecord = await auth.createUser({
       email: TEST_DATA.clubOwner.email,
       password: TEST_DATA.clubOwner.password,
@@ -183,8 +195,20 @@ async function step3_RegisterMembers(clubId: string) {
     console.log(`\n회원 ${i + 1}: ${memberData.name}`);
 
     try {
-      // Auth 사용자 생성
+      // 기존 사용자 확인 및 삭제
       console.log('  1️⃣  Auth 사용자 생성...');
+      try {
+        const existingUser = await auth.getUserByEmail(memberData.email);
+        console.log(`  ⚠️  기존 사용자 발견: ${existingUser.uid}, 삭제 중...`);
+        await auth.deleteUser(existingUser.uid);
+        console.log('  ✅ 기존 사용자 삭제 완료');
+      } catch (error: any) {
+        if (error.code !== 'auth/user-not-found') {
+          throw error;
+        }
+      }
+
+      // Auth 사용자 생성
       const userRecord = await auth.createUser({
         email: memberData.email,
         password: memberData.password,
@@ -508,7 +532,10 @@ async function step10_CreateAnnouncement(clubId: string) {
       clubId: clubId,
       title: '12월 정기 승급 심사 안내',
       content: '12월 15일 정기 승급 심사가 있습니다. 참가 희망자는 신청해주세요.',
+      type: 'general',
+      targetAudience: 'all',
       author: '김관장',
+      createdByName: '김관장',
       isPinned: true,
       createdAt: new Date().toISOString(),
     });
