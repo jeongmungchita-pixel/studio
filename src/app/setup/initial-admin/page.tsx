@@ -106,11 +106,12 @@ export default function InitialAdminSetupPage() {
     } catch (error: unknown) {
       
       let errorMessage = '관리자 생성에 실패했습니다.';
-      if (error.code === 'auth/email-already-in-use') {
+      const e = error as any;
+      if (e?.code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다.';
-      } else if (error.code === 'auth/invalid-email') {
+      } else if (e?.code === 'auth/invalid-email') {
         errorMessage = '유효하지 않은 이메일 형식입니다.';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (e?.code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다. (최소 6자)';
       }
       

@@ -35,6 +35,17 @@ export enum UserRole {
   VENDOR = 'VENDOR',
 }
 
+export interface FederationAdminInvite {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  invitedAt: string;
+  expiresAt: string;
+  inviteToken: string;
+}
+
 export enum Gender {
   MALE = 'MALE',
   FEMALE = 'FEMALE',
@@ -167,9 +178,31 @@ export interface ClubOwnerRequest {
   phoneNumber: string;
   clubName: string;
   clubAddress: string | { latitude: number; longitude: number; };
+  clubDescription?: string;
+  clubPhone?: string;
+  clubEmail?: string;
   businessLicense?: string;
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: string; // 요청 시간
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface SuperAdminRequest {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  organization: string;
+  position: string;
+  reason: string;
+  secretCode: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
 }

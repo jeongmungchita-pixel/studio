@@ -83,14 +83,30 @@ export default function SuperAdminDashboard() {
       // 1. 클럽 생성
       const clubData: Omit<Club, 'id'> = {
         name: request.clubName,
+        description: '',
+        address: typeof request.clubAddress === 'string' ? request.clubAddress : '',
+        phoneNumber: request.phoneNumber,
+        email: request.email,
+        website: undefined,
+        ownerId: request.userId,
+        ownerName: request.name,
         contactName: request.name,
         contactEmail: request.email,
         contactPhoneNumber: request.phoneNumber,
-        location: request.clubAddress,
-        status: 'approved',
+        status: 'active',
+        facilities: [],
+        capacity: 0,
+        operatingHours: {},
+        location: typeof request.clubAddress === 'object' ? { latitude: request.clubAddress.latitude, longitude: request.clubAddress.longitude } : undefined,
+        logoURL: undefined,
+        images: undefined,
         createdAt: new Date().toISOString(),
+        updatedAt: undefined,
         approvedAt: new Date().toISOString(),
         approvedBy: user.uid,
+        memberCount: undefined,
+        activeClassCount: undefined,
+        coachCount: undefined,
       };
       const clubRef = await addDoc(collection(firestore, 'clubs'), clubData);
 
@@ -468,7 +484,11 @@ export default function SuperAdminDashboard() {
                           {request.clubAddress && (
                             <div className="flex items-center gap-2 text-sm md:col-span-2">
                               <Building2 className="h-4 w-4 text-slate-400" />
-                              <span className="text-slate-600">{request.clubAddress}</span>
+                              <span className="text-slate-600">{
+                                typeof request.clubAddress === 'string'
+                                  ? request.clubAddress
+                                  : `${request.clubAddress.latitude}, ${request.clubAddress.longitude}`
+                              }</span>
                             </div>
                           )}
                         </div>

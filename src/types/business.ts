@@ -10,6 +10,20 @@ export enum CommitteeType {
   MARKETING = 'MARKETING',
 }
 
+export interface CompetitionSchedule {
+  id: string;
+  competitionId: string;
+  eventId: string;
+  eventName: string;
+  categoryId?: string;
+  categoryName?: string;
+  gender: 'male' | 'female';
+  participants?: { memberId: string; memberName?: string; clubName?: string }[];
+  status: 'scheduled' | 'in_progress' | 'completed';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // 위원회
 export interface Committee {
   id: string;
@@ -478,6 +492,11 @@ export interface GymnasticsScore {
   execution: number;
   penalty: number;
   total: number;
+  rank?: number;
+  dScore?: { final: number };
+  eScore?: { final: number };
+  finalScore?: number;
+  deductions?: { type: string; points: number }[];
   judgeId?: string;
   createdAt: string;
 }

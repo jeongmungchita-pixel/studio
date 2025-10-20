@@ -110,6 +110,7 @@ export default function ClubOwnerRegisterPage() {
         clubDescription: formData.clubDescription || undefined,
         status: 'pending',
         requestedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
       await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
       
@@ -123,9 +124,10 @@ export default function ClubOwnerRegisterPage() {
     } catch (error: unknown) {
       
       let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
-      if (error.code === 'auth/email-already-in-use') {
+      const e = error as any;
+      if (e?.code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다.';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (e?.code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
       

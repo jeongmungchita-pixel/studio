@@ -1,14 +1,17 @@
 {
   "project": {
-    "name": "studio",
+    "name": "federation-studio",
     "path": "/Users/daewookjeong/federation/studio",
     "workspace": true,
-    "created_at": "2025-10-19"
+    "created_at": "2025-10-20"
   },
   "befs": {
     "agent_port": 8766,
     "memory_path": "./befs-memory",
-    "automation_path": "./automation"
+    "automation_path": "./automation",
+    "agent_dir": "~/windsurf-memory/agent",
+    "agent_pid_file": "~/windsurf-memory/befs.pid",
+    "agent_uvicorn_app": "main:app"
   },
   "sync": {
     "watch_extensions": [

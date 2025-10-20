@@ -63,8 +63,21 @@ export default function AdultRegisterPage() {
   );
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
 
-  const updateFormData = (field: keyof FormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateFormData = (field: keyof FormData, value: any) => {
+    setFormData(prev => {
+      const updated = { ...prev } as FormData;
+      if (
+        field === 'agreePersonalInfo' ||
+        field === 'agreeTerms' ||
+        field === 'agreeSafety' ||
+        field === 'agreePortrait'
+      ) {
+        (updated as any)[field] = value === true;
+      } else {
+        (updated as any)[field] = value as never;
+      }
+      return updated;
+    });
   };
 
   const handleAgreeAll = (checked: boolean) => {
@@ -92,7 +105,7 @@ export default function AdultRegisterPage() {
       return false;
     }
     
-    const signatureData = signatureRef.current?.toDataURL();
+    const signatureData = signatureRef.current?.toDataURL() ?? null;
     updateFormData('signature', signatureData);
     return true;
   };

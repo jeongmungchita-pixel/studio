@@ -107,7 +107,8 @@ export default function LoginPage() {
       }
     } catch (error: unknown) {
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+      const e = error as any;
+      if (e?.code === 'auth/invalid-credential' || e?.code === 'auth/wrong-password' || e?.code === 'auth/user-not-found') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
       }
       toast({

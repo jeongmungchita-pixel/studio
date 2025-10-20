@@ -54,9 +54,11 @@ export function MemberSearch({
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // 고유 클럽 목록 추출
-  const uniqueClubs = useMemo(() => {
-    const clubs = Array.from(new Set(members.map(m => m.clubName).filter(Boolean)));
-    return clubs.sort();
+  const uniqueClubs = useMemo<string[]>(() => {
+    const clubs = members
+      .map(m => m.clubName ?? '')
+      .filter((x): x is string => x.length > 0);
+    return Array.from(new Set(clubs)).sort();
   }, [members]);
 
   // 필터링 및 정렬된 회원 목록

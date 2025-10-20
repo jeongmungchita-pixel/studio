@@ -85,15 +85,23 @@ export default function MemberWithContractPage() {
     return age < 19;
   };
 
-  const updateFormData = (field: keyof MemberFormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateFormData = (field: keyof MemberFormData, value: any) => {
     setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      
-      // 생년월일 변경 시 미성년자 자동 판단
-      if (field === 'birthDate') {
-        updated.isMinor = checkIfMinor(value);
+      const updated = { ...prev } as MemberFormData;
+      if (
+        field === 'agreePersonalInfo' ||
+        field === 'agreeTerms' ||
+        field === 'agreeSafety' ||
+        field === 'agreePortrait' ||
+        field === 'isMinor'
+      ) {
+        (updated as any)[field] = value === true;
+      } else if (field === 'birthDate') {
+        (updated as any)[field] = String(value);
+        updated.isMinor = checkIfMinor(String(value));
+      } else {
+        (updated as any)[field] = value as never;
       }
-      
       return updated;
     });
   };

@@ -8,7 +8,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { useFirestore, useCollection } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
-import { Member, Club, Competition } from '@/types';
+import { Member, Club, GymnasticsCompetition } from '@/types';
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
@@ -32,7 +32,7 @@ export function GlobalSearch() {
 
   const { data: members } = useCollection<Member>(membersCollection);
   const { data: clubs } = useCollection<Club>(clubsCollection);
-  const { data: competitions } = useCollection<Competition>(competitionsCollection);
+  const { data: competitions } = useCollection<GymnasticsCompetition>(competitionsCollection);
 
   // 키보드 단축키 (Cmd+K 또는 Ctrl+K)
   useEffect(() => {
@@ -117,7 +117,7 @@ export function GlobalSearch() {
                   <Building className="mr-2 h-4 w-4" />
                   <span>{club.name}</span>
                   <span className="ml-2 text-xs text-muted-foreground">
-                    {club.location}
+                    {club.address}
                   </span>
                 </CommandItem>
               ))}
@@ -134,7 +134,7 @@ export function GlobalSearch() {
                   <Trophy className="mr-2 h-4 w-4" />
                   <span>{comp.name}</span>
                   <span className="ml-2 text-xs text-muted-foreground">
-                    {new Date(comp.startDate).toLocaleDateString()}
+                    {comp.startDate ? new Date(comp.startDate).toLocaleDateString() : ''}
                   </span>
                 </CommandItem>
               ))}

@@ -124,7 +124,7 @@ export default function InvitesManagementPage() {
     return (
       invite.name.toLowerCase().includes(searchLower) ||
       invite.email.toLowerCase().includes(searchLower) ||
-      invite.phoneNumber.toLowerCase().includes(searchLower)
+      (invite.phoneNumber ? invite.phoneNumber.toLowerCase() : '').includes(searchLower)
     );
   });
 
@@ -264,8 +264,8 @@ export default function InvitesManagementPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusColors[invite.status]}>
-                          {statusLabels[invite.status]}
+                        <Badge variant={statusColors[invite.status as keyof typeof statusColors]}>
+                          {statusLabels[invite.status as keyof typeof statusLabels]}
                         </Badge>
                       </TableCell>
                       <TableCell>

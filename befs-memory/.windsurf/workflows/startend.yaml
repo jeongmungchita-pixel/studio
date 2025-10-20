@@ -1,7 +1,0 @@
-version: 1
-workflows:
-  - name: /startend
-    steps:
-      - http:
-          method: GET
-          url: http://127.0.0.1:8765/summary?limit=1

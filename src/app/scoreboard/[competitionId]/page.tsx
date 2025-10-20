@@ -130,14 +130,14 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
                 <div className="text-center">
                   <p className="text-sm text-white/70">D점 / E점</p>
                   <p className="text-2xl font-semibold">
-                    {score.dScore.final.toFixed(2)} / {score.eScore.final.toFixed(2)}
+                    {(score.dScore?.final ?? score.difficulty).toFixed(2)} / {(score.eScore?.final ?? score.execution).toFixed(2)}
                   </p>
                 </div>
 
                 {/* Final Score */}
                 <div className="text-center">
                   <p className="text-sm text-white/70">최종 점수</p>
-                  <p className="text-5xl font-bold text-yellow-400">{score.finalScore.toFixed(2)}</p>
+                  <p className="text-5xl font-bold text-yellow-400">{(score.finalScore ?? score.total).toFixed(2)}</p>
                 </div>
               </div>
             </Card>
