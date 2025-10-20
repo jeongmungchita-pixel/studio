@@ -52,3 +52,11 @@ serviceAccountKey.json
 **/public/sw.js.map
 **/public/workbox-*.js.map
 **/public/worker-*.js.map
+# BEFS Automation System
+befs-memory/memory.sqlite
+befs-memory/backups/
+befs-memory/*.log
+befs-memory/*.pid
+automation_backup*
+befs-memory_backup*
+befs_config.json

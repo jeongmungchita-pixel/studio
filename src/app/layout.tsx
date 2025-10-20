@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Metadata } from 'next';
+import './globals.css';
 import { RootLayoutClient } from './layout-client';
 
 // Force dynamic rendering for all pages - THIS WORKS IN SERVER COMPONENTS
