@@ -538,7 +538,7 @@ export default function MemberWithContractPage() {
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-800">
-                  서명 완료 후 "가입 신청" 버튼을 클릭하면 클럽 관리자에게 승인 요청이 전송됩니다.
+                  서명 완료 후 &quot;가입 신청&quot; 버튼을 클릭하면 클럽 관리자에게 승인 요청이 전송됩니다.
                 </p>
               </div>
             </div>

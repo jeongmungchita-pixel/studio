@@ -394,9 +394,9 @@ export default function ClubDashboardPage() {
                             <Card className="md:col-span-2 lg:col-span-3">
                                 <CardContent className="flex flex-col items-center justify-center h-64">
                                     <p className="text-muted-foreground">생성된 클래스가 없습니다.</p>
-                                    <Button variant="link" asChild>
-                                        <a href="/club-dashboard/classes">클래스 관리 페이지로 이동</a>
-                                    </Button>
+                                    <Link href="/club-dashboard/classes">
+                                      <Button variant="link">클래스 관리 페이지로 이동</Button>
+                                    </Link>
                                 </CardContent>
                             </Card>
                         )}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
@@ -99,14 +99,27 @@ export const useStorage = (): FirebaseStorage | null => {
 
 type MemoFirebase<T> = T & { __memo?: boolean };
 
-export function useMemoFirebase<T>(
-  factory: () => T,
-  deps: DependencyList
-): T | MemoFirebase<T> {
-  const memoized = useMemo(factory, deps);
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | MemoFirebase<T> {
+  const store = useRef<{ deps: DependencyList; value: T | MemoFirebase<T> } | null>(null);
 
-  if (typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
+  const depsChanged = () => {
+    if (!store.current) return true;
+    const a = store.current.deps;
+    const b = deps;
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return true;
+    }
+    return false;
+  };
 
-  return memoized;
+  if (depsChanged()) {
+    const value = factory();
+    if (typeof value === 'object' && value !== null) {
+      (value as MemoFirebase<T>).__memo = true;
+    }
+    store.current = { deps: [...deps], value };
+  }
+
+  return (store.current as { value: T | MemoFirebase<T> }).value;
 }

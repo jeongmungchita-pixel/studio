@@ -76,21 +76,24 @@ export default function MemberEventsPage() {
 
     setIsSubmitting(true);
     try {
-      const totalPrice = selectedEvent.price * quantity;
+      const totalPrice = (selectedEvent.price ?? 0) * quantity;
       
       // Create registration
       const regRef = doc(collection(firestore, 'event_registrations'));
       const registrationData: EventRegistration = {
         id: regRef.id,
         eventId: selectedEvent.id,
+        eventTitle: selectedEvent.title,
         memberId: user.uid,
         memberName: user.displayName || user.email || '회원',
         clubId: selectedEvent.clubId,
-        selectedOptions,
+        selectedOptions: Object.keys(selectedOptions).length ? selectedOptions : {},
         quantity,
         totalPrice,
+        status: 'registered',
         paymentStatus: 'pending',
         registeredAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         notes,
       };
       
@@ -156,10 +159,10 @@ export default function MemberEventsPage() {
                   <div>
                     <p className="font-semibold">{event?.title || '이벤트'}</p>
                     <p className="text-sm text-muted-foreground">
-                      {Object.entries(reg.selectedOptions).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                      {Object.entries(reg.selectedOptions ?? {}).map(([k, v]) => `${k}: ${v}`).join(', ')}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      수량: {reg.quantity}개 | {reg.totalPrice.toLocaleString()}원
+                      수량: {reg.quantity ?? 1}개 | {(reg.totalPrice ?? 0).toLocaleString()}원
                     </p>
                   </div>
                   <Badge variant={
@@ -182,7 +185,8 @@ export default function MemberEventsPage() {
         {events?.map((event) => {
           const isRegistered = isAlreadyRegistered(event.id);
           const isFull = event.maxParticipants && event.currentParticipants >= event.maxParticipants;
-          const daysLeft = Math.ceil((new Date(event.registrationEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          const regEndMs = event.registrationEnd ? new Date(event.registrationEnd).getTime() : undefined;
+          const daysLeft = typeof regEndMs === 'number' ? Math.ceil((regEndMs - Date.now()) / (1000 * 60 * 60 * 24)) : null;
           
           return (
             <Card key={event.id} className="hover:shadow-lg transition-shadow">
@@ -208,7 +212,7 @@ export default function MemberEventsPage() {
                     가격
                   </span>
                   <span className="font-semibold">
-                    {event.price.toLocaleString()}원
+                    {(event.price ?? 0).toLocaleString()}원
                     {event.priceUnit === 'per_person' ? '/인' : '/개'}
                   </span>
                 </div>
@@ -227,8 +231,8 @@ export default function MemberEventsPage() {
                     <Calendar className="h-4 w-4" />
                     마감
                   </span>
-                  <span className={`font-semibold ${daysLeft <= 3 ? 'text-red-600' : ''}`}>
-                    {daysLeft > 0 ? `D-${daysLeft}` : '오늘 마감'}
+                  <span className={`font-semibold ${typeof daysLeft === 'number' && daysLeft <= 3 ? 'text-red-600' : ''}`}>
+                    {typeof daysLeft === 'number' ? (daysLeft > 0 ? `D-${daysLeft}` : '오늘 마감') : '상시'}
                   </span>
                 </div>
                 
@@ -318,7 +322,7 @@ export default function MemberEventsPage() {
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <span className="font-semibold">총 금액</span>
               <span className="text-2xl font-bold">
-                {selectedEvent && (selectedEvent.price * quantity).toLocaleString()}원
+                {selectedEvent ? (((selectedEvent.price ?? 0) * quantity).toLocaleString()) : '0'}원
               </span>
             </div>
           </div>

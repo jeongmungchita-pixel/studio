@@ -297,7 +297,7 @@ export function MemberSearch({
           
           {searchTerm && (
             <Badge variant="secondary" className="gap-1">
-              검색: "{searchTerm}"
+              검색: &quot;{searchTerm}&quot;
               <X 
                 className="h-3 w-3 cursor-pointer" 
                 onClick={() => setSearchTerm('')}

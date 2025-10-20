@@ -173,10 +173,11 @@ export default function FederationAdminSignupPage() {
     } catch (error: unknown) {
       
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
-      if (error.code === 'auth/email-already-in-use') {
+      const e = error as any;
+      if (e?.code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다. 로그인을 시도하세요.';
         setMode('login');
-      } else if (error.code === 'auth/weak-password') {
+      } else if (e?.code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
 
@@ -248,7 +249,8 @@ export default function FederationAdminSignupPage() {
     } catch (error: unknown) {
       
       let errorMessage = '로그인 중 오류가 발생했습니다.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      const e = error as any;
+      if (e?.code === 'auth/user-not-found' || e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
       }
 

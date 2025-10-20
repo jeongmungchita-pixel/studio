@@ -44,6 +44,7 @@ export interface Committee {
   createdAt: string;
   updatedAt?: string;
   establishedDate: string;
+  createdBy?: string;
 }
 
 // 이용권 템플릿
@@ -52,74 +53,83 @@ export interface PassTemplate {
   name: string;
   description?: string;
   clubId: string;
-  clubName: string;
+  clubName?: string;
   
   // 이용권 정보
-  type: 'monthly' | 'quarterly' | 'yearly' | 'session-based' | 'unlimited';
-  duration: number; // 일 단위 (월간: 30, 분기: 90, 연간: 365)
+  type?: 'monthly' | 'quarterly' | 'yearly' | 'session-based' | 'unlimited';
+  passType?: 'period' | 'session' | 'unlimited';
+  duration?: number; // 일 단위 (월간: 30, 분기: 90, 연간: 365)
+  durationDays?: number; // UI 호환 필드
   sessionCount?: number; // 세션 기반인 경우
+  totalSessions?: number; // UI 호환 필드
+  attendableSessions?: number; // UI 호환 필드
   
   // 가격 정보
-  price: number;
+  price?: number;
   discountPrice?: number;
-  currency: string; // 'KRW'
+  currency?: string; // 'KRW'
   
   // 사용 조건
-  validDays: number[]; // 0=일요일, 1=월요일, ... 사용 가능한 요일
+  validDays?: number[]; // 0=일요일, 1=월요일, ... 사용 가능한 요일
   validTimes?: {
     start: string; // HH:MM
     end: string; // HH:MM
   };
   
   // 대상
-  targetCategory: 'adult' | 'child' | 'family' | 'all';
+  targetCategory?: 'adult' | 'child' | 'all';
   ageRestrictions?: {
     minAge?: number;
     maxAge?: number;
   };
   
   // 혜택
-  benefits: string[]; // 예: ['무료 체험 1회', '개인 상담', '이벤트 우선 참가']
+  benefits?: string[]; // 예: ['무료 체험 1회', '개인 상담', '이벤트 우선 참가']
   
   // 상태
-  status: 'active' | 'inactive' | 'archived';
+  status?: 'active' | 'inactive' | 'archived';
   
   // 메타데이터
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
-  createdBy: string;
+  createdBy?: string;
 }
 
 // 회원 이용권
 export interface MemberPass {
   id: string;
-  templateId: string;
-  templateName: string;
+  templateId?: string;
+  templateName?: string;
+  passType?: string;
+  passName?: string;
   memberId: string;
-  memberName: string;
+  memberName?: string;
   clubId: string;
   
   // 이용권 정보
-  type: 'monthly' | 'quarterly' | 'yearly' | 'session-based' | 'unlimited';
+  type?: 'monthly' | 'quarterly' | 'yearly' | 'session-based' | 'unlimited';
   startDate: string;
-  endDate: string;
+  endDate?: string;
   remainingSessions?: number; // 세션 기반인 경우
+  totalSessions?: number;
+  attendableSessions?: number;
+  attendanceCount?: number;
   
   // 결제 정보
-  price: number;
-  paymentStatus: 'pending' | 'paid' | 'overdue' | 'refunded';
+  price?: number;
+  paymentStatus?: 'pending' | 'paid' | 'overdue' | 'refunded';
   paymentDate?: string;
   paymentMethod?: string;
   
   // 상태
-  status: 'active' | 'expired' | 'suspended' | 'cancelled';
+  status: 'pending' | 'active' | 'expired' | 'suspended' | 'cancelled';
   
   // 사용 기록
-  usageCount: number;
+  usageCount?: number;
   lastUsedAt?: string;
   
   // 메타데이터
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
   approvedBy?: string;
   approvedAt?: string;
@@ -159,9 +169,11 @@ export interface Payment {
   clubId: string;
   
   // 결제 대상
+  type?: 'pass' | 'event' | 'competition' | 'level_test' | 'other';
   targetType: 'pass' | 'event' | 'class' | 'merchandise' | 'other';
   targetId: string;
   targetName: string;
+  relatedId?: string;
   
   // 결제 정보
   amount: number;
@@ -173,8 +185,13 @@ export interface Payment {
   
   // 결제 세부사항
   paymentDate?: string;
+  paidAt?: string;
   transactionId?: string;
   receiptURL?: string;
+  bankTransferInfo?: {
+    depositorName: string;
+    depositDate: string;
+  };
   
   // 환불 정보
   refundAmount?: number;
@@ -238,8 +255,8 @@ export interface FinancialTransaction {
   clubId: string;
   
   // 거래 정보
-  type: 'income' | 'expense';
-  category: string; // 예: 'membership', 'equipment', 'utilities', 'salary'
+  type: TransactionType;
+  category: TransactionCategory; // 예: 'membership', 'equipment', 'utilities', 'salary'
   amount: number;
   currency: string;
   
@@ -262,16 +279,62 @@ export interface FinancialTransaction {
     description: string;
   }[];
   splitParentId?: string; // 분할된 거래의 부모 ID
+  isSplit?: boolean;
+  splitMonths?: number;
+  splitIndex?: number;
   
   // 상태
   status: 'pending' | 'completed' | 'cancelled';
   isCancelled: boolean;
+  cancelledAt?: string;
+  cancelledBy?: string;
   
   // 메타데이터
   createdAt: string;
   updatedAt?: string;
-  recordedBy: string;
-  recordedByName: string;
+  recordedBy?: string;
+  createdBy?: string;
+  recordedByName?: string;
+}
+
+export type TransactionType = 'income' | 'expense';
+
+export type TransactionCategory =
+  | 'membership_fee'
+  | 'event_fee'
+  | 'competition_fee'
+  | 'sponsorship'
+  | 'other_income'
+  | 'facility_rent'
+  | 'equipment'
+  | 'salary'
+  | 'utility'
+  | 'marketing'
+  | 'maintenance'
+  | 'other_expense';
+
+// 클럽 은행 계좌 설정
+export interface ClubBankAccount {
+  clubId: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// 네이버 클라우드 메시징 설정
+export interface NaverCloudConfig {
+  clubId: string;
+  serviceId: string;
+  accessKey: string;
+  secretKey: string;
+  senderPhone: string;
+  kakaoSenderId?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // 승급 심사 - 평가 항목

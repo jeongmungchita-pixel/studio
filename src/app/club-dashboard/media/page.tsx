@@ -1,7 +1,7 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, useCollection, useStorage, uploadImage } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -87,47 +87,22 @@ export default function MediaManagementPage() {
     }
   };
 
-  // Stop camera
-  const stopCamera = () => {
-    if (isRecording) {
-      stopRecording();
-    }
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    setMediaRecorder(null);
-    setIsCameraOpen(false);
-  };
-
-  // Start recording
-  const startRecording = () => {
-    if (!mediaRecorder) return;
-    setRecordedChunks([]);
-    mediaRecorder.start();
-    setIsRecording(true);
-  };
-
   // Stop recording and save
-  const stopRecording = async () => {
+  const stopRecording = useCallback(async () => {
     if (!mediaRecorder || !selectedMember || !storage || !firestore) return;
     
     mediaRecorder.stop();
     setIsRecording(false);
     setIsUploading(true);
     
-    // Wait for data to be available
     await new Promise(resolve => setTimeout(resolve, 100));
     
     try {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
-      
-      // Upload to Firebase Storage
       const fileName = `media/${selectedMember.id}/${Date.now()}.webm`;
       const file = new File([blob], fileName, { type: 'video/webm' });
       const downloadURL = await uploadImage(storage, fileName, file);
       
-      // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));
       const timestamp = new Date();
       const mediaData: MediaItem = {
@@ -146,23 +121,36 @@ export default function MediaManagementPage() {
       };
       
       await setDoc(mediaRef, mediaData);
-      
-      toast({
-        title: '영상 저장 완료',
-        description: `${selectedMember.name}의 영상이 저장되었습니다.`
-      });
-      
+      toast({ title: '영상 저장 완료', description: `${selectedMember.name}의 영상이 저장되었습니다.` });
       setRecordedChunks([]);
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: '저장 실패',
-        description: '영상 저장 중 오류가 발생했습니다.'
-      });
+      toast({ variant: 'destructive', title: '저장 실패', description: '영상 저장 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
     }
+  }, [mediaRecorder, selectedMember, storage, firestore, recordedChunks, user, toast]);
+
+  // Stop camera
+  const stopCamera = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setMediaRecorder(null);
+    setIsCameraOpen(false);
+  }, [isRecording, stopRecording, stream]);
+
+  // Start recording
+  const startRecording = () => {
+    if (!mediaRecorder) return;
+    setRecordedChunks([]);
+    mediaRecorder.start();
+    setIsRecording(true);
   };
+
 
   // Take photo
   const takePhoto = async () => {
@@ -241,7 +229,7 @@ export default function MediaManagementPage() {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
 
   if (areMembersLoading) {
     return (

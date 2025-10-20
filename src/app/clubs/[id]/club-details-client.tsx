@@ -27,6 +27,7 @@ const statusTranslations: Record<Member['status'], string> = {
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
+  late: '지각',
   absent: '결석',
   excused: '사유',
 };
@@ -174,10 +175,11 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
         description: `${member.name}님의 상태가 ${attendanceStatusTranslations[newStatus]}(으)로 업데이트되었습니다.`
       });
     } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "출석 상태 변경 중 오류가 발생했습니다.";
         toast({
             variant: "destructive",
             title: "오류 발생",
-            description: error.message || "출석 상태 변경 중 오류가 발생했습니다."
+            description: message
         });
     } finally {
         setIsSubmitting(prevState => ({ ...prevState, [member.id]: false }));
@@ -230,7 +232,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
             <div className="flex-grow">
               <CardTitle className="text-3xl">{club.name}</CardTitle>
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-muted-foreground">
-                <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location}</span>
+                <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location ? `${club.location.latitude}, ${club.location.longitude}` : '위치 미등록'}</span>
                 <span className="flex items-center gap-2"><Users className="w-4 h-4"/>활동 선수 {clubMembers?.length || 0}명</span>
                 <span className="flex items-center gap-2"><Phone className="w-4 h-4"/>{club.contactPhoneNumber}</span>
                 <span className="flex items-center gap-2"><Mail className="w-4 h-4"/>{club.contactEmail}</span>

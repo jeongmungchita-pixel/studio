@@ -653,7 +653,7 @@ export default function ClassesPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>클래스 삭제 확인</AlertDialogTitle>
               <AlertDialogDescription>
-                '{deletingClass?.name}' 클래스를 삭제하시겠습니까?
+                &quot;{deletingClass?.name}&quot; 클래스를 삭제하시겠습니까?
                 <br />
                 <span className="text-destructive font-medium">이 작업은 되돌릴 수 없습니다.</span>
               </AlertDialogDescription>

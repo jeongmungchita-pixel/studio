@@ -83,7 +83,7 @@ export default function ClubsPage() {
                   <CardTitle className="text-lg">{club.name}</CardTitle>
                   <div className="mt-1 flex items-center gap-1 text-sm text-slate-500">
                     <MapPin className="h-3 w-3" />
-                    {club.location || '위치 미등록'}
+                    {club.location ? `${club.location.latitude}, ${club.location.longitude}` : '위치 미등록'}
                   </div>
                 </div>
               </div>

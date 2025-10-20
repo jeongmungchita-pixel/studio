@@ -44,6 +44,8 @@ export interface FederationAdminInvite {
   invitedAt: string;
   expiresAt: string;
   inviteToken: string;
+  invitedBy?: string;
+  invitedByName?: string;
 }
 
 export enum Gender {

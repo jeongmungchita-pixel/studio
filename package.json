@@ -40,7 +40,8 @@
     "reset:firestore": "tsx scripts/reset-firestore.ts",
     "validate:schema": "tsx scripts/validate-firestore-schema.ts",
     "fix:schema": "tsx scripts/fix-firestore-schema.ts",
-    "simulate": "tsx scripts/simulate-full-workflow.ts"
+    "simulate": "tsx scripts/simulate-full-workflow.ts",
+    "test:rules": "npx firebase-tools emulators:exec --only firestore \"jest -i src/__tests__/security/*.rules.test.ts\""
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.20.0",
@@ -91,6 +92,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",

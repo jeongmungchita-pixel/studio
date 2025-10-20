@@ -52,14 +52,6 @@ export default function LevelTestsPage() {
     );
   }, [firestore, member?.clubId]);
   const { data: levelTests, isLoading } = useCollection<ClubLevelTest>(testsQuery);
-  
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   // Fetch my registrations
   const myRegistrationsQuery = useMemoFirebase(() => {
@@ -70,6 +62,14 @@ export default function LevelTestsPage() {
     );
   }, [firestore, user?.uid]);
   const { data: myRegistrations } = useCollection<LevelTestRegistration>(myRegistrationsQuery);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleApply = (test: ClubLevelTest) => {
     setSelectedTest(test);
@@ -82,16 +82,19 @@ export default function LevelTestsPage() {
     setIsSubmitting(true);
     try {
       const regRef = doc(collection(firestore, 'level_test_registrations'));
+      const now = new Date().toISOString();
       const registrationData: LevelTestRegistration = {
         id: regRef.id,
         testId: selectedTest.id,
+        testName: selectedTest.title,
         memberId: user.uid,
         memberName: member.name,
         clubId: member.clubId,
-        currentLevel: member.level,
+        currentLevel: member.currentLevel || 'unknown',
         targetLevel: selectedLevel,
         status: 'pending',
-        registeredAt: new Date().toISOString(),
+        registeredAt: now,
+        createdAt: now,
       };
 
       await setDoc(regRef, registrationData);
@@ -115,14 +118,15 @@ export default function LevelTestsPage() {
   };
 
   const isRegistered = (testId: string) => {
-    return myRegistrations?.some(r => r.testId === testId && r.status !== 'rejected');
+    return myRegistrations?.some(r => r.testId === testId && r.status !== 'cancelled');
   };
 
   const canRegister = (test: ClubLevelTest) => {
     const now = new Date();
     const regStart = new Date(test.registrationStart);
     const regEnd = new Date(test.registrationEnd);
-    return test.status === 'registration_open' && now >= regStart && now <= regEnd;
+    const statusKey = (test.status || 'draft').replace(/-/g, '_') as keyof typeof statusLabels;
+    return statusKey === 'registration_open' && now >= regStart && now <= regEnd;
   };
 
   if (isLoading) {
@@ -141,7 +145,7 @@ export default function LevelTestsPage() {
       </div>
 
       {/* My Current Level */}
-      {member?.level && (
+      {member?.currentLevel && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -151,17 +155,7 @@ export default function LevelTestsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <Badge 
-                className="text-lg px-4 py-2"
-                style={{ backgroundColor: member.levelColor || '#3B82F6' }}
-              >
-                {member.level}
-              </Badge>
-              {member.levelRank && member.levelRank <= 3 && (
-                <span className="text-2xl">
-                  {member.levelRank === 1 ? '🏆' : member.levelRank === 2 ? '🥈' : '🥉'}
-                </span>
-              )}
+              <Badge className="text-lg px-4 py-2">{member.currentLevel}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -185,7 +179,7 @@ export default function LevelTestsPage() {
                     </p>
                   </div>
                   <Badge variant={reg.status === 'approved' ? 'default' : 'secondary'}>
-                    {reg.status === 'approved' ? '승인' : reg.status === 'rejected' ? '거절' : '대기'}
+                    {reg.status === 'approved' ? '승인' : reg.status === 'cancelled' ? '취소' : '대기'}
                   </Badge>
                 </div>
               );
@@ -204,13 +198,14 @@ export default function LevelTestsPage() {
             <Card key={test.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
-                  <Badge variant={
-                    test.status === 'registration_open' ? 'default' :
-                    test.status === 'in_progress' ? 'secondary' :
-                    'outline'
-                  }>
-                    {statusLabels[test.status]}
-                  </Badge>
+                  {(() => {
+                    const statusKey = (test.status || 'draft').replace(/-/g, '_') as keyof typeof statusLabels;
+                    return (
+                      <Badge variant={statusKey === 'registration_open' ? 'default' : statusKey === 'in_progress' ? 'secondary' : 'outline'}>
+                        {statusLabels[statusKey]}
+                      </Badge>
+                    );
+                  })()}
                   {registered && (
                     <Badge variant="default">
                       <CheckCircle2 className="h-3 w-3 mr-1" />

@@ -44,13 +44,20 @@ export default function NewCommitteePage() {
     setIsSubmitting(true);
     try {
       const committeeRef = doc(collection(firestore, 'committees'));
+      const now = new Date().toISOString();
       const committeeData: Committee = {
         id: committeeRef.id,
         name: formData.name,
         description: formData.description,
         type: formData.type,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        chairId: user.uid,
+        chairName: user.displayName || user.email || '관리자',
+        memberIds: [user.uid],
+        memberCount: 1,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+        establishedDate: now,
         createdBy: user.uid,
       };
 

@@ -85,11 +85,11 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
 
   const currentSchedule = currentSchedules?.[0];
   const completedEvents = myScores?.length || 0;
-  const totalEvents = myRegistration.registeredEvents.length;
-  const totalScore = myScores?.reduce((sum, score) => sum + score.finalScore, 0) || 0;
+  const totalEvents = myRegistration.registeredEvents?.length ?? 0;
+  const totalScore = myScores?.reduce((sum, score) => sum + (score.finalScore ?? 0), 0) || 0;
 
   // Check if I'm competing now
-  const isMyTurn = currentSchedule?.participants.some(p => p.memberId === user?.uid);
+  const isMyTurn = currentSchedule?.participants?.some(p => p.memberId === user?.uid) ?? false;
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
@@ -97,7 +97,7 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">{competition.title}</h1>
-          <p className="text-muted-foreground">{format(new Date(competition.competitionDate), 'PPP', { locale: ko })}</p>
+          <p className="text-muted-foreground">{competition.competitionDate ? format(new Date(competition.competitionDate), 'PPP', { locale: ko }) : ''}</p>
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">현재 시각</p>
@@ -189,15 +189,15 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-xs text-muted-foreground">D점</p>
-                      <p className="text-xl font-bold">{score.dScore.final.toFixed(2)}</p>
+                      <p className="text-xl font-bold">{score.dScore?.final?.toFixed(2) ?? '-'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">E점</p>
-                      <p className="text-xl font-bold">{score.eScore.final.toFixed(2)}</p>
+                      <p className="text-xl font-bold">{score.eScore?.final?.toFixed(2) ?? '-'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">최종</p>
-                      <p className="text-2xl font-bold text-blue-600">{score.finalScore.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-blue-600">{score.finalScore !== undefined ? score.finalScore.toFixed(2) : '-'}</p>
                     </div>
                   </div>
                   {score.deductions && score.deductions.length > 0 && (
@@ -223,7 +223,7 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {myRegistration.registeredEvents.map((eventId) => {
+            {(myRegistration.registeredEvents ?? []).map((eventId) => {
               const hasScore = myScores?.some(s => s.eventId === eventId);
               return (
                 <div

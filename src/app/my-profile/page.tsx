@@ -59,19 +59,33 @@ export default function MyProfilePage() {
       const batch = writeBatch(firestore);
       const newPassRef = doc(collection(firestore, 'member_passes'));
       
+      const now = new Date();
+      const durationDays = selectedTemplate.durationDays ?? selectedTemplate.duration ?? 30;
+      const end = new Date(now);
+      end.setDate(end.getDate() + durationDays);
+
       const newPass: MemberPass = {
         id: newPassRef.id,
-        memberId: selectedMember.id,
-        clubId: selectedMember.clubId,
-        passType: selectedTemplate.id, // Storing template id as passType for reference
+        templateId: selectedTemplate.id,
+        templateName: selectedTemplate.name,
+        passType: selectedTemplate.type,
         passName: selectedTemplate.name,
-        paymentMethod: paymentMethod,
+        memberId: selectedMember.id,
+        memberName: selectedMember.name,
+        clubId: selectedMember.clubId,
+        type: selectedTemplate.type,
+        startDate: now.toISOString(),
+        endDate: end.toISOString(),
         totalSessions: selectedTemplate.totalSessions,
         attendableSessions: selectedTemplate.attendableSessions,
         remainingSessions: selectedTemplate.totalSessions,
         attendanceCount: 0,
+        price: selectedTemplate.price,
+        paymentStatus: 'pending',
+        paymentMethod: paymentMethod,
         status: 'pending',
-        ...(selectedTemplate.durationDays && { endDate: new Date(new Date().setDate(new Date().getDate() + selectedTemplate.durationDays)).toISOString() })
+        usageCount: 0,
+        createdAt: now.toISOString(),
       };
       
       batch.set(newPassRef, newPass);
@@ -273,7 +287,7 @@ export default function MyProfilePage() {
                 </div>
               )}
               <p className="mt-2 text-sm text-muted-foreground">
-                신청 후 클럽 관리자의 승인이 필요합니다. '계좌 이체'를 선택한 경우, 클럽 계좌로 입금 후 승인 요청이 처리됩니다.
+                신청 후 클럽 관리자의 승인이 필요합니다. &apos;계좌 이체&apos;를 선택한 경우, 클럽 계좌로 입금 후 승인 요청이 처리됩니다.
               </p>
           </div>
           <DialogFooter>

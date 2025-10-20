@@ -29,6 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
   absent: '결석',
+  late: '지각',
   excused: '메모',
 };
 
@@ -183,15 +184,19 @@ export default function MemberProfileClient({ id }: { id:string }) {
       const mimeType = type === 'image' ? 'image/jpeg' : 'video/webm';
       const file = new (File as any)([blob], `capture.${fileExtension}`, { type: mimeType });
 
-      const mediaURL = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
+      const url = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
 
       const newMediaItem: MediaItem = {
         id: mediaId,
         memberId: member.id,
+        memberName: member.name,
         clubId: member.clubId,
-        mediaURL,
-        mediaType: type,
+        type: type === 'image' ? 'photo' : 'video',
+        url,
         uploadDate: new Date().toISOString(),
+        uploadedBy: user?.uid || '',
+        uploadedByName: user?.displayName || user?.email || '관리자',
+        isPublic: false,
       };
       
       const batch = writeBatch(firestore);
@@ -211,7 +216,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
   const handleEditAttendance = (attendance: Attendance) => {
     setEditingAttendance(attendance);
     setEditAttendanceStatus(attendance.status);
-    setEditAttendanceNote(attendance.note || '');
+    setEditAttendanceNote(attendance.notes || '');
   };
 
   // Handle attendance update
@@ -221,7 +226,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
     try {
       await updateDoc(doc(firestore, 'attendance', editingAttendance.id), {
         status: editAttendanceStatus,
-        note: editAttendanceNote || null,
+        notes: editAttendanceNote || null,
       });
       
       toast({
@@ -302,15 +307,19 @@ export default function MemberProfileClient({ id }: { id:string }) {
       const mediaRef = doc(collection(firestore, 'media'));
       const mediaId = mediaRef.id;
 
-      const mediaURL = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
+      const url = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
 
       const newMediaItem: MediaItem = {
         id: mediaId,
         memberId: member.id,
+        memberName: member.name,
         clubId: member.clubId,
-        mediaURL,
-        mediaType: file.type.startsWith('image/') ? 'image' : 'video',
+        type: file.type.startsWith('image/') ? 'photo' : 'video',
+        url,
         uploadDate: new Date().toISOString(),
+        uploadedBy: user?.uid || '',
+        uploadedByName: user?.displayName || user?.email || '관리자',
+        isPublic: false,
       };
       
       const batch = writeBatch(firestore);
@@ -343,13 +352,16 @@ export default function MemberProfileClient({ id }: { id:string }) {
       const requestRef = doc(collection(firestore, 'pass_renewal_requests'));
       const renewalRequest: PassRenewalRequest = {
         id: requestRef.id,
+        currentPassId: activePass?.id || '',
+        newTemplateId: template.id,
         memberId: member.id,
         memberName: member.name,
         clubId: member.clubId,
-        passTemplateId: template.id,
-        passTemplateName: template.name,
+        requestedStartDate: new Date().toISOString(),
+        paymentMethod: 'auto',
         requestedAt: new Date().toISOString(),
         status: 'pending',
+        createdAt: new Date().toISOString(),
       };
 
       await setDoc(requestRef, renewalRequest);
@@ -512,7 +524,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
                 <div>
                   <Label className="text-muted-foreground">회원 분류</Label>
                   <div className="font-medium">
-                    <Badge className={getMemberCategoryColor(member.memberCategory || (age && age >= 19 ? 'adult' : 'child')).badge}>
+                    <Badge>
                       {(member.memberCategory || (age && age >= 19 ? 'adult' : 'child')) === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
                       {getMemberCategoryLabel(member.memberCategory || (age && age >= 19 ? 'adult' : 'child'))}
                     </Badge>
@@ -580,8 +592,8 @@ export default function MemberProfileClient({ id }: { id:string }) {
                                         <div className="flex-1">
                                             <p className="font-medium">{format(new Date(att.date), 'yyyy년 M월 d일 (E)', { locale: ko })}</p>
                                             <p className="text-xs text-muted-foreground">{format(new Date(att.date), 'HH:mm')}</p>
-                                            {att.note && (
-                                                <p className="text-xs text-muted-foreground mt-1">메모: {att.note}</p>
+                                            {att.notes && (
+                                                <p className="text-xs text-muted-foreground mt-1">메모: {att.notes}</p>
                                             )}
                                         </div>
                                     </div>
@@ -647,7 +659,12 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     {pastPasses && pastPasses.length > 0 ? (
                         <Accordion type="single" collapsible className="w-full">
                         {pastPasses.map(pass => {
-                            const passAttendance = allAttendance?.filter(a => a.passId === pass.id);
+                            const passAttendance = allAttendance?.filter(a => {
+                              const d = new Date(a.date);
+                              const start = new Date(pass.startDate);
+                              const end = pass.endDate ? new Date(pass.endDate) : new Date(0);
+                              return d >= start && d <= end;
+                            });
                             return (
                             <AccordionItem key={pass.id} value={pass.id}>
                                 <AccordionTrigger>
@@ -724,15 +741,15 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     {mediaItems && mediaItems.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {mediaItems.map(item => (
-                                <div key={item.id} className="relative aspect-square group">
-                                  {item.mediaType === 'image' ? (
-                                    <Image src={item.mediaURL} alt={item.caption || "Member media"} fill className="object-cover rounded-md" />
+                              <div key={item.id} className="relative aspect-square group">
+                                  {item.type === 'photo' ? (
+                                    <Image src={item.url} alt={item.title || 'Member media'} fill className="object-cover rounded-md" />
                                   ) : (
-                                    <video src={item.mediaURL} className="object-cover rounded-md w-full h-full" controls />
+                                    <video src={item.url} className="object-cover rounded-md w-full h-full" controls />
                                   )}
-                                    <div className="absolute inset-0 bg-black/50 flex items-end justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <p className="text-white text-xs">{format(new Date(item.uploadDate), 'yyyy-MM-dd')}</p>
-                                        {canEdit && (
+                                  <div className="absolute inset-0 bg-black/50 flex items-end justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <p className="text-white text-xs">{format(new Date(item.uploadDate), 'yyyy-MM-dd')}</p>
+                                      {canEdit && (
                                           <Button
                                             size="sm"
                                             variant="destructive"
@@ -869,23 +886,24 @@ export default function MemberProfileClient({ id }: { id:string }) {
                             <CardDescription>{template.description}</CardDescription>
                           )}
                         </div>
-                        <Badge variant={
-                          template.targetCategory === 'adult' ? 'default' :
-                          template.targetCategory === 'child' ? 'secondary' :
-                          'outline'
-                        }>
-                          {template.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
-                          {template.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
-                          {template.targetCategory === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
-                          {getTargetCategoryLabel(template.targetCategory)}
-                        </Badge>
+                        {(() => {
+                          const cat = (template.targetCategory ?? 'all') as 'adult' | 'child' | 'all';
+                          return (
+                            <Badge variant={cat === 'adult' ? 'default' : cat === 'child' ? 'secondary' : 'outline'}>
+                              {cat === 'adult' && <User className="inline h-3 w-3 mr-1" />}
+                              {cat === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
+                              {cat === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
+                              {getTargetCategoryLabel(cat)}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        {template.passType === 'period' && <Badge variant="outline">기간제</Badge>}
-                        {template.passType === 'session' && <Badge variant="outline">횟수제</Badge>}
-                        {template.passType === 'unlimited' && <Badge variant="outline">기간+횟수제</Badge>}
+                        {template.type !== 'session-based' && template.type !== 'unlimited' && <Badge variant="outline">기간제</Badge>}
+                        {template.type === 'session-based' && <Badge variant="outline">횟수제</Badge>}
+                        {template.type === 'unlimited' && <Badge variant="outline">기간+횟수제</Badge>}
                         {template.price && <p>가격: {template.price.toLocaleString()}원</p>}
                         {template.durationDays && <p>기간: {template.durationDays}일</p>}
                         {template.totalSessions && <p>총 횟수: {template.totalSessions}회</p>}

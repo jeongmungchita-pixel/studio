@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import { UserPlus, AlertCircle, Upload, X } from 'lucide-react';
@@ -71,9 +72,9 @@ export default function AddFamilyMemberPage() {
     setMembers(members.filter((_, i) => i !== index));
   };
 
-  const updateMember = (index: number, field: keyof FamilyMember, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateMember = (index: number, field: keyof FamilyMember, value: any) => {
     const updated = [...members];
-    updated[index] = { ...updated[index], [field]: value };
+    (updated[index] as any)[field] = value as never;
     setMembers(updated);
   };
 
@@ -255,10 +256,11 @@ export default function AddFamilyMemberPage() {
                     <Label>프로필 사진 (선택)</Label>
                     {member.photoPreview ? (
                       <div className="relative w-32 h-32">
-                        <img
+                        <Image
                           src={member.photoPreview}
                           alt="미리보기"
-                          className="w-full h-full object-cover rounded-lg"
+                          fill
+                          className="object-cover rounded-lg"
                         />
                         <Button
                           type="button"

@@ -337,7 +337,7 @@ export default function MemberRegisterPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
                 <strong>안내:</strong> 가입 즉시 계정이 생성되며, 클럽 오너의 승인 후 모든 기능을 이용할 수 있습니다.
-                승인 전에는 "승인 대기중" 페이지가 표시됩니다.
+                승인 전에는 &quot;승인 대기중&quot; 페이지가 표시됩니다.
               </p>
             </div>
 

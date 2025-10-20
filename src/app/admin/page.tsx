@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Building, Trophy, Award, Loader2, ArrowRight, TrendingUp, Calendar, UserPlus, Building2 } from 'lucide-react';
 import { Member, Club, GymnasticsCompetition, Committee } from '@/types';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useRole } from '@/hooks/use-role';
 import { usePageLoading } from '@/hooks/use-page-loading';
 import { ErrorFallback } from '@/components/error-fallback';
@@ -20,27 +21,14 @@ export default function FederationAdminDashboard() {
 
   // 디버깅: 사용자 정보 출력
 
-  // 권한 체크: FEDERATION_ADMIN 또는 SUPER_ADMIN만 접근 가능
-  if (!isUserLoading && user) {
-    if (!isFederationAdmin && !isSuperAdmin) {
-      router.push('/dashboard');
-      return (
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
-    }
-  }
-  
-  // 로그인 안 됨
-  if (!isUserLoading && !user) {
-    router.push('/login');
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // 접근 제어 플래그 (훅 호출 이후에 처리)
+  const redirectToDash = !isUserLoading && !!user && !isFederationAdmin && !isSuperAdmin;
+  const redirectToLogin = !isUserLoading && !user;
+
+  useEffect(() => {
+    if (redirectToDash) router.push('/dashboard');
+    if (redirectToLogin) router.push('/login');
+  }, [redirectToDash, redirectToLogin, router]);
 
   // 전체 회원 수
   const membersCollection = useMemoFirebase(
@@ -51,10 +39,7 @@ export default function FederationAdminDashboard() {
   
   // 디버깅: 회원 데이터
 
-  // 에러 처리
-  if (membersError) {
-    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
-  }
+  // 에러 처리는 모든 훅 호출 이후로 이동
 
   // 전체 클럽 수
   const clubsCollection = useMemoFirebase(
@@ -65,10 +50,7 @@ export default function FederationAdminDashboard() {
   
   // 디버깅: 클럽 데이터
 
-  // 에러 처리
-  if (clubsError) {
-    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
-  }
+  // 에러 처리는 모든 훅 호출 이후로 이동
 
   // 전체 대회
   const competitionsCollection = useMemoFirebase(
@@ -79,10 +61,7 @@ export default function FederationAdminDashboard() {
   
   // 디버깅: 대회 데이터
 
-  // 에러 처리
-  if (competitionsError) {
-    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
-  }
+  // 에러 처리는 모든 훅 호출 이후로 이동
 
   // 위원회
   const committeesCollection = useMemoFirebase(
@@ -121,6 +100,25 @@ export default function FederationAdminDashboard() {
     isCompetitionsLoading,
     isCommitteesLoading
   );
+
+  if (redirectToDash || redirectToLogin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // 에러 처리 (모든 훅 이후)
+  if (membersError) {
+    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
+  }
+  if (clubsError) {
+    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
+  }
+  if (competitionsError) {
+    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
+  }
 
   if (isLoading) {
     return (

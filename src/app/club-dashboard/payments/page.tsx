@@ -1,7 +1,7 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -26,6 +26,7 @@ const statusLabels = {
   completed: '입금 완료',
   failed: '실패',
   refunded: '환불',
+  cancelled: '취소',
 };
 
 const statusColors = {
@@ -33,6 +34,7 @@ const statusColors = {
   completed: 'default',
   failed: 'destructive',
   refunded: 'outline',
+  cancelled: 'outline',
 } as const;
 
 const typeLabels = {
@@ -108,19 +110,52 @@ export default function PaymentsPage() {
   }, [members]);
 
   // Get member category
-  const getMemberCategory = (memberId?: string): 'adult' | 'child' | null => {
+  const getMemberCategory = useCallback((memberId?: string): 'adult' | 'child' | null => {
     if (!memberId) return null;
     const member = memberMap.get(memberId);
     if (!member) return null;
     return member.memberCategory || (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
-  };
+  }, [memberMap]);
 
   // Filter payments by category
   const filteredPayments = useMemo(() => {
     if (!payments) return [];
     if (categoryFilter === 'all') return payments;
     return payments.filter(p => getMemberCategory(p.memberId) === categoryFilter);
-  }, [payments, categoryFilter, memberMap]);
+  }, [payments, categoryFilter, getMemberCategory]);
+
+  // Statistics by category (moved above early return to avoid conditional hook warning)
+  const stats = useMemo(() => {
+    if (!payments) return { all: { pending: 0, completed: 0, total: 0 }, adult: { pending: 0, completed: 0, total: 0 }, child: { pending: 0, completed: 0, total: 0 } };
+    const result = {
+      all: { pending: 0, completed: 0, total: 0 },
+      adult: { pending: 0, completed: 0, total: 0 },
+      child: { pending: 0, completed: 0, total: 0 },
+    };
+    payments.forEach(p => {
+      const category = getMemberCategory(p.memberId);
+      const amount = p.amount;
+      if (p.status === 'pending') result.all.pending++;
+      if (p.status === 'completed') {
+        result.all.completed++;
+        result.all.total += amount;
+      }
+      if (category === 'adult') {
+        if (p.status === 'pending') result.adult.pending++;
+        if (p.status === 'completed') {
+          result.adult.completed++;
+          result.adult.total += amount;
+        }
+      } else if (category === 'child') {
+        if (p.status === 'pending') result.child.pending++;
+        if (p.status === 'completed') {
+          result.child.completed++;
+          result.child.total += amount;
+        }
+      }
+    });
+    return result;
+  }, [payments, getMemberCategory]);
 
   const handleVerify = async (payment: Payment, approved: boolean) => {
     if (!firestore || !user) return;
@@ -189,6 +224,8 @@ export default function PaymentsPage() {
         category: transactionCategory,
         amount,
         description: transactionDescription,
+        currency: 'KRW',
+        status: 'pending',
         date: transactionDate,
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
@@ -337,45 +374,7 @@ export default function PaymentsPage() {
   const pendingPayments = filteredPayments.filter(p => p.status === 'pending');
   const completedPayments = filteredPayments.filter(p => p.status === 'completed');
 
-  // Statistics by category
-  const stats = useMemo(() => {
-    if (!payments) return { all: { pending: 0, completed: 0, total: 0 }, adult: { pending: 0, completed: 0, total: 0 }, child: { pending: 0, completed: 0, total: 0 } };
-    
-    const result = {
-      all: { pending: 0, completed: 0, total: 0 },
-      adult: { pending: 0, completed: 0, total: 0 },
-      child: { pending: 0, completed: 0, total: 0 },
-    };
-
-    payments.forEach(p => {
-      const category = getMemberCategory(p.memberId);
-      const amount = p.amount;
-
-      // All
-      if (p.status === 'pending') result.all.pending++;
-      if (p.status === 'completed') {
-        result.all.completed++;
-        result.all.total += amount;
-      }
-
-      // By category
-      if (category === 'adult') {
-        if (p.status === 'pending') result.adult.pending++;
-        if (p.status === 'completed') {
-          result.adult.completed++;
-          result.adult.total += amount;
-        }
-      } else if (category === 'child') {
-        if (p.status === 'pending') result.child.pending++;
-        if (p.status === 'completed') {
-          result.child.completed++;
-          result.child.total += amount;
-        }
-      }
-    });
-
-    return result;
-  }, [payments, memberMap]);
+  // (stats defined above)
 
   // 카테고리 라벨
   const categoryLabels: Record<TransactionCategory, string> = {
@@ -551,11 +550,11 @@ export default function PaymentsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={statusColors[payment.status]}>
+                      <Badge variant={statusColors[payment.status as keyof typeof statusColors]}>
                         {statusLabels[payment.status]}
                       </Badge>
                       <Badge variant="outline">
-                        {typeLabels[payment.type]}
+                        {typeLabels[(payment.type ?? 'other') as keyof typeof typeLabels]}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
@@ -623,11 +622,11 @@ export default function PaymentsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={statusColors[payment.status]}>
+                    <Badge variant={statusColors[payment.status as keyof typeof statusColors]}>
                       {statusLabels[payment.status]}
                     </Badge>
                     <Badge variant="outline">
-                      {typeLabels[payment.type]}
+                      {typeLabels[(payment.type ?? 'other') as keyof typeof typeLabels]}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">

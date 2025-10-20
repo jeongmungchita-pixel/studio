@@ -56,10 +56,6 @@ service cloud.firestore {
       return isClubOwner() || isClubManager() || isCoach();
     }
     
-    function isMember() {
-      return isAuthenticated() && getUserData().role == 'MEMBER';
-    }
-    
     function isAdmin() {
       return isSuperAdmin() || isFederationAdmin();
     }
@@ -183,7 +179,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       
       // 생성: 누구나 가능 (가입 신청은 비회원도 가능)
-      allow create: if true;
+      allow create: if true && !("approvedBy" in request.resource.data) && !("approvedAt" in request.resource.data);
       
       // 수정/삭제: 관리자만
       allow update, delete: if isAdmin();
@@ -227,7 +223,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
       
       // 생성: 누구나 (회원 가입 신청)
-      allow create: if true;
+      allow create: if true && !("approvedBy" in request.resource.data) && !("approvedAt" in request.resource.data);
       
       // 수정/삭제: 관리자 또는 해당 클럽 스태프
       allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
@@ -239,7 +235,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
       
       // 생성: 누구나
-      allow create: if true;
+      allow create: if true && !("approvedBy" in request.resource.data) && !("approvedAt" in request.resource.data);
       
       // 수정/삭제: 관리자 또는 해당 클럽 스태프
       allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
@@ -251,7 +247,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
       
       // 생성: 누구나
-      allow create: if true;
+      allow create: if true && !("approvedBy" in request.resource.data) && !("approvedAt" in request.resource.data);
       
       // 수정/삭제: 관리자 또는 해당 클럽 스태프
       allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
@@ -288,17 +284,23 @@ service cloud.firestore {
     
     match /gym_classes/{classId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
     
     match /classes/{classId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
     
     match /pass_templates/{templateId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
 
     // ============================================
@@ -306,8 +308,10 @@ service cloud.firestore {
     // ============================================
     
     match /media/{mediaId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow read: if isAdmin() || (isAuthenticated() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
 
     // ============================================
@@ -315,30 +319,38 @@ service cloud.firestore {
     // ============================================
     
     match /payments/{paymentId} {
-      allow read: if isAdmin() || isClubStaff();
-      allow create, update: if isAdmin() || isClubStaff();
+      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
       allow delete: if isAdmin();
     }
     
     match /financial_transactions/{transactionId} {
       allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
-      allow create: if isAdmin() || isClubStaff();
-      allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
     
     match /incomes/{incomeId} {
-      allow read: if isAdmin() || isClubStaff();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
     
     match /expenses/{expenseId} {
-      allow read: if isAdmin() || isClubStaff();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
     
     match /budgets/{budgetId} {
-      allow read: if isAdmin() || isClubStaff();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
 
     // ============================================
@@ -346,13 +358,15 @@ service cloud.firestore {
     // ============================================
     
     match /announcements/{announcementId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      allow read: if isAdmin() || belongsToClub(resource.data.clubId);
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
+      allow update: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId) && !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      allow delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
     }
     
-    match /messageHistory/{messageId} {
-      allow read: if isAdmin() || isClubStaff();
-      allow create: if isAdmin() || isClubStaff();
+    match /message_history/{messageId} {
+      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      allow create: if isAdmin() || (isClubStaff() && belongsToClub(request.resource.data.clubId));
       allow update, delete: if isAdmin();
     }
 
