@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 import './globals.css';
 import { RootLayoutClient } from './layout-client';
 import { PT_Sans } from 'next/font/google';
@@ -12,8 +12,15 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: 'KGF 넥서스',
   description: '대한체조협회 관리 플랫폼',
-  themeColor: '#667eea',
   manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
+  themeColor: '#667eea',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 const ptSans = PT_Sans({
@@ -29,9 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-      </head>
+      <head />
       <body className={`${ptSans.className} font-body antialiased`}>
         <RootLayoutClient>{children}</RootLayoutClient>
       </body>
