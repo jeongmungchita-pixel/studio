@@ -17,7 +17,6 @@ export * from './club';
 export * from './business';
 
 // BEFS Hybrid Agent API
-export * from './befs';
 
 // 공지사항 시스템
 export * from './announcement';

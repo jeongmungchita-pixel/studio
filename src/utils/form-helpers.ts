@@ -136,19 +136,27 @@ export const commonValidationRules = {
     return dateRegex.test(value) ? null : '올바른 날짜 형식(YYYY-MM-DD)이 아닙니다.';
   },
 
+  parseLocalYmd: (value: string) => {
+    const [y, m, d] = value.split('-').map((v) => parseInt(v, 10));
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d, 0, 0, 0, 0);
+  },
+
   futureDate: (value: unknown) => {
     if (typeof value !== 'string' || value.trim() === '') return null;
-    const inputDate = new Date(value);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const inputDate = commonValidationRules.parseLocalYmd(value);
+    if (!inputDate) return '올바른 날짜 형식(YYYY-MM-DD)이 아닙니다.';
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     return inputDate >= today ? null : '오늘 이후의 날짜를 선택해주세요.';
   },
 
   pastDate: (value: unknown) => {
     if (typeof value !== 'string' || value.trim() === '') return null;
-    const inputDate = new Date(value);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
+    const inputDate = commonValidationRules.parseLocalYmd(value);
+    if (!inputDate) return '올바른 날짜 형식(YYYY-MM-DD)이 아닙니다.';
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     return inputDate <= today ? null : '오늘 이전의 날짜를 선택해주세요.';
   }
 };

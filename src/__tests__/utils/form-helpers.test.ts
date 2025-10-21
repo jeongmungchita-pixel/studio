@@ -118,8 +118,11 @@ describe('Form Helpers', () => {
     });
 
     it('should validate child birth date', () => {
-      const today = new Date().toISOString().split('T')[0];
-      const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      const now = new Date();
+      const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const futureLocal = new Date(todayLocal.getTime() + 24 * 60 * 60 * 1000);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const futureDate = `${futureLocal.getFullYear()}-${pad(futureLocal.getMonth() + 1)}-${pad(futureLocal.getDate())}`;
       
       expect(childValidationRules.birthDate('')).toBe('필수 입력 항목입니다.');
       expect(childValidationRules.birthDate('invalid')).toBe('올바른 날짜 형식(YYYY-MM-DD)이 아닙니다.');

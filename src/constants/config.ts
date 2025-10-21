@@ -5,19 +5,7 @@
 // ============================================
 
 // API 서버 설정
-export const API_CONFIG = {
-  BEFS_AGENT: {
-    BASE_URL: process.env.NEXT_PUBLIC_BEFS_API_URL || 'http://127.0.0.1:8765',
-    VERSION: '4.5',
-    ENDPOINTS: {
-      HEALTH: '/health',
-      SUMMARY: '/summary',
-      TASKS: '/tasks',
-      TASK_BY_ID: (id: number) => `/tasks/${id}`,
-    },
-    TIMEOUT: 10000, // 10초
-  },
-} as const;
+
 
 // 앱 기본 정보
 export const APP_CONFIG = {

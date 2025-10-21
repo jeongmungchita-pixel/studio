@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/firebase/admin';
+export const runtime = 'nodejs';
 
 // 삭제할 컬렉션 목록
 const COLLECTIONS_TO_DELETE = [

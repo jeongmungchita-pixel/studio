@@ -25,6 +25,10 @@ export default function PendingApprovalPage() {
     if (!auth) return;
     
     try {
+      await fetch('/api/session/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
       await signOut(auth);
       toast({
         title: '로그아웃 완료',

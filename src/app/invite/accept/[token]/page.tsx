@@ -139,6 +139,26 @@ export default function FederationAdminSignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      {
+        const idToken = await user.getIdToken();
+        const resp = await fetch('/api/session/login', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: '{}',
+        });
+        if (!resp.ok) {
+          toast({
+            variant: 'destructive',
+            title: '세션 설정 실패',
+            description: '잠시 후 다시 시도해주세요.',
+          });
+          return;
+        }
+      }
+
       // 2. Firestore에 사용자 프로필 생성
       await setDoc(doc(firestore, 'users', user.uid), {
         id: user.uid,
@@ -202,6 +222,26 @@ export default function FederationAdminSignupPage() {
       // 1. 로그인
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      {
+        const idToken = await user.getIdToken();
+        const resp = await fetch('/api/session/login', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: '{}',
+        });
+        if (!resp.ok) {
+          toast({
+            variant: 'destructive',
+            title: '세션 설정 실패',
+            description: '잠시 후 다시 시도해주세요.',
+          });
+          return;
+        }
+      }
 
       // 2. 사용자 프로필 업데이트 (연맹 관리자 권한 부여)
       const userDocRef = doc(firestore, 'users', user.uid);

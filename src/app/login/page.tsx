@@ -72,6 +72,10 @@ export default function LoginPage() {
     sessionStorage.clear();
     
     try {
+      await fetch('/api/session/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
       if (auth) {
         await signOut(auth);
       }
@@ -89,6 +93,26 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
+      
+      {
+        const idToken = await user.getIdToken();
+        const resp = await fetch('/api/session/login', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: '{}',
+        });
+        if (!resp.ok) {
+          toast({
+            variant: 'destructive',
+            title: '세션 설정 실패',
+            description: '잠시 후 다시 시도해주세요.',
+          });
+          return;
+        }
+      }
       
       // 사용자 프로필 가져오기
       const userDoc = await getDoc(doc(firestore, 'users', user.uid));
@@ -128,6 +152,25 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
+      {
+        const idToken = await user.getIdToken();
+        const resp = await fetch('/api/session/login', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: '{}',
+        });
+        if (!resp.ok) {
+          toast({
+            variant: 'destructive',
+            title: '세션 설정 실패',
+            description: '잠시 후 다시 시도해주세요.',
+          });
+          return;
+        }
+      }
       
       // 사용자 프로필 가져오기
       const userDoc = await getDoc(doc(firestore, 'users', user.uid));

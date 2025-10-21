@@ -59,6 +59,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
   }, [user, isUserLoading, pathname, router]);
 
   const handleLogout = async () => {
+    try {
+      await fetch('/api/session/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch {}
     if (auth) {
       await signOut(auth);
       router.push('/login');

@@ -128,7 +128,7 @@ export function middleware(request: NextRequest) {
   }
 
   // 인증이 필요한 경로 보호
-  const protectedPaths = ['/admin', '/club-dashboard', '/my-profile'];
+  const protectedPaths = ['/admin', '/club-dashboard', '/my-profile', '/super-admin', '/dashboard'];
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
 
   if (isProtectedPath) {
