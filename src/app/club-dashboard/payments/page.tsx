@@ -1,16 +1,16 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Payment, Member, FinancialTransaction, TransactionType, TransactionCategory } from '@/types';
+import { Payment, Member, FinancialTransaction } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle2, XCircle, Clock, DollarSign, CreditCard, User, Baby, Users, TrendingUp, TrendingDown, Split, Undo2 } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, DollarSign, CreditCard, User, Baby, Users, TrendingUp, TrendingDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ const statusLabels = {
   completed: '입금 완료',
   failed: '실패',
   refunded: '환불',
+  cancelled: '취소',
 };
 
 const statusColors = {
@@ -33,13 +34,14 @@ const statusColors = {
   completed: 'default',
   failed: 'destructive',
   refunded: 'outline',
+  cancelled: 'outline',
 } as const;
 
 const typeLabels = {
   pass: '이용권',
   event: '이벤트',
-  competition: '시합',
-  level_test: '레벨테스트',
+  class: '수업',
+  merchandise: '용품',
   other: '기타',
 };
 
@@ -54,16 +56,29 @@ export default function PaymentsPage() {
   
   // Transaction dialogs
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-  const [isSplitDialogOpen, setIsSplitDialogOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<FinancialTransaction | null>(null);
-  
+
+  type TransactionTypeLocal = 'income' | 'expense';
+  type TransactionCategoryLocal =
+    | 'membership_fee'
+    | 'event_fee'
+    | 'competition_fee'
+    | 'sponsorship'
+    | 'other_income'
+    | 'facility_rent'
+    | 'equipment'
+    | 'salary'
+    | 'utility'
+    | 'marketing'
+    | 'maintenance'
+    | 'other_expense';
+
   // Transaction form
-  const [transactionType, setTransactionType] = useState<TransactionType>('income');
-  const [transactionCategory, setTransactionCategory] = useState<TransactionCategory>('other_income');
+  const [transactionType, setTransactionType] = useState<TransactionTypeLocal>('income');
+  const [transactionCategory, setTransactionCategory] = useState<TransactionCategoryLocal>('other_income');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionDescription, setTransactionDescription] = useState('');
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
-  const [splitMonths, setSplitMonths] = useState('1');
+  
 
   // Fetch bank account
   const bankAccountQuery = useMemoFirebase(
@@ -108,19 +123,19 @@ export default function PaymentsPage() {
   }, [members]);
 
   // Get member category
-  const getMemberCategory = (memberId?: string): 'adult' | 'child' | null => {
+  const getMemberCategory = useCallback((memberId?: string): 'adult' | 'child' | null => {
     if (!memberId) return null;
     const member = memberMap.get(memberId);
     if (!member) return null;
     return member.memberCategory || (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
-  };
+  }, [memberMap]);
 
   // Filter payments by category
   const filteredPayments = useMemo(() => {
     if (!payments) return [];
     if (categoryFilter === 'all') return payments;
     return payments.filter(p => getMemberCategory(p.memberId) === categoryFilter);
-  }, [payments, categoryFilter, memberMap]);
+  }, [payments, categoryFilter, getMemberCategory]);
 
   const handleVerify = async (payment: Payment, approved: boolean) => {
     if (!firestore || !user) return;
@@ -131,15 +146,15 @@ export default function PaymentsPage() {
         status: approved ? 'completed' : 'failed',
         verifiedBy: user.uid,
         verifiedAt: new Date().toISOString(),
-        paidAt: approved ? new Date().toISOString() : undefined,
+        paymentDate: approved ? new Date().toISOString() : undefined,
       });
 
       // 승인 시 이용권 활성화 및 회원 정보 업데이트
-      if (approved && payment.type === 'pass' && payment.relatedId) {
+      if (approved && payment.targetType === 'pass' && payment.targetId) {
         const now = new Date();
         
         // 이용권 활성화
-        await updateDoc(doc(firestore, 'member_passes', payment.relatedId), {
+        await updateDoc(doc(firestore, 'member_passes', payment.targetId), {
           status: 'active',
           startDate: now.toISOString(),
           updatedAt: now.toISOString(),
@@ -148,7 +163,7 @@ export default function PaymentsPage() {
         // 회원의 activePassId 업데이트
         if (payment.memberId) {
           await updateDoc(doc(firestore, 'members', payment.memberId), {
-            activePassId: payment.relatedId,
+            activePassId: payment.targetId,
             updatedAt: now.toISOString(),
           });
         }
@@ -188,11 +203,14 @@ export default function PaymentsPage() {
         type: transactionType,
         category: transactionCategory,
         amount,
+        currency: 'KRW',
         description: transactionDescription,
         date: transactionDate,
-        createdBy: user.uid,
-        createdAt: new Date().toISOString(),
+        status: 'completed',
         isCancelled: false,
+        createdAt: new Date().toISOString(),
+        recordedBy: user.uid,
+        recordedByName: user.displayName || user.email || '관리자',
       };
 
       await addDoc(collection(firestore, 'financial_transactions'), transactionData);
@@ -214,128 +232,7 @@ export default function PaymentsPage() {
     }
   };
 
-  // 분할 처리
-  const handleSplitTransaction = async () => {
-    if (!firestore || !user || !selectedTransaction) return;
-    
-    const months = parseInt(splitMonths);
-    if (isNaN(months) || months < 2 || months > 12) {
-      toast({ variant: 'destructive', title: '2~12개월 사이로 입력하세요' });
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const { addDoc, writeBatch } = await import('firebase/firestore');
-      const batch = writeBatch(firestore);
-      
-      const monthlyAmount = Math.floor(selectedTransaction.amount / months);
-      const remainder = selectedTransaction.amount - (monthlyAmount * months);
-      
-      const baseDate = new Date(selectedTransaction.date);
-      
-      // 분할 거래 생성
-      for (let i = 0; i < months; i++) {
-        const splitDate = new Date(baseDate);
-        splitDate.setMonth(splitDate.getMonth() + i);
-        
-        const splitAmount = i === 0 ? monthlyAmount + remainder : monthlyAmount;
-        
-        const splitData: Omit<FinancialTransaction, 'id'> = {
-          ...selectedTransaction,
-          amount: splitAmount,
-          date: splitDate.toISOString().split('T')[0],
-          description: `${selectedTransaction.description} (${i + 1}/${months})`,
-          isSplit: true,
-          splitMonths: months,
-          splitParentId: selectedTransaction.id,
-          splitIndex: i + 1,
-          createdAt: new Date().toISOString(),
-        };
-        
-        const newDocRef = doc(collection(firestore, 'financial_transactions'));
-        batch.set(newDocRef, splitData);
-      }
-      
-      // 원본 거래 취소 처리
-      batch.update(doc(firestore, 'financial_transactions', selectedTransaction.id), {
-        isCancelled: true,
-        cancelledAt: new Date().toISOString(),
-        cancelledBy: user.uid,
-      });
-      
-      await batch.commit();
-
-      toast({
-        title: '분할 완료',
-        description: `${months}개월로 분할되었습니다.`,
-      });
-
-      setIsSplitDialogOpen(false);
-      setSelectedTransaction(null);
-      setSplitMonths('1');
-    } catch (error) {
-      toast({ variant: 'destructive', title: '분할 실패' });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // 분할 되돌리기
-  const handleUndoSplit = async (transaction: FinancialTransaction) => {
-    if (!firestore || !user || !transaction.splitParentId) return;
-
-    setIsProcessing(true);
-    try {
-      const { writeBatch, getDocs } = await import('firebase/firestore');
-      const batch = writeBatch(firestore);
-      
-      // 분할된 모든 거래 찾기
-      const splitQuery = query(
-        collection(firestore, 'financial_transactions'),
-        where('splitParentId', '==', transaction.splitParentId),
-        where('isCancelled', '==', false)
-      );
-      const splitSnapshot = await getDocs(splitQuery);
-      
-      // 분할된 거래들 취소
-      splitSnapshot.docs.forEach(docSnap => {
-        batch.update(docSnap.ref, {
-          isCancelled: true,
-          cancelledAt: new Date().toISOString(),
-          cancelledBy: user.uid,
-        });
-      });
-      
-      // 원본 거래 복원
-      batch.update(doc(firestore, 'financial_transactions', transaction.splitParentId), {
-        isCancelled: false,
-        updatedAt: new Date().toISOString(),
-      });
-      
-      await batch.commit();
-
-      toast({
-        title: '되돌리기 완료',
-        description: '분할이 취소되고 원본 거래가 복원되었습니다.',
-      });
-    } catch (error) {
-      toast({ variant: 'destructive', title: '되돌리기 실패' });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const pendingPayments = filteredPayments.filter(p => p.status === 'pending');
-  const completedPayments = filteredPayments.filter(p => p.status === 'completed');
+  // 분할 기능 제거됨
 
   // Statistics by category
   const stats = useMemo(() => {
@@ -375,10 +272,21 @@ export default function PaymentsPage() {
     });
 
     return result;
-  }, [payments, memberMap]);
+  }, [payments, getMemberCategory]);
+
+  const pendingPayments = filteredPayments.filter(p => p.status === 'pending');
+  const completedPayments = filteredPayments.filter(p => p.status === 'completed');
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // 카테고리 라벨
-  const categoryLabels: Record<TransactionCategory, string> = {
+  const categoryLabels: Record<TransactionCategoryLocal, string> = {
     membership_fee: '회원권',
     event_fee: '이벤트',
     competition_fee: '시합',
@@ -391,6 +299,10 @@ export default function PaymentsPage() {
     marketing: '마케팅',
     maintenance: '유지보수',
     other_expense: '기타 지출',
+  };
+
+  const getCategoryLabel = (cat: string): string => {
+    return categoryLabels[cat as TransactionCategoryLocal] || '기타';
   };
 
   return (
@@ -555,7 +467,7 @@ export default function PaymentsPage() {
                         {statusLabels[payment.status]}
                       </Badge>
                       <Badge variant="outline">
-                        {typeLabels[payment.type]}
+                        {typeLabels[payment.targetType]}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
@@ -579,13 +491,7 @@ export default function PaymentsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {payment.bankTransferInfo && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm font-semibold mb-1">입금 정보</p>
-                    <p className="text-sm">입금자: {payment.bankTransferInfo.depositorName}</p>
-                    <p className="text-sm">입금일: {format(new Date(payment.bankTransferInfo.depositDate), 'PPP', { locale: ko })}</p>
-                  </div>
-                )}
+                
                 <div className="flex gap-2">
                   <Button
                     onClick={() => handleVerify(payment, true)}
@@ -627,7 +533,7 @@ export default function PaymentsPage() {
                       {statusLabels[payment.status]}
                     </Badge>
                     <Badge variant="outline">
-                      {typeLabels[payment.type]}
+                      {typeLabels[payment.targetType]}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
@@ -647,11 +553,7 @@ export default function PaymentsPage() {
                   <p className="text-2xl font-bold text-green-600">
                     {payment.amount.toLocaleString()}원
                   </p>
-                  {payment.paidAt && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      입금 완료: {format(new Date(payment.paidAt), 'M/d')}
-                    </p>
-                  )}
+                  
                 </div>
               </div>
             </CardHeader>
@@ -682,13 +584,8 @@ export default function PaymentsPage() {
                         {transaction.type === 'income' ? <TrendingUp className="inline h-3 w-3 mr-1" /> : <TrendingDown className="inline h-3 w-3 mr-1" />}
                         {transaction.type === 'income' ? '수입' : '지출'}
                       </Badge>
-                      <Badge variant="outline">{categoryLabels[transaction.category]}</Badge>
-                      {transaction.isSplit && (
-                        <Badge variant="secondary">
-                          <Split className="inline h-3 w-3 mr-1" />
-                          분할 {transaction.splitIndex}/{transaction.splitMonths}
-                        </Badge>
-                      )}
+                      <Badge variant="outline">{getCategoryLabel(transaction.category)}</Badge>
+                      
                     </div>
                     <p className="font-medium">{transaction.description}</p>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -699,32 +596,7 @@ export default function PaymentsPage() {
                     <p className={`text-2xl font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                       {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()}원
                     </p>
-                    <div className="flex gap-1 mt-2">
-                      {!transaction.isSplit && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedTransaction(transaction);
-                            setIsSplitDialogOpen(true);
-                          }}
-                        >
-                          <Split className="h-3 w-3 mr-1" />
-                          분할
-                        </Button>
-                      )}
-                      {transaction.isSplit && transaction.splitParentId && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUndoSplit(transaction)}
-                          disabled={isProcessing}
-                        >
-                          <Undo2 className="h-3 w-3 mr-1" />
-                          되돌리기
-                        </Button>
-                      )}
-                    </div>
+                    
                   </div>
                 </div>
               </CardHeader>
@@ -745,7 +617,7 @@ export default function PaymentsPage() {
           <div className="space-y-4 py-4">
             <div>
               <Label>카테고리</Label>
-              <Select value={transactionCategory} onValueChange={(v) => setTransactionCategory(v as TransactionCategory)}>
+              <Select value={transactionCategory} onValueChange={(v) => setTransactionCategory(v as TransactionCategoryLocal)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -810,53 +682,7 @@ export default function PaymentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Split Transaction Dialog */}
-      <Dialog open={isSplitDialogOpen} onOpenChange={setIsSplitDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>수입 분할</DialogTitle>
-            <DialogDescription>
-              {selectedTransaction && (
-                <>
-                  <strong>{selectedTransaction.amount.toLocaleString()}원</strong>을 몇 개월로 분할하시겠습니까?
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>분할 개월 수 (2~12)</Label>
-              <Input
-                type="number"
-                min="2"
-                max="12"
-                value={splitMonths}
-                onChange={(e) => setSplitMonths(e.target.value)}
-              />
-            </div>
-            {selectedTransaction && parseInt(splitMonths) >= 2 && parseInt(splitMonths) <= 12 && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-semibold mb-2">분할 예상</p>
-                <p className="text-sm">
-                  월 {Math.floor(selectedTransaction.amount / parseInt(splitMonths)).toLocaleString()}원 × {splitMonths}개월
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  * 나머지 금액은 첫 달에 포함됩니다
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSplitDialogOpen(false)}>
-              취소
-            </Button>
-            <Button onClick={handleSplitTransaction} disabled={isProcessing}>
-              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              분할하기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Split Transaction Dialog 제거됨 */}
     </main>
   );
 }

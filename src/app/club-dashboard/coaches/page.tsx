@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, addDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, addDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,12 @@ export default function CoachesPage() {
     role: UserRole.ASSISTANT_COACH,
   });
 
+  const emailRegex = /[^@\s]+@[^@\s]+\.[^@\s]+/;
+  const isFormValid =
+    formData.displayName.trim().length > 0 &&
+    emailRegex.test(formData.email) &&
+    !!formData.role;
+
   // Fetch coaches for this club
   const coachesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.clubId) return null;
@@ -44,14 +50,53 @@ export default function CoachesPage() {
 
   const { data: coaches, isLoading: areCoachesLoading } = useCollection<UserProfile>(coachesQuery);
 
+  const sortedCoaches = (coaches || []).slice().sort((a, b) => {
+    // HEAD_COACH 먼저, 그 다음 이름순
+    const roleRank = (u: UserProfile) => (u.role === UserRole.HEAD_COACH ? 0 : 1);
+    const rdiff = roleRank(a) - roleRank(b);
+    if (rdiff !== 0) return rdiff;
+    return (a.displayName || '').localeCompare(b.displayName || '');
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !user?.clubId) return;
 
+    if (!isFormValid) {
+      toast({ variant: 'destructive', title: '입력 확인', description: '이름과 유효한 이메일을 입력하세요.' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // Prevent duplicate pending request
+      const pendingQ = query(
+        collection(firestore, 'coach_requests'),
+        where('clubId', '==', user.clubId),
+        where('email', '==', formData.email),
+        where('status', '==', 'pending')
+      );
+      const pendingSnap = await getDocs(pendingQ);
+      if (!pendingSnap.empty) {
+        toast({ variant: 'destructive', title: '중복 요청', description: '해당 이메일로 대기 중인 코치 요청이 있습니다.' });
+        return;
+      }
+
+      // Prevent creating if already a coach exists
+      const existingCoachQ = query(
+        collection(firestore, 'users'),
+        where('clubId', '==', user.clubId),
+        where('email', '==', formData.email),
+        where('role', 'in', [UserRole.HEAD_COACH, UserRole.ASSISTANT_COACH])
+      );
+      const existingCoachSnap = await getDocs(existingCoachQ);
+      if (!existingCoachSnap.empty) {
+        toast({ variant: 'destructive', title: '이미 등록됨', description: '해당 이메일은 이미 코치로 등록되어 있습니다.' });
+        return;
+      }
+
       // Create coach account request
-      await addDoc(collection(firestore, 'coachRequests'), {
+      await addDoc(collection(firestore, 'coach_requests'), {
         ...formData,
         clubId: user.clubId,
         clubName: user.clubName || '',
@@ -183,7 +228,7 @@ export default function CoachesPage() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   취소
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!isFormValid || isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   요청
                 </Button>
@@ -199,7 +244,7 @@ export default function CoachesPage() {
           <CardDescription>현재 등록된 코치 계정입니다</CardDescription>
         </CardHeader>
         <CardContent>
-          {coaches && coaches.length > 0 ? (
+          {sortedCoaches.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -212,7 +257,7 @@ export default function CoachesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {coaches.map((coach) => (
+                {sortedCoaches.map((coach) => (
                   <TableRow key={coach.uid}>
                     <TableCell className="font-medium">{coach.displayName}</TableCell>
                     <TableCell>{coach.email}</TableCell>
@@ -221,26 +266,34 @@ export default function CoachesPage() {
                       <Badge variant="secondary">{getRoleName(coach.role)}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={coach.status === 'approved' ? 'default' : 'secondary'}>
-                        {coach.status === 'approved' ? '활성' : '대기중'}
+                      <Badge variant={
+                        coach.status === 'active' ? 'default' :
+                        coach.status === 'pending' ? 'secondary' : 'outline'
+                      }>
+                        {coach.status === 'active' ? '활성' : coach.status === 'pending' ? '대기중' : '비활성'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(coach.uid)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {(user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.FEDERATION_ADMIN) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(coach.uid)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-12">
+            <div className="text-center py-12 space-y-4">
               <p className="text-slate-500">등록된 코치가 없습니다</p>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" /> 코치 추가 요청
+              </Button>
             </div>
           )}
         </CardContent>

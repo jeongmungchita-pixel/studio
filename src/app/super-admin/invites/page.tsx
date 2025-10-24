@@ -11,11 +11,23 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Mail, Phone, Calendar, XCircle, Clock, Copy, Trash2 } from 'lucide-react';
-import { FederationAdminInvite, UserRole } from '@/types';
+import { UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+
+// 로컬 타입: 연맹 관리자 초대
+interface FederationAdminInvite {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  invitedAt: string;
+  expiresAt: string;
+  inviteToken: string;
+}
 
 const statusLabels = {
   pending: '대기중',
@@ -124,7 +136,7 @@ export default function InvitesManagementPage() {
     return (
       invite.name.toLowerCase().includes(searchLower) ||
       invite.email.toLowerCase().includes(searchLower) ||
-      invite.phoneNumber.toLowerCase().includes(searchLower)
+      (invite.phoneNumber?.toLowerCase() || '').includes(searchLower)
     );
   });
 

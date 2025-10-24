@@ -75,18 +75,25 @@ export default function ClubPassesPage() {
       const batch = writeBatch(firestore);
 
       const newPassRef = doc(collection(firestore, 'member_passes'));
+      const now = new Date();
+      const end = new Date(now);
+      end.setMonth(end.getMonth() + 1);
       const newPass: MemberPass = {
         id: newPassRef.id,
+        templateId: 'manual',
+        templateName: '수동 발급 이용권',
         memberId: selectedMember.id,
+        memberName: selectedMember.name,
         clubId: selectedMember.clubId,
-        passType: 'manual-issue',
-        passName: '수동 발급 이용권',
-        startDate: new Date().toISOString(),
-        totalSessions: 5,
-        attendableSessions: 4,
+        type: 'session-based',
+        startDate: now.toISOString(),
+        endDate: end.toISOString(),
         remainingSessions: 5,
-        attendanceCount: 0,
+        price: 0,
+        paymentStatus: 'paid',
         status: 'active',
+        usageCount: 0,
+        createdAt: now.toISOString(),
       };
       batch.set(newPassRef, newPass);
 
@@ -112,18 +119,18 @@ export default function ClubPassesPage() {
   };
   
   const getPassStatusBadge = (pass: MemberPass | undefined) => {
-      if (pass && pass.status === 'active') {
-          if (pass.totalSessions !== undefined) {
-            return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
-          }
-           if (pass.endDate) {
-            const remainingDays = Math.ceil((new Date(pass.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-            return <Badge>{`기간권 (${remainingDays > 0 ? `${remainingDays}일 남음` : '만료'})`}</Badge>;
-          }
-          return <Badge>활성 (무제한)</Badge>;
-      }
-      return <Badge variant="secondary">이용권 없음 / 만료</Badge>;
-  }
+    if (!pass) return <Badge variant="secondary">이용권 없음 / 만료</Badge>;
+    if (pass.type === 'session-based') {
+      const used = pass.usageCount ?? 0;
+      const remaining = pass.remainingSessions ?? 0;
+      return <Badge>{`세션권 (사용 ${used}회 / 남은 ${remaining}회)`}</Badge>;
+    }
+    if (pass.endDate) {
+      const remainingDays = Math.ceil((new Date(pass.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      return <Badge>{`기간권 (${remainingDays > 0 ? `${remainingDays}일 남음` : '만료'})`}</Badge>;
+    }
+    return <Badge>활성 (무제한)</Badge>;
+  };
 
   const isLoading = areMembersLoading || arePassesLoading;
 

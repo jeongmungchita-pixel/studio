@@ -109,7 +109,6 @@ export function useUser(): UserHookResult {
                 }
                 
                 defaultProfile = {
-                  id: firebaseUser.uid,
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
                   displayName: approvedRequest.name || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
@@ -119,12 +118,12 @@ export function useUser(): UserHookResult {
                   clubId: clubId || undefined,
                   clubName: approvedRequest.clubName,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                  status: 'approved',
+                  status: 'active',
+                  createdAt: new Date().toISOString(),
                 };
               } else if (approvedRequest && requestType === 'superAdmin') {
                 // 승인된 슈퍼 관리자 신청이 있으면 SUPER_ADMIN으로 설정
                 defaultProfile = {
-                  id: firebaseUser.uid,
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
                   displayName: approvedRequest.name || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
@@ -132,12 +131,12 @@ export function useUser(): UserHookResult {
                   photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
                   role: UserRole.SUPER_ADMIN,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                  status: 'approved',
+                  status: 'active',
+                  createdAt: new Date().toISOString(),
                 };
               } else if (approvedRequest && requestType === 'member') {
                 // 승인된 일반 회원 신청이 있으면 MEMBER로 설정
                 defaultProfile = {
-                  id: firebaseUser.uid,
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
                   displayName: approvedRequest.name || firebaseUser.displayName || firebaseUser.email!.split('@')[0],
@@ -147,19 +146,20 @@ export function useUser(): UserHookResult {
                   clubId: approvedRequest.clubId,
                   clubName: approvedRequest.clubName,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                  status: 'approved',
+                  status: 'active',
+                  createdAt: new Date().toISOString(),
                 };
               } else {
                 // 승인된 요청이 없으면 기본 MEMBER
                 defaultProfile = {
-                  id: firebaseUser.uid,
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
                   displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
                   photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
                   role: UserRole.MEMBER,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                  status: 'approved',
+                  status: 'active',
+                  createdAt: new Date().toISOString(),
                 };
               }
               
@@ -206,7 +206,6 @@ export function useUser(): UserHookResult {
               
               // 세션이 유효하면 기본 프로필 제공
               const basicProfile: UserProfile = {
-                id: firebaseUser.uid,
                 uid: firebaseUser.uid,
                 email: firebaseUser.email!,
                 displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
@@ -214,6 +213,7 @@ export function useUser(): UserHookResult {
                 role: UserRole.MEMBER,
                 provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
                 status: 'pending',
+                createdAt: new Date().toISOString(),
               };
               
               setUser({ 

@@ -19,7 +19,7 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, Trash2, PenTool, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Loader2, Info, User, Baby } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
-import { Club, FamilyRegistrationRequest } from '@/types';
+import { Club } from '@/types';
 
 interface ParentData {
   name: string;
@@ -79,7 +79,7 @@ export default function FamilyRegisterPage() {
   };
 
   const removeParent = (index: number) => setParents(parents.filter((_, i) => i !== index));
-  const updateParent = (index: number, field: keyof ParentData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateParent = (index: number, field: keyof ParentData, value: string | boolean) => {
     const updated = [...parents];
     updated[index] = { ...updated[index], [field]: value };
     setParents(updated);
@@ -90,7 +90,7 @@ export default function FamilyRegisterPage() {
   };
 
   const removeChild = (index: number) => setChildren(children.filter((_, i) => i !== index));
-  const updateChild = (index: number, field: keyof ChildData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateChild = (index: number, field: keyof ChildData, value: string | boolean) => {
     const updated = [...children];
     updated[index] = { ...updated[index], [field]: value };
     setChildren(updated);
@@ -110,7 +110,7 @@ export default function FamilyRegisterPage() {
       toast({ variant: 'destructive', title: '서명 필요', description: '서명을 작성해주세요.' });
       return false;
     }
-    setSignature(signatureRef.current?.toDataURL());
+    setSignature(signatureRef.current?.toDataURL() || '');
     return true;
   };
 
@@ -178,7 +178,7 @@ export default function FamilyRegisterPage() {
       const selectedClub = clubs?.find(c => c.id === clubId);
       if (!selectedClub) throw new Error('클럽을 찾을 수 없습니다.');
 
-      const requestData: Omit<FamilyRegistrationRequest, 'id'> = {
+      const requestData = {
         clubId,
         clubName: selectedClub.name,
         requestType: 'family',
@@ -345,7 +345,7 @@ export default function FamilyRegisterPage() {
                             <Label>성별 *</Label>
                             <RadioGroup 
                               value={parent.gender}
-                              onValueChange={(val) => updateParent(index, 'gender', val)}
+                              onValueChange={(val: string) => updateParent(index, 'gender', val)}
                             >
                               <div className="flex gap-4">
                                 <div className="flex items-center space-x-2">
@@ -441,7 +441,7 @@ export default function FamilyRegisterPage() {
                             <Label>성별 *</Label>
                             <RadioGroup 
                               value={child.gender}
-                              onValueChange={(val) => updateChild(index, 'gender', val)}
+                              onValueChange={(val: string) => updateChild(index, 'gender', val)}
                             >
                               <div className="flex gap-4">
                                 <div className="flex items-center space-x-2">
@@ -459,7 +459,7 @@ export default function FamilyRegisterPage() {
                             <Label>학년 (선택)</Label>
                             <Select 
                               value={child.grade}
-                              onValueChange={(val) => updateChild(index, 'grade', val)}
+                              onValueChange={(val: string) => updateChild(index, 'grade', val)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="학년 선택" />
@@ -527,7 +527,7 @@ export default function FamilyRegisterPage() {
                           <Label>관계 *</Label>
                           <Select 
                             value={externalGuardian.relation}
-                            onValueChange={(val: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => setExternalGuardian({...externalGuardian, relation: val})}
+                            onValueChange={(val: string) => setExternalGuardian({...externalGuardian, relation: val as ExternalGuardianData['relation']})}
                           >
                             <SelectTrigger>
                               <SelectValue />

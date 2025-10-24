@@ -1,5 +1,3 @@
-'use client';
-
 // ============================================
 // 🛣️ 라우트 상수 정의
 // ============================================
@@ -80,6 +78,7 @@ export const ROUTES = {
   MEMBERS: '/members',
   CLUBS: '/clubs',
   COMMITTEES: '/committees',
+  COMMITTEES_NEW: '/committees/new',
   COMPETITIONS: '/competitions',
   EVENTS: '/events',
   LEVEL_TESTS: '/level-tests',
@@ -106,6 +105,7 @@ export const ROUTES = {
   
   // API 엔드포인트
   API: {
+    ROOT: '/api/',
     ADMIN_RESET: '/api/admin/reset-firestore',
   },
   
@@ -134,23 +134,25 @@ export const getRouteWithParams = (route: string, params: Record<string, string>
 
 export const isValidRoute = (path: string): boolean => {
   // 모든 라우트를 평면화하여 확인
-  const allRoutes = Object.values(ROUTES).flat();
   const flatRoutes: string[] = [];
-  
-  const flatten = (obj: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
-    Object.values(obj).forEach(value => {
-      if (typeof value === 'string') {
-        flatRoutes.push(value);
-      } else if (typeof value === 'object') {
+
+  const flatten = (obj: unknown): void => {
+    if (!obj) return;
+    if (typeof obj === 'string') {
+      flatRoutes.push(obj);
+      return;
+    }
+    if (typeof obj === 'object') {
+      Object.values(obj as Record<string, unknown>).forEach((value) => {
         flatten(value);
-      }
-    });
+      });
+    }
   };
-  
+
   flatten(ROUTES);
-  
+
   // 정확한 매치 또는 동적 라우트 매치
-  return flatRoutes.some(route => {
+  return flatRoutes.some((route) => {
     if (route === path) return true;
     // 동적 라우트 패턴 매치 (예: /clubs/[id] -> /clubs/123)
     const pattern = route.replace(/\[([^\]]+)\]/g, '[^/]+');

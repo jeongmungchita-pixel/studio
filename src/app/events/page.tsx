@@ -8,20 +8,18 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { ClubEvent, EventRegistration } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar, DollarSign, Users, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-const eventTypeLabels = {
-  merchandise: '굿즈/티셔츠',
-  uniform: '유니폼',
-  special_class: '특강/캠프',
+const eventTypeLabels: Record<ClubEvent['type'], string> = {
   competition: '대회',
-  event: '행사',
-  other: '기타',
+  workshop: '워크숍',
+  performance: '공연',
+  social: '소셜',
+  training: '훈련',
 };
 
 export default function MemberEventsPage() {
@@ -30,8 +28,7 @@ export default function MemberEventsPage() {
   const { toast } = useToast();
   
   const [selectedEvent, setSelectedEvent] = useState<ClubEvent | null>(null);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
-  const [quantity, setQuantity] = useState(1);
+  
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,7 +39,7 @@ export default function MemberEventsPage() {
     return query(
       collection(firestore, 'events'),
       where('clubId', '==', user.clubId),
-      where('status', '==', 'open'),
+      where('status', '==', 'registration-open'),
       orderBy('registrationEnd', 'asc')
     );
   }, [firestore, user?.clubId]);
@@ -61,37 +58,25 @@ export default function MemberEventsPage() {
   const handleApply = async () => {
     if (!selectedEvent || !firestore || !user) return;
 
-    // Validate options
-    const requiredOptions = selectedEvent.options?.filter(opt => opt.required) || [];
-    for (const opt of requiredOptions) {
-      if (!selectedOptions[opt.name]) {
-        toast({
-          variant: 'destructive',
-          title: '필수 옵션 선택',
-          description: `${opt.name}을(를) 선택해주세요.`
-        });
-        return;
-      }
-    }
-
     setIsSubmitting(true);
     try {
-      const totalPrice = selectedEvent.price * quantity;
+      const paymentAmount = selectedEvent.registrationFee ?? 0;
       
       // Create registration
       const regRef = doc(collection(firestore, 'event_registrations'));
       const registrationData: EventRegistration = {
         id: regRef.id,
         eventId: selectedEvent.id,
+        eventTitle: selectedEvent.title,
         memberId: user.uid,
         memberName: user.displayName || user.email || '회원',
         clubId: selectedEvent.clubId,
-        selectedOptions,
-        quantity,
-        totalPrice,
-        paymentStatus: 'pending',
         registeredAt: new Date().toISOString(),
-        notes,
+        status: 'registered',
+        paymentStatus: 'pending',
+        paymentAmount,
+        notes: notes || undefined,
+        createdAt: new Date().toISOString(),
       };
       
       await setDoc(regRef, registrationData);
@@ -107,8 +92,6 @@ export default function MemberEventsPage() {
       });
       
       setSelectedEvent(null);
-      setSelectedOptions({});
-      setQuantity(1);
       setNotes('');
     } catch (error) {
       toast({
@@ -122,7 +105,7 @@ export default function MemberEventsPage() {
   };
 
   const isAlreadyRegistered = (eventId: string) => {
-    return myRegistrations?.some(reg => reg.eventId === eventId && reg.paymentStatus !== 'cancelled');
+    return myRegistrations?.some(reg => reg.eventId === eventId);
   };
 
   if (areEventsLoading) {
@@ -154,21 +137,21 @@ export default function MemberEventsPage() {
               return (
                 <div key={reg.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <p className="font-semibold">{event?.title || '이벤트'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {Object.entries(reg.selectedOptions).map(([k, v]) => `${k}: ${v}`).join(', ')}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      수량: {reg.quantity}개 | {reg.totalPrice.toLocaleString()}원
-                    </p>
+                    <p className="font-semibold">{event?.title || reg.eventTitle || '이벤트'}</p>
+                    {reg.notes && (
+                      <p className="text-sm text-muted-foreground">메모: {reg.notes}</p>
+                    )}
+                    {typeof reg.paymentAmount === 'number' && (
+                      <p className="text-sm text-muted-foreground">금액: {reg.paymentAmount.toLocaleString()}원</p>
+                    )}
                   </div>
                   <Badge variant={
                     reg.paymentStatus === 'paid' ? 'default' :
-                    reg.paymentStatus === 'cancelled' ? 'destructive' :
+                    reg.paymentStatus === 'refunded' ? 'outline' :
                     'secondary'
                   }>
                     {reg.paymentStatus === 'paid' ? '결제완료' :
-                     reg.paymentStatus === 'cancelled' ? '취소' : '대기중'}
+                     reg.paymentStatus === 'refunded' ? '환불' : '대기중'}
                   </Badge>
                 </div>
               );
@@ -188,7 +171,7 @@ export default function MemberEventsPage() {
             <Card key={event.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
-                  <Badge>{eventTypeLabels[event.eventType]}</Badge>
+                  <Badge>{eventTypeLabels[event.type]}</Badge>
                   {isRegistered && (
                     <Badge variant="default">
                       <CheckCircle className="h-3 w-3 mr-1" />
@@ -208,8 +191,7 @@ export default function MemberEventsPage() {
                     가격
                   </span>
                   <span className="font-semibold">
-                    {event.price.toLocaleString()}원
-                    {event.priceUnit === 'per_person' ? '/인' : '/개'}
+                    {(event.registrationFee ?? 0).toLocaleString()}원
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -232,11 +214,7 @@ export default function MemberEventsPage() {
                   </span>
                 </div>
                 
-                {event.minParticipants && event.currentParticipants < event.minParticipants && (
-                  <p className="text-xs text-amber-600">
-                    최소 {event.minParticipants}명 이상 신청 시 진행됩니다
-                  </p>
-                )}
+                {/* 최소 참가자 로직 제거: 타입에 존재하지 않음 */}
                 
                 <Button
                   className="w-full"
@@ -271,37 +249,9 @@ export default function MemberEventsPage() {
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* Options */}
-            {selectedEvent?.options?.map((option) => (
-              <div key={option.id} className="space-y-2">
-                <label className="text-sm font-medium">
-                  {option.name} {option.required && <span className="text-red-600">*</span>}
-                </label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={selectedOptions[option.name] || ''}
-                  onChange={(e) => setSelectedOptions({ ...selectedOptions, [option.name]: e.target.value })}
-                >
-                  <option value="">선택하세요</option>
-                  {option.values.map((value) => (
-                    <option key={value} value={value}>{value}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
+            {/* 선택 옵션 로직 제거: 타입에 존재하지 않음 */}
 
-            {/* Quantity */}
-            {selectedEvent?.allowMultipleQuantity && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">수량</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                />
-              </div>
-            )}
+            {/* 수량 로직 제거: 타입에 존재하지 않음 */}
 
             {/* Notes */}
             <div className="space-y-2">
@@ -318,7 +268,7 @@ export default function MemberEventsPage() {
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <span className="font-semibold">총 금액</span>
               <span className="text-2xl font-bold">
-                {selectedEvent && (selectedEvent.price * quantity).toLocaleString()}원
+                {selectedEvent ? (selectedEvent.registrationFee ?? 0).toLocaleString() : 0}원
               </span>
             </div>
           </div>

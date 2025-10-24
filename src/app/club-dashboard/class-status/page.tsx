@@ -15,7 +15,7 @@ import { differenceInYears } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
-type AttendanceStatus = 'present' | 'absent' | 'excused' | null;
+type AttendanceStatus = 'present' | 'absent' | 'excused' | 'late' | null;
 
 const daysOfWeek = ['전체', '월', '화', '수', '목', '금', '토', '일'] as const;
 
@@ -57,17 +57,28 @@ export default function ClassStatusPage() {
   }, [firestore, user?.clubId]);
   const { data: todayAttendance } = useCollection<Attendance>(todayAttendanceQuery);
 
+  const dayLabelToNumber = (label: string): number | null => {
+    const map: Record<string, number> = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
+    return map[label] ?? null;
+  };
+
+  const numberToDayLabel = (num: number): string => {
+    const map = ['일', '월', '화', '수', '목', '금', '토'] as const;
+    return map[num] ?? '';
+  };
+
   // Filter classes by selected day
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
     if (selectedDay === '전체') return classes;
-    return classes.filter(cls => cls.dayOfWeek === selectedDay);
+    const dayNum = dayLabelToNumber(selectedDay);
+    if (dayNum === null) return classes;
+    return classes.filter(cls => cls.schedule?.some(s => s.dayOfWeek === dayNum));
   }, [classes, selectedDay]);
 
   // Get members for each class
-  const getClassMembers = (classItem: GymClass) => {
-    if (!allMembers) return [];
-    return allMembers.filter(member => classItem.memberIds.includes(member.id));
+  const getClassMembers = (_classItem: GymClass): Member[] => {
+    return [] as Member[];
   };
 
   const getMemberAge = (dateOfBirth?: string) => {
@@ -93,10 +104,7 @@ export default function ClassStatusPage() {
     // Initialize attendance states for all members
     const initialStates: Record<string, AttendanceStatus> = {};
     const initialNotes: Record<string, string> = {};
-    classItem.memberIds.forEach(memberId => {
-      initialStates[memberId] = null;
-      initialNotes[memberId] = '';
-    });
+    // 등록 회원 목록 연동 전까지 비워둡니다
     setAttendanceStates(initialStates);
     setAttendanceNotes(initialNotes);
   };
@@ -118,13 +126,17 @@ export default function ClassStatusPage() {
         .map(async ([memberId, status]) => {
           const attendanceRef = doc(collection(firestore, 'attendance'));
           const member = allMembers?.find(m => m.id === memberId);
+          const nowIso = new Date().toISOString();
           const attendanceData: Attendance = {
             id: attendanceRef.id,
-            memberId: memberId,
+            memberId,
+            memberName: member?.name || '회원',
             clubId: user.clubId!,
-            date: new Date().toISOString(),
-            status: status as 'present' | 'absent' | 'excused',
-            passId: member?.activePassId || '',
+            date: nowIso.split('T')[0],
+            checkInTime: nowIso,
+            status: (status as Exclude<AttendanceStatus, null>) || 'present',
+            recordedBy: user.uid,
+            createdAt: nowIso,
           };
           return setDoc(attendanceRef, attendanceData);
         });
@@ -174,7 +186,7 @@ export default function ClassStatusPage() {
             size="sm"
             onClick={() => setViewMode('calendar')}
           >
-            <CalendarIcon className="h-4 w-4 mr-2" />
+            <Calendar className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">캘린더</span>
           </Button>
         </div>
@@ -206,7 +218,8 @@ export default function ClassStatusPage() {
         /* Calendar View */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
           {['월', '화', '수', '목', '금', '토', '일'].map((day) => {
-            const dayClasses = classes?.filter(c => c.dayOfWeek === day) || [];
+            const dayNum = dayLabelToNumber(day) ?? -1;
+            const dayClasses = classes?.filter(c => c.schedule?.some(s => s.dayOfWeek === dayNum)) || [];
             return (
               <Card key={day} className="min-h-[200px]">
                 <CardHeader className="pb-3">
@@ -225,10 +238,12 @@ export default function ClassStatusPage() {
                           onClick={() => handleClassClick(classItem)}
                         >
                           <p className="font-semibold text-sm">{classItem.name}</p>
-                          <p className="text-xs text-muted-foreground">{classItem.time}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {classItem.schedule && classItem.schedule[0] ? `${classItem.schedule[0].startTime}~${classItem.schedule[0].endTime}` : '시간 미정'}
+                          </p>
                           <div className="flex items-center gap-1 mt-1">
                             <Users className="h-3 w-3" />
-                            <span className="text-xs">{classMembers.length}/{classItem.capacity}</span>
+                            <span className="text-xs">{classItem.currentEnrollment}/{classItem.maxCapacity}</span>
                           </div>
                         </div>
                       );
@@ -254,13 +269,13 @@ export default function ClassStatusPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xl">{classItem.name}</CardTitle>
                     <Badge variant="secondary" className="ml-2">
-                      {classItem.dayOfWeek}요일 {classItem.time}
+                      {classItem.schedule && classItem.schedule[0] ? `${numberToDayLabel(classItem.schedule[0].dayOfWeek)}요일 ${classItem.schedule[0].startTime}~${classItem.schedule[0].endTime}` : '스케줄 미정'}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                     <Users className="h-4 w-4" />
                     <span>
-                      {classMembers.length} / {classItem.capacity}명
+                      {classItem.currentEnrollment} / {classItem.maxCapacity}명
                     </span>
                   </div>
                 </CardHeader>
@@ -307,7 +322,7 @@ export default function ClassStatusPage() {
               {selectedClass?.name} - 출석 체크
             </DialogTitle>
             <DialogDescription>
-              {selectedClass?.dayOfWeek}요일 {selectedClass?.time} | 각 회원의 출석 상태를 선택하세요
+              {selectedClass?.schedule && selectedClass?.schedule[0] ? `${numberToDayLabel(selectedClass.schedule[0].dayOfWeek)}요일 ${selectedClass.schedule[0].startTime}~${selectedClass.schedule[0].endTime}` : '스케줄 미정'} | 각 회원의 출석 상태를 선택하세요
             </DialogDescription>
           </DialogHeader>
           
@@ -329,10 +344,12 @@ export default function ClassStatusPage() {
                             <Badge variant={
                               todayStatus === 'present' ? 'default' : 
                               todayStatus === 'absent' ? 'destructive' : 
+                              todayStatus === 'late' ? 'secondary' :
                               'secondary'
                             } className="text-xs">
                               {todayStatus === 'present' ? '✓ 출석' : 
                                todayStatus === 'absent' ? '✗ 결석' : 
+                               todayStatus === 'late' ? '⏰ 지각' :
                                '📝 메모'}
                             </Badge>
                           )}
@@ -361,6 +378,15 @@ export default function ClassStatusPage() {
                         >
                           <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           결석
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          variant={currentStatus === 'late' ? 'default' : 'outline'}
+                          onClick={() => handleAttendanceToggle(member.id, 'late')}
+                          className={`${currentStatus === 'late' ? 'bg-yellow-500 hover:bg-yellow-600 text-black' : ''} text-xs sm:text-sm`}
+                        >
+                          ⏰ 지각
                         </Button>
                         
                         <Button

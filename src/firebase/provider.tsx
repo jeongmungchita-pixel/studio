@@ -1,6 +1,6 @@
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
@@ -103,10 +103,24 @@ export function useMemoFirebase<T>(
   factory: () => T,
   deps: DependencyList
 ): T | MemoFirebase<T> {
-  const memoized = useMemo(factory, deps);
-
-  if (typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
-
-  return memoized;
+  const valueRef = useRef<T | MemoFirebase<T>>();
+  const depsRef = useRef<DependencyList>();
+  let changed = false;
+  if (!depsRef.current || depsRef.current.length !== deps.length) {
+    changed = true;
+  } else {
+    for (let i = 0; i < deps.length; i++) {
+      if (!Object.is(deps[i], depsRef.current[i])) {
+        changed = true;
+        break;
+      }
+    }
+  }
+  if (changed) {
+    const next = factory();
+    if (typeof next === 'object' && next !== null) (next as MemoFirebase<T>).__memo = true;
+    valueRef.current = next;
+    depsRef.current = deps;
+  }
+  return valueRef.current as T | MemoFirebase<T>;
 }

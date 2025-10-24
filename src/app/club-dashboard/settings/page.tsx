@@ -5,7 +5,28 @@ import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { ClubBankAccount, NaverCloudConfig } from '@/types';
+
+interface ClubBankAccount {
+  clubId: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+interface NaverCloudConfig {
+  clubId: string;
+  serviceId: string;
+  accessKey: string;
+  secretKey: string;
+  senderPhone: string;
+  kakaoSenderId?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

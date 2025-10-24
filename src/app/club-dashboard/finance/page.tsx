@@ -5,7 +5,41 @@ import { useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Income, Expense, Payment } from '@/types';
+import { Payment } from '@/types';
+
+interface IncomeAllocation { month: string; amount: number; allocated: boolean; }
+interface IncomeSplitInfo {
+  totalAmount: number;
+  months: number;
+  monthlyAmount: number;
+  startMonth: string;
+  allocations: IncomeAllocation[];
+}
+interface Income {
+  id: string;
+  clubId: string;
+  type: string;
+  category: string;
+  amount: number;
+  description: string;
+  date: string;
+  isRecurring: boolean;
+  isSplit: boolean;
+  splitInfo?: IncomeSplitInfo | null;
+  createdBy: string;
+  createdAt: string;
+}
+interface Expense {
+  id: string;
+  clubId: string;
+  category: keyof typeof expenseCategories | string;
+  amount: number;
+  description: string;
+  date: string;
+  isRecurring: boolean;
+  createdBy: string;
+  createdAt: string;
+}
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +61,10 @@ const expenseCategories = {
   marketing: '마케팅',
   maintenance: '유지보수',
   other: '기타',
+};
+
+const getExpenseCategoryLabel = (key: string): string => {
+  return expenseCategories[key as keyof typeof expenseCategories] || '기타';
 };
 
 export default function FinancePage() {
@@ -93,7 +131,7 @@ export default function FinancePage() {
     const monthEnd = endOfMonth(new Date(selectedMonth));
 
     // Filter incomes for selected month
-    const monthIncomes = incomes?.filter(income => {
+    const monthIncomes = incomes?.filter((income: Income) => {
       if (income.isSplit && income.splitInfo) {
         // Check if this month has allocation
         return income.splitInfo.allocations.some(
@@ -105,9 +143,9 @@ export default function FinancePage() {
     }) || [];
 
     // Calculate income considering splits
-    const totalIncome = monthIncomes.reduce((sum, income) => {
+    const totalIncome = monthIncomes.reduce((sum: number, income: Income) => {
       if (income.isSplit && income.splitInfo) {
-        const allocation = income.splitInfo.allocations.find(a => a.month === selectedMonth);
+        const allocation = income.splitInfo.allocations.find((a: IncomeAllocation) => a.month === selectedMonth);
         return sum + (allocation?.amount || 0);
       }
       return sum + income.amount;
@@ -123,9 +161,9 @@ export default function FinancePage() {
 
     // Category breakdown
     const incomeByCategory: Record<string, number> = {};
-    monthIncomes.forEach(income => {
+    monthIncomes.forEach((income: Income) => {
       const amount = income.isSplit && income.splitInfo
-        ? income.splitInfo.allocations.find(a => a.month === selectedMonth)?.amount || 0
+        ? income.splitInfo.allocations.find((a: IncomeAllocation) => a.month === selectedMonth)?.amount || 0
         : income.amount;
       incomeByCategory[income.category] = (incomeByCategory[income.category] || 0) + amount;
     });
@@ -437,7 +475,7 @@ export default function FinancePage() {
                   <div className="flex-1">
                     <p className="font-semibold">{expense.description}</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(expense.date), 'PPP', { locale: ko })} · {expenseCategories[expense.category]}
+                      {format(new Date(expense.date), 'PPP', { locale: ko })} · {getExpenseCategoryLabel(expense.category)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">

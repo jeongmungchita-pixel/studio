@@ -63,7 +63,7 @@ export default function CachedAdultRegistrationPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const updateFormData = (field: keyof FormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

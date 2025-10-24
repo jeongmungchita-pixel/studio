@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from 'react'
+import * as RechartsPrimitive from 'recharts'
 
 import { cn } from '@/lib/utils';
 
@@ -21,6 +23,14 @@ type ChartContextProps = {
 }
 
 const ChartContext = React.createContext<ChartContextProps | null>(null)
+
+type TooltipPayloadItem = NonNullable<
+  RechartsPrimitive.TooltipProps<any, any>['payload']
+>[number]
+
+type LegendPayloadItem = NonNullable<
+  RechartsPrimitive.LegendProps['payload']
+>[number]
 
 function useChart() {
   const context = React.useContext(ChartContext)
@@ -171,6 +181,7 @@ const ChartTooltipContent = React.forwardRef<
       return null
     }
 
+    const tooltipPayload = payload as TooltipPayloadItem[]
     const nestLabel = payload.length === 1 && indicator !== "dot"
 
     return (
@@ -183,10 +194,11 @@ const ChartTooltipContent = React.forwardRef<
       >
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
-          {payload.map((item, index) => {
+          {tooltipPayload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color || item.payload.fill || item.color
+            const indicatorColor =
+              color ?? (item.payload as { fill?: string } | undefined)?.fill ?? item.color
 
             return (
               <div
@@ -197,7 +209,7 @@ const ChartTooltipContent = React.forwardRef<
                 )}
               >
                 {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                  formatter(item.value, item.name, item, index, tooltipPayload)
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -283,7 +295,7 @@ const ChartLegendContent = React.forwardRef<
           className
         )}
       >
-        {payload.map((item) => {
+        {payload.map((item: LegendPayloadItem) => {
           const key = `${nameKey || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
 

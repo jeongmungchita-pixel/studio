@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, User, Calendar, History, Upload, Image, Camera, File, Phone, Mail, CreditCard, Edit, Trash2, Baby } from 'lucide-react';
+import { Loader2, User, Calendar, History, Upload, ImageIcon, Camera, File, Phone, Mail, CreditCard, Edit, Trash2, Baby, Users } from 'lucide-react';
 import { canUsePassTemplate, getMemberCategoryLabel, getTargetCategoryLabel } from '@/lib/member-utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
+  late: '지각',
   absent: '결석',
   excused: '메모',
 };
@@ -183,15 +184,19 @@ export default function MemberProfileClient({ id }: { id:string }) {
       const mimeType = type === 'image' ? 'image/jpeg' : 'video/webm';
       const file = new (File as any)([blob], `capture.${fileExtension}`, { type: mimeType });
 
-      const mediaURL = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
+      const url = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
 
       const newMediaItem: MediaItem = {
         id: mediaId,
         memberId: member.id,
+        memberName: member.name,
         clubId: member.clubId,
-        mediaURL,
-        mediaType: type,
+        type: type === 'image' ? 'photo' : 'video',
+        url,
         uploadDate: new Date().toISOString(),
+        uploadedBy: user!.uid,
+        uploadedByName: user!.displayName || 'User',
+        isPublic: false,
       };
       
       const batch = writeBatch(firestore);
@@ -211,7 +216,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
   const handleEditAttendance = (attendance: Attendance) => {
     setEditingAttendance(attendance);
     setEditAttendanceStatus(attendance.status);
-    setEditAttendanceNote(attendance.note || '');
+    setEditAttendanceNote(attendance.notes || '');
   };
 
   // Handle attendance update
@@ -221,7 +226,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
     try {
       await updateDoc(doc(firestore, 'attendance', editingAttendance.id), {
         status: editAttendanceStatus,
-        note: editAttendanceNote || null,
+        notes: editAttendanceNote || null,
       });
       
       toast({
@@ -302,15 +307,19 @@ export default function MemberProfileClient({ id }: { id:string }) {
       const mediaRef = doc(collection(firestore, 'media'));
       const mediaId = mediaRef.id;
 
-      const mediaURL = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
+      const url = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
 
       const newMediaItem: MediaItem = {
         id: mediaId,
         memberId: member.id,
+        memberName: member.name,
         clubId: member.clubId,
-        mediaURL,
-        mediaType: file.type.startsWith('image/') ? 'image' : 'video',
+        type: file.type.startsWith('image/') ? 'photo' : 'video',
+        url,
         uploadDate: new Date().toISOString(),
+        uploadedBy: user!.uid,
+        uploadedByName: user!.displayName || 'User',
+        isPublic: false,
       };
       
       const batch = writeBatch(firestore);
@@ -343,13 +352,16 @@ export default function MemberProfileClient({ id }: { id:string }) {
       const requestRef = doc(collection(firestore, 'pass_renewal_requests'));
       const renewalRequest: PassRenewalRequest = {
         id: requestRef.id,
+        currentPassId: activePass?.id || '',
+        newTemplateId: template.id,
         memberId: member.id,
         memberName: member.name,
         clubId: member.clubId,
-        passTemplateId: template.id,
-        passTemplateName: template.name,
-        requestedAt: new Date().toISOString(),
+        requestedStartDate: new Date().toISOString(),
+        paymentMethod: 'auto',
         status: 'pending',
+        requestedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
       await setDoc(requestRef, renewalRequest);
@@ -379,7 +391,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
      return null;
   }
   
-  const currentPass = passes?.find(p => p.status === 'active' || p.status === 'pending');
+  const currentPass = passes?.find(p => p.status === 'active');
   const pastPasses = passes?.filter(p => p.status === 'expired');
 
   return (
@@ -428,7 +440,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <UsersIcon className="w-5 h-5" />
+              <Users className="w-5 h-5" />
               부모/보호자 정보
             </CardTitle>
           </CardHeader>
@@ -505,14 +517,11 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     </Badge>
                   </div>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">회원 유형</Label>
-                  <p className="font-medium">{member.memberType === 'individual' ? '개인 회원' : '가족 회원'}</p>
-                </div>
+                
                 <div>
                   <Label className="text-muted-foreground">회원 분류</Label>
                   <div className="font-medium">
-                    <Badge className={getMemberCategoryColor(member.memberCategory || (age && age >= 19 ? 'adult' : 'child')).badge}>
+                    <Badge>
                       {(member.memberCategory || (age && age >= 19 ? 'adult' : 'child')) === 'adult' ? <User className="inline h-3 w-3 mr-1" /> : <Baby className="inline h-3 w-3 mr-1" />}
                       {getMemberCategoryLabel(member.memberCategory || (age && age >= 19 ? 'adult' : 'child'))}
                     </Badge>
@@ -541,13 +550,11 @@ export default function MemberProfileClient({ id }: { id:string }) {
                 <CardContent>
                     {currentPass ? (
                         <div className="p-4 rounded-lg bg-secondary">
-                           <p className="font-bold text-lg">{currentPass.passName}</p>
-                           {currentPass.status === 'pending' ? <Badge variant="destructive">승인 대기중</Badge> : <Badge>활성</Badge>}
+                           <p className="font-bold text-lg">{currentPass.templateName}</p>
+                           <Badge>활성</Badge>
                            <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                               {currentPass.totalSessions !== undefined && <p>총 횟수: {currentPass.totalSessions}회</p>}
-                               {currentPass.attendableSessions !== undefined && <p>출석 필요: {currentPass.attendableSessions}회</p>}
-                               {currentPass.attendanceCount !== undefined && <p>현재 출석: {currentPass.attendanceCount}회</p>}
-                               {currentPass.remainingSessions !== undefined && <p>남은 기회: {currentPass.remainingSessions}회</p>}
+                               {currentPass.remainingSessions !== undefined && <p>남은 횟수: {currentPass.remainingSessions}회</p>}
+                               <p>사용 횟수: {currentPass.usageCount}회</p>
                                {currentPass.endDate && <p>만료일: {format(new Date(currentPass.endDate), 'yyyy-MM-dd')}</p>}
                            </div>
                         </div>
@@ -580,8 +587,8 @@ export default function MemberProfileClient({ id }: { id:string }) {
                                         <div className="flex-1">
                                             <p className="font-medium">{format(new Date(att.date), 'yyyy년 M월 d일 (E)', { locale: ko })}</p>
                                             <p className="text-xs text-muted-foreground">{format(new Date(att.date), 'HH:mm')}</p>
-                                            {att.note && (
-                                                <p className="text-xs text-muted-foreground mt-1">메모: {att.note}</p>
+                                            {att.notes && (
+                                                <p className="text-xs text-muted-foreground mt-1">메모: {att.notes}</p>
                                             )}
                                         </div>
                                     </div>
@@ -647,12 +654,17 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     {pastPasses && pastPasses.length > 0 ? (
                         <Accordion type="single" collapsible className="w-full">
                         {pastPasses.map(pass => {
-                            const passAttendance = allAttendance?.filter(a => a.passId === pass.id);
+                            const passAttendance = allAttendance?.filter(a => {
+                              const d = new Date(a.date);
+                              const startOk = pass.startDate ? d >= new Date(pass.startDate) : true;
+                              const endOk = pass.endDate ? d <= new Date(pass.endDate) : true;
+                              return startOk && endOk;
+                            });
                             return (
                             <AccordionItem key={pass.id} value={pass.id}>
                                 <AccordionTrigger>
                                 <div className="flex justify-between w-full pr-4">
-                                    <span>{pass.passName} ({format(new Date(pass.startDate || new Date()), 'yy/MM/dd')} 시작)</span>
+                                    <span>{pass.templateName} ({format(new Date(pass.startDate || new Date()), 'yy/MM/dd')} 시작)</span>
                                     <Badge variant="secondary">만료</Badge>
                                 </div>
                                 </AccordionTrigger>
@@ -691,71 +703,71 @@ export default function MemberProfileClient({ id }: { id:string }) {
         </TabsContent>
         <TabsContent value="media">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>미디어 갤러리</CardTitle>
-                        <CardDescription>선수의 활동 사진이나 영상을 업로드하고 관리하세요.</CardDescription>
-                    </div>
-                    {canEdit && (
-                      <>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button disabled={isUploading}>
-                              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                              미디어 업로드
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>미디어 갤러리</CardTitle>
+                  <CardDescription>선수의 활동 사진이나 영상을 업로드하고 관리하세요.</CardDescription>
+                </div>
+                {canEdit && (
+                  <>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button disabled={isUploading}>
+                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                          미디어 업로드
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => setIsCameraOpen(true)}>
+                          <Camera className="mr-2 h-4 w-4" />
+                          <span>카메라로 촬영</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
+                          <File className="mr-2 h-4 w-4" />
+                          <span>파일 선택</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept="image/*,video/*"/>
+                  </>
+                )}
+              </CardHeader>
+              <CardContent>
+                {mediaItems && mediaItems.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {mediaItems.map(item => (
+                      <div key={item.id} className="relative aspect-square group">
+                        {item.type === 'photo' ? (
+                          <Image src={item.url} alt={item.title || 'Member media'} fill className="object-cover rounded-md" />
+                        ) : (
+                          <video src={item.url} className="object-cover rounded-md w-full h-full" controls />
+                        )}
+                        <div className="absolute inset-0 bg-black/50 flex items-end justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-white text-xs">{format(new Date(item.uploadDate), 'yyyy-MM-dd')}</p>
+                          {canEdit && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleDeleteMedia(item.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => setIsCameraOpen(true)}>
-                              <Camera className="mr-2 h-4 w-4" />
-                              <span>카메라로 촬영</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
-                              <File className="mr-2 h-4 w-4" />
-                              <span>파일 선택</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} accept="image/*,video/*"/>
-                      </>
-                    )}
-                </CardHeader>
-                <CardContent>
-                    {mediaItems && mediaItems.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {mediaItems.map(item => (
-                                <div key={item.id} className="relative aspect-square group">
-                                  {item.mediaType === 'image' ? (
-                                    <Image src={item.mediaURL} alt={item.caption || "Member media"} fill className="object-cover rounded-md" />
-                                  ) : (
-                                    <video src={item.mediaURL} className="object-cover rounded-md w-full h-full" controls />
-                                  )}
-                                    <div className="absolute inset-0 bg-black/50 flex items-end justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <p className="text-white text-xs">{format(new Date(item.uploadDate), 'yyyy-MM-dd')}</p>
-                                        {canEdit && (
-                                          <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            className="h-6 w-6 p-0"
-                                            onClick={() => handleDeleteMedia(item.id)}
-                                          >
-                                            <Trash2 className="h-3 w-3" />
-                                          </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                          )}
                         </div>
-                    ) : (
-                         <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-lg">
-                            <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                            <p className="mt-2 text-muted-foreground">업로드된 미디어가 없습니다.</p>
-                        </div>
-                    )}
-                </CardContent>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-lg">
+                    <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                    <p className="mt-2 text-muted-foreground">업로드된 미디어가 없습니다.</p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
 
       <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
         <DialogContent className="sm:max-w-2xl">
@@ -815,6 +827,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="present">출석</option>
+                <option value="late">지각</option>
                 <option value="absent">결석</option>
                 <option value="excused">메모</option>
               </select>
@@ -869,27 +882,21 @@ export default function MemberProfileClient({ id }: { id:string }) {
                             <CardDescription>{template.description}</CardDescription>
                           )}
                         </div>
-                        <Badge variant={
-                          template.targetCategory === 'adult' ? 'default' :
-                          template.targetCategory === 'child' ? 'secondary' :
-                          'outline'
-                        }>
+                        <Badge variant={template.targetCategory === 'adult' ? 'default' : template.targetCategory === 'child' ? 'secondary' : 'outline'}>
                           {template.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
                           {template.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
-                          {template.targetCategory === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
-                          {getTargetCategoryLabel(template.targetCategory)}
+                          {(template.targetCategory === 'all' || template.targetCategory === 'family') && <Users className="inline h-3 w-3 mr-1" />}
+                          {getTargetCategoryLabel((template.targetCategory === 'family' ? 'all' : template.targetCategory) as any)}
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2 text-sm">
-                        {template.passType === 'period' && <Badge variant="outline">기간제</Badge>}
-                        {template.passType === 'session' && <Badge variant="outline">횟수제</Badge>}
-                        {template.passType === 'unlimited' && <Badge variant="outline">기간+횟수제</Badge>}
+                        {template.type === 'session-based' && <Badge variant="outline">횟수제</Badge>}
+                        {template.type === 'unlimited' && <Badge variant="outline">무제한</Badge>}
+                        {template.type !== 'session-based' && template.duration && <p>기간: {template.duration}일</p>}
+                        {template.sessionCount !== undefined && <p>총 횟수: {template.sessionCount}회</p>}
                         {template.price && <p>가격: {template.price.toLocaleString()}원</p>}
-                        {template.durationDays && <p>기간: {template.durationDays}일</p>}
-                        {template.totalSessions && <p>총 횟수: {template.totalSessions}회</p>}
-                        {template.attendableSessions && <p>필수 출석: {template.attendableSessions}회</p>}
                       </div>
                     </CardContent>
                   </Card>

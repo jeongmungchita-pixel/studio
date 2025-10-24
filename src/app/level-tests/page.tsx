@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { ClubLevelTest, LevelTestRegistration, Member } from '@/types';
+import { LevelTest, LevelTestRegistration, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-const statusLabels = {
+const statusLabels: Record<'draft' | 'registration-open' | 'registration-closed' | 'in-progress' | 'completed', string> = {
   draft: '준비중',
-  registration_open: '신청중',
-  registration_closed: '신청마감',
-  in_progress: '진행중',
+  'registration-open': '신청중',
+  'registration-closed': '신청마감',
+  'in-progress': '진행중',
   completed: '완료',
 };
 
@@ -27,7 +27,7 @@ export default function LevelTestsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [selectedTest, setSelectedTest] = useState<ClubLevelTest | null>(null);
+  const [selectedTest, setSelectedTest] = useState<LevelTest | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,15 +51,9 @@ export default function LevelTestsPage() {
       orderBy('testDate', 'desc')
     );
   }, [firestore, member?.clubId]);
-  const { data: levelTests, isLoading } = useCollection<ClubLevelTest>(testsQuery);
+  const { data: levelTests, isLoading } = useCollection<LevelTest>(testsQuery);
   
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // 로딩 스피너는 모든 훅 호출 뒤에서 한 번만 렌더
 
   // Fetch my registrations
   const myRegistrationsQuery = useMemoFirebase(() => {
@@ -71,7 +65,15 @@ export default function LevelTestsPage() {
   }, [firestore, user?.uid]);
   const { data: myRegistrations } = useCollection<LevelTestRegistration>(myRegistrationsQuery);
 
-  const handleApply = (test: ClubLevelTest) => {
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const handleApply = (test: LevelTest) => {
     setSelectedTest(test);
     setSelectedLevel('');
   };
@@ -85,20 +87,22 @@ export default function LevelTestsPage() {
       const registrationData: LevelTestRegistration = {
         id: regRef.id,
         testId: selectedTest.id,
+        testName: selectedTest.name,
         memberId: user.uid,
         memberName: member.name,
         clubId: member.clubId,
-        currentLevel: member.level,
+        currentLevel: member.currentLevel || '',
         targetLevel: selectedLevel,
-        status: 'pending',
+        status: 'registered',
         registeredAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
       await setDoc(regRef, registrationData);
 
       toast({
         title: '신청 완료!',
-        description: `${selectedTest.title} 레벨테스트 신청이 완료되었습니다.`,
+        description: `${selectedTest.name} 레벨테스트 신청이 완료되었습니다.`,
       });
 
       setSelectedTest(null);
@@ -115,23 +119,16 @@ export default function LevelTestsPage() {
   };
 
   const isRegistered = (testId: string) => {
-    return myRegistrations?.some(r => r.testId === testId && r.status !== 'rejected');
+    return myRegistrations?.some(r => r.testId === testId);
   };
 
-  const canRegister = (test: ClubLevelTest) => {
+  const canRegister = (test: LevelTest) => {
     const now = new Date();
-    const regStart = new Date(test.registrationStart);
-    const regEnd = new Date(test.registrationEnd);
-    return test.status === 'registration_open' && now >= regStart && now <= regEnd;
+    const regEnd = new Date(test.registrationDeadline);
+    return test.status === 'registration-open' && now <= regEnd;
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+  // 상단에서 이미 로딩 처리를 통일함
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
@@ -141,7 +138,7 @@ export default function LevelTestsPage() {
       </div>
 
       {/* My Current Level */}
-      {member?.level && (
+      {member?.currentLevel && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -151,17 +148,9 @@ export default function LevelTestsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <Badge 
-                className="text-lg px-4 py-2"
-                style={{ backgroundColor: member.levelColor || '#3B82F6' }}
-              >
-                {member.level}
+              <Badge className="text-lg px-4 py-2">
+                {member.currentLevel}
               </Badge>
-              {member.levelRank && member.levelRank <= 3 && (
-                <span className="text-2xl">
-                  {member.levelRank === 1 ? '🏆' : member.levelRank === 2 ? '🥈' : '🥉'}
-                </span>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -179,13 +168,13 @@ export default function LevelTestsPage() {
               return (
                 <div key={reg.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <p className="font-semibold">{test?.title || '레벨테스트'}</p>
+                    <p className="font-semibold">{test?.name || '레벨테스트'}</p>
                     <p className="text-sm text-muted-foreground">
                       목표: {reg.targetLevel}
                     </p>
                   </div>
-                  <Badge variant={reg.status === 'approved' ? 'default' : 'secondary'}>
-                    {reg.status === 'approved' ? '승인' : reg.status === 'rejected' ? '거절' : '대기'}
+                  <Badge variant={reg.status === 'passed' ? 'default' : (reg.status === 'failed' || reg.status === 'cancelled' || reg.status === 'absent') ? 'destructive' : 'secondary'}>
+                    {reg.status === 'registered' ? '신청' : reg.status === 'tested' ? '심사완료' : reg.status === 'passed' ? '합격' : reg.status === 'failed' ? '불합격' : reg.status === 'absent' ? '결석' : reg.status === 'cancelled' ? '취소' : reg.status}
                   </Badge>
                 </div>
               );
@@ -205,11 +194,11 @@ export default function LevelTestsPage() {
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
                   <Badge variant={
-                    test.status === 'registration_open' ? 'default' :
-                    test.status === 'in_progress' ? 'secondary' :
+                    test.status === 'registration-open' ? 'default' :
+                    test.status === 'in-progress' ? 'secondary' :
                     'outline'
                   }>
-                    {statusLabels[test.status]}
+                    {statusLabels[test.status as keyof typeof statusLabels]}
                   </Badge>
                   {registered && (
                     <Badge variant="default">
@@ -218,10 +207,12 @@ export default function LevelTestsPage() {
                     </Badge>
                   )}
                 </div>
-                <CardTitle className="text-xl">{test.title}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {test.description}
-                </CardDescription>
+                <CardTitle className="text-xl">{test.name}</CardTitle>
+                {test.description && (
+                  <CardDescription className="line-clamp-2">
+                    {test.description}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
@@ -230,13 +221,11 @@ export default function LevelTestsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Target className="h-4 w-4 text-muted-foreground" />
-                  <span>{test.levels.length}개 레벨</span>
+                  <span>{(test.criteria || []).length}개 심사 항목</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Trophy className="h-4 w-4" />
-                  <span>
-                    신청: {format(new Date(test.registrationStart), 'M/d')} ~ {format(new Date(test.registrationEnd), 'M/d')}
-                  </span>
+                  <span>신청 마감: {format(new Date(test.registrationDeadline), 'M/d')}</span>
                 </div>
 
                 {canApply && !registered && (
@@ -263,35 +252,35 @@ export default function LevelTestsPage() {
       <Dialog open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{selectedTest?.title}</DialogTitle>
+            <DialogTitle>{selectedTest?.name}</DialogTitle>
             <DialogDescription>
               도전할 레벨을 선택하세요
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">
-            {selectedTest?.levels
-              .sort((a, b) => a.order - b.order)
-              .map((level) => (
+            {(selectedTest?.criteria || [])
+              .sort((a: any, b: any) => a.maxScore - b.maxScore)
+              .map((level: any) => (
                 <div
                   key={level.id}
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedLevel === level.name
+                    selectedLevel === level.skill
                       ? 'border-blue-500 bg-blue-50'
                       : 'hover:bg-muted'
                   }`}
-                  onClick={() => setSelectedLevel(level.name)}
+                  onClick={() => setSelectedLevel(level.skill)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: level.color }} className="text-white">
-                        {level.icon} {level.name}
+                      <Badge className="text-white">
+                        {level.skill}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {level.minScore}~{level.maxScore}점
+                        최대 점수 {level.maxScore}점
                       </span>
                     </div>
-                    {selectedLevel === level.name && (
+                    {selectedLevel === level.skill && (
                       <CheckCircle2 className="h-5 w-5 text-blue-500" />
                     )}
                   </div>

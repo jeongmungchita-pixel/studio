@@ -30,6 +30,8 @@ const EVENT_NAMES: Record<string, string> = {
 
 const statusLabels = {
   draft: '준비중',
+  open: '오픈',
+  closed: '마감',
   registration_open: '신청중',
   registration_closed: '신청마감',
   in_progress: '진행중',
@@ -87,24 +89,20 @@ export default function CompetitionsPage() {
     setIsSubmitting(true);
     try {
       const regRef = doc(collection(firestore, 'competition_registrations'));
-      const birthDate = member.dateOfBirth || '';
-      const age = member.dateOfBirth ? differenceInYears(new Date(), new Date(member.dateOfBirth)) : 0;
-      
+      const age = member.dateOfBirth ? differenceInYears(new Date(), new Date(member.dateOfBirth)) : undefined;
+
       const registrationData: CompetitionRegistration = {
         id: regRef.id,
         competitionId: selectedCompetition.id,
         memberId: user.uid,
         memberName: member.name,
-        clubId: member.clubId,
         clubName: member.clubName || '',
-        gender: member.gender || 'male',
-        birthDate,
-        age,
-        grade: member.grade,
-        level: member.level,
-        registeredEvents: selectedEvents,
+        categoryId: selectedCompetition.categories?.[0]?.id || 'general',
+        events: selectedEvents,
         status: 'pending',
-        registeredAt: new Date().toISOString(),
+        gender: (member.gender === 'female' ? 'female' : 'male') as any,
+        age,
+        createdAt: new Date().toISOString(),
       };
 
       await setDoc(regRef, registrationData);
@@ -132,6 +130,7 @@ export default function CompetitionsPage() {
   };
 
   const canRegister = (competition: GymnasticsCompetition) => {
+    if (!competition.registrationStart || !competition.registrationEnd) return false;
     const now = new Date();
     const regStart = new Date(competition.registrationStart);
     const regEnd = new Date(competition.registrationEnd);
@@ -167,7 +166,7 @@ export default function CompetitionsPage() {
                   <div>
                     <p className="font-semibold">{comp?.title || '시합'}</p>
                     <p className="text-sm text-muted-foreground">
-                      {reg.registeredEvents.length}개 종목 신청
+                      {(reg.registeredEvents ?? reg.events ?? []).length}개 종목 신청
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -219,7 +218,7 @@ export default function CompetitionsPage() {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(new Date(competition.competitionDate), 'PPP', { locale: ko })}</span>
+                  <span>{competition.competitionDate ? format(new Date(competition.competitionDate), 'PPP', { locale: ko }) : ''}</span>
                 </div>
                 {competition.venue && (
                   <div className="flex items-center gap-2 text-sm">
@@ -229,12 +228,12 @@ export default function CompetitionsPage() {
                 )}
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{competition.events.length}개 종목</span>
+                  <span>{(competition.events?.length || 0)}개 종목</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Trophy className="h-4 w-4" />
                   <span>
-                    신청: {format(new Date(competition.registrationStart), 'M/d')} ~ {format(new Date(competition.registrationEnd), 'M/d')}
+                    신청: {competition.registrationStart ? format(new Date(competition.registrationStart), 'M/d') : ''} ~ {competition.registrationEnd ? format(new Date(competition.registrationEnd), 'M/d') : ''}
                   </span>
                 </div>
 
@@ -284,8 +283,8 @@ export default function CompetitionsPage() {
 
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-3">
-              {selectedCompetition?.events
-                .filter(event => member?.gender === 'male' ? event.gender !== 'female' : event.gender !== 'male')
+              {selectedCompetition?.events?.
+                filter(event => (member?.gender === 'male' ? event.gender !== 'female' : event.gender !== 'male'))
                 .map((event) => (
                   <div
                     key={event.id}
@@ -305,7 +304,7 @@ export default function CompetitionsPage() {
                     <div className="flex items-center gap-2">
                       <Checkbox checked={selectedEvents.includes(event.id)} />
                       <div>
-                        <p className="font-semibold">{EVENT_NAMES[event.code] || event.name}</p>
+                        <p className="font-semibold">{EVENT_NAMES[event.code || ''] || event.name}</p>
                         <p className="text-xs text-muted-foreground">{event.code}</p>
                       </div>
                     </div>
@@ -318,10 +317,10 @@ export default function CompetitionsPage() {
                 <p className="text-sm font-semibold mb-2">선택한 종목 ({selectedEvents.length}개)</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedEvents.map(eventId => {
-                    const event = selectedCompetition?.events.find(e => e.id === eventId);
+                    const event = selectedCompetition?.events?.find(e => e.id === eventId);
                     return (
                       <Badge key={eventId}>
-                        {EVENT_NAMES[event?.code || ''] || event?.name}
+                        {EVENT_NAMES[(event?.code || '') as string] || event?.name}
                       </Badge>
                     );
                   })}

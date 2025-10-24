@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { ROUTES } from '@/constants/routes';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
@@ -27,6 +28,7 @@ const statusTranslations: Record<Member['status'], string> = {
 
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
+  late: '지각',
   absent: '결석',
   excused: '사유',
 };
@@ -118,7 +120,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
         const passData = passSnap.data() as MemberPass;
         
         // Prevent updates if pass is not session-based
-        if (passData.totalSessions === undefined || passData.attendableSessions === undefined || passData.remainingSessions === undefined) {
+        if (passData.type !== 'session-based' || passData.remainingSessions === undefined) {
              toast({ variant: "destructive", title: "업데이트 불가", description: "기간제 또는 무제한 이용권은 출석으로 차감되지 않습니다." });
              return;
         }
@@ -131,23 +133,23 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
         const oldStatus = existingAttendance?.status;
         if (oldStatus === newStatus) return;
 
-        let { attendanceCount = 0, remainingSessions = 0 } = passData;
+        let { usageCount = 0, remainingSessions = 0 } = passData;
 
         // Revert old status effect
         if (oldStatus) {
-            if (oldStatus === 'present') attendanceCount--;
+            if (oldStatus === 'present') usageCount = Math.max(0, usageCount - 1);
             if (oldStatus === 'present' || oldStatus === 'absent') remainingSessions++;
         }
 
         // Apply new status effect
         if (newStatus) {
-            if (newStatus === 'present') attendanceCount++;
+            if (newStatus === 'present') usageCount++;
             if (newStatus === 'present' || newStatus === 'absent') remainingSessions--;
         }
 
-        const shouldExpire = (remainingSessions <= 0) || (attendanceCount >= passData.attendableSessions!);
+        const shouldExpire = (remainingSessions <= 0) || (passData.endDate ? new Date(passData.endDate) < new Date() : false);
         const passUpdate: Partial<MemberPass> = {
-            attendanceCount,
+            usageCount,
             remainingSessions: Math.max(0, remainingSessions),
             status: shouldExpire ? 'expired' : 'active'
         };
@@ -177,7 +179,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
         toast({
             variant: "destructive",
             title: "오류 발생",
-            description: error.message || "출석 상태 변경 중 오류가 발생했습니다."
+            description: (error instanceof Error ? error.message : undefined) || "출석 상태 변경 중 오류가 발생했습니다."
         });
     } finally {
         setIsSubmitting(prevState => ({ ...prevState, [member.id]: false }));
@@ -197,13 +199,15 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
     notFound();
   }
 
- const getPassBadge = (pass: MemberPass | undefined) => {
+  const getPassBadge = (pass: MemberPass | undefined) => {
     if (!pass) return <Badge variant="secondary">이용권 없음</Badge>;
 
     if (pass.status === 'expired') return <Badge variant="destructive">만료</Badge>;
 
-    if (pass.totalSessions !== undefined && pass.attendableSessions !== undefined) {
-      return <Badge>{`${pass.attendanceCount} / ${pass.attendableSessions} (남은 기회: ${pass.remainingSessions})`}</Badge>;
+    if (pass.type === 'session-based') {
+      const remaining = pass.remainingSessions ?? 0;
+      const used = pass.usageCount ?? 0;
+      return <Badge>{`사용 ${used}회 (남은 ${remaining}회)`}</Badge>;
     }
     
     if (pass.endDate) {
@@ -230,7 +234,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
             <div className="flex-grow">
               <CardTitle className="text-3xl">{club.name}</CardTitle>
               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-muted-foreground">
-                <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location}</span>
+                <span className="flex items-center gap-2"><MapPin className="w-4 h-4"/>{club.location ? `${club.location.latitude.toFixed(3)}, ${club.location.longitude.toFixed(3)}` : '-'}</span>
                 <span className="flex items-center gap-2"><Users className="w-4 h-4"/>활동 선수 {clubMembers?.length || 0}명</span>
                 <span className="flex items-center gap-2"><Phone className="w-4 h-4"/>{club.contactPhoneNumber}</span>
                 <span className="flex items-center gap-2"><Mail className="w-4 h-4"/>{club.contactEmail}</span>
@@ -272,7 +276,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
                   {clubMembers?.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
-                        <Link href={`/members/${member.id}`} className="flex items-center gap-3 hover:underline">
+                        <Link href={ROUTES.DYNAMIC.MEMBER_DETAIL(member.id)} className="flex items-center gap-3 hover:underline">
                             <Image
                                 src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
                                 alt={member.name}
@@ -328,7 +332,7 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
                                 return (
                                   <TableRow key={member.id} className={isPassInvalid ? 'bg-muted/50' : ''}>
                                       <TableCell>
-                                        <Link href={`/members/${member.id}`} className="hover:underline">
+                                        <Link href={ROUTES.DYNAMIC.MEMBER_DETAIL(member.id)} className="hover:underline">
                                           {member.name}
                                         </Link>
                                       </TableCell>

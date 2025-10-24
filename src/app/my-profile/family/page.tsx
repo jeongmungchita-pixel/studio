@@ -10,6 +10,7 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Member } from '@/types';
+import { ROUTES } from '@/constants/routes';
 
 export default function FamilyManagementPage() {
   const router = useRouter();
@@ -150,7 +151,7 @@ export default function FamilyManagementPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/members/${child.id}`)}
+                        onClick={() => router.push(ROUTES.DYNAMIC.MEMBER_DETAIL(child.id))}
                         className="flex-1"
                       >
                         상세보기

@@ -5,7 +5,7 @@ import { use, useEffect, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { GymnasticsCompetition, CompetitionRegistration, CompetitionSchedule, GymnasticsScore } from '@/types';
+import { GymnasticsCompetition, CompetitionRegistration, GymnasticsScore } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy, Clock, CheckCircle2 } from 'lucide-react';
@@ -24,6 +24,17 @@ const EVENT_NAMES: Record<string, string> = {
 };
 
 export default function CompetitionLivePage({ params }: { params: Promise<{ competitionId: string }> }) {
+  // 로컬 타입: 현재 스케줄(이 파일에서 사용하는 최소 필드만)
+  interface CompetitionSchedule {
+    id: string;
+    competitionId: string;
+    eventId: string;
+    eventName: string;
+    categoryName: string;
+    gender: 'male' | 'female' | 'mixed';
+    status: 'in_progress' | 'completed' | 'pending' | 'scheduled';
+    participants?: { memberId: string }[];
+  }
   const { competitionId } = use(params);
   const { user } = useUser();
   const firestore = useFirestore();
@@ -85,11 +96,11 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
 
   const currentSchedule = currentSchedules?.[0];
   const completedEvents = myScores?.length || 0;
-  const totalEvents = myRegistration.registeredEvents.length;
-  const totalScore = myScores?.reduce((sum, score) => sum + score.finalScore, 0) || 0;
+  const totalEvents = (myRegistration.registeredEvents ?? (myRegistration as any).events ?? []).length;
+  const totalScore = myScores?.reduce((sum, score) => sum + (score.total ?? 0), 0) || 0;
 
   // Check if I'm competing now
-  const isMyTurn = currentSchedule?.participants.some(p => p.memberId === user?.uid);
+  const isMyTurn = currentSchedule?.participants?.some(p => p.memberId === user?.uid);
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
@@ -97,7 +108,7 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">{competition.title}</h1>
-          <p className="text-muted-foreground">{format(new Date(competition.competitionDate), 'PPP', { locale: ko })}</p>
+          <p className="text-muted-foreground">{competition.competitionDate ? format(new Date(competition.competitionDate), 'PPP', { locale: ko }) : ''}</p>
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">현재 시각</p>
@@ -180,31 +191,23 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
                         {EVENT_NAMES[score.eventId] || score.eventName}
                       </h4>
                     </div>
-                    {score.rank && (
-                      <Badge variant={score.rank <= 3 ? 'default' : 'secondary'}>
-                        {score.rank}위
-                      </Badge>
-                    )}
+                    {/* rank 표시 제거 (타입에 없음) */}
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="text-xs text-muted-foreground">D점</p>
-                      <p className="text-xl font-bold">{score.dScore.final.toFixed(2)}</p>
+                      <p className="text-xl font-bold">{score.difficulty.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">E점</p>
-                      <p className="text-xl font-bold">{score.eScore.final.toFixed(2)}</p>
+                      <p className="text-xl font-bold">{score.execution.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">최종</p>
-                      <p className="text-2xl font-bold text-blue-600">{score.finalScore.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-blue-600">{score.total.toFixed(2)}</p>
                     </div>
                   </div>
-                  {score.deductions && score.deductions.length > 0 && (
-                    <div className="mt-2 text-sm text-red-600">
-                      감점: {score.deductions.map(d => `${d.type} (-${d.points})`).join(', ')}
-                    </div>
-                  )}
+                  {/* deductions 표시 제거 (타입에 없음) */}
                 </div>
               ))}
             </div>
@@ -223,7 +226,7 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {myRegistration.registeredEvents.map((eventId) => {
+            {(myRegistration.registeredEvents ?? (myRegistration as any).events ?? []).map((eventId: string) => {
               const hasScore = myScores?.some(s => s.eventId === eventId);
               return (
                 <div

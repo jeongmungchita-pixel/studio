@@ -26,15 +26,35 @@ export function calculateAge(dateOfBirth: string): number {
  * 회원 필터링
  */
 export function filterMembers(
-  members: Member[], 
-  filters: {
-    status?: string;
-    gender?: string;
-    clubId?: string;
-    memberCategory?: string;
-  }
+  members: Member[],
+  filtersOrSearch:
+    | {
+        status?: string;
+        gender?: string;
+        clubId?: string;
+        memberCategory?: string;
+      }
+    | string
 ): Member[] {
-  return members.filter(member => {
+  // 문자열이 들어오면 간단한 텍스트 검색 수행
+  if (typeof filtersOrSearch === 'string') {
+    const term = filtersOrSearch.trim().toLowerCase();
+    if (!term) return members;
+    return members.filter((member) => {
+      const haystacks = [
+        member.name,
+        member.email,
+        member.phoneNumber,
+        member.clubName,
+      ]
+        .filter(Boolean)
+        .map((v) => String(v).toLowerCase());
+      return haystacks.some((h) => h.includes(term));
+    });
+  }
+
+  const filters = filtersOrSearch;
+  return members.filter((member) => {
     if (filters.status && member.status !== filters.status) return false;
     if (filters.gender && member.gender !== filters.gender) return false;
     if (filters.clubId && member.clubId !== filters.clubId) return false;
@@ -130,6 +150,109 @@ export function getMemberStats(members: Member[]) {
   });
   
   return stats;
+}
+
+// =============================
+// 분류/상태 라벨 & 색상 유틸
+// =============================
+
+export function getMemberCategory(member: Member): MemberCategory {
+  if (member.memberCategory) return member.memberCategory;
+  // 생년월일 기반 추정 (만 18세 이상을 성인으로 가정)
+  if (member.dateOfBirth) {
+    const age = calculateAge(member.dateOfBirth);
+    return age >= 18 ? 'adult' : 'child';
+  }
+  return 'adult';
+}
+
+export function getMemberCategoryLabel(category: MemberCategory): string {
+  return category === 'adult' ? '성인' : '아동';
+}
+
+export function getMemberCategoryColor(category: MemberCategory): {
+  badge: string;
+  dot: string;
+} {
+  if (category === 'adult') {
+    return { badge: 'bg-blue-100 text-blue-700 border-blue-200', dot: 'bg-blue-600' };
+  }
+  return { badge: 'bg-purple-100 text-purple-700 border-purple-200', dot: 'bg-purple-600' };
+}
+
+export function getMemberStatusLabel(status: Member['status']): string {
+  switch (status) {
+    case 'active':
+      return '활동중';
+    case 'pending':
+      return '승인대기';
+    case 'inactive':
+      return '비활동';
+    default:
+      return String(status);
+  }
+}
+
+export function getMemberStatusColor(status: Member['status']): {
+  badge: string;
+  dot: string;
+} {
+  switch (status) {
+    case 'active':
+      return { badge: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-600' };
+    case 'pending':
+      return { badge: 'bg-yellow-100 text-yellow-800 border-yellow-200', dot: 'bg-yellow-500' };
+    case 'inactive':
+      return { badge: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-500' };
+    default:
+      return { badge: 'bg-secondary text-secondary-foreground', dot: 'bg-secondary' } as any;
+  }
+}
+
+// =============================
+// 통계 계산 유틸 (컴포넌트 기대 형태)
+// =============================
+
+export function calculateMemberStats(members: Member[]) {
+  const total = members.length;
+  const active = members.filter((m) => m.status === 'active').length;
+  const pending = members.filter((m) => m.status === 'pending').length;
+  const inactive = members.filter((m) => m.status === 'inactive').length;
+  const adults = members.filter((m) => getMemberCategory(m) === 'adult').length;
+  const children = members.filter((m) => getMemberCategory(m) === 'child').length;
+
+  // 간단한 연령대 분포 (0-9, 10-19, ...)
+  const groups = ['0-9', '10-19', '20-29', '30-39', '40-49', '50+'] as const;
+  const counts: number[] = new Array(groups.length).fill(0);
+  members.forEach((m) => {
+    if (!m.dateOfBirth) return;
+    const age = calculateAge(m.dateOfBirth);
+    let idx = 0;
+    if (age < 10) idx = 0;
+    else if (age < 20) idx = 1;
+    else if (age < 30) idx = 2;
+    else if (age < 40) idx = 3;
+    else if (age < 50) idx = 4;
+    else idx = 5;
+    counts[idx]++;
+  });
+
+  const ageDistribution = groups.map((group, i) => ({
+    group,
+    count: counts[i],
+    percentage: total > 0 ? Math.round((counts[i] / total) * 100) : 0,
+  }));
+
+  return {
+    total,
+    active,
+    pending,
+    inactive,
+    activeRate: total > 0 ? Math.round((active / total) * 100) : 0,
+    adults,
+    children,
+    ageDistribution,
+  };
 }
 
 /**

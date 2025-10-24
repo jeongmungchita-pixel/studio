@@ -14,7 +14,7 @@ import { useFirestore, useUser, useCollection, useAuth } from '@/firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useMemoFirebase } from '@/firebase/provider';
-import { MemberRequest, Club, UserProfile } from '@/types';
+import { Club, UserProfile } from '@/types';
 import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -101,7 +101,6 @@ export default function MemberRegisterPage() {
 
       // 2. users 프로필 생성 (status: pending)
       const userProfile: UserProfile = {
-        id: newUser.uid,
         uid: newUser.uid,
         email: formData.email,
         displayName: formData.name,
@@ -112,11 +111,12 @@ export default function MemberRegisterPage() {
         clubName: selectedClub.name,
         provider: 'email',
         status: 'pending', // 승인 대기
+        createdAt: new Date().toISOString(),
       };
       await setDoc(doc(firestore, 'users', newUser.uid), userProfile);
 
       // 3. memberRegistrationRequests 생성 (참고용)
-      const requestData: Omit<MemberRequest, 'id'> = {
+      const requestData = {
         userId: newUser.uid,
         name: formData.name,
         email: formData.email || undefined,
@@ -140,14 +140,14 @@ export default function MemberRegisterPage() {
       // 승인 대기 페이지로 이동 (완전한 페이지 리로드)
       window.location.href = '/pending-approval';
     } catch (error: unknown) {
-      
       let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
-      if (error.code === 'auth/email-already-in-use') {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
+      if (code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다.';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
-      
+
       toast({
         variant: 'destructive',
         title: '가입 실패',
@@ -336,7 +336,7 @@ export default function MemberRegisterPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
                 <strong>안내:</strong> 가입 즉시 계정이 생성되며, 클럽 오너의 승인 후 모든 기능을 이용할 수 있습니다.
-                승인 전에는 "승인 대기중" 페이지가 표시됩니다.
+                승인 전에는 &quot;승인 대기중&quot; 페이지가 표시됩니다.
               </p>
             </div>
 

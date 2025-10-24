@@ -59,9 +59,10 @@ export default function AnalyticsPage() {
     
     // New members this month
     const newMembers = members.filter(m => {
-      if (!m.joinDate) return false;
-      const joinDate = new Date(m.joinDate);
-      return joinDate >= new Date(monthStart) && joinDate <= new Date(monthEnd);
+      const created = (m as any).createdAt as string | undefined;
+      if (!created) return false;
+      const createdDate = new Date(created);
+      return createdDate >= new Date(monthStart) && createdDate <= new Date(monthEnd);
     }).length;
 
     // Attendance stats
@@ -72,7 +73,7 @@ export default function AnalyticsPage() {
     // Level distribution
     const levelDist: Record<string, number> = {};
     members.forEach(m => {
-      const level = m.level || '미설정';
+      const level = (m as any).currentLevel || '미설정';
       levelDist[level] = (levelDist[level] || 0) + 1;
     });
 

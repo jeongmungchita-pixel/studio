@@ -19,6 +19,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { getMemberCategoryLabel, getMemberCategoryColor, calculateAge } from '@/lib/member-utils';
+import { ROUTES } from '@/constants/routes';
 
 export default function ClubDashboardPage() {
     const { user, isUserLoading } = useUser();
@@ -199,7 +200,7 @@ export default function ClubDashboardPage() {
                   return (
                    <TableRow key={member.id}>
                       <TableCell className="font-medium">
-                        <Link href={`/members/${member.id}`} className="flex items-center gap-3 hover:underline">
+                        <Link href={ROUTES.DYNAMIC.MEMBER_DETAIL(member.id)} className="flex items-center gap-3 hover:underline">
                             <Image
                                 src={member.photoURL || `https://picsum.photos/seed/${member.id}/40/40`}
                                 alt={member.name}
@@ -359,32 +360,22 @@ export default function ClubDashboardPage() {
                 <TabsContent value="classes">
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {gymClasses?.map((gymClass) => {
-                            const enrolledMembers = members?.filter(m => gymClass.memberIds?.includes(m.id)) || [];
+                            const firstSchedule = gymClass.schedule?.[0];
+                            const dayLabel = typeof firstSchedule?.dayOfWeek === 'number' ? `${firstSchedule.dayOfWeek}요일` : '스케줄 미정';
+                            const timeLabel = firstSchedule ? `${firstSchedule.startTime}~${firstSchedule.endTime}` : '시간 미정';
                             return (
                                 <Card key={gymClass.id}>
                                     <CardHeader>
                                         <CardTitle>{gymClass.name}</CardTitle>
                                         <CardDescription className="flex items-center gap-4">
-                                            <span>{gymClass.dayOfWeek}요일</span>
-                                            <span className="flex items-center gap-1"><Clock className="w-4 h-4"/>{gymClass.time}</span>
+                                            <span>{dayLabel}</span>
+                                            <span className="flex items-center gap-1"><Clock className="w-4 h-4"/>{timeLabel}</span>
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                                             <span className="flex items-center gap-1"><Users2 className="w-4 h-4"/>정원</span>
-                                            <span>{enrolledMembers?.length || 0} / {gymClass.capacity}</span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {enrolledMembers && enrolledMembers.length > 0 ? (
-                                                enrolledMembers.map(member => (
-                                                    <Link href={`/members/${member.id}`} key={member.id} className="flex items-center gap-2 text-sm p-1 rounded-md bg-secondary/50 hover:bg-secondary">
-                                                        <Image src={member.photoURL || `https://picsum.photos/seed/${member.id}/24/24`} alt={member.name} width={24} height={24} className="rounded-full" />
-                                                        <span>{member.name}</span>
-                                                    </Link>
-                                                ))
-                                            ) : (
-                                                <p className="text-sm text-muted-foreground text-center py-4">등록된 회원이 없습니다.</p>
-                                            )}
+                                            <span>{gymClass.currentEnrollment} / {gymClass.maxCapacity}</span>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -395,7 +386,7 @@ export default function ClubDashboardPage() {
                                 <CardContent className="flex flex-col items-center justify-center h-64">
                                     <p className="text-muted-foreground">생성된 클래스가 없습니다.</p>
                                     <Button variant="link" asChild>
-                                        <a href="/club-dashboard/classes">클래스 관리 페이지로 이동</a>
+                                        <Link href={ROUTES.CLUB_DASHBOARD.CLASSES}>클래스 관리 페이지로 이동</Link>
                                     </Button>
                                 </CardContent>
                             </Card>

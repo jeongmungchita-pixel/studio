@@ -104,16 +104,15 @@ export default function InitialAdminSetupPage() {
       alert(`최초 관리자가 생성되었습니다!\n이메일: ${formData.email}\n\n로그인해주세요.`);
       router.push('/login');
     } catch (error: unknown) {
-      
       let errorMessage = '관리자 생성에 실패했습니다.';
-      if (error.code === 'auth/email-already-in-use') {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
+      if (code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다.';
-      } else if (error.code === 'auth/invalid-email') {
+      } else if (code === 'auth/invalid-email') {
         errorMessage = '유효하지 않은 이메일 형식입니다.';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다. (최소 6자)';
       }
-      
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);

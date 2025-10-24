@@ -13,6 +13,7 @@ import { Users, MapPin, Loader2, Building2, Mail } from 'lucide-react';
 import { useMemo } from 'react';
 import { usePageLoading } from '@/hooks/use-page-loading';
 import { ErrorFallback } from '@/components/error-fallback';
+import { ROUTES } from '@/constants/routes';
 
 export default function ClubsPage() {
   const firestore = useFirestore();
@@ -129,7 +130,7 @@ export default function ClubsPage() {
             </CardContent>
             
             <CardFooter className="pt-3">
-              <Link href={`/clubs/${club.id}`} className="w-full">
+              <Link href={ROUTES.DYNAMIC.CLUB_DETAIL(club.id)} className="w-full">
                 <Button className="outline w-full">
                   상세보기
                 </Button>

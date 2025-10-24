@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useCollection, useFirebase, useUser, uploadImage } from '@/firebase';
 import { collection, writeBatch, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -121,7 +122,6 @@ export default function ProfileSetupPage() {
       // 1. Update the guardian's user profile, regardless of what's being added
       const userProfileUpdate: Partial<UserProfile> = {
         phoneNumber: values.phoneNumber,
-        isGuardian: true,
       };
       batch.update(userRef, userProfileUpdate);
 
@@ -158,6 +158,7 @@ export default function ProfileSetupPage() {
           status: 'pending', // New members require approval
           guardianIds: [user.uid],
           photoURL: photoURL,
+          createdAt: new Date().toISOString(),
         };
 
         batch.set(memberRef, memberPayload);
@@ -219,8 +220,8 @@ export default function ProfileSetupPage() {
               <CardHeader>
                 <CardTitle>성인 선수 정보</CardTitle>
                 <CardDescription>
-                  보호자 본인 또는 다른 성인 가족을 '선수'로 등록할 경우에만
-                  '성인 추가'를 눌러 정보를 입력해주세요.
+                  보호자 본인 또는 다른 성인 가족을 &apos;선수&apos;로 등록할 경우에만
+                  &apos;성인 추가&apos;를 눌러 정보를 입력해주세요.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -341,11 +342,9 @@ export default function ProfileSetupPage() {
                                     <Input
                                       type="file"
                                       accept="image/*"
-                                      ref={(el) =>
-                                        (adultFileInputRefs.current[
-                                          index
-                                        ] = el)
-                                      }
+                                      ref={(el) => {
+                                        adultFileInputRefs.current[index] = el;
+                                      }}
                                       onChange={(e) =>
                                         handleFileChange(
                                           e,
@@ -509,11 +508,9 @@ export default function ProfileSetupPage() {
                                     <Input
                                       type="file"
                                       accept="image/*"
-                                      ref={(el) =>
-                                        (childFileInputRefs.current[
-                                          index
-                                        ] = el)
-                                      }
+                                      ref={(el) => {
+                                        childFileInputRefs.current[index] = el;
+                                      }}
                                       onChange={(e) =>
                                         handleFileChange(
                                           e,

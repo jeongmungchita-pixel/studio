@@ -56,9 +56,6 @@ service cloud.firestore {
       return isClubOwner() || isClubManager() || isCoach();
     }
     
-    function isMember() {
-      return isAuthenticated() && getUserData().role == 'MEMBER';
-    }
     
     function isAdmin() {
       return isSuperAdmin() || isFederationAdmin();
@@ -211,13 +208,15 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
     
-    match /coachRequests/{requestId} {
-      // 읽기: 관리자 또는 요청한 클럽 스태프
-      allow read: if isAdmin() || (isClubStaff() && resource.data.requestedBy == request.auth.uid);
-      
-      // 생성: 클럽 스태프
-      allow create: if isClubStaff();
-      
+
+    // Standardized collection name
+    match /coach_requests/{requestId} {
+      // 읽기: 관리자 또는 요청한 사용자(본인)
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.requestedBy == request.auth.uid);
+
+      // 생성: 클럽 스태프 & 본인 클럽에 대해서만 허용
+      allow create: if isClubStaff() && belongsToClub(request.resource.data.clubId);
+
       // 수정/삭제: 관리자만
       allow update, delete: if isAdmin();
     }

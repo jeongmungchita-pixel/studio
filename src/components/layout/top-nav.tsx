@@ -1,10 +1,11 @@
 'use client';
 
+import * as React from 'react'
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
 import { useRole } from '@/hooks/use-role';
-import { LayoutDashboard, Users, Building, Trophy, ClipboardList, UserCog, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Building, Trophy, ClipboardList, UserCog, Shield, User } from 'lucide-react';
 
 interface NavSection {
   id: string;
@@ -32,7 +33,7 @@ const navSections: NavSection[] = [
   {
     id: 'my-profile',
     label: '내 정보',
-    icon: UserIcon,
+    icon: User,
     basePath: '/my-profile',
     roles: [UserRole.MEMBER, UserRole.PARENT],
   },

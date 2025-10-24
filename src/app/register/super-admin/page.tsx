@@ -11,7 +11,20 @@ import { useRouter } from 'next/navigation';
 import { Shield, AlertTriangle } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
-import { SuperAdminRequest } from '@/types';
+// 로컬 타입: 최고 관리자 요청 페이로드
+interface SuperAdminRequest {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  organization: string;
+  position: string;
+  reason: string;
+  secretCode: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+}
 
 export default function SuperAdminRegisterPage() {
   const router = useRouter();

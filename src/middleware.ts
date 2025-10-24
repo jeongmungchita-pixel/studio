@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { ROUTES } from '@/constants/routes';
+import { NextRequest } from 'next/server';
 
 // Rate limiting을 위한 간단한 메모리 저장소
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
@@ -19,7 +20,12 @@ function addSecurityHeaders(response: NextResponse) {
 
 // Rate Limiting 체크
 function checkRateLimit(request: NextRequest): boolean {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'anonymous';
+  const ipHeader =
+    request.headers.get('x-forwarded-for') ||
+    request.headers.get('x-real-ip') ||
+    request.headers.get('cf-connecting-ip') ||
+    ''
+  const ip = (ipHeader.split(',')[0]?.trim()) || 'anonymous'
   const now = Date.now();
   const windowStart = now - RATE_LIMIT_WINDOW;
 
@@ -42,7 +48,7 @@ function validateRequest(request: NextRequest): boolean {
   const { pathname } = request.nextUrl;
 
   // API 경로에 대한 추가 검증
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith(ROUTES.API.ROOT)) {
     // Content-Type 검증 (POST, PUT, PATCH 요청)
     if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
       const contentType = request.headers.get('content-type');
@@ -70,7 +76,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // API 경로에 대한 보안 검사
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith(ROUTES.API.ROOT)) {
     // Rate Limiting 체크
     if (!checkRateLimit(request)) {
       return new NextResponse(

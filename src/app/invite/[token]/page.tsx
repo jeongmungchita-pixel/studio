@@ -7,9 +7,10 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, XCircle, Mail, User, Phone, Calendar } from 'lucide-react';
-import { FederationAdminInvite } from '@/types';
+import { Loader2, CheckCircle2, XCircle, Mail, Calendar } from 'lucide-react';
+import { Invitation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { ROUTES } from '@/constants/routes';
 
 export default function InvitePage() {
   const params = useParams();
@@ -18,7 +19,7 @@ export default function InvitePage() {
   const { toast } = useToast();
   const token = params.token as string;
 
-  const [invite, setInvite] = useState<FederationAdminInvite | null>(null);
+  const [invite, setInvite] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 초대 정보 로드
@@ -39,7 +40,7 @@ export default function InvitePage() {
           return;
         }
 
-        const inviteData = { id: inviteDoc.id, ...inviteDoc.data() } as FederationAdminInvite;
+        const inviteData = { id: inviteDoc.id, ...inviteDoc.data() } as Invitation;
 
         // 상태 확인
         if (inviteData.status === 'accepted') {
@@ -94,7 +95,7 @@ export default function InvitePage() {
 
   // 초대 수락하기 - 연맹 관리자 전용 가입 페이지로 이동
   const handleAcceptInvite = () => {
-    router.push(`/invite/accept/${token}`);
+    router.push(ROUTES.INVITE.ACCEPT_TOKEN(token));
   };
 
   if (loading) {
@@ -119,7 +120,7 @@ export default function InvitePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push('/login')} className="w-full">
+            <Button onClick={() => router.push(ROUTES.LOGIN)} className="w-full">
               로그인 페이지로 이동
             </Button>
           </CardContent>
@@ -144,28 +145,12 @@ export default function InvitePage() {
           {/* 초대 정보 */}
           <div className="rounded-lg bg-slate-50 p-4 space-y-3">
             <div className="flex items-center gap-3">
-              <User className="h-5 w-5 text-slate-400" />
-              <div>
-                <p className="text-xs text-slate-500">이름</p>
-                <p className="text-sm font-medium text-slate-700">{invite.name}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-slate-400" />
               <div>
                 <p className="text-xs text-slate-500">이메일</p>
                 <p className="text-sm font-medium text-slate-700">{invite.email}</p>
               </div>
             </div>
-            {invite.phoneNumber && (
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-slate-400" />
-                <div>
-                  <p className="text-xs text-slate-500">전화번호</p>
-                  <p className="text-sm font-medium text-slate-700">{invite.phoneNumber}</p>
-                </div>
-              </div>
-            )}
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-slate-400" />
               <div>

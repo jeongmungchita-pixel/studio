@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Query, DocumentData, QueryDocumentSnapshot, limit, startAfter, getDocs } from 'firebase/firestore';
+import { Query, DocumentData, QueryDocumentSnapshot, limit, startAfter, getDocs, query } from 'firebase/firestore';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 interface UsePaginatedCollectionOptions {
@@ -43,8 +43,8 @@ export function usePaginatedCollection<T = any>(
     setError(null);
 
     try {
-      const firstPageQuery = firestoreQuery(baseQuery, limit(pageSize));
-      const snapshot = await getDocs(firstPageQuery);
+      const firstPage = query(baseQuery, limit(pageSize));
+      const snapshot = await getDocs(firstPage);
       
       const results: WithId<T>[] = snapshot.docs.map(doc => ({
         ...doc.data() as T,
@@ -71,13 +71,9 @@ export function usePaginatedCollection<T = any>(
 
     try {
       const lastSnapshot = pageSnapshots[pageSnapshots.length - 1];
-      const nextPageQuery = firestoreQuery(
-        baseQuery,
-        startAfter(lastSnapshot),
-        limit(pageSize)
-      );
+      const nextPage = query(baseQuery, startAfter(lastSnapshot), limit(pageSize));
       
-      const snapshot = await getDocs(nextPageQuery);
+      const snapshot = await getDocs(nextPage);
       
       if (snapshot.docs.length > 0) {
         const results: WithId<T>[] = snapshot.docs.map(doc => ({
@@ -113,13 +109,9 @@ export function usePaginatedCollection<T = any>(
       } else {
         // 이전 페이지의 스냅샷 사용
         const prevSnapshot = pageSnapshots[currentPage - 3]; // 0-based index
-        const prevPageQuery = firestoreQuery(
-          baseQuery,
-          startAfter(prevSnapshot),
-          limit(pageSize)
-        );
+        const prevPage = query(baseQuery, startAfter(prevSnapshot), limit(pageSize));
         
-        const snapshot = await getDocs(prevPageQuery);
+        const snapshot = await getDocs(prevPage);
         
         const results: WithId<T>[] = snapshot.docs.map(doc => ({
           ...doc.data() as T,

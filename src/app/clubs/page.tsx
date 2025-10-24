@@ -2,6 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 import Link from 'next/link';
+import { ROUTES } from '@/constants/routes';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -83,7 +84,11 @@ export default function ClubsPage() {
                   <CardTitle className="text-lg">{club.name}</CardTitle>
                   <div className="mt-1 flex items-center gap-1 text-sm text-slate-500">
                     <MapPin className="h-3 w-3" />
-                    {club.location || '위치 미등록'}
+                    {typeof club.location === 'string'
+                      ? club.location
+                      : club.location
+                      ? `${club.location.latitude.toFixed(3)}, ${club.location.longitude.toFixed(3)}`
+                      : '위치 미등록'}
                   </div>
                 </div>
               </div>
@@ -118,7 +123,7 @@ export default function ClubsPage() {
             </CardContent>
             
             <CardFooter className="pt-3">
-              <Link href={`/clubs/${club.id}`} className="w-full">
+              <Link href={ROUTES.DYNAMIC.CLUB_DETAIL(club.id)} className="w-full">
                 <Button variant="outline" size="sm" className="w-full">
                   상세보기
                 </Button>

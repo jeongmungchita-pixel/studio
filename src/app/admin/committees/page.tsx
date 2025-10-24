@@ -12,6 +12,7 @@ import { useFirestore, useCollection } from '@/firebase';
 import { ErrorFallback } from '@/components/error-fallback';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { ROUTES } from '@/constants/routes';
 
 const committeeTypeNames: Record<CommitteeType, string> = {
   COMPETITION: '대회',
@@ -66,7 +67,7 @@ export default function CommitteesPage() {
         
         {/* 연맹 관리자만 위원회 생성 가능 */}
         <RequireRole role={UserRole.FEDERATION_ADMIN}>
-          <Button onClick={() => router.push('/committees/new')}>
+          <Button onClick={() => router.push(ROUTES.COMMITTEES_NEW)}>
             <Plus className="h-4 w-4 mr-2" />
             새 위원회 만들기
           </Button>
@@ -79,7 +80,7 @@ export default function CommitteesPage() {
           <Card 
             key={committee.id}
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => router.push(`/committees/${committee.id}`)}
+            onClick={() => router.push(ROUTES.DYNAMIC.COMMITTEE_DETAIL(committee.id))}
           >
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -126,7 +127,7 @@ export default function CommitteesPage() {
               첫 번째 위원회를 만들어보세요
             </p>
             <RequireRole role={UserRole.FEDERATION_ADMIN}>
-              <Button onClick={() => router.push('/committees/new')}>
+              <Button onClick={() => router.push(ROUTES.COMMITTEES_NEW)}>
                 <Plus className="h-4 w-4 mr-2" />
                 위원회 만들기
               </Button>

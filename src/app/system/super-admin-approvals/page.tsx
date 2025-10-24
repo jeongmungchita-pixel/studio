@@ -9,7 +9,21 @@ import { useState } from 'react';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { SuperAdminRequest, UserRole } from '@/types';
+import { UserRole } from '@/types';
+
+// 로컬 타입: 최고 관리자 요청
+interface SuperAdminRequest {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  organization: string;
+  position: string;
+  reason: string;
+  requestedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  userId?: string;
+}
 
 
 export default function SuperAdminApprovalsPage() {

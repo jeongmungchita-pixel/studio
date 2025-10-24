@@ -85,13 +85,13 @@ export default function MemberWithContractPage() {
     return age < 19;
   };
 
-  const updateFormData = (field: keyof MemberFormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateFormData = (field: keyof MemberFormData, value: string | boolean | null) => {
     setFormData(prev => {
-      const updated = { ...prev, [field]: value };
+      const updated = { ...prev, [field]: value } as MemberFormData;
       
       // 생년월일 변경 시 미성년자 자동 판단
       if (field === 'birthDate') {
-        updated.isMinor = checkIfMinor(value);
+        updated.isMinor = typeof value === 'string' ? checkIfMinor(value) : false;
       }
       
       return updated;
@@ -114,7 +114,7 @@ export default function MemberWithContractPage() {
     }
     
     const signatureData = signatureRef.current?.toDataURL();
-    updateFormData('signature', signatureData);
+    updateFormData('signature', signatureData || '');
     return true;
   };
 
@@ -530,7 +530,7 @@ export default function MemberWithContractPage() {
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-800">
-                  서명 완료 후 "가입 신청" 버튼을 클릭하면 클럽 관리자에게 승인 요청이 전송됩니다.
+                  서명 완료 후 &quot;가입 신청&quot; 버튼을 클릭하면 클럽 관리자에게 승인 요청이 전송됩니다.
                 </p>
               </div>
             </div>

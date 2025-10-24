@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
@@ -183,12 +184,12 @@ export default function AdminCompetitionsPage() {
     form.reset({
       title: competition.title,
       description: competition.description,
-      registrationStart: competition.registrationStart.split('T')[0],
-      registrationEnd: competition.registrationEnd.split('T')[0],
-      competitionDate: competition.competitionDate.split('T')[0],
+      registrationStart: (competition.registrationStart || '').split('T')[0],
+      registrationEnd: (competition.registrationEnd || '').split('T')[0],
+      competitionDate: (competition.competitionDate || '').split('T')[0],
       venue: competition.venue,
     });
-    setSelectedEvents(competition.events.map(e => e.id));
+    setSelectedEvents((competition.events ?? []).map(e => e.id));
     setIsDialogOpen(true);
   };
 
@@ -246,7 +247,7 @@ export default function AdminCompetitionsPage() {
     
     try {
       // competition_schedules 컬렉션에 심판 배정 저장
-      for (const event of judgeCompetition.events) {
+      for (const event of (judgeCompetition?.events ?? [])) {
         const assignment = judgeAssignments[event.id];
         if (!assignment) continue;
 
@@ -320,7 +321,7 @@ export default function AdminCompetitionsPage() {
                   competition.status === 'in_progress' ? 'secondary' :
                   'outline'
                 }>
-                  {statusLabels[competition.status]}
+                  {statusLabels[competition.status as keyof typeof statusLabels]}
                 </Badge>
               </div>
               <CardTitle className="text-lg">{competition.title}</CardTitle>
@@ -331,17 +332,17 @@ export default function AdminCompetitionsPage() {
             <CardContent className="space-y-3">
               <div className="text-sm">
                 <p className="text-muted-foreground">시합일</p>
-                <p className="font-semibold">{format(new Date(competition.competitionDate), 'PPP', { locale: ko })}</p>
+                <p className="font-semibold">{competition.competitionDate ? format(new Date(competition.competitionDate), 'PPP', { locale: ko }) : '-'}</p>
               </div>
               <div className="text-sm">
                 <p className="text-muted-foreground">신청 기간</p>
                 <p className="font-semibold">
-                  {format(new Date(competition.registrationStart), 'M/d')} ~ {format(new Date(competition.registrationEnd), 'M/d')}
+                  {competition.registrationStart ? format(new Date(competition.registrationStart), 'M/d') : '-'} ~ {competition.registrationEnd ? format(new Date(competition.registrationEnd), 'M/d') : '-'}
                 </p>
               </div>
               <div className="text-sm">
                 <p className="text-muted-foreground">종목</p>
-                <p className="font-semibold">{competition.events.length}개</p>
+                <p className="font-semibold">{(competition.events?.length || 0)}개</p>
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
@@ -621,8 +622,8 @@ export default function AdminCompetitionsPage() {
                       {reg.clubName} | {reg.gender === 'male' ? '남자' : '여자'} | {reg.age}세
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      종목: {reg.registeredEvents.map(e => {
-                        const event = selectedCompetition?.events.find(ev => ev.id === e);
+                      종목: {(reg.registeredEvents ?? (reg as any).events ?? []).map((e: string) => {
+                        const event = selectedCompetition?.events?.find(ev => ev.id === e);
                         return event?.name || e;
                       }).join(', ')}
                     </p>
@@ -673,7 +674,7 @@ export default function AdminCompetitionsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {judgeCompetition?.events.map((event, eventIndex) => {
+            {(judgeCompetition?.events ?? []).map((event, eventIndex) => {
               const assignment = judgeAssignments[event.id] || { dJudges: ['', ''], eJudges: ['', '', '', ''] };
               
               return (

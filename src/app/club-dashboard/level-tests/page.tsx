@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { ClubLevelTest, TestLevel, EvaluationItem, LevelTestRegistration } from '@/types';
 import { UserRole } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,9 +17,52 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
+
+type TestLevel = {
+  id: string
+  name: string
+  code: string
+  color: string
+  minScore: number
+  maxScore: number
+  order: number
+  icon?: string
+}
+
+type EvaluationItem = {
+  id: string
+  name: string
+  maxScore: number
+  weight: number
+}
+
+type UILevelTest = {
+  id: string
+  title: string
+  description: string
+  clubId: string
+  registrationStart: string
+  registrationEnd: string
+  testDate: string
+  levels: TestLevel[]
+  evaluationItems: EvaluationItem[]
+  status: 'draft' | 'registration_open' | 'registration_closed' | 'in_progress' | 'completed'
+  createdAt: string
+  updatedAt?: string
+}
+
+type LevelTestRegistration = {
+  id: string
+  testId: string
+  memberName: string
+  currentLevel?: string
+  targetLevel: string
+  status: 'pending' | 'approved' | 'rejected'
+}
 
 const DEFAULT_LEVELS: TestLevel[] = [
   { id: 'beginner', name: '입문', code: 'BEGINNER', color: '#8B4513', minScore: 0, maxScore: 59, order: 1, icon: '🟤' },
@@ -61,8 +103,8 @@ export default function ClubLevelTestsPage() {
   const { toast } = useToast();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTest, setEditingTest] = useState<ClubLevelTest | null>(null);
-  const [selectedTest, setSelectedTest] = useState<ClubLevelTest | null>(null);
+  const [editingTest, setEditingTest] = useState<UILevelTest | null>(null);
+  const [selectedTest, setSelectedTest] = useState<UILevelTest | null>(null);
 
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testFormSchema),
@@ -84,7 +126,7 @@ export default function ClubLevelTestsPage() {
       orderBy('testDate', 'desc')
     );
   }, [firestore, user?.clubId]);
-  const { data: levelTests, isLoading } = useCollection<ClubLevelTest>(testsQuery);
+  const { data: levelTests, isLoading } = useCollection<UILevelTest>(testsQuery);
 
   // Fetch registrations for selected test
   const registrationsQuery = useMemoFirebase(() => {
@@ -104,11 +146,11 @@ export default function ClubLevelTestsPage() {
         await updateDoc(doc(firestore, 'level_tests', editingTest.id), {
           ...values,
           updatedAt: new Date().toISOString(),
-        });
+        } as any);
         toast({ title: '레벨테스트 수정 완료' });
       } else {
         const testRef = doc(collection(firestore, 'level_tests'));
-        const testData: ClubLevelTest = {
+        const testData: UILevelTest = {
           ...values,
           id: testRef.id,
           clubId: user.clubId,
@@ -117,8 +159,8 @@ export default function ClubLevelTestsPage() {
           status: 'draft',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        };
-        await setDoc(testRef, testData);
+        } as any;
+        await setDoc(testRef, testData as any);
         toast({ title: '레벨테스트 생성 완료' });
       }
 
@@ -130,7 +172,7 @@ export default function ClubLevelTestsPage() {
     }
   };
 
-  const handleEdit = (test: ClubLevelTest) => {
+  const handleEdit = (test: UILevelTest) => {
     setEditingTest(test);
     form.reset({
       title: test.title,
@@ -152,7 +194,7 @@ export default function ClubLevelTestsPage() {
     }
   };
 
-  const handleStatusChange = async (testId: string, newStatus: ClubLevelTest['status']) => {
+  const handleStatusChange = async (testId: string, newStatus: UILevelTest['status']) => {
     if (!firestore) return;
     try {
       await updateDoc(doc(firestore, 'level_tests', testId), {

@@ -57,20 +57,30 @@ export default function AdminUsersPage() {
     try {
       const batch = writeBatch(firestore);
 
-      // 1. Update user status to 'approved'
+      // 1. Update user status to 'active'
       const userRef = doc(firestore, 'users', userToApprove.uid);
-      batch.update(userRef, { status: 'approved' });
+      batch.update(userRef, { status: 'active' });
 
       // 2. Create a new club document
       const clubRef = doc(collection(firestore, 'clubs'));
       const newClub: Club = {
         id: clubRef.id,
         name: userToApprove.clubName,
+        ownerId: userToApprove.uid,
+        ownerName: userToApprove.displayName || userToApprove.email || '관리자',
         contactName: userToApprove.displayName,
         contactEmail: userToApprove.email,
         contactPhoneNumber: userToApprove.phoneNumber || '',
-        location: '미정', // Default location
-        status: 'approved', // 신규 클럽은 승인 상태로 생성
+        // 위치 정보는 좌표 객체로 관리. 초기값 미정 처리 (옵셔널)
+        // location은 지정하지 않음
+        address: '',
+        phoneNumber: '',
+        email: userToApprove.email || '',
+        status: 'active',
+        facilities: [],
+        capacity: 0,
+        operatingHours: {},
+        createdAt: new Date().toISOString(),
       };
       batch.set(clubRef, newClub);
 
@@ -120,11 +130,11 @@ export default function AdminUsersPage() {
 
   const getStatusVariant = (status: UserProfile['status']): 'default' | 'destructive' | 'secondary' => {
     switch (status) {
-      case 'approved':
+      case 'active':
         return 'default';
       case 'pending':
         return 'destructive';
-      case 'rejected':
+      case 'inactive':
         return 'secondary';
       default:
         return 'secondary';
@@ -181,7 +191,7 @@ export default function AdminUsersPage() {
                     <TableCell>{u.clubName || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(u.status)}>
-                        {u.status === 'pending' ? '승인 대기' : '승인됨'}
+                        {u.status === 'pending' ? '승인 대기' : u.status === 'active' ? '활성' : '비활성'}
                       </Badge>
                     </TableCell>
                     <TableCell className="space-x-2">

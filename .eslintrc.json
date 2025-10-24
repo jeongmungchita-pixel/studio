@@ -1,5 +1,8 @@
 {
   "extends": "next/core-web-vitals",
+  "ignorePatterns": [
+    ".next/**/*"
+  ],
   "rules": {
     "react-hooks/rules-of-hooks": "warn",
     "react-hooks/exhaustive-deps": "warn"

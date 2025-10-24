@@ -8,7 +8,10 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { useFirestore, useCollection } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
-import { Member, Club, Competition } from '@/types';
+import { ROUTES } from '@/constants/routes';
+import { Member } from '@/types/member';
+import { Club } from '@/types/club';
+import { GymnasticsCompetition } from '@/types/business';
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
@@ -32,7 +35,7 @@ export function GlobalSearch() {
 
   const { data: members } = useCollection<Member>(membersCollection);
   const { data: clubs } = useCollection<Club>(clubsCollection);
-  const { data: competitions } = useCollection<Competition>(competitionsCollection);
+  const { data: competitions } = useCollection<GymnasticsCompetition>(competitionsCollection);
 
   // 키보드 단축키 (Cmd+K 또는 Ctrl+K)
   useEffect(() => {
@@ -93,7 +96,7 @@ export function GlobalSearch() {
               {filteredMembers.map((member) => (
                 <CommandItem
                   key={member.id}
-                  onSelect={() => handleSelect(`/members/${member.id}`)}
+                  onSelect={() => handleSelect(ROUTES.DYNAMIC.MEMBER_DETAIL(member.id))}
                 >
                   <User className="mr-2 h-4 w-4" />
                   <span>{member.name}</span>
@@ -112,13 +115,15 @@ export function GlobalSearch() {
               {filteredClubs.map((club) => (
                 <CommandItem
                   key={club.id}
-                  onSelect={() => handleSelect(`/clubs/${club.id}`)}
+                  onSelect={() => handleSelect(ROUTES.DYNAMIC.CLUB_DETAIL(club.id))}
                 >
                   <Building className="mr-2 h-4 w-4" />
                   <span>{club.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {club.location}
-                  </span>
+                  {club.location && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {`${club.location.latitude}, ${club.location.longitude}`}
+                    </span>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -129,12 +134,12 @@ export function GlobalSearch() {
               {filteredCompetitions.map((comp) => (
                 <CommandItem
                   key={comp.id}
-                  onSelect={() => handleSelect(`/competitions/${comp.id}`)}
+                  onSelect={() => handleSelect(ROUTES.DYNAMIC.COMPETITION_DETAIL(comp.id))}
                 >
                   <Trophy className="mr-2 h-4 w-4" />
                   <span>{comp.name}</span>
                   <span className="ml-2 text-xs text-muted-foreground">
-                    {new Date(comp.startDate).toLocaleDateString()}
+                    {comp.startDate ? new Date(comp.startDate).toLocaleDateString() : ''}
                   </span>
                 </CommandItem>
               ))}
@@ -142,19 +147,19 @@ export function GlobalSearch() {
           )}
 
           <CommandGroup heading="빠른 이동">
-            <CommandItem onSelect={() => handleSelect('/dashboard')}>
+            <CommandItem onSelect={() => handleSelect(ROUTES.DASHBOARD)}>
               <FileText className="mr-2 h-4 w-4" />
               <span>대시보드</span>
             </CommandItem>
-            <CommandItem onSelect={() => handleSelect('/members')}>
+            <CommandItem onSelect={() => handleSelect(ROUTES.MEMBERS)}>
               <Users className="mr-2 h-4 w-4" />
               <span>회원 목록</span>
             </CommandItem>
-            <CommandItem onSelect={() => handleSelect('/clubs')}>
+            <CommandItem onSelect={() => handleSelect(ROUTES.CLUBS)}>
               <Building className="mr-2 h-4 w-4" />
               <span>클럽 목록</span>
             </CommandItem>
-            <CommandItem onSelect={() => handleSelect('/competitions')}>
+            <CommandItem onSelect={() => handleSelect(ROUTES.COMPETITIONS)}>
               <Trophy className="mr-2 h-4 w-4" />
               <span>대회 목록</span>
             </CommandItem>

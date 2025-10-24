@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ROUTES } from '@/constants/routes';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { Member, MemberPass, PassTemplate } from '@/types';
 import { collection, query, where, doc, writeBatch, orderBy } from 'firebase/firestore';
@@ -59,25 +60,35 @@ export default function MyProfilePage() {
       const batch = writeBatch(firestore);
       const newPassRef = doc(collection(firestore, 'member_passes'));
       
+      const now = new Date();
+      const endDate = new Date(now);
+      endDate.setDate(endDate.getDate() + (selectedTemplate.duration || 0));
+
+      const isSessionBased = selectedTemplate.type === 'session-based';
+
       const newPass: MemberPass = {
         id: newPassRef.id,
+        templateId: selectedTemplate.id,
+        templateName: selectedTemplate.name,
         memberId: selectedMember.id,
+        memberName: selectedMember.name,
         clubId: selectedMember.clubId,
-        passType: selectedTemplate.id, // Storing template id as passType for reference
-        passName: selectedTemplate.name,
+        type: selectedTemplate.type,
+        startDate: now.toISOString(),
+        endDate: endDate.toISOString(),
+        remainingSessions: isSessionBased ? selectedTemplate.sessionCount : undefined,
+        price: selectedTemplate.price,
+        paymentStatus: 'pending',
         paymentMethod: paymentMethod,
-        totalSessions: selectedTemplate.totalSessions,
-        attendableSessions: selectedTemplate.attendableSessions,
-        remainingSessions: selectedTemplate.totalSessions,
-        attendanceCount: 0,
-        status: 'pending',
-        ...(selectedTemplate.durationDays && { endDate: new Date(new Date().setDate(new Date().getDate() + selectedTemplate.durationDays)).toISOString() })
+        status: 'active',
+        usageCount: 0,
+        createdAt: now.toISOString(),
       };
       
       batch.set(newPassRef, newPass);
 
       const memberRef = doc(firestore, 'members', selectedMember.id);
-      batch.update(memberRef, { status: 'pending' });
+      batch.update(memberRef, { status: 'active' });
 
       await batch.commit();
       
@@ -106,14 +117,16 @@ export default function MyProfilePage() {
     
     switch (pass.status) {
       case 'active':
-        if (pass.totalSessions !== undefined) {
-             return <Badge>{`활성: ${pass.attendanceCount}/${pass.attendableSessions} (남은 기회 ${pass.remainingSessions})`}</Badge>;
+        if (pass.remainingSessions !== undefined) {
+          return <Badge>{`활성: 사용 ${pass.usageCount}회 / 남은 ${pass.remainingSessions ?? 0}`}</Badge>;
         }
-        return <Badge>활성 (무제한)</Badge>
-      case 'pending':
-        return <Badge variant="destructive">승인 대기중</Badge>;
+        return <Badge>활성 (기간제)</Badge>
       case 'expired':
         return <Badge variant="secondary">만료됨</Badge>;
+      case 'suspended':
+        return <Badge variant="secondary">일시중지</Badge>;
+      case 'cancelled':
+        return <Badge variant="secondary">취소됨</Badge>;
       default:
         return <Badge variant="secondary">이용권 없음</Badge>;
     }
@@ -159,8 +172,9 @@ export default function MyProfilePage() {
         <h2 className="text-xl font-semibold">소속 선수/가족 목록</h2>
         {members && members.length > 0 ? members.map(member => {
            const memberPasses = passes?.filter(p => p.memberId === member.id) || [];
-           const currentPass = memberPasses.find(p => p.status === 'active' || p.status === 'pending');
-           const canRequestNewPass = !currentPass && member.status !== 'pending';
+           const currentPass = memberPasses.find(p => p.status === 'active');
+           const hasPendingPayment = memberPasses.some(p => p.paymentStatus === 'pending');
+           const canRequestNewPass = !currentPass && !hasPendingPayment && member.status !== 'pending';
 
           return (
             <Card key={member.id}>
@@ -188,7 +202,7 @@ export default function MyProfilePage() {
                         <h4 className="font-semibold flex items-center"><History className="mr-2 h-4 w-4"/>이용권 내역</h4>
                         <ul className="list-disc list-inside text-sm text-muted-foreground pl-2">
                            {memberPasses.map(p => (
-                            <li key={p.id}>{new Date(p.startDate || '').toLocaleDateString()} 시작 ({p.passName}) - {p.status === 'expired' ? '만료' : p.status === 'active' ? '활성' : '대기' }</li>
+                           <li key={p.id}>{new Date(p.startDate || '').toLocaleDateString()} 시작 ({p.templateName}) - {p.status === 'expired' ? '만료' : p.status === 'active' ? '활성' : p.status === 'suspended' ? '중지' : '취소' }</li>
                            ))}
                         </ul>
                    </div>
@@ -199,7 +213,7 @@ export default function MyProfilePage() {
                   <Ticket className="mr-2 h-4 w-4"/>
                   {canRequestNewPass ? '신규 이용권 신청' : '활성/대기중인 이용권 있음'}
                 </Button>
-                <Link href={`/members/${member.id}`} passHref>
+                <Link href={ROUTES.DYNAMIC.MEMBER_DETAIL(member.id)} passHref>
                     <Button variant="outline">
                         상세보기 <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -240,9 +254,8 @@ export default function MyProfilePage() {
                                 <p className="text-sm text-muted-foreground mt-1">{template.description || "상세 설명 없음"}</p>
                             </div>
                             <div className="text-xs mt-2 space-y-1">
-                                {template.durationDays && <p>• 유효기간: {template.durationDays}일</p>}
-                                {template.totalSessions !== undefined && <p>• 총 {template.totalSessions}회 사용 가능</p>}
-                                {template.attendableSessions !== undefined && <p>• {template.attendableSessions}회 출석 필요</p>}
+                                {template.duration && <p>• 유효기간: {template.duration}일</p>}
+                                {template.sessionCount !== undefined && <p>• 총 {template.sessionCount}회 사용 가능</p>}
                                 {template.price && <p className="font-semibold mt-2">{template.price.toLocaleString()}원</p>}
                             </div>
                         </div>
@@ -273,7 +286,7 @@ export default function MyProfilePage() {
                 </div>
               )}
               <p className="mt-2 text-sm text-muted-foreground">
-                신청 후 클럽 관리자의 승인이 필요합니다. '계좌 이체'를 선택한 경우, 클럽 계좌로 입금 후 승인 요청이 처리됩니다.
+                신청 후 클럽 관리자의 승인이 필요합니다. &apos;계좌 이체&apos;를 선택한 경우, 클럽 계좌로 입금 후 승인 요청이 처리됩니다.
               </p>
           </div>
           <DialogFooter>

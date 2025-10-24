@@ -18,7 +18,7 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { User, PenTool, CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
-import { Club, AdultRegistrationRequest } from '@/types';
+import { Club } from '@/types';
 
 interface FormData {
   clubId: string;
@@ -63,7 +63,7 @@ export default function AdultRegisterPage() {
   );
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
 
-  const updateFormData = (field: keyof FormData, value: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -79,7 +79,7 @@ export default function AdultRegisterPage() {
 
   const clearSignature = () => {
     signatureRef.current?.clear();
-    updateFormData('signature', null);
+    updateFormData('signature', '');
   };
 
   const saveSignature = () => {
@@ -93,7 +93,7 @@ export default function AdultRegisterPage() {
     }
     
     const signatureData = signatureRef.current?.toDataURL();
-    updateFormData('signature', signatureData);
+    updateFormData('signature', signatureData || '');
     return true;
   };
 
@@ -176,7 +176,7 @@ export default function AdultRegisterPage() {
         throw new Error('클럽을 찾을 수 없습니다.');
       }
 
-      const requestData: Omit<AdultRegistrationRequest, 'id'> = {
+      const requestData = {
         clubId: formData.clubId,
         clubName: selectedClub.name,
         requestType: 'adult',

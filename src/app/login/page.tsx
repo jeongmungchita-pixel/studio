@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -93,7 +94,8 @@ export default function LoginPage() {
       }
     } catch (error: unknown) {
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
       }
       toast({

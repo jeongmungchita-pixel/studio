@@ -5,7 +5,7 @@ import { use, useEffect, useState } from 'react';
 import { useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { GymnasticsCompetition, CompetitionSchedule, GymnasticsScore } from '@/types';
+import { GymnasticsCompetition, GymnasticsScore } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy } from 'lucide-react';
@@ -22,6 +22,15 @@ const EVENT_NAMES: Record<string, string> = {
 };
 
 export default function ScoreboardPage({ params }: { params: Promise<{ competitionId: string }> }) {
+  // 로컬 타입: 현재 스케줄 (이 파일에서 사용하는 필드만 선언)
+  interface CompetitionSchedule {
+    id: string;
+    eventId: string;
+    eventName: string;
+    categoryName: string;
+    gender: 'male' | 'female' | 'mixed';
+    status: 'in_progress' | 'completed' | 'pending';
+  }
   const { competitionId } = use(params);
   const firestore = useFirestore();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -111,12 +120,12 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
               <div className="grid grid-cols-5 gap-4 items-center">
                 {/* Rank */}
                 <div className="text-center">
-                  {score.rank && score.rank <= 3 ? (
+                  {index <= 2 ? (
                     <div className="text-6xl">
-                      {score.rank === 1 ? '🥇' : score.rank === 2 ? '🥈' : '🥉'}
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
                     </div>
                   ) : (
-                    <div className="text-5xl font-bold">{score.rank || '-'}</div>
+                    <div className="text-5xl font-bold">{index + 1}</div>
                   )}
                 </div>
 
@@ -130,14 +139,14 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
                 <div className="text-center">
                   <p className="text-sm text-white/70">D점 / E점</p>
                   <p className="text-2xl font-semibold">
-                    {score.dScore.final.toFixed(2)} / {score.eScore.final.toFixed(2)}
+                    {score.difficulty.toFixed(2)} / {score.execution.toFixed(2)}
                   </p>
                 </div>
 
                 {/* Final Score */}
                 <div className="text-center">
                   <p className="text-sm text-white/70">최종 점수</p>
-                  <p className="text-5xl font-bold text-yellow-400">{score.finalScore.toFixed(2)}</p>
+                  <p className="text-5xl font-bold text-yellow-400">{score.total.toFixed(2)}</p>
                 </div>
               </div>
             </Card>

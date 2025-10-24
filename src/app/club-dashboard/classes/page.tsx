@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -15,12 +16,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby, Users } from 'lucide-react';
+import { Loader2, Edit, Trash2, PlusCircle, Users, User, Baby } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTargetCategoryLabel } from '@/lib/member-utils';
 import { FirebaseDebug } from '@/components/debug/firebase-debug';
+import { ROUTES } from '@/constants/routes';
 
 
 const classFormSchema = z.object({
@@ -33,6 +35,14 @@ const classFormSchema = z.object({
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
 const daysOfWeek: Array<ClassFormValues['dayOfWeek']> = ['월', '화', '수', '목', '금', '토', '일'];
+type DayOfWeek = (typeof daysOfWeek)[number]
+
+type UIGymClass = GymClass & {
+  dayOfWeek: DayOfWeek
+  time: string
+  capacity: number
+  memberIds: string[]
+}
 
 export default function ClassesPage() {
   const { user } = useUser();
@@ -40,9 +50,9 @@ export default function ClassesPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingClass, setEditingClass] = useState<GymClass | null>(null);
+  const [editingClass, setEditingClass] = useState<UIGymClass | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deletingClass, setDeletingClass] = useState<GymClass | null>(null);
+  const [deletingClass, setDeletingClass] = useState<UIGymClass | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child' | 'general'>('all');
 
   // 전역 에러 핸들러 추가
@@ -85,13 +95,13 @@ export default function ClassesPage() {
     if (!firestore || !user?.clubId) return null;
     return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
   }, [firestore, user?.clubId]);
-  const { data: classes, isLoading } = useCollection<GymClass>(classesQuery);
+  const { data: classes, isLoading } = useCollection<UIGymClass>(classesQuery);
 
   // Filter and sort classes
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
     
-    let filtered = classes;
+    let filtered: UIGymClass[] = classes;
     
     // Apply category filter
     if (categoryFilter !== 'all') {
@@ -103,7 +113,7 @@ export default function ClassesPage() {
     }
     
     // Sort by day of week and time
-    const dayOrder = {'월': 0, '화': 1, '수': 2, '목': 3, '금': 4, '토': 5, '일': 6};
+    const dayOrder: Record<DayOfWeek, number> = { '월': 0, '화': 1, '수': 2, '목': 3, '금': 4, '토': 5, '일': 6 };
     return filtered.sort((a, b) => {
       const dayDiff = dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
       if (dayDiff !== 0) return dayDiff;
@@ -111,7 +121,7 @@ export default function ClassesPage() {
     });
   }, [classes, categoryFilter]);
 
-  const handleOpenDialog = (gymClass: GymClass | null = null) => {
+  const handleOpenDialog = (gymClass: UIGymClass | null = null) => {
     setEditingClass(gymClass);
     
     // Reset form with proper values
@@ -193,8 +203,8 @@ export default function ClassesPage() {
           time: values.time,
           capacity: values.capacity,
           targetCategory: values.targetCategory,
-        };
-        await setDoc(classRef, updatedData, { merge: true });
+        } as any;
+        await setDoc(classRef, updatedData as any, { merge: true });
         toast({ title: '클래스 수정 완료', description: `'${values.name}' 클래스가 수정되었습니다.` });
       } else {
         // Create new class
@@ -209,8 +219,8 @@ export default function ClassesPage() {
             capacity: values.capacity,
             targetCategory: values.targetCategory,
             memberIds: [],
-        };
-        await setDoc(newClassRef, classData);
+        } as any;
+        await setDoc(newClassRef, classData as any);
         toast({ title: '클래스 생성 완료', description: `'${values.name}' 클래스가 생성되었습니다.` });
       }
       
@@ -219,14 +229,14 @@ export default function ClassesPage() {
       setEditingClass(null);
       
     } catch (error: unknown) {
-      
+      const e = error as { code?: string; message?: string } | undefined;
       let errorMessage = '저장 중 오류가 발생했습니다.';
-      if (error?.code === 'permission-denied') {
+      if (e?.code === 'permission-denied') {
         errorMessage = '권한이 없습니다. 관리자에게 문의하세요.';
-      } else if (error?.code === 'unavailable') {
+      } else if (e?.code === 'unavailable') {
         errorMessage = 'Firebase 서비스에 연결할 수 없습니다. 네트워크를 확인해주세요.';
-      } else if (error?.message) {
-        errorMessage = `오류: ${error.message}`;
+      } else if (e?.message) {
+        errorMessage = `오류: ${e.message}`;
       }
       
       toast({ 
@@ -310,7 +320,7 @@ export default function ClassesPage() {
                 size="sm"
                 onClick={() => setCategoryFilter('all')}
               >
-                <UsersIcon className="mr-2 h-4 w-4" />
+                <Users className="mr-2 h-4 w-4" />
                 전체 ({classes?.length || 0})
               </Button>
               <Button
@@ -334,7 +344,7 @@ export default function ClassesPage() {
                 size="sm"
                 onClick={() => setCategoryFilter('general')}
               >
-                <UsersIcon className="mr-2 h-4 w-4" />
+                <Users className="mr-2 h-4 w-4" />
                 일반 ({classes?.filter(c => !c.targetCategory || c.targetCategory === 'all').length || 0})
               </Button>
             </div>
@@ -369,7 +379,7 @@ export default function ClassesPage() {
                           }>
                             {gymClass.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
                             {gymClass.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
-                            {gymClass.targetCategory === 'all' && <UsersIcon className="inline h-3 w-3 mr-1" />}
+                            {gymClass.targetCategory === 'all' && <Users className="inline h-3 w-3 mr-1" />}
                             {getTargetCategoryLabel(gymClass.targetCategory)}
                           </Badge>
                           {gymClass.ageRange && (gymClass.ageRange.min || gymClass.ageRange.max) && (
@@ -388,7 +398,7 @@ export default function ClassesPage() {
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          onClick={() => router.push(`/club-dashboard/classes/${gymClass.id}`)}
+                          onClick={() => router.push(ROUTES.DYNAMIC.CLASS_DETAIL(gymClass.id))}
                           title="회원 관리"
                         >
                           <Users className="h-4 w-4" />
@@ -415,7 +425,7 @@ export default function ClassesPage() {
 
         <Dialog 
           open={isDialogOpen} 
-          onOpenChange={(open) => {
+          onOpenChange={(open: boolean) => {
             setIsDialogOpen(open);
               if (!open) {
               // Reset form when dialog closes
@@ -543,7 +553,7 @@ export default function ClassesPage() {
                               주니어 전용
                             </SelectItem>
                             <SelectItem value="all">
-                              <UsersIcon className="inline h-4 w-4 mr-2" />
+                              <Users className="inline h-4 w-4 mr-2" />
                               전체 (성인+주니어)
                             </SelectItem>
                           </SelectContent>
@@ -586,12 +596,12 @@ export default function ClassesPage() {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deletingClass} onOpenChange={(open) => !open && setDeletingClass(null)}>
+        <AlertDialog open={!!deletingClass} onOpenChange={(open: boolean) => { if (!open) setDeletingClass(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>클래스 삭제 확인</AlertDialogTitle>
               <AlertDialogDescription>
-                '{deletingClass?.name}' 클래스를 삭제하시겠습니까?
+                &apos;{deletingClass?.name}&apos; 클래스를 삭제하시겠습니까?
                 <br />
                 <span className="text-destructive font-medium">이 작업은 되돌릴 수 없습니다.</span>
               </AlertDialogDescription>

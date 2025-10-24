@@ -12,10 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Building2, Users, Loader2, CheckCircle, XCircle, UserPlus, Mail, Phone, Activity, Trash2, AlertTriangle } from 'lucide-react';
-import { UserRole, ClubOwnerRequest, Club } from '@/types';
+import { UserRole, ClubOwnerRequest } from '@/types';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { ROUTES } from '@/constants/routes';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SuperAdminDashboard() {
@@ -81,13 +82,13 @@ export default function SuperAdminDashboard() {
 
     try {
       // 1. 클럽 생성
-      const clubData: Omit<Club, 'id'> = {
+      const clubData = {
         name: request.clubName,
         contactName: request.name,
         contactEmail: request.email,
         contactPhoneNumber: request.phoneNumber,
-        location: request.clubAddress,
-        status: 'approved',
+        address: typeof request.clubAddress === 'string' ? request.clubAddress : '',
+        status: 'active',
         createdAt: new Date().toISOString(),
         approvedAt: new Date().toISOString(),
         approvedBy: user.uid,
@@ -468,14 +469,18 @@ export default function SuperAdminDashboard() {
                           {request.clubAddress && (
                             <div className="flex items-center gap-2 text-sm md:col-span-2">
                               <Building2 className="h-4 w-4 text-slate-400" />
-                              <span className="text-slate-600">{request.clubAddress}</span>
+                              <span className="text-slate-600">
+                                {typeof request.clubAddress === 'string'
+                                  ? request.clubAddress
+                                  : `${request.clubAddress.latitude}, ${request.clubAddress.longitude}`}
+                              </span>
                             </div>
                           )}
                         </div>
 
-                        {request.clubDescription && (
+                        {(request as any).clubDescription && (
                           <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                            <p className="text-sm text-slate-700">{request.clubDescription}</p>
+                            <p className="text-sm text-slate-700">{(request as any).clubDescription}</p>
                           </div>
                         )}
 
@@ -589,10 +594,10 @@ export default function SuperAdminDashboard() {
                 대기 중인 최고 관리자 신청: {superAdminRequests?.length || 0}건
               </div>
               <p className="text-sm text-muted-foreground text-center">
-                최고 관리자 승인은 /system/super-admin-approvals 페이지에서 처리하세요
+                최고 관리자 승인은 시스템 승인 페이지에서 처리하세요
               </p>
               <div className="flex justify-center mt-4">
-                <Button onClick={() => router.push('/system/super-admin-approvals')}>
+                <Button onClick={() => router.push(ROUTES.SYSTEM.SUPER_ADMIN_APPROVALS)}>
                   승인 페이지로 이동
                 </Button>
               </div>

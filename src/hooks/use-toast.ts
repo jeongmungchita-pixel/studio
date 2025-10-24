@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from 'react';
 // Inspired by react-hot-toast library
 
 import { ToastActionElement, ToastProps } from '@/components/ui/toast';
@@ -154,7 +155,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },

@@ -49,9 +49,14 @@ export default function NewCommitteePage() {
         name: formData.name,
         description: formData.description,
         type: formData.type,
+        chairId: user.uid,
+        chairName: user.displayName || user.email || '관리자',
+        memberIds: [user.uid],
+        memberCount: 1,
+        status: 'active',
+        establishedDate: new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: user.uid,
       };
 
       await setDoc(committeeRef, committeeData);

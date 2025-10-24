@@ -10,8 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2, Mail, User, Phone } from 'lucide-react';
-import { FederationAdminInvite, UserRole } from '@/types';
+import { Loader2, CheckCircle2, Mail } from 'lucide-react';
+import { Invitation, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export default function FederationAdminSignupPage() {
@@ -22,7 +22,7 @@ export default function FederationAdminSignupPage() {
   const { toast } = useToast();
   const token = params.token as string;
 
-  const [invite, setInvite] = useState<FederationAdminInvite | null>(null);
+  const [invite, setInvite] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
@@ -52,7 +52,7 @@ export default function FederationAdminSignupPage() {
           return;
         }
 
-        const inviteData = { id: inviteDoc.id, ...inviteDoc.data() } as FederationAdminInvite;
+        const inviteData = { id: inviteDoc.id, ...inviteDoc.data() } as Invitation;
 
         // 상태 확인
         if (inviteData.status === 'accepted') {
@@ -92,8 +92,8 @@ export default function FederationAdminSignupPage() {
 
         setInvite(inviteData);
         setEmail(inviteData.email);
-        setDisplayName(inviteData.name);
-        setPhoneNumber(inviteData.phoneNumber || '');
+        setDisplayName(inviteData.email.split('@')[0]);
+        setPhoneNumber('');
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -149,10 +149,8 @@ export default function FederationAdminSignupPage() {
         photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
         provider: 'email',
         role: UserRole.FEDERATION_ADMIN,
-        status: 'approved',
+        status: 'active',
         createdAt: new Date().toISOString(),
-        approvedBy: invite.invitedBy,
-        approvedAt: new Date().toISOString(),
       });
 
       // 3. 초대 상태 업데이트
@@ -171,12 +169,12 @@ export default function FederationAdminSignupPage() {
         router.push('/admin');
       }, 1500);
     } catch (error: unknown) {
-      
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
-      if (error.code === 'auth/email-already-in-use') {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
+      if (code === 'auth/email-already-in-use') {
         errorMessage = '이미 사용 중인 이메일입니다. 로그인을 시도하세요.';
         setMode('login');
-      } else if (error.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
 
@@ -210,9 +208,7 @@ export default function FederationAdminSignupPage() {
         // 기존 사용자 프로필 업데이트
         await updateDoc(userDocRef, {
           role: UserRole.FEDERATION_ADMIN,
-          status: 'approved',
-          approvedBy: invite.invitedBy,
-          approvedAt: new Date().toISOString(),
+          status: 'active',
         });
       } else {
         // 프로필이 없으면 생성
@@ -220,14 +216,12 @@ export default function FederationAdminSignupPage() {
           id: user.uid,
           uid: user.uid,
           email: user.email!,
-          displayName: user.displayName || invite.name,
-          phoneNumber: invite.phoneNumber,
+          displayName: user.displayName || invite.email.split('@')[0],
+          phoneNumber: '',
           photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
           provider: 'email',
           role: UserRole.FEDERATION_ADMIN,
-          status: 'approved',
-          approvedBy: invite.invitedBy,
-          approvedAt: new Date().toISOString(),
+          status: 'active',
         });
       }
 
@@ -246,9 +240,9 @@ export default function FederationAdminSignupPage() {
         router.push('/admin');
       }, 1500);
     } catch (error: unknown) {
-      
       let errorMessage = '로그인 중 오류가 발생했습니다.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
+      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
       }
 
@@ -290,19 +284,9 @@ export default function FederationAdminSignupPage() {
           {/* 초대 정보 */}
           <div className="rounded-lg bg-slate-50 p-4 space-y-2">
             <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-600">{invite.name}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4 text-slate-400" />
               <span className="text-slate-600">{invite.email}</span>
             </div>
-            {invite.phoneNumber && (
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">{invite.phoneNumber}</span>
-              </div>
-            )}
           </div>
 
           {/* 탭 */}

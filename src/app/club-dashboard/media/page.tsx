@@ -1,7 +1,7 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, useCollection, useStorage, uploadImage } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, X, Image, Video } from 'lucide-react';
+import { Loader2, Camera, X, ImageIcon, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 
@@ -27,6 +27,8 @@ export default function MediaManagementPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const stopRecordingRef = useRef<() => void | Promise<void>>();
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -72,7 +74,11 @@ export default function MediaManagementPage() {
       
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          setRecordedChunks((prev) => [...prev, event.data]);
+          setRecordedChunks((prev) => {
+            const next = [...prev, event.data];
+            recordedChunksRef.current = next;
+            return next;
+          });
         }
       };
       
@@ -87,18 +93,7 @@ export default function MediaManagementPage() {
     }
   };
 
-  // Stop camera
-  const stopCamera = () => {
-    if (isRecording) {
-      stopRecording();
-    }
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    setMediaRecorder(null);
-    setIsCameraOpen(false);
-  };
+  
 
   // Start recording
   const startRecording = () => {
@@ -109,43 +104,37 @@ export default function MediaManagementPage() {
   };
 
   // Stop recording and save
-  const stopRecording = async () => {
+  const stopRecording = useCallback(async () => {
     if (!mediaRecorder || !selectedMember || !storage || !firestore) return;
-    
     mediaRecorder.stop();
     setIsRecording(false);
     setIsUploading(true);
-    
-    // Wait for data to be available
     await new Promise(resolve => setTimeout(resolve, 100));
-    
     try {
-      const blob = new Blob(recordedChunks, { type: 'video/webm' });
-      
-      // Upload to Firebase Storage
+      const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
       const fileName = `media/${selectedMember.id}/${Date.now()}.webm`;
       const file = new File([blob], fileName, { type: 'video/webm' });
       const downloadURL = await uploadImage(storage, fileName, file);
-      
-      // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));
       const mediaData: MediaItem = {
         id: mediaRef.id,
         memberId: selectedMember.id,
+        memberName: selectedMember.name,
         clubId: user!.clubId!,
-        mediaType: 'video',
-        mediaURL: downloadURL,
+        type: 'video',
+        url: downloadURL,
         uploadDate: new Date().toISOString(),
-        caption: `${selectedMember.name} - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`
+        uploadedBy: user!.uid,
+        uploadedByName: user!.displayName || user!.email || '관리자',
+        isPublic: false,
+        title: `${selectedMember.name} 영상`,
+        description: `${format(new Date(), 'yyyy-MM-dd HH:mm')}`,
       };
-      
       await setDoc(mediaRef, mediaData);
-      
       toast({
         title: '영상 저장 완료',
         description: `${selectedMember.name}의 영상이 저장되었습니다.`
       });
-      
       setRecordedChunks([]);
     } catch (error) {
       toast({
@@ -156,7 +145,25 @@ export default function MediaManagementPage() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [firestore, mediaRecorder, selectedMember, storage, toast, user]);
+
+  // Keep a stable ref to the latest stopRecording
+  useEffect(() => {
+    stopRecordingRef.current = stopRecording;
+  }, [stopRecording]);
+
+  // Stop camera (defined after stopRecording to avoid TS used-before-declare)
+  const stopCamera = useCallback(() => {
+    if (isRecording) {
+      stopRecordingRef.current && stopRecordingRef.current();
+    }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setMediaRecorder(null);
+    setIsCameraOpen(false);
+  }, [isRecording, stream]);
 
   // Take photo
   const takePhoto = async () => {
@@ -189,11 +196,16 @@ export default function MediaManagementPage() {
       const mediaData: MediaItem = {
         id: mediaRef.id,
         memberId: selectedMember.id,
+        memberName: selectedMember.name,
         clubId: user!.clubId!,
-        mediaType: 'image',
-        mediaURL: downloadURL,
+        type: 'photo',
+        url: downloadURL,
         uploadDate: new Date().toISOString(),
-        caption: `${selectedMember.name} - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`
+        uploadedBy: user!.uid,
+        uploadedByName: user!.displayName || user!.email || '관리자',
+        isPublic: false,
+        title: `${selectedMember.name} 사진`,
+        description: `${format(new Date(), 'yyyy-MM-dd HH:mm')}`,
       };
       
       await setDoc(mediaRef, mediaData);
@@ -227,9 +239,14 @@ export default function MediaManagementPage() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopCamera();
+      if (isRecording) {
+        stopRecordingRef.current && stopRecordingRef.current();
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, []);
+  }, [stream, isRecording]);
 
   if (areMembersLoading) {
     return (
@@ -375,23 +392,23 @@ export default function MediaManagementPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {mediaItems?.slice(0, 6).map((item) => (
                     <div key={item.id} className="relative group aspect-square">
-                      {item.mediaType === 'image' ? (
+                      {item.type === 'photo' ? (
                         <Image
-                          src={item.mediaURL}
-                          alt={item.caption || ''}
+                          src={item.url}
+                          alt={item.description || item.title || ''}
                           fill
                           className="object-cover rounded-lg"
                         />
                       ) : (
                         <video
-                          src={item.mediaURL}
+                          src={item.url}
                           className="w-full h-full object-cover rounded-lg"
                           controls
                         />
                       )}
                       <div className="absolute top-2 right-2">
-                        <Badge variant={item.mediaType === 'image' ? 'default' : 'secondary'}>
-                          {item.mediaType === 'image' ? '📷' : '🎥'}
+                        <Badge variant={item.type === 'photo' ? 'default' : 'secondary'}>
+                          {item.type === 'photo' ? '📷' : '🎥'}
                         </Badge>
                       </div>
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">

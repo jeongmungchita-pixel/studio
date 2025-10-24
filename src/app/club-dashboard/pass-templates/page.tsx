@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -50,12 +51,19 @@ const templateFormSchema = z.object({
 
 type TemplateFormValues = z.infer<typeof templateFormSchema>;
 
+type UIPassTemplate = PassTemplate & {
+  passType?: 'period' | 'session' | 'unlimited'
+  durationDays?: number
+  totalSessions?: number
+  attendableSessions?: number
+}
+
 export default function PassTemplatesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<PassTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<UIPassTemplate | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<TemplateFormValues>({
@@ -78,7 +86,7 @@ export default function PassTemplatesPage() {
     if (!firestore || !user?.clubId) return null;
     return query(collection(firestore, 'pass_templates'), where('clubId', '==', user.clubId));
   }, [firestore, user?.clubId]);
-  const { data: templates, isLoading } = useCollection<PassTemplate>(templatesQuery);
+  const { data: templates, isLoading } = useCollection<UIPassTemplate>(templatesQuery);
 
   useEffect(() => {
     if (editingTemplate) {
@@ -86,7 +94,7 @@ export default function PassTemplatesPage() {
         name: editingTemplate.name,
         description: editingTemplate.description || '',
         passType: editingTemplate.passType || 'period',
-        targetCategory: editingTemplate.targetCategory || 'all',
+        targetCategory: (editingTemplate.targetCategory === 'family' ? 'all' : editingTemplate.targetCategory) || 'all',
         price: editingTemplate.price,
         durationDays: editingTemplate.durationDays,
         totalSessions: editingTemplate.totalSessions,
@@ -106,7 +114,7 @@ export default function PassTemplatesPage() {
     }
   }, [editingTemplate, form]);
 
-  const handleOpenDialog = (template: PassTemplate | null = null) => {
+  const handleOpenDialog = (template: UIPassTemplate | null = null) => {
     setEditingTemplate(template);
     setIsDialogOpen(true);
   };
@@ -135,19 +143,19 @@ export default function PassTemplatesPage() {
       ...(values.durationDays !== undefined && { durationDays: values.durationDays }),
       ...(values.totalSessions !== undefined && { totalSessions: values.totalSessions }),
       ...(values.attendableSessions !== undefined && { attendableSessions: values.attendableSessions }),
-    };
+    } as any;
 
 
     try {
       if (editingTemplate) {
         // Update existing template
         const templateRef = doc(firestore, 'pass_templates', editingTemplate.id);
-        await setDoc(templateRef, templateData, { merge: true });
+        await setDoc(templateRef, templateData as any, { merge: true });
         toast({ title: '템플릿 수정 완료', description: `'${values.name}' 이용권 정보가 업데이트되었습니다.` });
       } else {
         // Create new template
         const newTemplateRef = doc(collection(firestore, 'pass_templates'));
-        await setDoc(newTemplateRef, { ...templateData, id: newTemplateRef.id });
+        await setDoc(newTemplateRef, { ...(templateData as any), id: newTemplateRef.id } as any);
         toast({ title: '템플릿 생성 완료', description: `'${values.name}' 이용권이 생성되었습니다.` });
       }
       setIsDialogOpen(false);
@@ -162,10 +170,11 @@ export default function PassTemplatesPage() {
         attendableSessions: '' as any,
       });
     } catch (error: unknown) {
+      const e = error as { message?: string } | undefined
       toast({ 
         variant: 'destructive', 
         title: '저장 실패', 
-        description: `오류: ${error.message || '알 수 없는 오류'}` 
+        description: `오류: ${e?.message || '알 수 없는 오류'}` 
       });
     } finally {
       setIsSubmitting(false);
@@ -229,8 +238,8 @@ export default function PassTemplatesPage() {
                         }>
                           {template.targetCategory === 'adult' && <User className="inline h-3 w-3 mr-1" />}
                           {template.targetCategory === 'child' && <Baby className="inline h-3 w-3 mr-1" />}
-                          {template.targetCategory === 'all' && <Users className="inline h-3 w-3 mr-1" />}
-                          {getTargetCategoryLabel(template.targetCategory)}
+                          {(template.targetCategory === 'all' || template.targetCategory === 'family') && <Users className="inline h-3 w-3 mr-1" />}
+                          {getTargetCategoryLabel(template.targetCategory === 'family' ? 'all' : template.targetCategory)}
                         </Badge>
                       </TableCell>
                       <TableCell>{template.durationDays ? `${template.durationDays}일` : '무제한'}</TableCell>
@@ -264,7 +273,7 @@ export default function PassTemplatesPage() {
             <DialogHeader>
               <DialogTitle>{editingTemplate ? '이용권 종류 수정' : '새 이용권 종류 생성'}</DialogTitle>
               <DialogDescription>
-                이용권의 세부 정보를 입력하세요. 비워둔 항목은 '무제한' 또는 '설정 안함'으로 처리됩니다.
+                이용권의 세부 정보를 입력하세요. 비워둔 항목은 &apos;무제한&apos; 또는 &apos;설정 안함&apos;으로 처리됩니다.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>

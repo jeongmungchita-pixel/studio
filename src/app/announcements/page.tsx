@@ -4,12 +4,32 @@ export const dynamic = 'force-dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Announcement, Member } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Pin, Bell, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+
+interface Announcement {
+  id: string;
+  clubId: string;
+  title: string;
+  content: string;
+  type: 'general' | 'important' | 'event' | 'emergency';
+  targetAudience?: 'all' | 'members' | 'parents' | 'staff';
+  isPinned: boolean;
+  createdBy?: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+interface Member {
+  id: string;
+  userId: string;
+  clubId: string;
+  name: string;
+}
 
 const typeLabels = {
   general: '일반',
@@ -31,6 +51,9 @@ const typeIcons = {
   event: Bell,
   emergency: AlertCircle,
 };
+
+const getTypeVariant = (t: string) => typeColors[(t as keyof typeof typeColors) || 'general'] || 'default';
+const getTypeLabel = (t: string) => typeLabels[(t as keyof typeof typeLabels) || 'general'] || '일반';
 
 export default function MemberAnnouncementsPage() {
   const { user } = useUser();
@@ -84,7 +107,7 @@ export default function MemberAnnouncementsPage() {
             고정된 공지
           </h2>
           {pinnedAnnouncements.map((announcement) => {
-            const Icon = typeIcons[announcement.type];
+            const Icon = typeIcons[announcement.type as keyof typeof typeIcons] || Bell;
             return (
               <Card key={announcement.id} className="border-2 border-blue-500 hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -102,8 +125,8 @@ export default function MemberAnnouncementsPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant={typeColors[announcement.type]}>
-                          {typeLabels[announcement.type]}
+                        <Badge variant={getTypeVariant(announcement.type)}>
+                          {getTypeLabel(announcement.type)}
                         </Badge>
                         <Pin className="h-4 w-4 text-blue-500" />
                       </div>
@@ -150,8 +173,8 @@ export default function MemberAnnouncementsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={typeColors[announcement.type]}>
-                        {typeLabels[announcement.type]}
+                      <Badge variant={getTypeVariant(announcement.type)}>
+                        {getTypeLabel(announcement.type)}
                       </Badge>
                     </div>
                     <CardTitle className="text-lg">{announcement.title}</CardTitle>

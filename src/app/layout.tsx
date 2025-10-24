@@ -1,4 +1,10 @@
 import { Metadata } from 'next';
+import { PT_Sans } from 'next/font/google';
+const ptSans = PT_Sans({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap'
+});
 import { RootLayoutClient } from './layout-client';
 
 // Force dynamic rendering for all pages - THIS WORKS IN SERVER COMPONENTS
@@ -22,18 +28,8 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body className="font-body antialiased">
+      <body className={`${ptSans.className} font-body antialiased`}>
         <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>

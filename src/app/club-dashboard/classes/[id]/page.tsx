@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, UserPlus, UserMinus, Users, User, Baby, AlertTriangle } from 'lucide-react';
+import { Loader2, ArrowLeft, UserMinus, Users, User, Baby, AlertTriangle } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
 import { canJoinClass, calculateAge, getMemberCategoryLabel, getMemberCategoryColor } from '@/lib/member-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,22 +39,20 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
   const { data: allMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
 
   // Get members in this class
-  const classMembers = useMemo(() => {
-    if (!allMembers || !classData) return [];
-    return allMembers.filter(member => classData.memberIds.includes(member.id));
-  }, [allMembers, classData]);
+  const classMembers: Member[] = useMemo(() => {
+    // 등록 회원 목록 기능은 후속 구현 대상. 현재는 요약 정보만 표기합니다.
+    return [];
+  }, []);
 
   // Get available members (not in this class) with eligibility check
   const availableMembers = useMemo(() => {
     if (!allMembers || !classData) return [];
     return allMembers
-      .filter(member => !classData.memberIds.includes(member.id))
       .map(member => ({
         ...member,
         canJoin: canJoinClass(member, classData),
       }))
       .sort((a, b) => {
-        // Sort eligible members first
         if (a.canJoin && !b.canJoin) return -1;
         if (!a.canJoin && b.canJoin) return 1;
         return 0;
@@ -64,6 +62,11 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
   const getMemberAge = (dateOfBirth?: string) => {
     if (!dateOfBirth) return null;
     return differenceInYears(new Date(), new Date(dateOfBirth));
+  };
+
+  const numberToDayLabel = (num: number): string => {
+    const map = ['일', '월', '화', '수', '목', '금', '토'] as const;
+    return map[num] ?? '';
   };
 
   const handleAddMembers = async () => {
@@ -162,7 +165,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
           <h1 className="text-3xl font-bold text-slate-900">{classData.name}</h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="secondary">
-              {classData.dayOfWeek}요일 {classData.time}
+              {classData.schedule && classData.schedule[0] ? `${numberToDayLabel(classData.schedule[0].dayOfWeek)}요일 ${classData.schedule[0].startTime}~${classData.schedule[0].endTime}` : '스케줄 미정'}
             </Badge>
             {classData.targetCategory && (
               <Badge variant={
@@ -184,14 +187,14 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
               </Badge>
             )}
             <span className="text-slate-600">
-              정원: {classMembers.length} / {classData.capacity}명
+              정원: {classData.currentEnrollment} / {classData.maxCapacity}명
             </span>
           </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            수업 시간과 정원을 확인하세요. 등록 회원 연동은 추후 제공됩니다.
+          </p>
         </div>
-        <Button onClick={() => setIsAddMemberDialogOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          회원 추가
-        </Button>
+        {/* 회원 추가 기능은 후속 구현 예정 */}
       </div>
 
       <Card>

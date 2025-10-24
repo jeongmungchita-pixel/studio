@@ -1,16 +1,18 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Building, Trophy, Award, Loader2, ArrowRight, TrendingUp, Calendar, UserPlus, Building2 } from 'lucide-react';
-import { Member, Club, Competition } from '@/types';
+import { Member, Club, GymnasticsCompetition } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/hooks/use-role';
 import { usePageLoading } from '@/hooks/use-page-loading';
 import { ErrorFallback } from '@/components/error-fallback';
+import { ROUTES } from '@/constants/routes';
 
 export default function FederationAdminDashboard() {
   const { user, isUserLoading } = useUser();
@@ -20,27 +22,14 @@ export default function FederationAdminDashboard() {
 
   // 디버깅: 사용자 정보 출력
 
-  // 권한 체크: FEDERATION_ADMIN 또는 SUPER_ADMIN만 접근 가능
-  if (!isUserLoading && user) {
-    if (!isFederationAdmin && !isSuperAdmin) {
-      router.push('/dashboard');
-      return (
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
-    }
-  }
-  
-  // 로그인 안 됨
-  if (!isUserLoading && !user) {
-    router.push('/login');
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // 접근 제어 및 리다이렉트 (훅은 항상 최상단에서 호출)
+  const isUnauthorized = !isUserLoading && !!user && !isFederationAdmin && !isSuperAdmin;
+  const requiresLogin = !isUserLoading && !user;
+
+  useEffect(() => {
+    if (isUnauthorized) router.push('/dashboard');
+    if (requiresLogin) router.push('/login');
+  }, [isUnauthorized, requiresLogin, router]);
 
   // 전체 회원 수
   const membersCollection = useMemoFirebase(
@@ -51,10 +40,7 @@ export default function FederationAdminDashboard() {
   
   // 디버깅: 회원 데이터
 
-  // 에러 처리
-  if (membersError) {
-    return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
-  }
+  // 에러는 훅 호출 이후에 일괄 처리
 
   // 전체 클럽 수
   const clubsCollection = useMemoFirebase(
@@ -65,24 +51,18 @@ export default function FederationAdminDashboard() {
   
   // 디버깅: 클럽 데이터
 
-  // 에러 처리
-  if (clubsError) {
-    return <ErrorFallback error={clubsError} title="클럽 데이터 조회 오류" />;
-  }
+  // 에러는 훅 호출 이후에 일괄 처리
 
   // 전체 대회
   const competitionsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'competitions') : null),
     [firestore]
   );
-  const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<Competition>(competitionsCollection);
+  const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<GymnasticsCompetition>(competitionsCollection);
   
   // 디버깅: 대회 데이터
 
-  // 에러 처리
-  if (competitionsError) {
-    return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
-  }
+  // 에러는 훅 호출 이후에 일괄 처리
 
   // 위원회
   const committeesCollection = useMemoFirebase(
@@ -122,6 +102,15 @@ export default function FederationAdminDashboard() {
     isCommitteesLoading
   );
 
+  // 리다이렉트 중 로딩 UI
+  if (isUnauthorized || requiresLogin) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -130,14 +119,17 @@ export default function FederationAdminDashboard() {
     );
   }
 
+  const firstError = membersError || clubsError || competitionsError;
+  if (firstError) {
+    return <ErrorFallback error={firstError} title="데이터 조회 오류" />;
+  }
+
   // 통계 계산
   const activeCompetitions = competitions?.filter(
-    (c) => c.status === 'ongoing'
+    (c) => c.status === 'in_progress'
   ) || [];
 
-  const activeClubs = allClubs?.filter(
-    (c) => c.status === 'approved'
-  ) || [];
+  const activeClubs = allClubs?.filter((c) => c.status === 'active') || [];
 
   return (
     <div className="p-8 space-y-6">
@@ -290,7 +282,7 @@ export default function FederationAdminDashboard() {
                   <div
                     key={member.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/members/${member.id}`)}
+                    onClick={() => router.push(ROUTES.DYNAMIC.MEMBER_DETAIL(member.id))}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
@@ -330,7 +322,7 @@ export default function FederationAdminDashboard() {
                   <div
                     key={club.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/clubs/${club.id}`)}
+                    onClick={() => router.push(ROUTES.DYNAMIC.CLUB_DETAIL(club.id))}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
@@ -338,7 +330,13 @@ export default function FederationAdminDashboard() {
                       </div>
                       <div>
                         <p className="font-medium text-slate-900">{club.name}</p>
-                        <p className="text-sm text-slate-500">{club.location || '위치 미등록'}</p>
+                        <p className="text-sm text-slate-500">
+                          {typeof (club as any).location === 'string'
+                            ? (club as any).location
+                            : (club as any).location && (club as any).location.latitude !== undefined
+                            ? `${(club as any).location.latitude.toFixed(3)}, ${(club as any).location.longitude.toFixed(3)}`
+                            : '위치 미등록'}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -379,16 +377,16 @@ export default function FederationAdminDashboard() {
                     </div>
                     <div>
                       <p className="font-medium text-slate-900">{comp.name}</p>
-                      <p className="text-sm text-slate-500">{comp.location}</p>
+                      <p className="text-sm text-slate-500">{comp.venue || '장소 미정'}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-slate-900">
-                      {new Date(comp.startDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                      {(comp.startDate ? new Date(comp.startDate) : new Date()).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
                     </p>
                     <p className="text-xs text-slate-500">
                       <Calendar className="inline h-3 w-3 mr-1" />
-                      {new Date(comp.startDate).toLocaleDateString('ko-KR')}
+                      {(comp.startDate ? new Date(comp.startDate) : new Date()).toLocaleDateString('ko-KR')}
                     </p>
                   </div>
                 </div>

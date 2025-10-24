@@ -42,30 +42,33 @@ export default function ClubApprovalsPage() {
     if (!firestore) return;
 
     try {
-      const template = passTemplates?.find(t => t.id === request.passTemplateId);
+      const template = passTemplates?.find(t => t.id === request.newTemplateId);
       if (!template) {
         toast({ variant: 'destructive', title: '오류', description: '이용권 템플릿을 찾을 수 없습니다.' });
         return;
       }
 
       const now = new Date();
-      const endDate = template.durationDays ? addDays(now, template.durationDays) : undefined;
+      const endDateDate = template.duration ? addDays(now, template.duration) : undefined;
 
       // 새 이용권 생성
       const newPassRef = doc(collection(firestore, 'member_passes'));
       const newPass: MemberPass = {
         id: newPassRef.id,
+        templateId: template.id,
+        templateName: template.name,
         memberId: request.memberId,
+        memberName: request.memberName,
         clubId: request.clubId,
-        passName: template.name,
-        passType: template.passType || 'unlimited',
+        type: template.type,
         startDate: now.toISOString(),
-        endDate: endDate?.toISOString(),
-        totalSessions: template.totalSessions,
-        attendableSessions: template.attendableSessions,
-        remainingSessions: template.totalSessions,
-        attendanceCount: 0,
+        endDate: (endDateDate || now).toISOString(),
+        remainingSessions: template.type === 'session-based' ? (template.sessionCount ?? 0) : undefined,
+        price: template.price,
+        paymentStatus: 'paid',
         status: 'active',
+        usageCount: 0,
+        createdAt: now.toISOString(),
       };
 
       await setDoc(newPassRef, newPass);
@@ -73,6 +76,8 @@ export default function ClubApprovalsPage() {
       // 요청 상태 업데이트
       await updateDoc(doc(firestore, 'pass_renewal_requests', request.id), {
         status: 'approved',
+        processedAt: now.toISOString(),
+        processedBy: user?.uid || '',
       });
 
       toast({ title: '승인 완료', description: `${request.memberName}님의 이용권이 활성화되었습니다.` });
@@ -141,7 +146,7 @@ export default function ClubApprovalsPage() {
                         <div>
                           <CardTitle>{request.memberName}</CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {request.passTemplateName} 신청
+                            {(passTemplates?.find(t => t.id === request.newTemplateId)?.name) || '이용권'} 신청
                           </p>
                         </div>
                         <Badge variant="secondary">대기중</Badge>

@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Announcement } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +16,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+
+interface Announcement {
+  id: string;
+  clubId: string;
+  title: string;
+  content: string;
+  type: 'general' | 'important' | 'event' | 'emergency';
+  targetAudience: 'all' | 'members' | 'parents' | 'staff';
+  isPinned: boolean;
+  createdBy: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
 
 const typeLabels = {
   general: '일반',
@@ -38,6 +51,10 @@ const audienceLabels = {
   parents: '학부모',
   staff: '스태프',
 };
+
+const getTypeVariant = (t: string) => typeColors[(t as keyof typeof typeColors) || 'general'] || 'default';
+const getTypeLabel = (t: string) => typeLabels[(t as keyof typeof typeLabels) || 'general'] || '일반';
+const getAudienceLabel = (a: string) => audienceLabels[(a as keyof typeof audienceLabels) || 'all'] || '전체';
 
 export default function AnnouncementsPage() {
   const { user } = useUser();
@@ -103,7 +120,7 @@ export default function AnnouncementsPage() {
         const announcementRef = doc(collection(firestore, 'announcements'));
         const announcementData: Announcement = {
           id: announcementRef.id,
-          clubId: user.clubId,
+          clubId: user.clubId!,
           title,
           content,
           type,
@@ -186,12 +203,10 @@ export default function AnnouncementsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={typeColors[announcement.type]}>
-                        {typeLabels[announcement.type]}
+                      <Badge variant={getTypeVariant(announcement.type)}>
+                        {getTypeLabel(announcement.type)}
                       </Badge>
-                      <Badge variant="outline">
-                        {audienceLabels[announcement.targetAudience]}
-                      </Badge>
+                      <Badge variant="outline">{getAudienceLabel(announcement.targetAudience)}</Badge>
                       <Pin className="h-4 w-4 text-blue-500" />
                     </div>
                     <CardTitle className="text-xl">{announcement.title}</CardTitle>
@@ -234,12 +249,8 @@ export default function AnnouncementsPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={typeColors[announcement.type]}>
-                      {typeLabels[announcement.type]}
-                    </Badge>
-                    <Badge variant="outline">
-                      {audienceLabels[announcement.targetAudience]}
-                    </Badge>
+                    <Badge variant={getTypeVariant(announcement.type)}>{getTypeLabel(announcement.type)}</Badge>
+                    <Badge variant="outline">{getAudienceLabel(announcement.targetAudience)}</Badge>
                   </div>
                   <CardTitle className="text-lg">{announcement.title}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">

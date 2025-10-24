@@ -16,7 +16,7 @@ export default function PendingApprovalPage() {
   const { toast } = useToast();
 
   // 승인되면 자동으로 대시보드로 이동
-  if (!isUserLoading && user?.status === 'approved') {
+  if (!isUserLoading && user?.status === 'active') {
     router.push('/dashboard');
     return null;
   }

@@ -11,7 +11,55 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { UserCheck, Users, User, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { AdultRegistrationRequest, FamilyRegistrationRequest, MemberRequest } from '@/types';
+// 로컬 타입: 이 화면에서 사용하는 필드만 정의
+interface AdultRegistrationRequest {
+  id: string;
+  name: string;
+  birthDate: string;
+  gender: 'male' | 'female';
+  phoneNumber: string;
+  email?: string;
+  clubId: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+interface FamilyRegistrationRequestLocal {
+  id: string;
+  clubId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  parents: Array<{
+    name: string;
+    birthDate: string;
+    gender: 'male' | 'female';
+    phoneNumber: string;
+    email?: string;
+  }>;
+  children: Array<{
+    name: string;
+    birthDate: string;
+    gender: 'male' | 'female';
+    grade?: string;
+  }>;
+  externalGuardian?: {
+    name: string;
+    phoneNumber: string;
+    relation: 'parent' | 'grandparent' | 'legal_guardian' | 'other';
+  };
+}
+
+interface MemberRegistrationRequestLocal {
+  id: string;
+  userId?: string;
+  name: string;
+  email?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female';
+  clubId: string;
+  memberType?: 'individual' | 'family';
+  familyRole?: 'parent' | 'child';
+  status: 'pending' | 'approved' | 'rejected';
+}
 
 export default function MemberApprovalsPage() {
   const { user } = useUser();
@@ -39,7 +87,7 @@ export default function MemberApprovalsPage() {
       where('status', '==', 'pending')
     );
   }, [firestore, user?.clubId]);
-  const { data: familyRequests, isLoading: isFamilyLoading } = useCollection<FamilyRegistrationRequest>(familyRequestsQuery);
+  const { data: familyRequests, isLoading: isFamilyLoading } = useCollection<FamilyRegistrationRequestLocal>(familyRequestsQuery);
 
   // 일반 회원 가입 요청 조회 (memberRegistrationRequests)
   const memberRequestsQuery = useMemoFirebase(() => {
@@ -50,7 +98,7 @@ export default function MemberApprovalsPage() {
       where('status', '==', 'pending')
     );
   }, [firestore, user?.clubId]);
-  const { data: memberRequests, isLoading: isMemberLoading } = useCollection<MemberRequest>(memberRequestsQuery);
+  const { data: memberRequests, isLoading: isMemberLoading } = useCollection<MemberRegistrationRequestLocal>(memberRequestsQuery);
 
   const isLoading = isAdultLoading || isFamilyLoading || isMemberLoading;
   const totalPending = (adultRequests?.length || 0) + (familyRequests?.length || 0) + (memberRequests?.length || 0);
@@ -100,7 +148,7 @@ export default function MemberApprovalsPage() {
   };
 
   // 가족 회원 승인
-  const handleApproveFamily = async (request: FamilyRegistrationRequest) => {
+  const handleApproveFamily = async (request: FamilyRegistrationRequestLocal) => {
     if (!firestore || !user) return;
     setIsProcessing(true);
 
@@ -190,7 +238,7 @@ export default function MemberApprovalsPage() {
   };
 
   // 일반 회원 승인
-  const handleApproveMember = async (request: MemberRequest) => {
+  const handleApproveMember = async (request: MemberRegistrationRequestLocal) => {
     if (!firestore || !user) return;
     setIsProcessing(true);
 

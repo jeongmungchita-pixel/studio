@@ -1,10 +1,15 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import fs from 'fs';
+import path from 'path';
 
 let app: App;
 
-if (!getApps().length) {
+// Ensure this file is only evaluated in a server context
+const isServer = typeof window === 'undefined';
+
+if (isServer && !getApps().length) {
   try {
     // 프로덕션 환경에서는 Firebase App Hosting이 자동으로 인증 제공
     if (process.env.FIREBASE_CONFIG) {
@@ -29,5 +34,5 @@ if (!getApps().length) {
   app = getApps()[0];
 }
 
-export const adminAuth = getAuth(app);
-export const adminDb = getFirestore(app);
+export const adminAuth = isServer ? getAuth(app) : (undefined as any);
+export const adminDb = isServer ? getFirestore(app) : (undefined as any);

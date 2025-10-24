@@ -5,7 +5,6 @@ import { use, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { ClubLevelTest, LevelTestRegistration, LevelTestScore } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,73 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle2, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+
+type TestLevel = {
+  id: string
+  name: string
+  code: string
+  color: string
+  minScore: number
+  maxScore: number
+  order: number
+  icon?: string
+}
+
+type EvaluationItem = {
+  id: string
+  name: string
+  maxScore: number
+  weight: number
+}
+
+type UILevelTest = {
+  id: string
+  title: string
+  description: string
+  clubId: string
+  registrationStart: string
+  registrationEnd: string
+  testDate: string
+  levels: TestLevel[]
+  evaluationItems: EvaluationItem[]
+  status: 'draft' | 'registration_open' | 'registration_closed' | 'in_progress' | 'completed'
+  createdAt: string
+  updatedAt?: string
+}
+
+type LevelTestRegistration = {
+  id: string
+  testId: string
+  memberId: string
+  memberName: string
+  targetLevel: string
+  currentLevel?: string
+  status: 'pending' | 'approved' | 'rejected'
+}
+
+type LevelTestScore = {
+  id: string
+  testId: string
+  registrationId: string
+  memberId: string
+  memberName: string
+  targetLevel: string
+  itemScores: {
+    itemId: string
+    itemName: string
+    score: number
+    maxScore: number
+  }[]
+  totalScore: number
+  percentage: number
+  passed: boolean
+  achievedLevel: string
+  evaluatorId: string
+  evaluatorName: string
+  notes?: string
+  createdAt: string
+  rank?: number
+}
 
 export default function EvaluatePage({ params }: { params: Promise<{ testId: string }> }) {
   const { testId } = use(params);
@@ -31,7 +97,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
     () => (firestore ? doc(firestore, 'level_tests', testId) : null),
     [firestore, testId]
   );
-  const { data: test } = useDoc<ClubLevelTest>(testRef);
+  const { data: test } = useDoc<UILevelTest>(testRef);
 
   // Fetch registrations
   const registrationsQuery = useMemoFirebase(() => {
@@ -118,7 +184,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
         createdAt: new Date().toISOString(),
       };
 
-      await setDoc(scoreRef, scoreData);
+      await setDoc(scoreRef, scoreData as any);
 
       // Calculate rank for this level
       const levelScores = scores?.filter(s => s.achievedLevel === achievedLevel.name) || [];
@@ -126,7 +192,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
       const rank = allScores.findIndex(s => s.id === scoreData.id) + 1;
 
       // Update score with rank
-      await updateDoc(doc(firestore, 'level_test_scores', scoreRef.id), { rank });
+      await updateDoc(doc(firestore, 'level_test_scores', scoreRef.id), { rank } as any);
 
       // Update member level if top 3 or passed
       if (rank <= 3 || scoreData.passed) {
@@ -137,7 +203,7 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
           levelColor: achievedLevel.color,
           levelIcon: achievedLevel.icon,
           levelRank: rank <= 3 ? rank : undefined,
-        });
+        } as any);
       }
 
       toast({

@@ -91,17 +91,19 @@ export default function MessagesPage() {
         })) || [];
 
       const historyRef = doc(collection(firestore, 'message_history'));
+      const mappedType: MessageHistory['type'] = messageType === 'kakao' ? 'in-app' : 'sms';
       const historyData: MessageHistory = {
         id: historyRef.id,
         clubId: user.clubId!,
-        type: messageType,
-        recipients,
+        type: mappedType,
         content,
-        totalCount: recipients.length,
-        successCount: 0,
-        failCount: 0,
+        recipientType: 'specific',
+        recipientIds: recipients.map(r => r.memberId),
+        recipientCount: recipients.length,
         sentBy: user.uid,
         sentByName: user.displayName || user.email || '관리자',
+        sentAt: new Date().toISOString(),
+        status: 'sent',
         createdAt: new Date().toISOString(),
       };
 
@@ -299,22 +301,18 @@ export default function MessagesPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Badge>{history.type.toUpperCase()}</Badge>
-                      <Badge variant="outline">
-                        {history.totalCount}명 발송
-                      </Badge>
+                      <Badge variant="outline">{history.recipientCount || 0}명 발송</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {history.sentByName} · {format(new Date(history.createdAt), 'PPP p', { locale: ko })}
+                      {history.sentByName} · {format(new Date(history.sentAt || history.createdAt), 'PPP p', { locale: ko })}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-green-600 font-semibold">
-                      성공: {history.successCount}
-                    </p>
-                    {history.failCount > 0 && (
-                      <p className="text-sm text-red-600 font-semibold">
-                        실패: {history.failCount}
-                      </p>
+                    {typeof history.deliveredCount === 'number' && (
+                      <p className="text-sm text-green-600 font-semibold">성공: {history.deliveredCount}</p>
+                    )}
+                    {typeof history.readCount === 'number' && (
+                      <p className="text-sm text-blue-600 font-semibold">열람: {history.readCount}</p>
                     )}
                   </div>
                 </div>

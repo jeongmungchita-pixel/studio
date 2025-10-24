@@ -1,5 +1,6 @@
 'use client';
 import { getAuth } from 'firebase/auth';
+import { User } from 'firebase/auth';
 
 // ============================================
 // 🔥 Firebase 에러 처리 유틸리티
@@ -68,9 +69,7 @@ export function handleFirebaseError(error: unknown): string {
   const message = getErrorMessage(error);
   
   if (isFirebaseError(error)) {
-    console.error('Firebase Error:', error);
   } else {
-    console.error('Error:', error);
   }
   
   return message;
@@ -126,7 +125,7 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
     phone_number: currentUser.phoneNumber,
     sub: currentUser.uid,
     firebase: {
-      identities: currentUser.providerData.reduce((acc, p) => {
+      identities: currentUser.providerData.reduce((acc: Record<string, string[]>, p: any) => {
         if (p.providerId) {
           acc[p.providerId] = [p.uid];
         }

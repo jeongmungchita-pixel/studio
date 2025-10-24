@@ -17,6 +17,7 @@ import { Member } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ROUTES } from '@/constants/routes';
 
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
@@ -157,7 +158,7 @@ export default function MembersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>기능</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => router.push(`/members/${member.id}`)}>
+                        <DropdownMenuItem onClick={() => router.push(ROUTES.DYNAMIC.MEMBER_DETAIL(member.id))}>
                           <Eye className="mr-2 h-4 w-4" />
                           프로필 보기
                         </DropdownMenuItem>

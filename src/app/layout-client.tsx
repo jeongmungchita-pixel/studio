@@ -1,7 +1,7 @@
 'use client';
 
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseProvider, initializeFirebase } from '@/firebase';
 import { usePathname } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
 
@@ -12,15 +12,16 @@ export function RootLayoutClient({
 }) {
   const pathname = usePathname();
   const isPublicPage = pathname === '/login' || pathname.startsWith('/register');
+  const { firebaseApp, firestore, auth, storage } = initializeFirebase();
 
   return (
-    <FirebaseClientProvider>
+    <FirebaseProvider firebaseApp={firebaseApp} firestore={firestore} auth={auth} storage={storage}>
       {isPublicPage ? (
         children
       ) : (
         <MainLayout>{children}</MainLayout>
       )}
       <Toaster />
-    </FirebaseClientProvider>
+    </FirebaseProvider>
   );
 }

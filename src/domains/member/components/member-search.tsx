@@ -55,7 +55,13 @@ export function MemberSearch({
 
   // 고유 클럽 목록 추출
   const uniqueClubs = useMemo(() => {
-    const clubs = Array.from(new Set(members.map(m => m.clubName).filter(Boolean)));
+    const clubs = Array.from(
+      new Set(
+        members
+          .map((m) => m.clubName)
+          .filter((v): v is string => typeof v === 'string' && v.length > 0)
+      )
+    );
     return clubs.sort();
   }, [members]);
 
@@ -289,7 +295,7 @@ export function MemberSearch({
           
           {searchTerm && (
             <Badge variant="secondary" className="gap-1">
-              검색: "{searchTerm}"
+              검색: &quot;{searchTerm}&quot;
               <X 
                 className="h-3 w-3 cursor-pointer" 
                 onClick={() => setSearchTerm('')}
