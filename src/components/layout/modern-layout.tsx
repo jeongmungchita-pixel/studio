@@ -5,15 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useRole } from '@/hooks/use-role';
 import { UserRole } from '@/types';
-import { Loader2, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Loader2, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { RoleBadge } from '@/components/role-badge';
 import { ModernNav } from '@/components/layout/modern-nav';
 import { GlobalSearch } from '@/components/layout/global-search';
-import { signOut } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { LogoutButton } from '@/components/logout-button';
 
 interface ModernLayoutProps {
   children: React.ReactNode;
@@ -24,7 +23,6 @@ export function ModernLayout({ children }: ModernLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { userRole } = useRole();
-  const auth = useAuth();
 
   useEffect(() => {
     if (isUserLoading) return;
@@ -57,13 +55,6 @@ export function ModernLayout({ children }: ModernLayoutProps) {
       }
     }
   }, [user, isUserLoading, pathname, router]);
-
-  const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-      router.push('/login');
-    }
-  };
 
   if (isUserLoading) {
     return (
@@ -159,9 +150,11 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                   내 프로필
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  로그아웃
+                <DropdownMenuItem asChild>
+                  <LogoutButton 
+                    variant="ghost" 
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
+                  />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

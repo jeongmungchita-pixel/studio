@@ -23,13 +23,21 @@ export default function FederationAdminDashboard() {
   // 디버깅: 사용자 정보 출력
 
   // 접근 제어 및 리다이렉트 (훅은 항상 최상단에서 호출)
-  const isUnauthorized = !isUserLoading && !!user && !isFederationAdmin && !isSuperAdmin;
-  const requiresLogin = !isUserLoading && !user;
-
   useEffect(() => {
-    if (isUnauthorized) router.push('/dashboard');
-    if (requiresLogin) router.push('/login');
-  }, [isUnauthorized, requiresLogin, router]);
+    if (!isUserLoading) {
+      // 로그인하지 않은 경우
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      
+      // 연맹 관리자 또는 슈퍼 관리자가 아닌 경우
+      if (!isFederationAdmin && !isSuperAdmin) {
+        router.push('/dashboard');
+        return;
+      }
+    }
+  }, [isUserLoading, user, isFederationAdmin, isSuperAdmin, router]);
 
   // 전체 회원 수
   const membersCollection = useMemoFirebase(
@@ -102,16 +110,8 @@ export default function FederationAdminDashboard() {
     isCommitteesLoading
   );
 
-  // 리다이렉트 중 로딩 UI
-  if (isUnauthorized || requiresLogin) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (isLoading) {
+  // 로딩 UI
+  if (isLoading || isUserLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { UserRole, hasEqualOrHigherRole, hasHigherRole, canManageUser, roleHierarchy } from '@/types';
-import { useUser } from '@/hooks/use-user';
+import { useUser } from '@/firebase';
 
 /**
  * 역할 관리를 위한 커스텀 훅
@@ -47,11 +47,11 @@ export function useRole() {
   };
 
   // 편의 속성들
-  const isSuperAdmin = hasRole(UserRole.SUPER_ADMIN);
-  const isFederationAdmin = hasRole(UserRole.FEDERATION_ADMIN);
-  const isClubOwner = hasRole(UserRole.CLUB_OWNER);
-  const isClubManager = hasRole(UserRole.CLUB_MANAGER);
-  const isCoach = hasRole(UserRole.ASSISTANT_COACH);
+  const isSuperAdmin = userRole === UserRole.SUPER_ADMIN;
+  const isFederationAdmin = userRole === UserRole.FEDERATION_ADMIN;
+  const isClubOwner = userRole === UserRole.CLUB_OWNER;
+  const isClubManager = userRole === UserRole.CLUB_MANAGER;
+  const isCoach = userRole === UserRole.HEAD_COACH || userRole === UserRole.ASSISTANT_COACH;
   const isMember = userRole === UserRole.MEMBER;
   const isParent = userRole === UserRole.PARENT;
 
