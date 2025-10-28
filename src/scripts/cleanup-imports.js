@@ -113,6 +113,18 @@ class ImportCleaner {
   }
 
   cleanImportStatement(importStatement, fileContent) {
+    // Star namespace import: import * as Alias from 'pkg'
+    const starAliasMatch = importStatement.match(/import\s+\*\s+as\s+(\w+)\s+from\s+['"`]([^'"`]+)['"`]/);
+    if (starAliasMatch) {
+      const nsAlias = starAliasMatch[1];
+      const used = (() => {
+        const regex = new RegExp(`\\b${nsAlias}\\b`, 'g');
+        const matches = fileContent.match(regex);
+        return matches && matches.length > 1; // import line + actual usage
+      })();
+      return used ? importStatement.trim() : '';
+    }
+
     // Default import 추출
     const defaultImportMatch = importStatement.match(/import\s+(\w+)(?:\s*,\s*\{[^}]*\})?\s+from/);
     const defaultImport = defaultImportMatch ? defaultImportMatch[1] : null;
@@ -120,7 +132,12 @@ class ImportCleaner {
     // Named imports 추출
     const namedImportsMatch = importStatement.match(/\{\s*([^}]+)\s*\}/);
     const namedImports = namedImportsMatch 
-      ? namedImportsMatch[1].split(',').map(imp => imp.trim().split(' as ')[0].trim())
+      ? namedImportsMatch[1]
+          .split(',')
+          .map(imp => imp.trim())
+          .filter(Boolean)
+          // Prefer alias if present: `Name as Alias` -> use "Alias" for usage detection
+          .map(imp => (imp.includes(' as ') ? imp.split(' as ')[1].trim() : imp.split(' ')[0].trim()))
       : [];
     
     // From 경로 추출

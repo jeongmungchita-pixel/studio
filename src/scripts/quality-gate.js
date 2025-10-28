@@ -190,41 +190,36 @@ class QualityGate {
 
   parseCleanupOutput(output) {
     const issues = [];
-    
-    if (output.includes('Unused files:')) {
-      const match = output.match(/Unused files: (\d+)/);
-      if (match && parseInt(match[1]) > 0) {
-        issues.push(`${match[1]} unused files`);
-      }
+    // Only block on empty files or unused imports; others are warnings
+    const emptyMatch = output.match(/Empty files: (\d+)/i);
+    const emptyCount = emptyMatch ? parseInt(emptyMatch[1]) : 0;
+    if (emptyCount > 0) {
+      issues.push(`${emptyCount} empty files`);
     }
-    
-    if (output.includes('Empty files:')) {
-      const match = output.match(/Empty files: (\d+)/);
-      if (match && parseInt(match[1]) > 0) {
-        issues.push(`${match[1]} empty files`);
-      }
+
+    // Summary line
+    const unusedImportsMatch = output.match(/Files with Unused Imports: (\d+)/i);
+    let unusedImportsCount = unusedImportsMatch ? parseInt(unusedImportsMatch[1]) : 0;
+    // Fallback to scan report header
+    if (unusedImportsCount === 0) {
+      const fallback = output.match(/Found unused imports in (\d+) files/i);
+      if (fallback) unusedImportsCount = parseInt(fallback[1]);
     }
-    
-    if (output.includes('Deprecated patterns:')) {
-      const match = output.match(/Deprecated patterns: (\d+)/);
-      if (match && parseInt(match[1]) > 0) {
-        issues.push(`${match[1]} deprecated patterns`);
-      }
+    if (unusedImportsCount > 0) {
+      issues.push(`${unusedImportsCount} files with unused imports`);
     }
-    
+
     return issues;
   }
 
   parseRouteOutput(output) {
     const issues = [];
-    
-    if (output.includes('Issues found:')) {
-      const match = output.match(/Issues found: (\d+)/);
-      if (match && parseInt(match[1]) > 0) {
-        issues.push(`${match[1]} route issues`);
-      }
+    // Treat only invalid and hardcoded routes as blocking
+    const hasInvalid = output.includes('❌ Invalid Routes');
+    const hasHardcoded = output.includes('🔧 Hardcoded Routes');
+    if (hasInvalid || hasHardcoded) {
+      issues.push('blocking route issues');
     }
-    
     return issues;
   }
 

@@ -78,7 +78,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
   
   // Prevent flashing of content for users who will be redirected
-  if ((user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') && user.status === 'pending') {
+  if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.status === 'pending') {
      // Show loader instead of login to prevent flashing login page
      return (
        <div className="flex min-h-screen items-center justify-center bg-background">

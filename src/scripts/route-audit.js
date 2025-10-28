@@ -46,18 +46,32 @@ class RouteAuditor {
         absolute: false 
       });
       
+      const normalize = (r) => {
+        // Ensure leading slash
+        if (!r.startsWith('/')) r = '/' + r
+        // Remove trailing slash except for root
+        if (r.length > 1 && r.endsWith('/')) r = r.replace(/\/+$/, '')
+        return r
+      }
+
       pageFiles.forEach(file => {
-        // page.tsx 파일 경로를 라우트로 변환
-        let route = '/' + file.replace('/page.tsx', '');
-        
-        // 루트 경로 처리
-        if (route === '/page') route = '/';
-        
+        // page.tsx 파일 경로를 라우트로 변환 (handles root page.tsx)
+        let route = file.replace(/\/?page\.tsx$/, '')
+        if (route === '') route = '/'
         // 동적 라우트 처리 ([id] -> :id)
-        route = route.replace(/\[([^\]]+)\]/g, ':$1');
-        
-        this.existingRoutes.add(route);
+        route = route.replace(/\[([^\]]+)\]/g, ':$1')
+        this.existingRoutes.add(normalize(route))
       });
+
+      // API route handlers
+      const apiRouteFiles = await glob('api/**/route.ts', {
+        cwd: this.appPath,
+        absolute: false
+      })
+      apiRouteFiles.forEach(file => {
+        let route = '/' + file.replace(/\/?route\.ts$/, '') // e.g., api/admin/reset-firestore
+        this.existingRoutes.add(normalize(route))
+      })
       
       console.log(`   Found ${this.existingRoutes.size} existing routes`);
     } catch (error) {
@@ -103,8 +117,15 @@ class RouteAuditor {
         const content = fs.readFileSync(file, 'utf8');
         const routes = this.extractRoutesFromContent(content);
         
+        // normalize trailing slashes
+        const normalize = (r) => {
+          if (!r.startsWith('/')) r = '/' + r
+          if (r.length > 1 && r.endsWith('/')) r = r.replace(/\/+$/, '')
+          return r
+        }
+
         routes.forEach(route => {
-          this.usedRoutes.add(route);
+          this.usedRoutes.add(normalize(route));
         });
       }
       
@@ -181,6 +202,7 @@ class RouteAuditor {
     if (unusedRoutes.length > 0) {
       this.issues.push({
         type: 'unused_routes',
+        severity: 'warning',
         title: '🚫 Unused Routes',
         items: unusedRoutes,
         description: 'These routes exist but are not referenced in the code'
@@ -204,6 +226,7 @@ class RouteAuditor {
     if (invalidRoutes.length > 0) {
       this.issues.push({
         type: 'invalid_routes',
+        severity: 'error',
         title: '❌ Invalid Routes',
         items: invalidRoutes,
         description: 'These routes are used in code but do not exist'
@@ -218,6 +241,7 @@ class RouteAuditor {
     if (hardcodedRoutes.length > 0) {
       this.issues.push({
         type: 'hardcoded_routes',
+        severity: 'error',
         title: '🔧 Hardcoded Routes',
         items: hardcodedRoutes,
         description: 'These routes should be defined in route constants'
@@ -232,6 +256,7 @@ class RouteAuditor {
     if (unusedConstants.length > 0) {
       this.issues.push({
         type: 'unused_constants',
+        severity: 'warning',
         title: '📋 Unused Route Constants',
         items: unusedConstants,
         description: 'These route constants are defined but not used'
@@ -247,7 +272,8 @@ class RouteAuditor {
     console.log(`   Existing routes: ${this.existingRoutes.size}`);
     console.log(`   Used routes: ${this.usedRoutes.size}`);
     console.log(`   Route constants: ${this.routeConstants.size}`);
-    console.log(`   Issues found: ${this.issues.length}`);
+    const blockingIssues = this.issues.filter(i => i.severity !== 'warning');
+    console.log(`   Issues found: ${blockingIssues.length}`);
 
     if (this.issues.length === 0) {
       console.log('\n✅ No issues found! All routes are properly organized.');

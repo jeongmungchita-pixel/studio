@@ -335,9 +335,13 @@ class CleanupAnalyzer {
     // { name1, name2 } 패턴
     const namedMatch = importStatement.match(/\{\s*([^}]+)\s*\}/);
     if (namedMatch) {
-      const names = namedMatch[1].split(',').map(name => 
-        name.trim().split(' as ')[0].trim()
-      );
+      const names = namedMatch[1]
+        .split(',')
+        .map(name => name.trim())
+        // strip TypeScript type-only specifier
+        .map(name => name.replace(/^type\s+/, ''))
+        // handle aliases
+        .map(name => name.split(' as ')[0].trim());
       namedImports.push(...names);
     }
     

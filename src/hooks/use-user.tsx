@@ -36,29 +36,21 @@ export function useUser(): UserHookResult {
               userProfileData = userSnap.data() as UserProfile;
             } else {
               // 프로필이 없는 경우: 비회원 가입 승인 확인
-              
-              let approvedRequest: any = null;
-              let requestType: 'clubOwner' | 'superAdmin' | 'member' | null = null;
-              
-              // clubOwnerRequests에서 승인된 요청 찾기
-              try {
-                const clubOwnerRequestsRef = collection(firestore, 'clubOwnerRequests');
-                const q = query(
-                  clubOwnerRequestsRef, 
-                  where('email', '==', firebaseUser.email),
-                  where('status', '==', 'approved')
-                );
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                  approvedRequest = querySnapshot.docs[0].data();
-                  requestType = 'clubOwner';
-                }
-              } catch (error) {
-              }
-              
-              // clubOwner가 아니면 superAdminRequests 확인
-              if (!approvedRequest) {
-                try {
+              // 병렬로 모든 승인 요청 확인
+              const [clubOwnerResult, superAdminResult, memberResult] = await Promise.allSettled([
+                // clubOwnerRequests 확인
+                (async () => {
+                  const clubOwnerRequestsRef = collection(firestore, 'clubOwnerRequests');
+                  const q = query(
+                    clubOwnerRequestsRef, 
+                    where('email', '==', firebaseUser.email),
+                    where('status', '==', 'approved')
+                  );
+                  const querySnapshot = await getDocs(q);
+                  return !querySnapshot.empty ? { data: querySnapshot.docs[0].data(), type: 'clubOwner' } : null;
+                })(),
+                // superAdminRequests 확인
+                (async () => {
                   const superAdminRequestsRef = collection(firestore, 'superAdminRequests');
                   const q = query(
                     superAdminRequestsRef,
@@ -66,17 +58,10 @@ export function useUser(): UserHookResult {
                     where('status', '==', 'approved')
                   );
                   const querySnapshot = await getDocs(q);
-                  if (!querySnapshot.empty) {
-                    approvedRequest = querySnapshot.docs[0].data();
-                    requestType = 'superAdmin';
-                  }
-                } catch (error) {
-                }
-              }
-              
-              // memberRegistrationRequests 확인 (일반 회원 가입)
-              if (!approvedRequest) {
-                try {
+                  return !querySnapshot.empty ? { data: querySnapshot.docs[0].data(), type: 'superAdmin' } : null;
+                })(),
+                // memberRegistrationRequests 확인
+                (async () => {
                   const memberRequestsRef = collection(firestore, 'memberRegistrationRequests');
                   const q = query(
                     memberRequestsRef,
@@ -84,12 +69,23 @@ export function useUser(): UserHookResult {
                     where('status', '==', 'approved')
                   );
                   const querySnapshot = await getDocs(q);
-                  if (!querySnapshot.empty) {
-                    approvedRequest = querySnapshot.docs[0].data();
-                    requestType = 'member';
-                  }
-                } catch (error) {
-                }
+                  return !querySnapshot.empty ? { data: querySnapshot.docs[0].data(), type: 'member' } : null;
+                })()
+              ]);
+              
+              // 결과 중에서 유효한 요청 찾기 (우선순위: clubOwner > superAdmin > member)
+              let approvedRequest: any = null;
+              let requestType: 'clubOwner' | 'superAdmin' | 'member' | null = null;
+              
+              if (clubOwnerResult.status === 'fulfilled' && clubOwnerResult.value) {
+                approvedRequest = clubOwnerResult.value.data;
+                requestType = 'clubOwner';
+              } else if (superAdminResult.status === 'fulfilled' && superAdminResult.value) {
+                approvedRequest = superAdminResult.value.data;
+                requestType = 'superAdmin';
+              } else if (memberResult.status === 'fulfilled' && memberResult.value) {
+                approvedRequest = memberResult.value.data;
+                requestType = 'member';
               }
               
               let defaultProfile: UserProfile;

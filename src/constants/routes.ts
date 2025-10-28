@@ -105,7 +105,7 @@ export const ROUTES = {
   
   // API 엔드포인트
   API: {
-    ROOT: '/api/',
+    ROOT: '/api',
     ADMIN_RESET: '/api/admin/reset-firestore',
   },
   

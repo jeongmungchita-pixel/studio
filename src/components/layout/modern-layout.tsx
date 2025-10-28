@@ -85,7 +85,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
     );
   }
 
-  if ((user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') && user.status === 'pending') {
+  if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.status === 'pending') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

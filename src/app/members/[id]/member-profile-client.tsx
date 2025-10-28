@@ -110,8 +110,8 @@ export default function MemberProfileClient({ id }: { id:string }) {
   const hasAccess = useMemo(() => {
     if (!user || !member) return false;
     // Check if user is admin or club manager
-    if (user.role === 'FEDERATION_ADMIN' || user.role === 'SUPER_ADMIN') return true;
-    if (user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') {
+    if (user.role === UserRole.FEDERATION_ADMIN || user.role === UserRole.SUPER_ADMIN) return true;
+    if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
       if (user.clubId === member.clubId) return true;
     }
     // Check if user is guardian
@@ -123,8 +123,8 @@ export default function MemberProfileClient({ id }: { id:string }) {
   const canEdit = useMemo(() => {
     if (!user || !member) return false;
     // Only admins and club managers can edit
-    if (user.role === 'FEDERATION_ADMIN' || user.role === 'SUPER_ADMIN') return true;
-    if (user.role === 'CLUB_OWNER' || user.role === 'CLUB_MANAGER') {
+    if (user.role === UserRole.FEDERATION_ADMIN || user.role === UserRole.SUPER_ADMIN) return true;
+    if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
       if (user.clubId === member.clubId) return true;
     }
     return false;
@@ -386,7 +386,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
 
   if (!member || !user || !hasAccess) {
      toast({ variant: 'destructive', title: '접근 권한 없음', description: '이 페이지를 볼 수 있는 권한이 없습니다.' });
-     const redirectUrl = (user?.role === 'CLUB_OWNER' || user?.role === 'CLUB_MANAGER') ? '/club-dashboard' : '/my-profile';
+     const redirectUrl = (user?.role === UserRole.CLUB_OWNER || user?.role === UserRole.CLUB_MANAGER) ? '/club-dashboard' : '/my-profile';
      router.push(redirectUrl);
      return null;
   }

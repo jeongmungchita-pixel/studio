@@ -1,0 +1,8 @@
+runtime: fastapi
+entry: app:app
+port: auto
+health_path: /health
+env: {}
+intents:
+  allow_auto_apply: false
+  max_deleted_ratio: 0.05

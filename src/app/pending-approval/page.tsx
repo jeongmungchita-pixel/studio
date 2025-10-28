@@ -8,6 +8,7 @@ import { Clock, Shield, LogOut } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { UserRole } from '@/types/auth';
 
 export default function PendingApprovalPage() {
   const router = useRouter();
@@ -67,9 +68,9 @@ export default function PendingApprovalPage() {
             )}
             <p className="text-sm">
               <span className="text-gray-600">역할:</span>{' '}
-              {user?.role === 'CLUB_OWNER' ? '클럽 오너' : 
-               user?.role === 'MEMBER' ? '일반 회원' : 
-               user?.role === 'SUPER_ADMIN' ? '슈퍼 관리자' : '회원'}
+              {user?.role === UserRole.CLUB_OWNER ? '클럽 오너' : 
+               user?.role === UserRole.MEMBER ? '일반 회원' : 
+               user?.role === UserRole.SUPER_ADMIN ? '슈퍼 관리자' : '회원'}
             </p>
           </div>
 
@@ -81,9 +82,9 @@ export default function PendingApprovalPage() {
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
               계정이 생성되었습니다! 
-              {user?.role === 'CLUB_OWNER' && ' 슈퍼 관리자'}
-              {user?.role === 'MEMBER' && ' 클럽 오너'}
-              {user?.role === 'SUPER_ADMIN' && ' 시스템 관리자'}
+              {user?.role === UserRole.CLUB_OWNER && ' 슈퍼 관리자'}
+              {user?.role === UserRole.MEMBER && ' 클럽 오너'}
+              {user?.role === UserRole.SUPER_ADMIN && ' 시스템 관리자'}
               의 승인을 기다려주세요.
             </p>
             <p className="text-sm text-gray-600">
