@@ -1,8 +1,9 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useRole } from '@/hooks/use-role';
 import { collection, doc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function SuperAdminDashboard() {
   const { user, isUserLoading } = useUser();
+  const { isSuperAdmin } = useRole();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
@@ -31,6 +33,20 @@ export default function SuperAdminDashboard() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+
+  // 접근 제어
+  useEffect(() => {
+    if (!isUserLoading) {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      if (!isSuperAdmin) {
+        router.push('/dashboard');
+        return;
+      }
+    }
+  }, [isUserLoading, user, isSuperAdmin, router]);
 
   // 클럽 오너 신청 목록
   const clubOwnerRequestsQuery = useMemoFirebase(() => {

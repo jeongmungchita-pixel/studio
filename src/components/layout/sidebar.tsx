@@ -3,9 +3,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { LogOut, Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, Home, ArrowLeft, PartyPopper, Trophy, Award, Bell, TrendingUp, MessageSquare, CreditCard, DollarSign, ChevronDown, Users, Mail, Building, Gavel } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
-import { signOut } from 'firebase/auth';
+import { Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, Home, ArrowLeft, PartyPopper, Trophy, Award, Bell, TrendingUp, MessageSquare, CreditCard, DollarSign, ChevronDown, Users, Mail, Building, Gavel } from 'lucide-react';
+import { useUser } from '@/firebase';
+import { LogoutButton } from '@/components/logout-button';
 import { UserProfile, UserRole } from '@/types';
 
 interface SubMenuItem {
@@ -287,15 +287,13 @@ function getCurrentSection(pathname: string): string {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
-  const auth = useAuth();
+  const { user: currentUser } = useUser();
   const router = useRouter();
 
   const isActive = (href: string) => {
     return pathname === href;
   };
   
-  const currentUser = user as UserProfile | null;
   const currentSection = getCurrentSection(pathname);
 
   // 현재 섹션의 서브메뉴만 필터링
@@ -305,12 +303,6 @@ export function AppSidebar() {
     item.roles.includes(currentUser.role)
   );
   
-  const handleLogout = async () => {
-    if(auth) {
-        await signOut(auth);
-        router.push('/login');
-    }
-  }
 
   // 서브메뉴가 없으면 사이드바를 표시하지 않음
   if (filteredSubMenuItems.length === 0) {
@@ -329,10 +321,11 @@ export function AppSidebar() {
         <SidebarFooter className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} tooltip='로그아웃'>
-                <LogOut />
-                <span>로그아웃</span>
-              </SidebarMenuButton>
+              <LogoutButton 
+                variant="ghost" 
+                size="default"
+                className="w-full justify-start" 
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
@@ -481,10 +474,11 @@ export function AppSidebar() {
       <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} tooltip='로그아웃'>
-              <LogOut />
-              <span>로그아웃</span>
-            </SidebarMenuButton>
+            <LogoutButton 
+              variant="ghost" 
+              size="default"
+              className="w-full justify-start" 
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -1,8 +1,10 @@
 'use client';
 
 export const dynamic = 'force-dynamic';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useRole } from '@/hooks/use-role';
+import { useRouter } from 'next/navigation';
 import { collection, query, where, doc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Member, GymClass } from '@/types';
@@ -23,9 +25,25 @@ import { ROUTES } from '@/constants/routes';
 
 export default function ClubDashboardPage() {
     const { user, isUserLoading } = useUser();
+    const { isClubOwner, isClubManager, canManageClub } = useRole();
     const firestore = useFirestore();
+    const router = useRouter();
     const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
+
+    // 접근 제어 - 클럽 관리자만 접근 가능
+    useEffect(() => {
+        if (!isUserLoading) {
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+            if (!canManageClub) {
+                router.push('/dashboard');
+                return;
+            }
+        }
+    }, [isUserLoading, user, canManageClub, router]);
 
     // Query for all members (regular and pending) in the club
     const membersQuery = useMemoFirebase(() => {
