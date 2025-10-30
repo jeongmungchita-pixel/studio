@@ -10,6 +10,58 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  
+  // 프로덕션 최적화
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
+  
+  // 보안 헤더
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
+          }
+        ]
+      }
+    ];
+  },
+  
+  // 리다이렉트
+  async redirects() {
+    return [
+      {
+        source: '/admin',
+        destination: '/super-admin',
+        permanent: true,
+      },
+    ];
+  },
+  
   images: {
     // 이미지 최적화 설정
     formats: ['image/webp', 'image/avif'], // 최신 이미지 포맷 우선 사용
