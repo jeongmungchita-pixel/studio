@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { PT_Sans } from 'next/font/google';
 import { RootLayoutClient } from './layout-client';
+import './globals.css';
 
 const ptSans = PT_Sans({
   weight: ['400', '700'],
