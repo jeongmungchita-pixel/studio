@@ -151,28 +151,28 @@ export const invalidateQueries = {
  */
 export const cacheUtils = {
   // 특정 쿼리 데이터 가져오기
-  getQueryData: <T>(queryClient: QueryClient, queryKey: readonly unknown[]): T | undefined => {
+  getQueryData<T>(queryClient: QueryClient, queryKey: readonly unknown[]): T | undefined {
     return queryClient.getQueryData<T>(queryKey);
   },
   
   // 쿼리 데이터 설정
-  setQueryData: <T>(queryClient: QueryClient, queryKey: readonly unknown[], data: T) => {
+  setQueryData<T>(queryClient: QueryClient, queryKey: readonly unknown[], data: T): void {
     queryClient.setQueryData(queryKey, data);
   },
   
   // 쿼리 캐시 제거
-  removeQueries: (queryClient: QueryClient, queryKey: readonly unknown[]) => {
+  removeQueries(queryClient: QueryClient, queryKey: readonly unknown[]): void {
     queryClient.removeQueries({ queryKey });
   },
   
   // 캐시 크기 확인
-  getCacheSize: (queryClient: QueryClient) => {
+  getCacheSize(queryClient: QueryClient): number {
     const cache = queryClient.getQueryCache();
     return cache.getAll().length;
   },
   
   // 오래된 캐시 정리
-  clearStaleCache: (queryClient: QueryClient) => {
+  clearStaleCache(queryClient: QueryClient): void {
     queryClient.clear();
   },
 };
@@ -182,7 +182,7 @@ export const cacheUtils = {
  */
 export const debugUtils = {
   // 모든 쿼리 상태 로그
-  logAllQueries: (queryClient: QueryClient) => {
+  logAllQueries(queryClient: QueryClient): void {
     if (process.env.NODE_ENV === 'development') {
       const cache = queryClient.getQueryCache();
       const queries = cache.getAll();
@@ -200,7 +200,7 @@ export const debugUtils = {
   },
   
   // 특정 쿼리 상태 로그
-  logQuery: (queryClient: QueryClient, queryKey: readonly unknown[]) => {
+  logQuery(queryClient: QueryClient, queryKey: readonly unknown[]): void {
     if (process.env.NODE_ENV === 'development') {
       const query = queryClient.getQueryCache().find({ queryKey });
       console.log('Query State:', {

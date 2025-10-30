@@ -171,7 +171,6 @@ export function useRealtimeCollection<T extends DocumentData>(
     enabled,
     onError,
     onConnect,
-    onDisconnect,
     retryOnError,
     maxRetries,
     retryCount,

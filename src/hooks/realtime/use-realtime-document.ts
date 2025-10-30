@@ -185,7 +185,6 @@ export function useRealtimeDocument<T extends DocumentData>(
     enabled,
     onError,
     onConnect,
-    onDisconnect,
     onDocumentChange,
     retryOnError,
     maxRetries,
