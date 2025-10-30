@@ -164,9 +164,9 @@ export default function FederationAdminSignupPage() {
         description: '연맹 관리자 계정이 생성되었습니다.',
       });
 
-      // 대시보드로 이동
+      // 대시보드로 이동 (완전한 페이지 새로고침)
       setTimeout(() => {
-        router.push('/admin');
+        window.location.href = '/admin';
       }, 1500);
     } catch (error: unknown) {
       let errorMessage = '회원가입 중 오류가 발생했습니다.';
@@ -237,7 +237,8 @@ export default function FederationAdminSignupPage() {
       });
 
       setTimeout(() => {
-        router.push('/admin');
+        // 완전한 페이지 새로고침으로 리다이렉트
+        window.location.href = '/admin';
       }, 1500);
     } catch (error: unknown) {
       let errorMessage = '로그인 중 오류가 발생했습니다.';
