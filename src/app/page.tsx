@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { UserRole } from '@/types/auth';
@@ -9,12 +9,21 @@ import { Loader2 } from 'lucide-react';
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
+    // 이미 리다이렉트했으면 중단
+    if (redirectedRef.current) {
+      return;
+    }
+
     // 로딩 중이면 기다림
     if (isUserLoading) {
       return;
     }
+
+    // 리다이렉트 시작
+    redirectedRef.current = true;
 
     // 사용자가 없으면 로그인 페이지로
     if (!user) {
@@ -31,23 +40,23 @@ export default function Home() {
     // 역할별 적절한 대시보드로 리다이렉트
     switch (user.role) {
       case UserRole.SUPER_ADMIN:
-        router.push('/super-admin');
+        window.location.href = '/super-admin';
         break;
       case UserRole.FEDERATION_ADMIN:
-        router.push('/admin');
+        window.location.href = '/admin';
         break;
       case UserRole.CLUB_OWNER:
       case UserRole.CLUB_MANAGER:
-        router.push('/club-dashboard');
+        window.location.href = '/club-dashboard';
         break;
       case UserRole.HEAD_COACH:
       case UserRole.ASSISTANT_COACH:
-        router.push('/club-dashboard');
+        window.location.href = '/club-dashboard';
         break;
       default:
-        router.push('/my-profile');
+        window.location.href = '/my-profile';
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading]);
 
   // 로딩 중 표시
   return (

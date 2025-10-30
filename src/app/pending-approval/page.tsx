@@ -39,29 +39,36 @@ export default function PendingApprovalPage() {
     );
   }
 
-  // 사용자가 없으면 로그인 페이지로
+  // 사용자가 없으면 - 그냥 메시지만 표시
   if (!user) {
-    window.location.href = '/login';
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <p>로그인이 필요합니다.</p>
+            <Button onClick={() => window.location.href = '/login'} className="mt-4">
+              로그인하기
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
-  // 승인 완료된 사용자는 대시보드로
+  // 승인 완료된 사용자는 - 그냥 메시지만 표시
   if (user.status === 'active') {
-    switch (user.role) {
-      case UserRole.SUPER_ADMIN:
-        window.location.href = '/super-admin';
-        return null;
-      case UserRole.FEDERATION_ADMIN:
-        window.location.href = '/admin';
-        return null;
-      case UserRole.CLUB_OWNER:
-      case UserRole.CLUB_MANAGER:
-        window.location.href = '/club-dashboard';
-        return null;
-      default:
-        window.location.href = '/my-profile';
-        return null;
-    }
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <p>승인이 완료되었습니다!</p>
+            <Button onClick={() => window.location.href = '/'} className="mt-4">
+              대시보드로 이동
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
