@@ -125,12 +125,21 @@ async function deleteAuthUsers(superAdminUid: string | null): Promise<number> {
 export async function POST(request: NextRequest) {
   try {
     console.log('🔥 Reset Firestore API 호출됨');
+    console.log('🔧 Admin SDK 상태:', {
+      adminAuth: !!adminAuth,
+      adminDb: !!adminDb,
+      nodeEnv: process.env.NODE_ENV,
+      firebaseConfig: !!process.env.FIREBASE_CONFIG
+    });
 
     // Admin SDK 초기화 확인
     if (!adminAuth || !adminDb) {
       console.error('❌ Firebase Admin SDK가 초기화되지 않음');
       return NextResponse.json(
-        { error: 'Firebase Admin SDK 초기화 오류' },
+        { 
+          error: 'Firebase Admin SDK 초기화 오류',
+          details: 'adminAuth 또는 adminDb가 undefined입니다.'
+        },
         { status: 500 }
       );
     }
