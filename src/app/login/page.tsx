@@ -20,6 +20,7 @@ import { useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
 import { UserProfile, UserRole } from '@/types';
 import { useNavigation } from '@/hooks/use-navigation';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 const formSchema = z.object({
   email: z.string().email({ message: '유효하지 않은 이메일 주소입니다.' }),
@@ -34,6 +35,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { navigate, navigateByRole } = useNavigation();
+  const { handleError } = useErrorHandler({ component: 'LoginPage' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -108,16 +110,8 @@ export default function LoginPage() {
         navigate('/my-profile', { replace: true });
       }
     } catch (error: unknown) {
-      let errorMessage = '예상치 못한 오류가 발생했습니다.';
-      const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
-      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
-        errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
-      }
-      toast({
-        variant: 'destructive',
-        title: '로그인 실패',
-        description: errorMessage,
-      });
+      // ErrorHandler를 통한 에러 처리
+      handleError(error, 'login-submit', { email: values.email });
     } finally {
       setIsSubmitting(false);
     }
@@ -146,11 +140,8 @@ export default function LoginPage() {
         navigate('/my-profile', { replace: true });
       }
     } catch (error: unknown) {
-      toast({
-        variant: 'destructive',
-        title: '로그인 실패',
-        description: 'Google 로그인 중 오류가 발생했습니다.',
-      });
+      // ErrorHandler를 통한 에러 처리
+      handleError(error, 'google-signin');
     } finally {
       setIsSubmitting(false);
     }
