@@ -43,3 +43,8 @@ if (isServer) {
 
 export const adminAuth = isServer && app ? getAuth(app) : (undefined as any);
 export const adminDb = isServer && app ? getFirestore(app) : (undefined as any);
+
+export function initializeAdmin() {
+  // 이미 초기화되어 있으므로 아무것도 하지 않음
+  return { adminAuth, adminDb };
+}
