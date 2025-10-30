@@ -16,9 +16,27 @@ export default function PendingApprovalPage() {
   const auth = useAuth();
   const { toast } = useToast();
 
-  // 승인되면 자동으로 대시보드로 이동
+  // 승인되면 자동으로 적절한 대시보드로 이동
   if (!isUserLoading && user?.status === 'active') {
-    router.push('/dashboard');
+    // 역할별 적절한 대시보드로 리다이렉트
+    switch (user.role) {
+      case UserRole.SUPER_ADMIN:
+        router.push('/super-admin');
+        break;
+      case UserRole.FEDERATION_ADMIN:
+        router.push('/admin');
+        break;
+      case UserRole.CLUB_OWNER:
+      case UserRole.CLUB_MANAGER:
+        router.push('/club-dashboard');
+        break;
+      case UserRole.HEAD_COACH:
+      case UserRole.ASSISTANT_COACH:
+        router.push('/club-dashboard');
+        break;
+      default:
+        router.push('/my-profile');
+    }
     return null;
   }
 
