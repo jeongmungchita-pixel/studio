@@ -1,62 +1,23 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useUser } from '@/firebase';
-import { UserRole } from '@/types/auth';
 import { Loader2 } from 'lucide-react';
+import { useNavigation } from '@/hooks/use-navigation';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const router = useRouter();
-  const redirectedRef = useRef(false);
+  const { navigateByRole } = useNavigation();
 
   useEffect(() => {
-    // 이미 리다이렉트했으면 중단
-    if (redirectedRef.current) {
-      return;
-    }
-
     // 로딩 중이면 기다림
     if (isUserLoading) {
       return;
     }
 
-    // 리다이렉트 시작
-    redirectedRef.current = true;
-
-    // 사용자가 없으면 로그인 페이지로
-    if (!user) {
-      window.location.href = '/login';
-      return;
-    }
-
-    // 승인 대기 중인 사용자는 대기 페이지로
-    if (user.status === 'pending') {
-      window.location.href = '/pending-approval';
-      return;
-    }
-
-    // 역할별 적절한 대시보드로 리다이렉트
-    switch (user.role) {
-      case UserRole.SUPER_ADMIN:
-        window.location.href = '/super-admin';
-        break;
-      case UserRole.FEDERATION_ADMIN:
-        window.location.href = '/admin';
-        break;
-      case UserRole.CLUB_OWNER:
-      case UserRole.CLUB_MANAGER:
-        window.location.href = '/club-dashboard';
-        break;
-      case UserRole.HEAD_COACH:
-      case UserRole.ASSISTANT_COACH:
-        window.location.href = '/club-dashboard';
-        break;
-      default:
-        window.location.href = '/my-profile';
-    }
-  }, [user, isUserLoading]);
+    // NavigationManager를 통한 역할 기반 리다이렉트
+    navigateByRole();
+  }, [isUserLoading, navigateByRole]);
 
   // 로딩 중 표시
   return (

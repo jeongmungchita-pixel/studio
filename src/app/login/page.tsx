@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
 import { Loader2, Trophy } from 'lucide-react';
 import { UserProfile, UserRole } from '@/types';
+import { useNavigation } from '@/hooks/use-navigation';
 
 const formSchema = z.object({
   email: z.string().email({ message: '유효하지 않은 이메일 주소입니다.' }),
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
+  const { navigate, navigateByRole } = useNavigation();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -42,33 +44,29 @@ export default function LoginPage() {
     },
   });
 
-  const redirectRef = useRef(false);
-
-  // 이미 로그인된 사용자 자동 리다이렉트 (한 번만 실행)
+  // 이미 로그인된 사용자 자동 리다이렉트 (NavigationManager 사용)
   useEffect(() => {
-    if (redirectRef.current) return;
     if (isUserLoading) return;
     if (!user) return;
 
-    redirectRef.current = true;
+    // NavigationManager를 통한 역할 기반 리다이렉트
+    navigateByRole();
+  }, [user, isUserLoading, navigateByRole]);
 
-    // 승인 대기 중이면 pending 페이지로
-    if (user.status === 'pending') {
-      window.location.href = '/pending-approval';
-      return;
+  // 역할별 리다이렉트 경로 헬퍼 함수
+  const getRedirectPath = (role: UserRole): string => {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return '/super-admin';
+      case UserRole.FEDERATION_ADMIN:
+        return '/admin';
+      case UserRole.CLUB_OWNER:
+      case UserRole.CLUB_MANAGER:
+        return '/club-dashboard';
+      default:
+        return '/my-profile';
     }
-
-    // 역할에 따라 즉시 리다이렉트
-    if (user.role === UserRole.SUPER_ADMIN) {
-      window.location.href = '/super-admin';
-    } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-      window.location.href = '/club-dashboard';
-    } else if (user.role === UserRole.FEDERATION_ADMIN) {
-      window.location.href = '/admin';
-    } else {
-      window.location.href = '/my-profile';
-    }
-  }, [user, isUserLoading]);
+  };
 
   // Force logout function - 컴포넌트 최상위에 위치
   const forceLogout = useCallback(async () => {
@@ -100,25 +98,14 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userProfile = userDoc.data() as UserProfile;
         
-        // 승인 대기 중이면 pending 페이지로
-        if (userProfile.status === 'pending') {
-          router.push('/pending-approval');
-          return;
-        }
-        
-        // 역할에 따라 리다이렉트 (완전한 페이지 리로드)
-        if (userProfile.role === UserRole.SUPER_ADMIN) {
-          router.push('/super-admin');
-        } else if (userProfile.role === UserRole.CLUB_OWNER || userProfile.role === UserRole.CLUB_MANAGER) {
-          router.push('/club-dashboard');
-        } else if (userProfile.role === UserRole.FEDERATION_ADMIN) {
-          router.push('/admin');
-        } else {
-          router.push('/my-profile');
-        }
+        // NavigationManager를 통한 리다이렉트
+        const targetPath = userProfile.status === 'pending' 
+          ? '/pending-approval'
+          : getRedirectPath(userProfile.role);
+        navigate(targetPath, { replace: true });
       } else {
         // 프로필이 없으면 기본 페이지로
-        router.push('/my-profile');
+        navigate('/my-profile', { replace: true });
       }
     } catch (error: unknown) {
       let errorMessage = '예상치 못한 오류가 발생했습니다.';
@@ -149,25 +136,14 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userProfile = userDoc.data() as UserProfile;
         
-        // 승인 대기 중이면 pending 페이지로
-        if (userProfile.status === 'pending') {
-          router.push('/pending-approval');
-          return;
-        }
-        
-        // 역할에 따라 리다이렉트 (완전한 페이지 리로드)
-        if (userProfile.role === UserRole.SUPER_ADMIN) {
-          router.push('/super-admin');
-        } else if (userProfile.role === UserRole.CLUB_OWNER || userProfile.role === UserRole.CLUB_MANAGER) {
-          router.push('/club-dashboard');
-        } else if (userProfile.role === UserRole.FEDERATION_ADMIN) {
-          router.push('/admin');
-        } else {
-          router.push('/my-profile');
-        }
+        // NavigationManager를 통한 리다이렉트
+        const targetPath = userProfile.status === 'pending' 
+          ? '/pending-approval'
+          : getRedirectPath(userProfile.role);
+        navigate(targetPath, { replace: true });
       } else {
         // 프로필이 없으면 기본 페이지로
-        router.push('/my-profile');
+        navigate('/my-profile', { replace: true });
       }
     } catch (error: unknown) {
       toast({
