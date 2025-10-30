@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -41,6 +41,30 @@ export default function LoginPage() {
       password: '',
     },
   });
+
+  // 이미 로그인된 사용자 자동 리다이렉트
+  useEffect(() => {
+    if (isUserLoading) return;
+    
+    if (user) {
+      // 승인 대기 중이면 pending 페이지로
+      if (user.status === 'pending') {
+        router.push('/pending-approval');
+        return;
+      }
+      
+      // 역할에 따라 즉시 리다이렉트
+      if (user.role === UserRole.SUPER_ADMIN) {
+        router.push('/super-admin');
+      } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
+        router.push('/club-dashboard');
+      } else if (user.role === UserRole.FEDERATION_ADMIN) {
+        router.push('/admin');
+      } else {
+        router.push('/my-profile');
+      }
+    }
+  }, [user, isUserLoading, router]);
 
   // Force logout function - 컴포넌트 최상위에 위치
   const forceLogout = useCallback(async () => {
@@ -160,48 +184,14 @@ export default function LoginPage() {
     );
   }
 
-  // If user is already logged in, show message
+  // If user is already logged in, show loading (redirect will happen automatically)
   if (user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>이미 로그인되어 있습니다</CardTitle>
-            <CardDescription>대시보드로 이동하시겠습니까?</CardDescription>
-          </CardHeader>
-          <CardContent className="flex gap-4">
-            <Button 
-              onClick={() => {
-                // 승인 대기 중이면 pending 페이지로
-                if (user.status === 'pending') {
-                  router.push('/pending-approval');
-                  return;
-                }
-                
-                // 역할에 따라 리다이렉트
-                if (user.role === UserRole.SUPER_ADMIN) {
-                  router.push('/super-admin');
-                } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-                  router.push('/club-dashboard');
-                } else if (user.role === UserRole.FEDERATION_ADMIN) {
-                  router.push('/admin');
-                } else {
-                  router.push('/my-profile');
-                }
-              }}
-              className="flex-1"
-            >
-              대시보드로 이동
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={forceLogout}
-              className="flex-1"
-            >
-              로그아웃
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">대시보드로 이동 중...</p>
+        </div>
       </div>
     );
   }
