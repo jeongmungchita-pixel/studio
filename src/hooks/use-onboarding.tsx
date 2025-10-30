@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useUser } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -86,25 +86,30 @@ export function useOnboarding() {
   /**
    * 다음 단계로 이동
    */
+  const hasNavigatedRef = useRef(false);
+
   const goToNextStep = () => {
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
+
     switch (state.step) {
       case 'register':
-        router.push('/register');
+        window.location.href = '/register';
         break;
       case 'verify':
         // 이메일 인증 페이지로 이동 (필요시 구현)
         break;
       case 'approval':
-        router.push('/pending-approval');
+        window.location.href = '/pending-approval';
         break;
       case 'profile':
-        router.push('/profile-setup');
+        window.location.href = '/profile-setup';
         break;
       case 'complete':
         // 역할별 대시보드로 이동
         if (user) {
           const defaultRoute = getDefaultRouteByRole(user.role);
-          router.push(defaultRoute);
+          window.location.href = defaultRoute;
         }
         break;
     }

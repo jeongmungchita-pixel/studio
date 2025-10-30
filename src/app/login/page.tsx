@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -42,29 +42,33 @@ export default function LoginPage() {
     },
   });
 
-  // 이미 로그인된 사용자 자동 리다이렉트
+  const redirectRef = useRef(false);
+
+  // 이미 로그인된 사용자 자동 리다이렉트 (한 번만 실행)
   useEffect(() => {
+    if (redirectRef.current) return;
     if (isUserLoading) return;
-    
-    if (user) {
-      // 승인 대기 중이면 pending 페이지로
-      if (user.status === 'pending') {
-        router.push('/pending-approval');
-        return;
-      }
-      
-      // 역할에 따라 즉시 리다이렉트
-      if (user.role === UserRole.SUPER_ADMIN) {
-        router.push('/super-admin');
-      } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-        router.push('/club-dashboard');
-      } else if (user.role === UserRole.FEDERATION_ADMIN) {
-        router.push('/admin');
-      } else {
-        router.push('/my-profile');
-      }
+    if (!user) return;
+
+    redirectRef.current = true;
+
+    // 승인 대기 중이면 pending 페이지로
+    if (user.status === 'pending') {
+      window.location.href = '/pending-approval';
+      return;
     }
-  }, [user, isUserLoading, router]);
+
+    // 역할에 따라 즉시 리다이렉트
+    if (user.role === UserRole.SUPER_ADMIN) {
+      window.location.href = '/super-admin';
+    } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
+      window.location.href = '/club-dashboard';
+    } else if (user.role === UserRole.FEDERATION_ADMIN) {
+      window.location.href = '/admin';
+    } else {
+      window.location.href = '/my-profile';
+    }
+  }, [user, isUserLoading]);
 
   // Force logout function - 컴포넌트 최상위에 위치
   const forceLogout = useCallback(async () => {
