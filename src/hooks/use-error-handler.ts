@@ -20,6 +20,21 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
   const [errorHistory, setErrorHistory] = useState<ErrorInfo[]>([]);
 
   /**
+   * 에러 Toast 표시
+   */
+  const showErrorToast = useCallback((errorInfo: ErrorInfo) => {
+    // 심각도에 따른 Toast 스타일 결정
+    const variant = getToastVariant(errorInfo.severity);
+    
+    toast({
+      variant,
+      title: getErrorTitle(errorInfo.type),
+      description: errorInfo.userMessage,
+      duration: errorInfo.severity === ErrorSeverity.CRITICAL ? 10000 : 5000
+    });
+  }, [toast]);
+
+  /**
    * 에러 처리 함수
    */
   const handleError = useCallback((error: Error | unknown, action?: string, metadata?: Record<string, any>) => {
@@ -39,22 +54,7 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
     }
 
     return errorInfo;
-  }, [user, component, showToast]);
-
-  /**
-   * 에러 Toast 표시
-   */
-  const showErrorToast = useCallback((errorInfo: ErrorInfo) => {
-    // 심각도에 따른 Toast 스타일 결정
-    const variant = getToastVariant(errorInfo.severity);
-    
-    toast({
-      variant,
-      title: getErrorTitle(errorInfo.type),
-      description: errorInfo.userMessage,
-      duration: errorInfo.severity === ErrorSeverity.CRITICAL ? 10000 : 5000
-    });
-  }, [toast]);
+  }, [user, component, showToast, showErrorToast]);
 
   /**
    * Toast variant 결정

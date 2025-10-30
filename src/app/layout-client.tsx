@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseProvider, initializeFirebase } from '@/firebase';
 import { usePathname } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
+import { LoadingIndicator } from '@/components/loading-indicator';
 
 export function RootLayoutClient({
   children,
@@ -21,6 +22,7 @@ export function RootLayoutClient({
       ) : (
         <MainLayout>{children}</MainLayout>
       )}
+      <LoadingIndicator position="top" showDetails />
       <Toaster />
     </FirebaseProvider>
   );
