@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { UserRole } from '@/types/auth';
@@ -9,42 +9,29 @@ import { Loader2 } from 'lucide-react';
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (isUserLoading) {
-      console.log('🏠 Home Page - Still loading user...');
+    // 이미 리다이렉트했으면 다시 실행하지 않음
+    if (hasRedirected) {
       return;
     }
 
-    // 디버깅: 홈페이지에서 사용자 상태 확인
-    console.log('🏠 Home Page - User Status:', {
-      user: user ? {
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        clubName: user.clubName
-      } : null,
-      isUserLoading,
-      currentPath: window.location.pathname
-    });
-
-    // 이미 pending-approval 페이지에 있다면 리다이렉트하지 않음
-    if (window.location.pathname === '/pending-approval') {
-      console.log('🏠 Already on pending-approval page, not redirecting');
+    if (isUserLoading) {
       return;
     }
 
     // 로그인하지 않은 사용자는 로그인 페이지로
     if (!user) {
-      console.log('🏠 Redirecting to login - no user');
-      router.push('/login');
+      setHasRedirected(true);
+      router.replace('/login');
       return;
     }
 
     // 승인 대기 중인 사용자는 대기 페이지로
     if (user.status === 'pending') {
-      console.log('🏠 Redirecting to pending-approval - user status is pending');
-      router.push('/pending-approval');
+      setHasRedirected(true);
+      router.replace('/pending-approval');
       return;
     }
 

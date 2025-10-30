@@ -16,37 +16,6 @@ export default function PendingApprovalPage() {
   const auth = useAuth();
   const { toast } = useToast();
 
-  // 승인되면 자동으로 적절한 대시보드로 이동
-  if (!isUserLoading && user?.status === 'active') {
-    console.log('🔍 User is active, redirecting to dashboard based on role:', user.role);
-    // 역할별 적절한 대시보드로 리다이렉트
-    switch (user.role) {
-      case UserRole.SUPER_ADMIN:
-        router.push('/super-admin');
-        break;
-      case UserRole.FEDERATION_ADMIN:
-        router.push('/admin');
-        break;
-      case UserRole.CLUB_OWNER:
-      case UserRole.CLUB_MANAGER:
-        router.push('/club-dashboard');
-        break;
-      case UserRole.HEAD_COACH:
-      case UserRole.ASSISTANT_COACH:
-        router.push('/club-dashboard');
-        break;
-      default:
-        router.push('/my-profile');
-    }
-    return null;
-  }
-
-  // 사용자가 없거나 로그인되지 않은 경우 로그인 페이지로
-  if (!isUserLoading && !user) {
-    console.log('🔍 No user found, redirecting to login');
-    router.push('/login');
-    return null;
-  }
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -70,16 +39,30 @@ export default function PendingApprovalPage() {
     );
   }
 
-  // 디버깅: 사용자 상태 확인
-  console.log('🔍 Pending Approval Page - User Status:', {
-    user: user ? {
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      clubName: user.clubName
-    } : null,
-    isUserLoading
-  });
+  // 사용자 상태가 pending이 아니면 적절한 페이지로 리다이렉트
+  if (!isUserLoading && user && user.status !== 'pending') {
+    // 활성 사용자는 대시보드로, 그 외는 로그인으로
+    if (user.status === 'active') {
+      switch (user.role) {
+        case UserRole.SUPER_ADMIN:
+          router.replace('/super-admin');
+          return null;
+        case UserRole.FEDERATION_ADMIN:
+          router.replace('/admin');
+          return null;
+        case UserRole.CLUB_OWNER:
+        case UserRole.CLUB_MANAGER:
+          router.replace('/club-dashboard');
+          return null;
+        default:
+          router.replace('/my-profile');
+          return null;
+      }
+    } else {
+      router.replace('/login');
+      return null;
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
