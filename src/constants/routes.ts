@@ -38,6 +38,7 @@ export const ROUTES = {
     ANALYTICS: '/club-dashboard/analytics',
     ANNOUNCEMENTS: '/club-dashboard/announcements',
     APPROVALS: '/club-dashboard/approvals',
+    ATTENDANCE: '/club-dashboard/attendance',
     CLASS_STATUS: '/club-dashboard/class-status',
     CLASSES: '/club-dashboard/classes',
     COACHES: '/club-dashboard/coaches',

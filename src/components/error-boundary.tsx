@@ -32,7 +32,6 @@ export class AuthErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅
-    console.error('AuthErrorBoundary caught an error:', error, errorInfo);
     
     // 부모 컴포넌트에 에러 전달
     if (this.props.onError) {
@@ -57,7 +56,6 @@ export class AuthErrorBoundary extends Component<Props, State> {
     };
     
     // TODO: Sentry, LogRocket 등으로 전송
-    console.log('Firebase Error Log:', errorLog);
   }
 
   private handleReset = () => {
@@ -205,7 +203,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
     
     if (this.props.onError) {
       this.props.onError(error, errorInfo);

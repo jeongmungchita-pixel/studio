@@ -144,7 +144,6 @@ export function useRealtimePermissions() {
         setIsUpdating(false);
       },
       (error) => {
-        console.error('Permission listener error:', error);
         toast({
           title: '권한 모니터링 오류',
           description: '권한 변경을 감지할 수 없습니다.',
@@ -185,7 +184,6 @@ export function useRealtimePermissions() {
         });
       }
     } catch (error) {
-      console.error('Permission refresh error:', error);
       toast({
         title: '새로고침 실패',
         description: '권한 정보를 가져올 수 없습니다.',

@@ -33,6 +33,8 @@ export default function SuperAdminDashboard() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
   // 접근 제어
   useEffect(() => {
@@ -260,15 +262,31 @@ export default function SuperAdminDashboard() {
     }
 
     setIsResetting(true);
+    console.log('🔥 데이터 리셋 시작...');
+    
     try {
       // Firebase Auth 토큰 가져오기
       const auth = (await import('firebase/auth')).getAuth();
-      const token = await auth.currentUser?.getIdToken();
+      const currentUser = auth.currentUser;
+      
+      console.log('👤 현재 사용자:', {
+        uid: currentUser?.uid,
+        email: currentUser?.email,
+        emailVerified: currentUser?.emailVerified
+      });
+
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const token = await currentUser.getIdToken(true); // 강제 새로고침
+      console.log('🎫 토큰 획득 성공, 길이:', token.length);
 
       if (!token) {
         throw new Error('인증 토큰을 가져올 수 없습니다.');
       }
 
+      console.log('📡 API 요청 시작...');
       const response = await fetch('/api/admin/reset-firestore', {
         method: 'POST',
         headers: {
@@ -277,10 +295,13 @@ export default function SuperAdminDashboard() {
         },
       });
 
+      console.log('📨 응답 상태:', response.status, response.statusText);
+
       const data = await response.json();
+      console.log('📄 응답 데이터:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || '초기화 실패');
+        throw new Error(data.error || data.details || '초기화 실패');
       }
 
       toast({
@@ -297,6 +318,7 @@ export default function SuperAdminDashboard() {
       }, 1500);
 
     } catch (error) {
+      console.error('💥 리셋 오류:', error);
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -304,6 +326,50 @@ export default function SuperAdminDashboard() {
       });
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  // 디버깅 정보 가져오기
+  const handleDebugInfo = async () => {
+    try {
+      const auth = (await import('firebase/auth')).getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const token = await currentUser.getIdToken(true);
+      
+      const response = await fetch('/api/admin/debug', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '디버깅 정보 가져오기 실패');
+      }
+
+      setDebugInfo(data);
+      setShowDebugInfo(true);
+
+      toast({
+        title: '디버깅 정보 로드 완료',
+        description: '콘솔에서 상세 정보를 확인하세요.',
+      });
+
+    } catch (error) {
+      console.error('디버깅 정보 오류:', error);
+      toast({
+        variant: 'destructive',
+        title: '디버깅 정보 오류',
+        description: error instanceof Error ? error.message : '알 수 없는 오류',
+      });
     }
   };
 
@@ -328,6 +394,15 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDebugInfo}
+              className="gap-2"
+            >
+              <Activity className="h-4 w-4" />
+              디버깅 정보
+            </Button>
             <Button
               variant="destructive"
               size="sm"
@@ -711,6 +786,104 @@ export default function SuperAdminDashboard() {
                   데이터 초기화
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 디버깅 정보 다이얼로그 */}
+      <Dialog open={showDebugInfo} onOpenChange={setShowDebugInfo}>
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              시스템 디버깅 정보
+            </DialogTitle>
+            <DialogDescription>
+              Firebase Admin SDK 및 시스템 상태 정보
+            </DialogDescription>
+          </DialogHeader>
+          
+          {debugInfo && (
+            <div className="space-y-4">
+              {/* 사용자 정보 */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold mb-2">사용자 정보</h3>
+                <div className="text-sm space-y-1">
+                  <p><strong>UID:</strong> {debugInfo.user?.uid}</p>
+                  <p><strong>이메일:</strong> {debugInfo.user?.email}</p>
+                  <p><strong>역할:</strong> {debugInfo.user?.role}</p>
+                </div>
+              </div>
+
+              {/* Admin SDK 상태 */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold mb-2">Firebase Admin SDK</h3>
+                <div className="text-sm space-y-1">
+                  <p><strong>초기화:</strong> {debugInfo.adminSDK?.initialized ? '✅ 성공' : '❌ 실패'}</p>
+                  <p><strong>Auth:</strong> {debugInfo.adminSDK?.authAvailable ? '✅ 사용 가능' : '❌ 사용 불가'}</p>
+                  <p><strong>Firestore:</strong> {debugInfo.adminSDK?.firestoreAvailable ? '✅ 사용 가능' : '❌ 사용 불가'}</p>
+                </div>
+              </div>
+
+              {/* 연결 테스트 */}
+              {debugInfo.connectionTest && (
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h3 className="font-semibold mb-2">연결 테스트</h3>
+                  <div className="text-sm space-y-1">
+                    <p><strong>전체:</strong> {debugInfo.connectionTest.success ? '✅ 성공' : '❌ 실패'}</p>
+                    <p><strong>Firestore:</strong> {debugInfo.connectionTest.firestore ? '✅ 성공' : '❌ 실패'}</p>
+                    <p><strong>Auth:</strong> {debugInfo.connectionTest.auth ? '✅ 성공' : '❌ 실패'}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* 통계 */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold mb-2">데이터 통계</h3>
+                <div className="text-sm space-y-1">
+                  <p><strong>Auth 사용자:</strong> {debugInfo.statistics?.authUsers}명</p>
+                  <p><strong>총 Firestore 문서:</strong> {debugInfo.statistics?.totalFirestoreDocuments}개</p>
+                </div>
+                
+                {debugInfo.statistics?.collections && (
+                  <div className="mt-3">
+                    <p className="font-medium mb-2">컬렉션별 문서 수:</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {Object.entries(debugInfo.statistics.collections).map(([collection, count]) => (
+                        <div key={collection} className="flex justify-between">
+                          <span>{collection}:</span>
+                          <span>{count as number >= 0 ? `${count}개` : '오류'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 환경 정보 */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold mb-2">환경 정보</h3>
+                <div className="text-sm space-y-1">
+                  <p><strong>NODE_ENV:</strong> {debugInfo.environment?.nodeEnv}</p>
+                  <p><strong>FIREBASE_CONFIG:</strong> {debugInfo.environment?.hasFirebaseConfig ? '✅ 설정됨' : '❌ 없음'}</p>
+                  <p><strong>GOOGLE_APPLICATION_CREDENTIALS:</strong> {debugInfo.environment?.hasGoogleCredentials ? '✅ 설정됨' : '❌ 없음'}</p>
+                </div>
+              </div>
+
+              {/* JSON 원본 데이터 */}
+              <details className="p-4 bg-slate-50 rounded-lg">
+                <summary className="font-semibold cursor-pointer">원본 JSON 데이터</summary>
+                <pre className="mt-2 text-xs overflow-x-auto bg-white p-2 rounded border">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setShowDebugInfo(false)}>
+              닫기
             </Button>
           </DialogFooter>
         </DialogContent>

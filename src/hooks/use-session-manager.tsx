@@ -80,7 +80,6 @@ export function useSessionManager(config: SessionConfig = {}) {
         await signOut(auth);
       }
     } catch (error) {
-      console.error('Session manager: Error signing out', error);
     }
 
     // 로컬 스토리지 정리
@@ -186,7 +185,6 @@ export function useSessionManager(config: SessionConfig = {}) {
         }
       }
     } catch (error) {
-      console.error('Token refresh error:', error);
       await endSession('token_expired');
     }
   }, [user, idleTimeout, warningTime, endSession, extendSession, toast, auth]);

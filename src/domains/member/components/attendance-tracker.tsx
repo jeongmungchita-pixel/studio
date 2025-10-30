@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Member, Attendance } from '@/types/member';
 import { AvatarImage } from '@/components/optimized-image';
-import { CheckCircle, XCircle, Clock, AlertCircle, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertCircle, CalendarIcon, TrendingUp } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 

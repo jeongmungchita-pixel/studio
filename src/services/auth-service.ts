@@ -69,7 +69,6 @@ export class AuthService {
 
       return null;
     } catch (error) {
-      console.error('Error getting user profile:', error);
       return null;
     }
   }

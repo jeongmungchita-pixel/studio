@@ -63,7 +63,6 @@ export function LogoutButton({
         description: '안전하게 로그아웃되었습니다.',
       });
     } catch (error) {
-      console.error('Logout error:', error);
       toast({
         title: '로그아웃 실패',
         description: '로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.',

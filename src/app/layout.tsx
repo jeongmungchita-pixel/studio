@@ -1,13 +1,12 @@
 import { Metadata } from 'next';
 import { PT_Sans } from 'next/font/google';
-import './globals.css';
+import { RootLayoutClient } from './layout-client';
 
 const ptSans = PT_Sans({
-  subsets: ['latin'],
   weight: ['400', '700'],
-  display: 'swap'
+  subsets: ['latin'],
+  display: 'swap',
 });
-import { RootLayoutClient } from './layout-client';
 
 // Force dynamic rendering for all pages - THIS WORKS IN SERVER COMPONENTS
 export const dynamic = 'force-dynamic';

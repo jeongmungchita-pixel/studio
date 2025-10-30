@@ -181,7 +181,6 @@ export class AuditService {
     limitCount = 100
   ): Promise<AuditLog[]> {
     if (!this.firestore) {
-      console.warn('AuditService: Firestore not initialized');
       return [];
     }
 
@@ -212,7 +211,6 @@ export class AuditService {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => doc.data() as AuditLog);
     } catch (error) {
-      console.error('AuditService: Error fetching logs', error);
       return [];
     }
   }
@@ -279,7 +277,6 @@ export class AuditService {
     try {
       await Promise.all(batch.map(log => this.writeLog(log)));
     } catch (error) {
-      console.error('AuditService: Batch write failed', error);
       // 실패한 로그는 다시 큐에 추가
       this.queue.unshift(...batch);
     } finally {
@@ -292,7 +289,6 @@ export class AuditService {
    */
   private async writeLog(log: AuditLog): Promise<void> {
     if (!this.firestore) {
-      console.warn('AuditService: Firestore not initialized, queuing log');
       this.queue.push(log);
       return;
     }
@@ -300,7 +296,6 @@ export class AuditService {
     try {
       await addDoc(collection(this.firestore, 'audit_logs'), log);
     } catch (error) {
-      console.error('AuditService: Failed to write log', error);
       // 실패한 로그는 로컬 스토리지에 백업
       this.backupToLocalStorage(log);
     }
@@ -323,7 +318,6 @@ export class AuditService {
       }
       localStorage.setItem(key, JSON.stringify(logs));
     } catch (error) {
-      console.error('AuditService: LocalStorage backup failed', error);
     }
   }
 
@@ -366,10 +360,6 @@ export class AuditService {
     const color = colors[log.severity];
     const reset = '\x1b[0m';
     
-    console.log(
-      `${color}[AUDIT]${reset} ${log.action} - ${log.userId || 'anonymous'} - ${log.resource || 'N/A'}`,
-      log.metadata || {}
-    );
   }
 
   /**

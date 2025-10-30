@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, Home, ArrowLeft, PartyPopper, Trophy, Award, Bell, TrendingUp, MessageSquare, CreditCard, DollarSign, ChevronDown, Users, Mail, Building, Gavel } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { LogoutButton } from '@/components/logout-button';
-import { UserProfile, UserRole } from '@/types';
+import { UserRole } from '@/types';
 
 interface SubMenuItem {
   href: string;
