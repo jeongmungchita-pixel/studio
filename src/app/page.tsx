@@ -13,14 +13,27 @@ export default function Home() {
   useEffect(() => {
     if (isUserLoading) return;
 
+    // 디버깅: 홈페이지에서 사용자 상태 확인
+    console.log('🏠 Home Page - User Status:', {
+      user: user ? {
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        clubName: user.clubName
+      } : null,
+      isUserLoading
+    });
+
     // 로그인하지 않은 사용자는 로그인 페이지로
     if (!user) {
+      console.log('🏠 Redirecting to login - no user');
       router.push('/login');
       return;
     }
 
     // 승인 대기 중인 사용자는 대기 페이지로
     if (user.status === 'pending') {
+      console.log('🏠 Redirecting to pending-approval - user status is pending');
       router.push('/pending-approval');
       return;
     }

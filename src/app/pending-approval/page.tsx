@@ -62,6 +62,17 @@ export default function PendingApprovalPage() {
     );
   }
 
+  // 디버깅: 사용자 상태 확인
+  console.log('🔍 Pending Approval Page - User Status:', {
+    user: user ? {
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      clubName: user.clubName
+    } : null,
+    isUserLoading
+  });
+
   return (
     <div className="flex min-h-screen items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
       <Card className="w-full max-w-md">
