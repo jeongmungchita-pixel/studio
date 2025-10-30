@@ -18,6 +18,7 @@ export default function PendingApprovalPage() {
 
   // 승인되면 자동으로 적절한 대시보드로 이동
   if (!isUserLoading && user?.status === 'active') {
+    console.log('🔍 User is active, redirecting to dashboard based on role:', user.role);
     // 역할별 적절한 대시보드로 리다이렉트
     switch (user.role) {
       case UserRole.SUPER_ADMIN:
@@ -37,6 +38,13 @@ export default function PendingApprovalPage() {
       default:
         router.push('/my-profile');
     }
+    return null;
+  }
+
+  // 사용자가 없거나 로그인되지 않은 경우 로그인 페이지로
+  if (!isUserLoading && !user) {
+    console.log('🔍 No user found, redirecting to login');
+    router.push('/login');
     return null;
   }
 

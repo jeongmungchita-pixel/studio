@@ -11,7 +11,10 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isUserLoading) return;
+    if (isUserLoading) {
+      console.log('🏠 Home Page - Still loading user...');
+      return;
+    }
 
     // 디버깅: 홈페이지에서 사용자 상태 확인
     console.log('🏠 Home Page - User Status:', {
@@ -21,8 +24,15 @@ export default function Home() {
         status: user.status,
         clubName: user.clubName
       } : null,
-      isUserLoading
+      isUserLoading,
+      currentPath: window.location.pathname
     });
+
+    // 이미 pending-approval 페이지에 있다면 리다이렉트하지 않음
+    if (window.location.pathname === '/pending-approval') {
+      console.log('🏠 Already on pending-approval page, not redirecting');
+      return;
+    }
 
     // 로그인하지 않은 사용자는 로그인 페이지로
     if (!user) {
