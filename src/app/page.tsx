@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { UserRole } from '@/types/auth';
@@ -9,29 +9,22 @@ import { Loader2 } from 'lucide-react';
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    // 이미 리다이렉트했으면 다시 실행하지 않음
-    if (hasRedirected) {
-      return;
-    }
-
+    // 로딩 중이면 기다림
     if (isUserLoading) {
       return;
     }
 
-    // 로그인하지 않은 사용자는 로그인 페이지로
+    // 사용자가 없으면 로그인 페이지로
     if (!user) {
-      setHasRedirected(true);
-      router.replace('/login');
+      window.location.href = '/login';
       return;
     }
 
     // 승인 대기 중인 사용자는 대기 페이지로
     if (user.status === 'pending') {
-      setHasRedirected(true);
-      router.replace('/pending-approval');
+      window.location.href = '/pending-approval';
       return;
     }
 

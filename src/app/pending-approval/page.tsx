@@ -16,7 +16,6 @@ export default function PendingApprovalPage() {
   const auth = useAuth();
   const { toast } = useToast();
 
-
   const handleLogout = async () => {
     if (!auth) return;
     
@@ -26,11 +25,12 @@ export default function PendingApprovalPage() {
         title: '로그아웃 완료',
         description: '다시 로그인해주세요.',
       });
-      router.push('/login');
+      window.location.href = '/login';
     } catch (error) {
     }
   };
 
+  // 로딩 중
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -39,28 +39,28 @@ export default function PendingApprovalPage() {
     );
   }
 
-  // 사용자 상태가 pending이 아니면 적절한 페이지로 리다이렉트
-  if (!isUserLoading && user && user.status !== 'pending') {
-    // 활성 사용자는 대시보드로, 그 외는 로그인으로
-    if (user.status === 'active') {
-      switch (user.role) {
-        case UserRole.SUPER_ADMIN:
-          router.replace('/super-admin');
-          return null;
-        case UserRole.FEDERATION_ADMIN:
-          router.replace('/admin');
-          return null;
-        case UserRole.CLUB_OWNER:
-        case UserRole.CLUB_MANAGER:
-          router.replace('/club-dashboard');
-          return null;
-        default:
-          router.replace('/my-profile');
-          return null;
-      }
-    } else {
-      router.replace('/login');
-      return null;
+  // 사용자가 없으면 로그인 페이지로
+  if (!user) {
+    window.location.href = '/login';
+    return null;
+  }
+
+  // 승인 완료된 사용자는 대시보드로
+  if (user.status === 'active') {
+    switch (user.role) {
+      case UserRole.SUPER_ADMIN:
+        window.location.href = '/super-admin';
+        return null;
+      case UserRole.FEDERATION_ADMIN:
+        window.location.href = '/admin';
+        return null;
+      case UserRole.CLUB_OWNER:
+      case UserRole.CLUB_MANAGER:
+        window.location.href = '/club-dashboard';
+        return null;
+      default:
+        window.location.href = '/my-profile';
+        return null;
     }
   }
 
