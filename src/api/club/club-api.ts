@@ -24,7 +24,9 @@ export class ClubAPI extends BaseAPI<Club> {
    * 클럽 정보 업데이트
    */
   async updateClub(clubId: string, updates: Partial<Club>) {
-    return this.update(clubId, updates);
+    // Firestore 호환 타입으로 변환
+    const firestoreUpdates = { ...updates } as any;
+    return this.update(clubId, firestoreUpdates);
   }
 
   /**

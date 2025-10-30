@@ -120,7 +120,7 @@ export const useClubStore = create<ClubStore>()(
         },
 
         getClubsByRegion: (region) => {
-          return get().clubs.filter((club) => club.region === region);
+          return get().clubs.filter((club) => club.address.includes(region));
         },
       }),
       {
