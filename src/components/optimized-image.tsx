@@ -1,10 +1,8 @@
 'use client';
-
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ImageIcon, Loader2 } from 'lucide-react';
-
 interface OptimizedImageProps {
   src?: string | null;
   alt: string;
@@ -22,7 +20,6 @@ interface OptimizedImageProps {
   placeholder?: 'blur' | 'empty';
   blurDataURL?: string;
 }
-
 // Firebase Storage URL을 리사이징된 URL로 변환
 function getOptimizedFirebaseUrl(url: string, width: number, height: number): string {
   // Firebase Storage URL 패턴 감지
@@ -32,21 +29,17 @@ function getOptimizedFirebaseUrl(url: string, width: number, height: number): st
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}w=${width}&h=${height}&fit=crop`;
   }
-  
   // Picsum 이미지 최적화
   if (url.includes('picsum.photos')) {
     // 기존 크기를 새로운 크기로 교체
     return url.replace(/\/\d+\/\d+/, `/${width}/${height}`);
   }
-  
   return url;
 }
-
 // 기본 아바타 생성 (사용자 ID 기반)
 function generateAvatarUrl(seed: string, width: number, height: number): string {
   return `https://picsum.photos/seed/${seed}/${width}/${height}`;
 }
-
 export function OptimizedImage({
   src,
   alt,
@@ -66,26 +59,21 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-
   // 이미지 로드 완료 핸들러
   const handleLoad = useCallback(() => {
     setIsLoading(false);
     setHasError(false);
   }, []);
-
   // 이미지 로드 에러 핸들러
   const handleError = useCallback(() => {
     setIsLoading(false);
     setHasError(true);
   }, []);
-
   // 최적화된 이미지 URL 생성
   const optimizedSrc = src ? getOptimizedFirebaseUrl(src, width, height) : null;
-
   // Fallback 이미지 결정
   const getFallbackSrc = (): string => {
     if (fallbackSrc) return fallbackSrc;
-    
     switch (fallbackType) {
       case 'avatar':
         // alt 텍스트나 랜덤 시드로 아바타 생성
@@ -104,17 +92,14 @@ export function OptimizedImage({
         return generateAvatarUrl('default', width, height);
     }
   };
-
   // 실제 표시할 이미지 URL
   const displaySrc = hasError || !optimizedSrc ? getFallbackSrc() : optimizedSrc;
-
   // 컨테이너 스타일
   const containerClassName = cn(
     'relative overflow-hidden bg-muted',
     fill ? 'w-full h-full' : '',
     className
   );
-
   // 이미지 스타일
   const imageClassName = cn(
     'transition-opacity duration-300',
@@ -125,7 +110,6 @@ export function OptimizedImage({
     objectFit === 'none' ? 'object-none' : '',
     objectFit === 'scale-down' ? 'object-scale-down' : ''
   );
-
   return (
     <div className={containerClassName}>
       {/* 로딩 상태 */}
@@ -137,7 +121,6 @@ export function OptimizedImage({
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       )}
-
       {/* 에러 상태 (아바타가 아닌 경우) */}
       {hasError && fallbackType !== 'avatar' && (
         <div 
@@ -147,7 +130,6 @@ export function OptimizedImage({
           <ImageIcon className="h-1/2 w-1/2 text-muted-foreground" />
         </div>
       )}
-
       {/* 실제 이미지 */}
       <Image
         src={displaySrc}
@@ -169,7 +151,6 @@ export function OptimizedImage({
     </div>
   );
 }
-
 // 프리셋 컴포넌트들
 export function AvatarImage({
   src,
@@ -193,7 +174,6 @@ export function AvatarImage({
     />
   );
 }
-
 export function ThumbnailImage({
   src,
   alt,
@@ -216,7 +196,6 @@ export function ThumbnailImage({
     />
   );
 }
-
 export function HeroImage({
   src,
   alt,

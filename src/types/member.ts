@@ -1,17 +1,13 @@
 'use client';
-
 // ============================================
 // 👤 회원 관리 시스템
 // ============================================
-
 export enum Gender {
   MALE = 'MALE',
   FEMALE = 'FEMALE',
   OTHER = 'OTHER',
 }
-
 export type MemberCategory = 'adult' | 'child';
-
 // 회원 기본 정보
 export interface Member {
   id: string;
@@ -29,42 +25,38 @@ export interface Member {
   memberCategory?: MemberCategory; // 회원 분류
   createdAt: string;
   updatedAt?: string;
-  
   // 추가 정보
   emergencyContact?: string;
   emergencyPhone?: string;
   medicalConditions?: string;
   notes?: string;
-  
   // 체조 관련
   currentLevel?: string;
   experience?: string;
   goals?: string;
 }
+// 성인 등록 요청 (별칭)
+export type AdultRegistrationRequest = MemberRegistrationRequest;
 
 // 회원 등록 요청
 export interface MemberRegistrationRequest {
   id: string;
   type: 'adult' | 'family';
-  
   // 기본 정보
   name: string;
   email: string;
   phoneNumber: string;
   dateOfBirth?: string;
   gender?: 'male' | 'female';
-  
   // 클럽 정보
   clubId: string;
   clubName: string;
-  
   // 추가 정보
   emergencyContact?: string;
   emergencyPhone?: string;
   medicalConditions?: string;
   experience?: string;
   goals?: string;
-  
   // 가족 등록인 경우
   children?: {
     name: string;
@@ -72,7 +64,6 @@ export interface MemberRegistrationRequest {
     gender: 'male' | 'female';
     medicalConditions?: string;
   }[];
-  
   // 상태
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: string;
@@ -80,11 +71,9 @@ export interface MemberRegistrationRequest {
   processedBy?: string;
   rejectionReason?: string;
 }
-
 // 가족 등록 요청
 export interface FamilyRegistrationRequest {
   id: string;
-  
   // 부모 정보
   parents: {
     name: string;
@@ -93,7 +82,6 @@ export interface FamilyRegistrationRequest {
     dateOfBirth?: string;
     gender?: 'male' | 'female';
   }[];
-  
   // 자녀 정보
   children: {
     name: string;
@@ -101,21 +89,17 @@ export interface FamilyRegistrationRequest {
     gender: 'male' | 'female';
     medicalConditions?: string;
   }[];
-  
   // 클럽 정보
   clubId: string;
   clubName: string;
-  
   // 추가 정보
   emergencyContact: string;
   emergencyPhone: string;
   familyMedicalHistory?: string;
-  
   // 동의서
   agreementSigned: boolean;
   agreementSignedAt?: string;
   agreementSignature?: string;
-  
   // 상태
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: string;
@@ -123,7 +107,6 @@ export interface FamilyRegistrationRequest {
   processedBy?: string;
   rejectionReason?: string;
 }
-
 // 회원 레벨 시스템
 export interface MemberLevel {
   id: string;
@@ -137,7 +120,6 @@ export interface MemberLevel {
   description?: string;
   requirements?: string[]; // 승급 요구사항
 }
-
 // 출석 기록
 export interface Attendance {
   id: string;
@@ -154,7 +136,6 @@ export interface Attendance {
   recordedBy: string; // 기록한 사람 (코치/스태프)
   createdAt: string;
 }
-
 // 미디어 아이템
 export interface MediaItem {
   id: string;
@@ -171,7 +152,6 @@ export interface MediaItem {
   uploadedBy: string;
   uploadedByName: string;
   isPublic: boolean;
-  
   // 메타데이터
   fileSize?: number;
   mimeType?: string;
@@ -181,7 +161,6 @@ export interface MediaItem {
   };
   duration?: number; // 비디오인 경우 (초)
 }
-
 // 회원 통계
 export interface MemberStats {
   totalMembers: number;
@@ -189,7 +168,6 @@ export interface MemberStats {
   pendingMembers: number;
   adultMembers: number;
   childMembers: number;
-  
   // 월별 통계
   monthlyStats: {
     month: string; // YYYY-MM
@@ -197,7 +175,6 @@ export interface MemberStats {
     activeMembers: number;
     attendanceRate: number;
   }[];
-  
   // 레벨별 분포
   levelDistribution: {
     level: string;

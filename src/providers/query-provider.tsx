@@ -1,14 +1,11 @@
 'use client';
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { toast } from '@/stores/ui-store';
-
 interface QueryProviderProps {
   children: React.ReactNode;
 }
-
 export function QueryProvider({ children }: QueryProviderProps) {
   const [queryClient] = useState(
     () =>
@@ -22,7 +19,6 @@ export function QueryProvider({ children }: QueryProviderProps) {
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
             refetchOnWindowFocus: false,
             refetchOnReconnect: 'always',
-            
             // 에러 처리
             throwOnError: false,
           },
@@ -30,17 +26,16 @@ export function QueryProvider({ children }: QueryProviderProps) {
             // 뮤테이션 기본 설정
             retry: 2,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            
             // 글로벌 에러 처리
-            onError: (error: any) => {
-              const message = error?.response?.data?.message || error?.message || '오류가 발생했습니다.';
+            onError: (error: unknown) => {
+              const parsedError = error as any;
+              const message = parsedError?.response?.data?.message || parsedError?.message || '오류가 발생했습니다.';
               toast.error('오류', message);
             },
           },
         },
       })
   );
-
   return (
     <QueryClientProvider client={queryClient}>
       {children}

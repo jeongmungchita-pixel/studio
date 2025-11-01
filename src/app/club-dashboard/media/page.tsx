@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser, useFirestore, useCollection, useStorage, uploadImage } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, orderBy } from 'firebase/firestore';
@@ -13,13 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Camera, X, ImageIcon, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
-
 export default function MediaManagementPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -29,21 +25,18 @@ export default function MediaManagementPage() {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const recordedChunksRef = useRef<Blob[]>([]);
   const stopRecordingRef = useRef<() => void | Promise<void>>();
-  
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   // Fetch all active members
   const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'members'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('status', '==', 'active')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
-
   // Fetch recent media for selected member
   const mediaQuery = useMemoFirebase(() => {
     if (!firestore || !selectedMember) return null;
@@ -54,7 +47,6 @@ export default function MediaManagementPage() {
     );
   }, [firestore, selectedMember?.id]);
   const { data: mediaItems } = useCollection<MediaItem>(mediaQuery);
-
   // Start camera
   const startCamera = async () => {
     try {
@@ -66,25 +58,22 @@ export default function MediaManagementPage() {
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-      
       // Setup MediaRecorder
       const recorder = new MediaRecorder(mediaStream, {
         mimeType: 'video/webm;codecs=vp8,opus'
       });
-      
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+      recorder.ondataavailable = (_event) => {
+        if (_event.data.size > 0) {
           setRecordedChunks((prev) => {
-            const next = [...prev, event.data];
+            const next = [...prev, _event.data];
             recordedChunksRef.current = next;
             return next;
           });
         }
       };
-      
       setMediaRecorder(recorder);
       setIsCameraOpen(true);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '카메라 오류',
@@ -92,9 +81,6 @@ export default function MediaManagementPage() {
       });
     }
   };
-
-  
-
   // Start recording
   const startRecording = () => {
     if (!mediaRecorder) return;
@@ -102,7 +88,6 @@ export default function MediaManagementPage() {
     mediaRecorder.start();
     setIsRecording(true);
   };
-
   // Stop recording and save
   const stopRecording = useCallback(async () => {
     if (!mediaRecorder || !selectedMember || !storage || !firestore) return;
@@ -120,12 +105,12 @@ export default function MediaManagementPage() {
         id: mediaRef.id,
         memberId: selectedMember.id,
         memberName: selectedMember.name,
-        clubId: user!.clubId!,
+        clubId: _user!.clubId!,
         type: 'video',
         url: downloadURL,
         uploadDate: new Date().toISOString(),
-        uploadedBy: user!.uid,
-        uploadedByName: user!.displayName || user!.email || '관리자',
+        uploadedBy: _user!.uid,
+        uploadedByName: _user!.displayName || _user!.email || '관리자',
         isPublic: false,
         title: `${selectedMember.name} 영상`,
         description: `${format(new Date(), 'yyyy-MM-dd HH:mm')}`,
@@ -136,7 +121,7 @@ export default function MediaManagementPage() {
         description: `${selectedMember.name}의 영상이 저장되었습니다.`
       });
       setRecordedChunks([]);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '저장 실패',
@@ -145,13 +130,11 @@ export default function MediaManagementPage() {
     } finally {
       setIsUploading(false);
     }
-  }, [firestore, mediaRecorder, selectedMember, storage, toast, user]);
-
+  }, [firestore, mediaRecorder, selectedMember, storage, toast, _user]);
   // Keep a stable ref to the latest stopRecording
   useEffect(() => {
     stopRecordingRef.current = stopRecording;
   }, [stopRecording]);
-
   // Stop camera (defined after stopRecording to avoid TS used-before-declare)
   const stopCamera = useCallback(() => {
     if (isRecording) {
@@ -164,57 +147,48 @@ export default function MediaManagementPage() {
     setMediaRecorder(null);
     setIsCameraOpen(false);
   }, [isRecording, stream]);
-
   // Take photo
   const takePhoto = async () => {
     if (!videoRef.current || !canvasRef.current || !selectedMember || !storage || !firestore) return;
-    
     setIsUploading(true);
     try {
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      
       ctx.drawImage(video, 0, 0);
-      
       // Convert to blob
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.9);
       });
-      
       // Upload to Firebase Storage
       const fileName = `media/${selectedMember.id}/${Date.now()}.jpg`;
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       const downloadURL = await uploadImage(storage, fileName, file);
-      
       // Save to Firestore
       const mediaRef = doc(collection(firestore, 'media'));
       const mediaData: MediaItem = {
         id: mediaRef.id,
         memberId: selectedMember.id,
         memberName: selectedMember.name,
-        clubId: user!.clubId!,
+        clubId: _user!.clubId!,
         type: 'photo',
         url: downloadURL,
         uploadDate: new Date().toISOString(),
-        uploadedBy: user!.uid,
-        uploadedByName: user!.displayName || user!.email || '관리자',
+        uploadedBy: _user!.uid,
+        uploadedByName: _user!.displayName || _user!.email || '관리자',
         isPublic: false,
         title: `${selectedMember.name} 사진`,
         description: `${format(new Date(), 'yyyy-MM-dd HH:mm')}`,
       };
-      
       await setDoc(mediaRef, mediaData);
-      
       toast({
         title: '사진 저장 완료',
         description: `${selectedMember.name}의 사진이 저장되었습니다.`
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '저장 실패',
@@ -224,18 +198,16 @@ export default function MediaManagementPage() {
       setIsUploading(false);
     }
   };
-
   // Delete media
   const handleDelete = async (mediaId: string) => {
     if (!firestore) return;
     try {
       await deleteDoc(doc(firestore, 'media', mediaId));
       toast({ title: '삭제 완료', description: '미디어가 삭제되었습니다.' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -247,7 +219,6 @@ export default function MediaManagementPage() {
       }
     };
   }, [stream, isRecording]);
-
   if (areMembersLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -255,7 +226,6 @@ export default function MediaManagementPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -266,7 +236,6 @@ export default function MediaManagementPage() {
           </p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Member Selection */}
         <Card className="lg:col-span-1">
@@ -296,7 +265,6 @@ export default function MediaManagementPage() {
             ))}
           </CardContent>
         </Card>
-
         {/* Camera & Recent Photos */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -325,7 +293,6 @@ export default function MediaManagementPage() {
                 <p>왼쪽에서 회원을 선택하세요</p>
               </div>
             )}
-
             {selectedMember && isCameraOpen && (
               <div className="space-y-4">
                 <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
@@ -356,7 +323,6 @@ export default function MediaManagementPage() {
                       </>
                     )}
                   </Button>
-                  
                   <Button
                     onClick={isRecording ? stopRecording : startRecording}
                     disabled={isUploading}
@@ -385,7 +351,6 @@ export default function MediaManagementPage() {
                 )}
               </div>
             )}
-
             {selectedMember && !isCameraOpen && (
               <div>
                 <h3 className="font-semibold mb-3">최근 미디어 ({mediaItems?.length || 0})</h3>

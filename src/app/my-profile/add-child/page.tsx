@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +11,9 @@ import { UserPlus, AlertCircle } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-
 export default function AddChildPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,7 +24,6 @@ export default function AddChildPage() {
       gender: 'male' as 'male' | 'female',
     }
   ]);
-
   const addChild = () => {
     setChildren([...children, {
       name: '',
@@ -35,23 +31,19 @@ export default function AddChildPage() {
       gender: 'male' as 'male' | 'female',
     }]);
   };
-
   const removeChild = (index: number) => {
     setChildren(children.filter((_, i) => i !== index));
   };
-
   const updateChild = (index: number, field: keyof typeof children[0], value: string) => {
     const updated = [...children];
     updated[index] = { ...updated[index], [field]: value };
     setChildren(updated);
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user) return;
-    
+    if (!firestore || !_user) return;
     // clubId 확인
-    if (!user.clubId) {
+    if (!_user.clubId) {
       toast({
         variant: 'destructive',
         title: '클럽 정보 없음',
@@ -59,9 +51,7 @@ export default function AddChildPage() {
       });
       return;
     }
-    
     setIsSubmitting(true);
-
     try {
       // Firestore에 각 자녀를 Member로 생성
       for (const child of children) {
@@ -69,8 +59,8 @@ export default function AddChildPage() {
           name: child.name,
           birthDate: child.birthDate,
           gender: child.gender,
-          guardianIds: [user.uid], // 부모 UID 배열
-          clubId: user.clubId,
+          guardianIds: [_user.uid], // 부모 UID 배열
+          clubId: _user.clubId,
           memberType: 'family',
           familyRole: 'child',
           status: 'active', // 이미 부모가 승인됨
@@ -78,13 +68,12 @@ export default function AddChildPage() {
           updatedAt: new Date().toISOString(),
         });
       }
-      
       toast({
         title: '자녀 추가 완료',
         description: `${children.length}명의 자녀가 추가되었습니다!`,
       });
       router.push('/my-profile/family');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -94,8 +83,7 @@ export default function AddChildPage() {
       setIsSubmitting(false);
     }
   };
-
-  if (!user) {
+  if (!_user) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card>
@@ -108,9 +96,7 @@ export default function AddChildPage() {
       </main>
     );
   }
-
   const isFormValid = children.every(child => child.name && child.birthDate);
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -141,7 +127,6 @@ export default function AddChildPage() {
                 </div>
               </div>
             </div>
-
             {/* 자녀 목록 */}
             {children.map((child, index) => (
               <Card key={index} className="border-2">
@@ -174,7 +159,6 @@ export default function AddChildPage() {
                       required
                     />
                   </div>
-
                   {/* 생년월일 */}
                   <div className="space-y-2">
                     <Label htmlFor={`birthDate-${index}`}>생년월일 *</Label>
@@ -186,7 +170,6 @@ export default function AddChildPage() {
                       required
                     />
                   </div>
-
                   {/* 성별 */}
                   <div className="space-y-2">
                     <Label>성별 *</Label>
@@ -213,7 +196,6 @@ export default function AddChildPage() {
                 </CardContent>
               </Card>
             ))}
-
             {/* 자녀 추가 버튼 */}
             <Button
               type="button"
@@ -224,7 +206,6 @@ export default function AddChildPage() {
               <UserPlus className="h-4 w-4 mr-2" />
               다른 자녀 추가
             </Button>
-
             {/* 제출 버튼 */}
             <div className="flex gap-3">
               <Button

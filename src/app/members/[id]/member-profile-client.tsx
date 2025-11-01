@@ -1,5 +1,4 @@
 'use client';
-
 import { useMemo, useState, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -24,27 +23,22 @@ import { canUsePassTemplate, getMemberCategoryLabel, getTargetCategoryLabel } fr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
   late: '지각',
   absent: '결석',
   excused: '메모',
 };
-
 export default function MemberProfileClient({ id }: { id:string }) {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
   const router = useRouter();
   const { toast } = useToast();
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
-
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
@@ -53,32 +47,27 @@ export default function MemberProfileClient({ id }: { id:string }) {
   const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
   const [editAttendanceStatus, setEditAttendanceStatus] = useState<Attendance['status']>('present');
   const [editAttendanceNote, setEditAttendanceNote] = useState('');
-
   // 1. Fetch member data
   const memberRef = useMemoFirebase(() => (firestore ? doc(firestore, 'members', id) : null), [firestore, id]);
   const { data: member, isLoading: isMemberLoading } = useDoc<Member>(memberRef);
-
   // 2. Fetch all passes for this member
   const passesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'member_passes'), where('memberId', '==', id), orderBy('startDate', 'desc'));
   }, [firestore, id]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
-  
   // 3. Fetch all attendance records for this member
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'attendance'), where('memberId', '==', id), orderBy('date', 'desc'));
   }, [firestore, id]);
   const { data: allAttendance, isLoading: areAttendanceLoading } = useCollection<Attendance>(attendanceQuery);
-
   // 4. Fetch all media items for this member
   const mediaQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'media'), where('memberId', '==', id));
   }, [firestore, id]);
   const { data: mediaItems, isLoading: areMediaLoading } = useCollection<MediaItem>(mediaQuery);
-
   // 5. Fetch guardian (parent) information if exists
   const guardianIds = member?.guardianIds || [];
   const guardianQuery = useMemoFirebase(() => {
@@ -86,50 +75,43 @@ export default function MemberProfileClient({ id }: { id:string }) {
     return query(collection(firestore, 'users'), where('__name__', 'in', guardianIds));
   }, [firestore, guardianIds]);
   const { data: guardians, isLoading: areGuardiansLoading } = useCollection<UserProfile>(guardianQuery);
-
   // 6. Fetch pass templates for renewal
   const passTemplatesQuery = useMemoFirebase(() => {
     if (!firestore || !member?.clubId) return null;
     return query(collection(firestore, 'pass_templates'), where('clubId', '==', member.clubId));
   }, [firestore, member?.clubId]);
   const { data: passTemplates } = useCollection<PassTemplate>(passTemplatesQuery);
-
   // 7. Filter pass templates based on member category
   const availablePassTemplates = useMemo(() => {
     if (!passTemplates || !member) return [];
     return passTemplates.filter(template => canUsePassTemplate(member, template));
   }, [passTemplates, member]);
-
   const isLoading = isUserLoading || isMemberLoading || arePassesLoading || areAttendanceLoading || areMediaLoading || areGuardiansLoading;
-
   const age = useMemo(() => {
     if (!member?.dateOfBirth) return null;
     return differenceInYears(new Date(), new Date(member.dateOfBirth));
   }, [member]);
-
   const hasAccess = useMemo(() => {
-    if (!user || !member) return false;
+    if (!_user || !member) return false;
     // Check if user is admin or club manager
-    if (user.role === UserRole.FEDERATION_ADMIN || user.role === UserRole.SUPER_ADMIN) return true;
-    if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-      if (user.clubId === member.clubId) return true;
+    if (_user.role === UserRole.FEDERATION_ADMIN || _user.role === UserRole.SUPER_ADMIN) return true;
+    if (_user.role === UserRole.CLUB_OWNER || _user.role === UserRole.CLUB_MANAGER) {
+      if (_user.clubId === member.clubId) return true;
     }
     // Check if user is guardian
-    if (member.guardianIds?.includes(user.uid)) return true;
+    if (member.guardianIds?.includes(_user.uid)) return true;
     return false;
-  }, [user, member]);
-
+  }, [_user, member]);
   // 편집 권한: 관리자만 가능
   const canEdit = useMemo(() => {
-    if (!user || !member) return false;
+    if (!_user || !member) return false;
     // Only admins and club managers can edit
-    if (user.role === UserRole.FEDERATION_ADMIN || user.role === UserRole.SUPER_ADMIN) return true;
-    if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
-      if (user.clubId === member.clubId) return true;
+    if (_user.role === UserRole.FEDERATION_ADMIN || _user.role === UserRole.SUPER_ADMIN) return true;
+    if (_user.role === UserRole.CLUB_OWNER || _user.role === UserRole.CLUB_MANAGER) {
+      if (_user.clubId === member.clubId) return true;
     }
     return false;
-  }, [user, member]);
-
+  }, [_user, member]);
   // 현재 활성 이용권 확인
   const activePass = useMemo(() => {
     if (!passes || passes.length === 0) return null;
@@ -140,12 +122,10 @@ export default function MemberProfileClient({ id }: { id:string }) {
       return endDate > now;
     });
   }, [passes]);
-
   // 이용권 갱신 가능 여부 (만료되었거나 이용권이 없는 경우)
   const canRequestRenewal = useMemo(() => {
     return !activePass;
   }, [activePass]);
-  
   // Effect for handling camera permission and stream
   useEffect(() => {
     let stream: MediaStream;
@@ -156,36 +136,29 @@ export default function MemberProfileClient({ id }: { id:string }) {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         setHasCameraPermission(false);
       }
     };
-
     if (isCameraOpen) {
       getCameraPermission();
     }
-
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
   }, [isCameraOpen]);
-
-
   const uploadBlob = async (blob: Blob, type: 'image' | 'video') => {
     if (!storage || !member || !firestore) return;
     setIsUploading(true);
-
     try {
       const mediaRef = doc(collection(firestore, 'media'));
       const mediaId = mediaRef.id;
       const fileExtension = type === 'image' ? 'jpg' : 'webm';
       const mimeType = type === 'image' ? 'image/jpeg' : 'video/webm';
       const file = new (File as any)([blob], `capture.${fileExtension}`, { type: mimeType });
-
       const url = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
-
       const newMediaItem: MediaItem = {
         id: mediaId,
         memberId: member.id,
@@ -194,48 +167,41 @@ export default function MemberProfileClient({ id }: { id:string }) {
         type: type === 'image' ? 'photo' : 'video',
         url,
         uploadDate: new Date().toISOString(),
-        uploadedBy: user!.uid,
-        uploadedByName: user!.displayName || 'User',
+        uploadedBy: _user!.uid,
+        uploadedByName: _user!.displayName || 'User',
         isPublic: false,
       };
-      
       const batch = writeBatch(firestore);
       batch.set(mediaRef, newMediaItem);
       await batch.commit();
-      
       toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '업로드 실패', description: '미디어 업로드 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
       setIsCameraOpen(false); // Close camera dialog on finish
     }
   };
-
   // Handle attendance edit
   const handleEditAttendance = (attendance: Attendance) => {
     setEditingAttendance(attendance);
     setEditAttendanceStatus(attendance.status);
     setEditAttendanceNote(attendance.notes || '');
   };
-
   // Handle attendance update
   const handleUpdateAttendance = async () => {
     if (!firestore || !editingAttendance) return;
-    
     try {
       await updateDoc(doc(firestore, 'attendance', editingAttendance.id), {
         status: editAttendanceStatus,
         notes: editAttendanceNote || null,
       });
-      
       toast({
         title: '출석 기록 수정 완료',
         description: '출석 기록이 수정되었습니다.',
       });
-      
       setEditingAttendance(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '수정 실패',
@@ -243,19 +209,16 @@ export default function MemberProfileClient({ id }: { id:string }) {
       });
     }
   };
-
   // Handle attendance delete
   const handleDeleteAttendance = async (attendanceId: string) => {
     if (!firestore || !confirm('정말 이 출석 기록을 삭제하시겠습니까?')) return;
-    
     try {
       await deleteDoc(doc(firestore, 'attendance', attendanceId));
-      
       toast({
         title: '출석 기록 삭제 완료',
         description: '출석 기록이 삭제되었습니다.',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '삭제 실패',
@@ -263,27 +226,22 @@ export default function MemberProfileClient({ id }: { id:string }) {
       });
     }
   };
-
-  const handleProfilePhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (!storage || !member || !firestore || !event.target.files || event.target.files.length === 0) return;
-    const file = event.target.files[0];
+  const handleProfilePhotoUpload = async (_event: ChangeEvent<HTMLInputElement>) => {
+    if (!storage || !member || !firestore || !_event.target.files || _event.target.files.length === 0) return;
+    const file = _event.target.files[0];
     setIsUploading(true);
-
     try {
       const photoURL = await uploadImage(storage, `profiles/${member.id}/profile`, file);
-      
       // Update member's photoURL in Firestore
       const memberRef = doc(firestore, 'members', member.id);
       await updateDoc(memberRef, { photoURL });
-      
       toast({ title: '업로드 성공', description: '프로필 사진이 업데이트되었습니다.' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '업로드 실패', description: '프로필 사진 업로드 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
     }
   };
-
   const handleCapturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -297,18 +255,14 @@ export default function MemberProfileClient({ id }: { id:string }) {
       }
     }, 'image/jpeg');
   };
-
-  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (!storage || !member || !firestore || !event.target.files || event.target.files.length === 0) return;
-    const file = event.target.files[0];
+  const handleFileUpload = async (_event: ChangeEvent<HTMLInputElement>) => {
+    if (!storage || !member || !firestore || !_event.target.files || _event.target.files.length === 0) return;
+    const file = _event.target.files[0];
     setIsUploading(true);
-
     try {
       const mediaRef = doc(collection(firestore, 'media'));
       const mediaId = mediaRef.id;
-
       const url = await uploadImage(storage, `media/${member.clubId}/${member.id}/${mediaId}`, file);
-
       const newMediaItem: MediaItem = {
         id: mediaId,
         memberId: member.id,
@@ -317,37 +271,31 @@ export default function MemberProfileClient({ id }: { id:string }) {
         type: file.type.startsWith('image/') ? 'photo' : 'video',
         url,
         uploadDate: new Date().toISOString(),
-        uploadedBy: user!.uid,
-        uploadedByName: user!.displayName || 'User',
+        uploadedBy: _user!.uid,
+        uploadedByName: _user!.displayName || 'User',
         isPublic: false,
       };
-      
       const batch = writeBatch(firestore);
       batch.set(mediaRef, newMediaItem);
       await batch.commit();
-
       toast({ title: '업로드 성공', description: '미디어가 성공적으로 업로드되었습니다.' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '업로드 실패', description: '미디어 업로드 중 오류가 발생했습니다.' });
     } finally {
       setIsUploading(false);
     }
   };
-
   const handleDeleteMedia = async (mediaId: string) => {
     if (!firestore || !confirm('이 미디어를 삭제하시겠습니까?')) return;
-
     try {
       await deleteDoc(doc(firestore, 'media', mediaId));
       toast({ title: '삭제 완료', description: '미디어가 삭제되었습니다.' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '오류 발생', description: '미디어 삭제 중 오류가 발생했습니다.' });
     }
   };
-
   const handleRequestRenewal = async (template: PassTemplate) => {
-    if (!firestore || !member || !user) return;
-
+    if (!firestore || !member || !_user) return;
     try {
       const requestRef = doc(collection(firestore, 'pass_renewal_requests'));
       const renewalRequest: PassRenewalRequest = {
@@ -363,14 +311,13 @@ export default function MemberProfileClient({ id }: { id:string }) {
         requestedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(requestRef, renewalRequest);
       toast({ 
         title: '신청 완료', 
         description: `${template.name} 이용권 갱신 신청이 완료되었습니다. 클럽의 승인을 기다려주세요.` 
       });
       setIsRenewalDialogOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 
@@ -378,22 +325,17 @@ export default function MemberProfileClient({ id }: { id:string }) {
       });
     }
   };
-
-
   if (isLoading) {
     return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
-
-  if (!member || !user || !hasAccess) {
+  if (!member || !_user || !hasAccess) {
      toast({ variant: 'destructive', title: '접근 권한 없음', description: '이 페이지를 볼 수 있는 권한이 없습니다.' });
-     const redirectUrl = (user?.role === UserRole.CLUB_OWNER || user?.role === UserRole.CLUB_MANAGER) ? '/club-dashboard' : '/my-profile';
+     const redirectUrl = (_user?.role === UserRole.CLUB_OWNER || _user?.role === UserRole.CLUB_MANAGER) ? '/club-dashboard' : '/my-profile';
      router.push(redirectUrl);
      return null;
   }
-  
   const currentPass = passes?.find(p => p.status === 'active');
   const pastPasses = passes?.filter(p => p.status === 'expired');
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <Card>
@@ -434,7 +376,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
           </div>
         </CardHeader>
       </Card>
-
       {/* 부모 정보 카드 */}
       {guardians && guardians.length > 0 && (
         <Card>
@@ -469,7 +410,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
           </CardContent>
         </Card>
       )}
-      
       <Tabs defaultValue="info">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="info">기본 정보</TabsTrigger>
@@ -517,7 +457,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     </Badge>
                   </div>
                 </div>
-                
                 <div>
                   <Label className="text-muted-foreground">회원 분류</Label>
                   <div className="font-medium">
@@ -563,7 +502,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     )}
                 </CardContent>
             </Card>
-
             {/* 최근 출석 이력 */}
             <Card className="mt-6">
                 <CardHeader>
@@ -600,7 +538,7 @@ export default function MemberProfileClient({ id }: { id:string }) {
                                         }>
                                             {attendanceStatusTranslations[att.status]}
                                         </Badge>
-                                        {(user?.role === UserRole.CLUB_OWNER || user?.role === UserRole.CLUB_MANAGER) && (
+                                        {(_user?.role === UserRole.CLUB_OWNER || _user?.role === UserRole.CLUB_MANAGER) && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="sm">
@@ -644,7 +582,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     )}
                 </CardContent>
             </Card>
-
             <Card className="mt-6" id="past-passes">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><History className="w-5 h-5"/>지난 회원권 현황</CardTitle>
@@ -699,7 +636,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
                     )}
                 </CardContent>
             </Card>
-
         </TabsContent>
         <TabsContent value="media">
             <Card>
@@ -768,7 +704,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
             </Card>
           </TabsContent>
         </Tabs>
-
       <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -808,7 +743,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Edit Attendance Dialog */}
       <Dialog open={!!editingAttendance} onOpenChange={() => setEditingAttendance(null)}>
         <DialogContent>
@@ -851,7 +785,6 @@ export default function MemberProfileClient({ id }: { id:string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* 이용권 갱신 신청 다이얼로그 */}
       <Dialog open={isRenewalDialogOpen} onOpenChange={setIsRenewalDialogOpen}>
         <DialogContent className="sm:max-w-2xl">

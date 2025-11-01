@@ -1,9 +1,8 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, doc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, addDoc, writeBatch, getDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,12 +20,13 @@ interface AdultRegistrationRequest {
   email?: string;
   clubId: string;
   status: 'pending' | 'approved' | 'rejected';
+  requestedBy?: string;
 }
-
 interface FamilyRegistrationRequestLocal {
   id: string;
   clubId: string;
   status: 'pending' | 'approved' | 'rejected';
+  requestedBy?: string;
   parents: Array<{
     name: string;
     birthDate: string;
@@ -46,7 +46,6 @@ interface FamilyRegistrationRequestLocal {
     relation: 'parent' | 'grandparent' | 'legal_guardian' | 'other';
   };
 }
-
 interface MemberRegistrationRequestLocal {
   id: string;
   userId?: string;
@@ -60,83 +59,154 @@ interface MemberRegistrationRequestLocal {
   familyRole?: 'parent' | 'child';
   status: 'pending' | 'approved' | 'rejected';
 }
-
 export default function MemberApprovalsPage() {
-  const { user } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const router = useRouter();
+  // remove undefined fields to avoid Firestore 400 Bad Request
+  const sanitize = (obj: Record<string, unknown>) => {
+    const clean: Record<string, unknown> = {};
+    Object.keys(obj).forEach((k) => {
+      const v = obj[k];
+      if (v !== undefined) clean[k] = v;
+    });
+    return clean;
+  };
+  // Activate user (pending -> active) only if allowed by rules, otherwise skip
+  const activateAndLinkUser = async (
+    targetUserId: string,
+    linkMemberId: string | null,
+    clubId?: string,
+    clubName?: string | null
+  ) => {
+    if (!firestore) return;
+    try {
+      const userRef = doc(firestore, 'users', targetUserId);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) return;
+      const current = snap.data() as any;
+      const update: any = {};
+      // Only staff-approved transition pending -> active is allowed by rules
+      if (current.status === 'pending') {
+        update.status = 'active';
+        if (clubId) update.requestedClubId = clubId;
+        if (clubName !== undefined) update.requestedClubName = clubName ?? null;
+      }
+      if (linkMemberId && current.linkedMemberId !== linkMemberId) {
+        // Link only when we're already allowed to update users doc
+        if (update.status === 'active') update.linkedMemberId = linkMemberId;
+      }
+      if (Object.keys(update).length > 0) {
+        await updateDoc(userRef, sanitize(update));
+      }
+    } catch (e: unknown) {
+      // Surface the failure to console for diagnostics (was previously swallowed)
+    }
+  };
+  // Debug logging
+  React.useEffect(() => {
+    if (_user) {
+      if (!_user.clubId && !(_user as any)?.clubName) {
+        toast({
+          variant: 'destructive',
+          title: '클럽 정보 없음',
+          description: '관리자 계정에 클럽 정보가 설정되지 않았습니다. 시스템 관리자에게 문의하세요.',
+        });
+      }
+    } else if (!isUserLoading) {
+    }
+  }, [_user, isUserLoading, toast]);
   // 성인 회원 가입 요청 조회
   const adultRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(
-      collection(firestore, 'adultRegistrationRequests'),
-      where('clubId', '==', user.clubId),
-      where('status', '==', 'pending')
-    );
-  }, [firestore, user?.clubId]);
+    if (!firestore) return null;
+    if (_user?.clubId) {
+      return query(
+        collection(firestore, 'adultRegistrationRequests'),
+        where('clubId', '==', _user.clubId),
+        where('status', '==', 'pending')
+      );
+    }
+    if (_user && (_user as any).clubName) {
+      return query(
+        collection(firestore, 'adultRegistrationRequests'),
+        where('clubName', '==', (_user as any).clubName as string),
+        where('status', '==', 'pending')
+      );
+    }
+    return null;
+  }, [firestore, _user?.clubId, (_user as any)?.clubName]);
   const { data: adultRequests, isLoading: isAdultLoading } = useCollection<AdultRegistrationRequest>(adultRequestsQuery);
-
   // 가족 회원 가입 요청 조회
   const familyRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(
-      collection(firestore, 'familyRegistrationRequests'),
-      where('clubId', '==', user.clubId),
-      where('status', '==', 'pending')
-    );
-  }, [firestore, user?.clubId]);
-  const { data: familyRequests, isLoading: isFamilyLoading } = useCollection<FamilyRegistrationRequestLocal>(familyRequestsQuery);
-
+    if (!firestore) return null;
+    if (_user?.clubId) {
+      return query(
+        collection(firestore, 'familyRegistrationRequests'),
+        where('clubId', '==', _user.clubId),
+        where('status', '==', 'pending')
+      );
+    }
+    if (_user && (_user as any).clubName) {
+      return query(
+        collection(firestore, 'familyRegistrationRequests'),
+        where('clubName', '==', (_user as any).clubName as string),
+        where('status', '==', 'pending')
+      );
+    }
+    return null;
+  }, [firestore, _user?.clubId, (_user as any)?.clubName]);
+  const { data: familyRequests, isLoading: isFamilyLoading, error: familyError } = useCollection<FamilyRegistrationRequestLocal>(familyRequestsQuery);
+  // 에러 로깅
+  React.useEffect(() => {
+    if (familyError) {
+      toast({
+        variant: 'destructive',
+        title: '조회 오류',
+        description: `가족 회원 요청 조회 실패: ${familyError.message || familyError}`,
+      });
+    }
+  }, [familyError, toast]);
   // 일반 회원 가입 요청 조회 (memberRegistrationRequests)
   const memberRequestsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(
-      collection(firestore, 'memberRegistrationRequests'),
-      where('clubId', '==', user.clubId),
-      where('status', '==', 'pending')
-    );
-  }, [firestore, user?.clubId]);
+    if (!firestore) return null;
+    if (_user?.clubId) {
+      return query(
+        collection(firestore, 'memberRegistrationRequests'),
+        where('clubId', '==', _user.clubId),
+        where('status', '==', 'pending')
+      );
+    }
+    if (_user && (_user as any).clubName) {
+      return query(
+        collection(firestore, 'memberRegistrationRequests'),
+        where('clubName', '==', (_user as any).clubName as string),
+        where('status', '==', 'pending')
+      );
+    }
+    return null;
+  }, [firestore, _user?.clubId, (_user as any)?.clubName]);
   const { data: memberRequests, isLoading: isMemberLoading } = useCollection<MemberRegistrationRequestLocal>(memberRequestsQuery);
-
   const isLoading = isAdultLoading || isFamilyLoading || isMemberLoading;
   const totalPending = (adultRequests?.length || 0) + (familyRequests?.length || 0) + (memberRequests?.length || 0);
-
+  // Debug query results
+  React.useEffect(() => {
+  }, [adultRequests, familyRequests, memberRequests]);
   // 성인 회원 승인
   const handleApproveAdult = async (request: AdultRegistrationRequest) => {
-    if (!firestore || !user) return;
-    setIsProcessing(true);
-
+    if (!_user) return;
     try {
-      // members 컬렉션에 생성
-      await addDoc(collection(firestore, 'members'), {
-        name: request.name,
-        dateOfBirth: request.birthDate,
-        gender: request.gender,
-        phoneNumber: request.phoneNumber,
-        email: request.email,
-        clubId: request.clubId,
-        memberCategory: 'adult',
-        memberType: 'individual',
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
-      });
-
-      // 요청 상태 업데이트
-      await updateDoc(doc(firestore, 'adultRegistrationRequests', request.id), {
-        status: 'approved',
-        approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
-      });
-
+      // Use Admin API for approval
+      const { adminAPI } = await import('@/utils/api-client');
+      const result = await adminAPI.approvals.approveAdult(request.id);
       toast({
         title: '승인 완료',
-        description: `${request.name}님의 가입이 승인되었습니다.`,
+        description: result.message || `${request.name}님의 가입이 승인되었습니다.`,
       });
-    } catch (error) {
+      // Refresh the page to show updated data
+      router.refresh();
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -146,87 +216,24 @@ export default function MemberApprovalsPage() {
       setIsProcessing(false);
     }
   };
-
   // 가족 회원 승인
   const handleApproveFamily = async (request: FamilyRegistrationRequestLocal) => {
-    if (!firestore || !user) return;
+    if (!_user) return;
     setIsProcessing(true);
-
     try {
-      const batch = writeBatch(firestore);
-      const parentMemberIds: string[] = [];
-
-      // 1. 부모들 생성
-      for (const parent of request.parents) {
-        const parentRef = doc(collection(firestore, 'members'));
-        parentMemberIds.push(parentRef.id);
-
-        batch.set(parentRef, {
-          id: parentRef.id,
-          name: parent.name,
-          dateOfBirth: parent.birthDate,
-          gender: parent.gender,
-          phoneNumber: parent.phoneNumber,
-          email: parent.email,
-          clubId: request.clubId,
-          memberCategory: 'adult',
-          memberType: 'family',
-          familyRole: 'parent',
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
-        });
-      }
-
-      // 2. 자녀들 생성
-      for (const child of request.children) {
-        const childRef = doc(collection(firestore, 'members'));
-
-        batch.set(childRef, {
-          id: childRef.id,
-          name: child.name,
-          dateOfBirth: child.birthDate,
-          gender: child.gender,
-          grade: child.grade,
-          clubId: request.clubId,
-          memberCategory: 'child',
-          memberType: 'family',
-          familyRole: 'child',
-          guardianIds: parentMemberIds,
-          guardianName: parentMemberIds.length > 0 
-            ? request.parents[0].name 
-            : request.externalGuardian?.name,
-          guardianPhone: parentMemberIds.length > 0 
-            ? request.parents[0].phoneNumber 
-            : request.externalGuardian?.phoneNumber,
-          guardianRelation: request.externalGuardian?.relation,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
-        });
-      }
-
-      // 3. 요청 상태 업데이트
-      batch.update(doc(firestore, 'familyRegistrationRequests', request.id), {
-        status: 'approved',
-        approvedBy: user.uid,
-        approvedAt: new Date().toISOString(),
-        createdMemberIds: [...parentMemberIds],
-      });
-
-      await batch.commit();
-
+      // Use Admin API for approval
+      const { adminAPI } = await import('@/utils/api-client');
+      const result = await adminAPI.approvals.approveFamily(request.id);
       const message = [];
       if (request.parents.length > 0) message.push(`부모 ${request.parents.length}명`);
       if (request.children.length > 0) message.push(`자녀 ${request.children.length}명`);
-
       toast({
         title: '승인 완료',
-        description: `${message.join(' + ')} 가입이 승인되었습니다.`,
+        description: result.message || `${message.join(' + ')} 가입이 승인되었습니다.`,
       });
-    } catch (error) {
+      // Refresh the page to show updated data
+      router.refresh();
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -236,16 +243,13 @@ export default function MemberApprovalsPage() {
       setIsProcessing(false);
     }
   };
-
   // 일반 회원 승인
   const handleApproveMember = async (request: MemberRegistrationRequestLocal) => {
-    if (!firestore || !user) return;
+    if (!firestore || !_user) return;
     setIsProcessing(true);
-
     try {
-
       // 1. members 컬렉션에 생성
-      await addDoc(collection(firestore, 'members'), {
+      const memberPayload2 = sanitize({
         name: request.name,
         dateOfBirth: request.dateOfBirth,
         gender: request.gender,
@@ -255,37 +259,52 @@ export default function MemberApprovalsPage() {
         memberCategory: 'adult', // 기본값
         memberType: request.memberType || 'individual',
         familyRole: request.familyRole,
+        userId: request.userId || null,
         status: 'active',
         createdAt: new Date().toISOString(),
-        approvedBy: user.uid,
+        approvedBy: _user.uid,
         approvedAt: new Date().toISOString(),
       });
-
-      // 2. users 프로필 승인 (status: approved)
+      const memberRef = await addDoc(collection(firestore, 'members'), memberPayload2);
+      // 2. users 프로필 활성화 (pending일 때만) + 링크
       if (request.userId && request.userId.trim() !== '') {
-        await updateDoc(doc(firestore, 'users', request.userId), {
-          status: 'approved',
-          approvedBy: user.uid,
-          approvedAt: new Date().toISOString(),
-        });
-      } else {
+        await activateAndLinkUser(
+          request.userId,
+          memberRef.id,
+          request.clubId,
+          (request as any)?.clubName ?? (_user as any)?.clubName ?? null
+        );
+      } else if (request.email) {
+        // 이메일 폴백: 해당 이메일의 사용자 1명만 존재하면 활성화 + 링크
+        const { getDocs } = await import('firebase/firestore');
+        const userSnap = await getDocs(
+          query(collection(firestore, 'users'), where('email', '==', request.email))
+        );
+        if (userSnap.size === 1) {
+          const u = userSnap.docs[0];
+          await activateAndLinkUser(
+            u.id,
+            memberRef.id,
+            request.clubId,
+            (request as any)?.clubName ?? (_user as any)?.clubName ?? null
+          );
+          // member.userId 연결
+          await updateDoc(doc(firestore, 'members', memberRef.id), { userId: u.id });
+        }
       }
-
       // 3. memberRegistrationRequests 상태 업데이트
       if (request.id) {
-        await updateDoc(doc(firestore, 'memberRegistrationRequests', request.id), {
+        await updateDoc(doc(firestore, 'memberRegistrationRequests', request.id), sanitize({
           status: 'approved',
-          approvedBy: user.uid,
+          approvedBy: _user.uid,
           approvedAt: new Date().toISOString(),
-        });
+        }));
       }
-
-
       toast({
         title: '승인 완료',
         description: `${request.name}님의 가입이 승인되었습니다.`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -295,28 +314,21 @@ export default function MemberApprovalsPage() {
       setIsProcessing(false);
     }
   };
-
   // 거절
   const handleReject = async (requestId: string, type: 'adult' | 'family' | 'member') => {
-    if (!firestore || !user) return;
+    if (!_user) return;
     setIsProcessing(true);
-
     try {
-      const collectionName = 
-        type === 'adult' ? 'adultRegistrationRequests' : 
-        type === 'family' ? 'familyRegistrationRequests' :
-        'memberRegistrationRequests';
-      await updateDoc(doc(firestore, collectionName, requestId), {
-        status: 'rejected',
-        rejectedBy: user.uid,
-        rejectedAt: new Date().toISOString(),
-      });
-
+      // Use Admin API for rejection
+      const { adminAPI } = await import('@/utils/api-client');
+      const result = await adminAPI.approvals.reject(requestId, type);
       toast({
         title: '거절 완료',
-        description: '가입 신청이 거절되었습니다.',
+        description: result.message || '가입 신청이 거절되었습니다.',
       });
-    } catch (error) {
+      // Refresh the page to show updated data
+      router.refresh();
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -326,7 +338,6 @@ export default function MemberApprovalsPage() {
       setIsProcessing(false);
     }
   };
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -334,7 +345,6 @@ export default function MemberApprovalsPage() {
       </div>
     );
   }
-
   return (
     <div className="p-8 space-y-6">
       {/* 헤더 */}
@@ -354,7 +364,6 @@ export default function MemberApprovalsPage() {
           </div>
         )}
       </div>
-
       {/* 통계 */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -368,7 +377,6 @@ export default function MemberApprovalsPage() {
             <p className="text-xs text-muted-foreground">승인 대기</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -380,7 +388,6 @@ export default function MemberApprovalsPage() {
             <p className="text-xs text-muted-foreground">승인 대기</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -393,7 +400,6 @@ export default function MemberApprovalsPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* 승인 요청 목록 */}
       <Tabs defaultValue="member" className="space-y-4">
         <TabsList>
@@ -407,7 +413,6 @@ export default function MemberApprovalsPage() {
             가족 회원 ({familyRequests?.length || 0})
           </TabsTrigger>
         </TabsList>
-
         {/* 일반 회원 탭 */}
         <TabsContent value="member" className="space-y-4">
           {memberRequests && memberRequests.length > 0 ? (
@@ -430,7 +435,6 @@ export default function MemberApprovalsPage() {
                         </div>
                         <Badge variant="secondary">일반</Badge>
                       </div>
-
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">연락처:</span> {request.phoneNumber || '-'}
@@ -450,7 +454,6 @@ export default function MemberApprovalsPage() {
                         )}
                       </div>
                     </div>
-
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -483,7 +486,6 @@ export default function MemberApprovalsPage() {
             </Card>
           )}
         </TabsContent>
-
         {/* 성인 회원 탭 */}
         <TabsContent value="adult" className="space-y-4">
           {adultRequests && adultRequests.length > 0 ? (
@@ -504,7 +506,6 @@ export default function MemberApprovalsPage() {
                         </div>
                         <Badge variant="secondary">성인 개인</Badge>
                       </div>
-
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">연락처:</span> {request.phoneNumber}
@@ -514,7 +515,6 @@ export default function MemberApprovalsPage() {
                         </div>
                       </div>
                     </div>
-
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -547,7 +547,6 @@ export default function MemberApprovalsPage() {
             </Card>
           )}
         </TabsContent>
-
         {/* 가족 회원 탭 */}
         <TabsContent value="family" className="space-y-4">
           {familyRequests && familyRequests.length > 0 ? (
@@ -570,7 +569,6 @@ export default function MemberApprovalsPage() {
                         </div>
                         <Badge variant="secondary">가족</Badge>
                       </div>
-
                       {/* 부모 정보 */}
                       {request.parents.length > 0 && (
                         <div className="pl-4 border-l-2 border-primary/20">
@@ -582,7 +580,6 @@ export default function MemberApprovalsPage() {
                           ))}
                         </div>
                       )}
-
                       {/* 자녀 정보 */}
                       {request.children.length > 0 && (
                         <div className="pl-4 border-l-2 border-primary/20">
@@ -595,7 +592,6 @@ export default function MemberApprovalsPage() {
                           ))}
                         </div>
                       )}
-
                       {/* 외부 보호자 정보 */}
                       {request.externalGuardian && (
                         <div className="pl-4 border-l-2 border-amber-200">
@@ -606,7 +602,6 @@ export default function MemberApprovalsPage() {
                         </div>
                       )}
                     </div>
-
                     <div className="flex gap-2">
                       <Button
                         variant="outline"

@@ -1,12 +1,10 @@
 import { User } from 'firebase/auth';
-import { Firestore, doc, getDoc, collection, query, where, getDocs, setDoc } from 'firebase/firestore';
+import { Firestore, doc, getDoc, collection, query, where, getDocs, setDoc, DocumentData } from 'firebase/firestore';
 import { UserProfile, UserRole } from '@/types';
-
 interface CachedProfile {
   profile: UserProfile & { clubId?: string };
   timestamp: number;
 }
-
 /**
  * AuthService: 통합 인증 서비스
  * - 프로필 캐싱으로 Firebase 읽기 요청 최소화
@@ -17,16 +15,13 @@ export class AuthService {
   private static instance: AuthService;
   private profileCache: Map<string, CachedProfile> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5분
-
   private constructor() {}
-
   static getInstance(): AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService();
     }
     return AuthService.instance;
   }
-
   /**
    * 사용자 프로필 가져오기 (캐싱 포함)
    */
@@ -38,14 +33,11 @@ export class AuthService {
       // 1. 캐시 확인
       const cached = this.getCachedProfile(firebaseUser.uid);
       if (cached) return cached;
-
       // 2. Firestore에서 프로필 조회
       const userRef = doc(firestore, 'users', firebaseUser.uid);
       const userSnap = await getDoc(userRef);
-      
       if (userSnap.exists()) {
         const profile = userSnap.data() as UserProfile & { clubId?: string };
-        
         // 클럽 ID 확인 (클럽 관련 역할인 경우)
         if (profile.clubName && this.isClubRole(profile.role)) {
           const clubId = await this.getClubId(firestore, profile.clubName);
@@ -53,11 +45,9 @@ export class AuthService {
             profile.clubId = clubId;
           }
         }
-        
         this.cacheProfile(firebaseUser.uid, profile);
         return profile;
       }
-
       // 3. 프로필이 없으면 승인된 요청 확인 (병렬 처리)
       const approvedProfile = await this.checkApprovedRequests(firebaseUser, firestore);
       if (approvedProfile) {
@@ -66,13 +56,11 @@ export class AuthService {
         this.cacheProfile(firebaseUser.uid, approvedProfile);
         return approvedProfile;
       }
-
       return null;
-    } catch (error) {
+    } catch (error: unknown) {
       return null;
     }
   }
-
   /**
    * 승인된 요청 확인 (병렬 처리)
    */
@@ -85,7 +73,6 @@ export class AuthService {
       this.checkRequest(firestore, 'superAdminRequests', firebaseUser.email!),
       this.checkRequest(firestore, 'memberRegistrationRequests', firebaseUser.email!)
     ]);
-
     // 우선순위에 따라 프로필 생성
     if (clubOwnerResult.status === 'fulfilled' && clubOwnerResult.value) {
       return this.createProfileFromRequest(firebaseUser, clubOwnerResult.value, 'clubOwner', firestore);
@@ -96,11 +83,9 @@ export class AuthService {
     if (memberResult.status === 'fulfilled' && memberResult.value) {
       return this.createProfileFromRequest(firebaseUser, memberResult.value, 'member', firestore);
     }
-
     // 승인된 요청이 없으면 기본 프로필 생성
     return this.createDefaultProfile(firebaseUser);
   }
-
   /**
    * 특정 컬렉션에서 승인된 요청 확인
    */
@@ -122,13 +107,12 @@ export class AuthService {
       return null;
     }
   }
-
   /**
    * 승인된 요청으로부터 프로필 생성
    */
   private async createProfileFromRequest(
     firebaseUser: User,
-    request: any,
+    request: DocumentData,
     requestType: 'clubOwner' | 'superAdmin' | 'member',
     firestore: Firestore
   ): Promise<UserProfile> {
@@ -142,7 +126,6 @@ export class AuthService {
       status: 'active',
       createdAt: new Date().toISOString(),
     };
-
     switch (requestType) {
       case 'clubOwner': {
         const clubId = await this.getClubId(firestore, request.clubName);
@@ -172,7 +155,6 @@ export class AuthService {
         } as UserProfile;
     }
   }
-
   /**
    * 기본 프로필 생성
    */
@@ -188,7 +170,6 @@ export class AuthService {
       createdAt: new Date().toISOString(),
     };
   }
-
   /**
    * 클럽 ID 가져오기
    */
@@ -202,7 +183,6 @@ export class AuthService {
       return null;
     }
   }
-
   /**
    * 역할별 리다이렉트 URL 가져오기
    */
@@ -211,7 +191,6 @@ export class AuthService {
     if (status === 'pending') {
       return '/pending-approval';
     }
-
     // 역할별 리다이렉트
     switch (role) {
       case UserRole.SUPER_ADMIN:
@@ -230,7 +209,6 @@ export class AuthService {
         return '/my-profile';
     }
   }
-
   /**
    * 역할별 접근 권한 확인
    */
@@ -239,29 +217,23 @@ export class AuthService {
     const clubRoutes = ['/club-dashboard'];
     const memberRoutes = ['/my-profile', '/events', '/competitions'];
     const publicRoutes = ['/login', '/register', '/'];
-
     // 공개 라우트는 모두 접근 가능
     if (publicRoutes.some(r => route.startsWith(r))) return true;
-
     // SUPER_ADMIN은 모든 라우트 접근 가능
     if (userRole === UserRole.SUPER_ADMIN) return true;
-
     // FEDERATION_ADMIN은 관리자 라우트 접근 가능
     if (userRole === UserRole.FEDERATION_ADMIN) {
       return adminRoutes.some(r => route.startsWith(r)) ||
              memberRoutes.some(r => route.startsWith(r));
     }
-
     // 클럽 관련 역할
     if (this.isClubRole(userRole)) {
       return clubRoutes.some(r => route.startsWith(r)) ||
              memberRoutes.some(r => route.startsWith(r));
     }
-
     // 일반 회원
     return memberRoutes.some(r => route.startsWith(r));
   }
-
   /**
    * 클럽 관련 역할인지 확인
    */
@@ -275,23 +247,19 @@ export class AuthService {
       UserRole.MEDIA_MANAGER
     ].includes(role);
   }
-
   /**
    * 캐시된 프로필 가져오기
    */
   private getCachedProfile(uid: string): (UserProfile & { clubId?: string }) | null {
     const cached = this.profileCache.get(uid);
     if (!cached) return null;
-
     // 캐시 유효성 확인
     if (Date.now() - cached.timestamp > this.CACHE_TTL) {
       this.profileCache.delete(uid);
       return null;
     }
-
     return cached.profile;
   }
-
   /**
    * 프로필 캐싱
    */
@@ -301,7 +269,6 @@ export class AuthService {
       timestamp: Date.now()
     });
   }
-
   /**
    * 캐시 초기화
    */
@@ -313,6 +280,5 @@ export class AuthService {
     }
   }
 }
-
 // 싱글톤 인스턴스 export
 export const authService = AuthService.getInstance();

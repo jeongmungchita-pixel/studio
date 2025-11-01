@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useUser } from '@/hooks/use-user';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
@@ -19,38 +17,33 @@ import { Loader2, Send, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 export default function MessagesPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   const [messageType, setMessageType] = useState<'sms' | 'lms' | 'kakao'>('sms');
   const [content, setContent] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
-
   // Fetch members
   const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'members'),
-      where('clubId', '==', user.clubId)
+      where('clubId', '==', _user.clubId)
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: members } = useCollection<Member>(membersQuery);
-
   // Fetch message history
   const historyQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'message_history'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: messageHistory } = useCollection<MessageHistory>(historyQuery);
-
   const handleSelectAll = () => {
     if (selectedMembers.length === members?.length) {
       setSelectedMembers([]);
@@ -58,7 +51,6 @@ export default function MessagesPage() {
       setSelectedMembers(members?.map(m => m.id) || []);
     }
   };
-
   const handleToggleMember = (memberId: string) => {
     setSelectedMembers(prev =>
       prev.includes(memberId)
@@ -66,19 +58,16 @@ export default function MessagesPage() {
         : [...prev, memberId]
     );
   };
-
   const handleSend = async () => {
-    if (!firestore || !user || !content || selectedMembers.length === 0) {
+    if (!firestore || !_user || !content || selectedMembers.length === 0) {
       toast({ variant: 'destructive', title: '내용과 수신자를 선택하세요' });
       return;
     }
-
     // SMS는 90자, LMS는 2000자 제한
     if (messageType === 'sms' && content.length > 90) {
       toast({ variant: 'destructive', title: 'SMS는 90자까지 입력 가능합니다' });
       return;
     }
-
     setIsSending(true);
     try {
       const recipients = members
@@ -89,26 +78,23 @@ export default function MessagesPage() {
           phone: m.phoneNumber || '',
           status: 'pending' as const,
         })) || [];
-
       const historyRef = doc(collection(firestore, 'message_history'));
       const mappedType: MessageHistory['type'] = messageType === 'kakao' ? 'in-app' : 'sms';
       const historyData: MessageHistory = {
         id: historyRef.id,
-        clubId: user.clubId!,
+        clubId: _user.clubId!,
         type: mappedType,
         content,
         recipientType: 'specific',
         recipientIds: recipients.map(r => r.memberId),
         recipientCount: recipients.length,
-        sentBy: user.uid,
-        sentByName: user.displayName || user.email || '관리자',
+        sentBy: _user.uid,
+        sentByName: _user.displayName || _user.email || '관리자',
         sentAt: new Date().toISOString(),
         status: 'sent',
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(historyRef, historyData);
-
       // TODO: SMS 발송 기능은 나중에 구현 예정
       // Firebase Functions를 통한 실제 SMS 발송은 외부 API 연동 및 비용이 발생하므로 보류
       // 현재는 발송 기록만 저장됨
@@ -116,7 +102,6 @@ export default function MessagesPage() {
         title: '발송 기록 저장 완료',
         description: `${recipients.length}명에게 ${messageType.toUpperCase()} 발송 기록이 저장되었습니다. (실제 발송 기능은 추후 구현 예정)`,
       });
-      
       // 향후 구현 시 아래 코드 활성화
       // try {
       //   const functions = getFunctions();
@@ -135,49 +120,43 @@ export default function MessagesPage() {
       //     title: '발송 완료',
       //     description: `${recipients.length}명에게 ${messageType.toUpperCase()} 발송이 완료되었습니다.`,
       //   });
-      // } catch (error) {
-      //   console.error('SMS send error:', error);
+      // } catch (error: unknown) {
+      //   
       //   toast({
       //     title: '발송 실패',
       //     description: 'SMS 발송 중 오류가 발생했습니다.',
       //     variant: 'destructive',
       //   });
       // }
-
       setContent('');
       setSelectedMembers([]);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '발송 실패' });
     } finally {
       setIsSending(false);
     }
   };
-
   const getCharCount = () => {
     const max = messageType === 'sms' ? 90 : 2000;
     return `${content.length} / ${max}`;
   };
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">단체 문자 발송</h1>
         <p className="text-muted-foreground mt-1">회원들에게 문자를 발송하세요</p>
       </div>
-
       {/* 개발 중 알림 */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <p className="text-sm text-yellow-800">
           <strong>알림:</strong> 실제 SMS 발송 기능은 추후 구현 예정입니다. 현재는 발송 기록만 저장됩니다.
         </p>
       </div>
-
       <Tabs defaultValue="send" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="send">문자 발송</TabsTrigger>
           <TabsTrigger value="history">발송 내역</TabsTrigger>
         </TabsList>
-
         {/* Send Tab */}
         <TabsContent value="send" className="space-y-6">
           <Card>
@@ -212,7 +191,6 @@ export default function MessagesPage() {
                   </Button>
                 </div>
               </div>
-
               {/* Content */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -229,7 +207,6 @@ export default function MessagesPage() {
               </div>
             </CardContent>
           </Card>
-
           {/* Recipients */}
           <Card>
             <CardHeader>
@@ -250,7 +227,6 @@ export default function MessagesPage() {
                   전체 선택 ({members?.length || 0}명)
                 </label>
               </div>
-
               <div className="max-h-96 overflow-y-auto space-y-2">
                 {members?.map((member) => (
                   <div
@@ -269,7 +245,6 @@ export default function MessagesPage() {
                   </div>
                 ))}
               </div>
-
               <Button
                 onClick={handleSend}
                 disabled={isSending || !content || selectedMembers.length === 0}
@@ -291,7 +266,6 @@ export default function MessagesPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* History Tab */}
         <TabsContent value="history" className="space-y-3">
           {messageHistory?.map((history) => (
@@ -322,7 +296,6 @@ export default function MessagesPage() {
               </CardContent>
             </Card>
           ))}
-
           {(!messageHistory || messageHistory.length === 0) && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center h-64">

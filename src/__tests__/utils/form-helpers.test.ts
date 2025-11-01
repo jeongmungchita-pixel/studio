@@ -112,7 +112,7 @@ describe('Form Helpers', () => {
     });
 
     it('should validate child birth date', () => {
-      const today = new Date().toISOString().split('T')[0];
+      const _today = new Date().toISOString().split('T')[0];
       const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
       
       expect(childValidationRules.birthDate('')).toBe('필수 입력 항목입니다.');

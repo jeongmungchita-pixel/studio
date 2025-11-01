@@ -6,7 +6,6 @@ export class APIError extends Error {
   public readonly code: string;
   public readonly statusCode: number;
   public readonly timestamp: string;
-
   constructor(
     message: string,
     code: string = 'UNKNOWN_ERROR',
@@ -17,11 +16,9 @@ export class APIError extends Error {
     this.code = code;
     this.statusCode = statusCode;
     this.timestamp = new Date().toISOString();
-
     // Error 클래스 상속 시 필요한 설정
     Object.setPrototypeOf(this, APIError.prototype);
   }
-
   /**
    * 에러를 JSON 형태로 직렬화
    */
@@ -42,11 +39,10 @@ export class APIError extends Error {
       stack: this.stack,
     };
   }
-
   /**
    * Firebase 에러를 APIError로 변환
    */
-  static fromFirebaseError(error: any): APIError {
+  static fromFirebaseError(error: unknown): APIError {
     const firebaseErrorMap: Record<string, { message: string; statusCode: number }> = {
       'permission-denied': {
         message: '권한이 없습니다.',
@@ -97,68 +93,72 @@ export class APIError extends Error {
         statusCode: 401,
       },
     };
-
-    const errorCode = error.code || 'unknown';
+    const errorCode =
+      typeof (error as any)?.code === 'string'
+        ? (error as any).code
+        : 'unknown';
     const errorInfo = firebaseErrorMap[errorCode] || {
-      message: error.message || '알 수 없는 오류가 발생했습니다.',
+      message:
+        typeof (error as any)?.message === 'string'
+          ? (error as any).message
+          : '알 수 없는 오류가 발생했습니다.',
       statusCode: 500,
     };
-
     return new APIError(
       errorInfo.message,
       errorCode.toUpperCase().replace(/-/g, '_'),
       errorInfo.statusCode
     );
   }
-
   /**
    * 네트워크 에러를 APIError로 변환
    */
-  static fromNetworkError(error: any): APIError {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+  static fromNetworkError(error: unknown): APIError {
+    const name = typeof (error as any)?.name === 'string' ? (error as any).name : '';
+    const message = typeof (error as any)?.message === 'string' ? (error as any).message : '';
+    if (name === 'TypeError' && message.includes('fetch')) {
       return new APIError(
         '네트워크 연결을 확인해주세요.',
         'NETWORK_ERROR',
         0
       );
     }
-
-    if (error.name === 'AbortError') {
+    if (name === 'AbortError') {
       return new APIError(
         '요청이 취소되었습니다.',
         'REQUEST_ABORTED',
         0
       );
     }
-
     return new APIError(
-      error.message || '네트워크 오류가 발생했습니다.',
+      message || '네트워크 오류가 발생했습니다.',
       'NETWORK_ERROR',
       0
     );
   }
-
   /**
    * 일반 에러를 APIError로 변환
    */
-  static fromError(error: any): APIError {
+  static fromError(error: unknown): APIError {
     if (error instanceof APIError) {
       return error;
     }
-
     // Firebase 에러 확인
-    if (error.code && typeof error.code === 'string') {
+    if (typeof (error as any)?.code === 'string') {
       return APIError.fromFirebaseError(error);
     }
-
     // 네트워크 에러 확인
-    if (error.name === 'TypeError' || error.name === 'AbortError') {
+    if (
+      typeof (error as any)?.name === 'string' &&
+      ([("TypeError"), ("AbortError")] as string[]).includes((error as any).name)
+    ) {
       return APIError.fromNetworkError(error);
     }
-
     // 일반 에러
     return new APIError(
-      error.message || '알 수 없는 오류가 발생했습니다.',
+      typeof (error as any)?.message === 'string'
+        ? (error as any).message
+        : '알 수 없는 오류가 발생했습니다.',
       'UNKNOWN_ERROR',
       500
     );

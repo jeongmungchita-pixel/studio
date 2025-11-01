@@ -1,14 +1,11 @@
 'use client';
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, Clock, CheckCircle } from 'lucide-react';
-
 export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-
   // 임시 데이터 - 추후 API로 대체
   const attendanceData = [
     { id: 1, name: '김철수', status: 'present', time: '09:00' },
@@ -16,7 +13,6 @@ export default function AttendancePage() {
     { id: 3, name: '박민수', status: 'late', time: '09:15' },
     { id: 4, name: '최지영', status: 'present', time: '08:55' },
   ];
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'present':
@@ -29,7 +25,6 @@ export default function AttendancePage() {
         return <Badge variant="outline">미확인</Badge>;
     }
   };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -42,7 +37,6 @@ export default function AttendancePage() {
           출석 체크
         </Button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -53,7 +47,6 @@ export default function AttendancePage() {
             <div className="text-2xl font-bold">{attendanceData.length}</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">출석</CardTitle>
@@ -65,7 +58,6 @@ export default function AttendancePage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">지각</CardTitle>
@@ -77,7 +69,6 @@ export default function AttendancePage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">결석</CardTitle>
@@ -90,7 +81,6 @@ export default function AttendancePage() {
           </CardContent>
         </Card>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>출석 현황</CardTitle>

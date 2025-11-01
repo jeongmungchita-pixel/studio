@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
@@ -16,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 interface Announcement {
   id: string;
   clubId: string;
@@ -30,37 +27,31 @@ interface Announcement {
   createdAt: string;
   updatedAt?: string;
 }
-
 const typeLabels = {
   general: '일반',
   important: '중요',
-  event: '이벤트',
+  _event: '이벤트',
   emergency: '긴급',
 };
-
 const typeColors = {
   general: 'default',
   important: 'secondary',
-  event: 'outline',
+  _event: 'outline',
   emergency: 'destructive',
 } as const;
-
 const audienceLabels = {
   all: '전체',
   members: '회원',
   parents: '학부모',
   staff: '스태프',
 };
-
 const getTypeVariant = (t: string) => typeColors[(t as keyof typeof typeColors) || 'general'] || 'default';
 const getTypeLabel = (t: string) => typeLabels[(t as keyof typeof typeLabels) || 'general'] || '일반';
 const getAudienceLabel = (a: string) => audienceLabels[(a as keyof typeof audienceLabels) || 'all'] || '전체';
-
 export default function AnnouncementsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [title, setTitle] = useState('');
@@ -69,18 +60,16 @@ export default function AnnouncementsPage() {
   const [targetAudience, setTargetAudience] = useState<Announcement['targetAudience']>('all');
   const [isPinned, setIsPinned] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Fetch announcements
   const announcementsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'announcements'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
-
   const handleCreate = () => {
     setEditingAnnouncement(null);
     setTitle('');
@@ -90,7 +79,6 @@ export default function AnnouncementsPage() {
     setIsPinned(false);
     setIsDialogOpen(true);
   };
-
   const handleEdit = (announcement: Announcement) => {
     setEditingAnnouncement(announcement);
     setTitle(announcement.title);
@@ -100,10 +88,8 @@ export default function AnnouncementsPage() {
     setIsPinned(announcement.isPinned);
     setIsDialogOpen(true);
   };
-
   const handleSubmit = async () => {
-    if (!firestore || !user || !title || !content) return;
-
+    if (!firestore || !_user || !title || !content) return;
     setIsSubmitting(true);
     try {
       if (editingAnnouncement) {
@@ -120,39 +106,36 @@ export default function AnnouncementsPage() {
         const announcementRef = doc(collection(firestore, 'announcements'));
         const announcementData: Announcement = {
           id: announcementRef.id,
-          clubId: user.clubId!,
+          clubId: _user.clubId!,
           title,
           content,
           type,
           targetAudience,
           isPinned,
-          createdBy: user.uid,
-          createdByName: user.displayName || user.email || '관리자',
+          createdBy: _user.uid,
+          createdByName: _user.displayName || _user.email || '관리자',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         await setDoc(announcementRef, announcementData);
         toast({ title: '공지사항 등록 완료' });
       }
-
       setIsDialogOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleDelete = async (id: string) => {
     if (!firestore || !confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(firestore, 'announcements', id));
       toast({ title: '공지사항 삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
   const togglePin = async (announcement: Announcement) => {
     if (!firestore) return;
     try {
@@ -161,11 +144,10 @@ export default function AnnouncementsPage() {
         updatedAt: new Date().toISOString(),
       });
       toast({ title: announcement.isPinned ? '고정 해제' : '상단 고정' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '변경 실패' });
     }
   };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -173,10 +155,8 @@ export default function AnnouncementsPage() {
       </div>
     );
   }
-
   const pinnedAnnouncements = announcements?.filter(a => a.isPinned) || [];
   const regularAnnouncements = announcements?.filter(a => !a.isPinned) || [];
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -189,7 +169,6 @@ export default function AnnouncementsPage() {
           새 공지사항
         </Button>
       </div>
-
       {/* Pinned Announcements */}
       {pinnedAnnouncements.length > 0 && (
         <div className="space-y-3">
@@ -234,7 +213,6 @@ export default function AnnouncementsPage() {
           ))}
         </div>
       )}
-
       {/* Regular Announcements */}
       <div className="space-y-3">
         {pinnedAnnouncements.length > 0 && (
@@ -276,7 +254,6 @@ export default function AnnouncementsPage() {
           </Card>
         ))}
       </div>
-
       {(!announcements || announcements.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -289,7 +266,6 @@ export default function AnnouncementsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -299,7 +275,6 @@ export default function AnnouncementsPage() {
               회원들에게 전달할 소식을 작성하세요
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">제목</label>
@@ -309,7 +284,6 @@ export default function AnnouncementsPage() {
                 placeholder="공지사항 제목"
               />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">유형</label>
@@ -325,7 +299,6 @@ export default function AnnouncementsPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium">대상</label>
                 <Select value={targetAudience} onValueChange={(v) => setTargetAudience(v as Announcement['targetAudience'])}>
@@ -341,7 +314,6 @@ export default function AnnouncementsPage() {
                 </Select>
               </div>
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-medium">내용</label>
               <Textarea
@@ -351,7 +323,6 @@ export default function AnnouncementsPage() {
                 rows={10}
               />
             </div>
-
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -365,7 +336,6 @@ export default function AnnouncementsPage() {
               </label>
             </div>
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               취소

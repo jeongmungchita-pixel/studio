@@ -1,7 +1,5 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,14 +11,14 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser, useFirebase } from '@/firebase';
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { useDraft } from '@/hooks/use-draft';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, Trash2, PenTool, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Loader2, Info, User, Baby } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Club } from '@/types';
-
 interface ParentData {
   name: string;
   birthDate: string;
@@ -28,27 +26,44 @@ interface ParentData {
   phoneNumber: string;
   email: string;
 }
-
 interface ChildData {
   name: string;
   birthDate: string;
   gender: 'male' | 'female';
   grade: string;
 }
-
 interface ExternalGuardianData {
   name: string;
   phoneNumber: string;
   relation: 'parent' | 'grandparent' | 'legal_guardian' | 'other';
 }
-
+interface Agreements {
+  personal: boolean;
+  terms: boolean;
+  safety: boolean;
+  portrait: boolean;
+}
+interface FamilyDraft {
+  clubId: string;
+  parents: ParentData[];
+  children: ChildData[];
+  externalGuardian: ExternalGuardianData;
+  agreements: Agreements;
+  signature: string | null;
+}
 export default function FamilyRegisterPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { _user, isUserLoading } = useUser();
+  const { auth, firestore: fstore } = useFirebase();
   const signatureRef = useRef<SignatureCanvas>(null);
-  
+  const { load: loadDraft, saveDebounced: saveDraft, clear: clearDraft } = useDraft<FamilyDraft>('family');
   const [step, setStep] = useState(1);
+  const [acctEmail, setAcctEmail] = useState('');
+  const [acctPassword, setAcctPassword] = useState('');
+  const [acctName, setAcctName] = useState('');
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clubId, setClubId] = useState('');
   const [parents, setParents] = useState<ParentData[]>([]);
@@ -65,67 +80,156 @@ export default function FamilyRegisterPage() {
     portrait: false,
   });
   const [signature, setSignature] = useState<string | null>(null);
-
   const clubsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'clubs') : null),
     [firestore]
   );
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
-
+  // Initialize step based on auth state + Load draft on mount
+  React.useEffect(() => {
+    if (!isUserLoading && !_user) {
+      setStep(0);
+    }
+    (async () => {
+      const draft = await loadDraft();
+      if (draft) {
+        setClubId(draft.clubId || '');
+        setParents(draft.parents || []);
+        setChildren(draft.children || []);
+        if (draft.externalGuardian) setExternalGuardian(draft.externalGuardian);
+        if (draft.agreements) setAgreements(draft.agreements as Agreements);
+        if (typeof draft.signature !== 'undefined') setSignature(draft.signature);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_user, isUserLoading]);
+  // Persist requestedClub to user profile for approval rules
+  React.useEffect(() => {
+    const persistRequestedClub = async () => {
+      if (!firestore || !_user) return;
+      if (!clubId) return;
+      try {
+        const selectedClub = clubs?.find(c => c.id === clubId);
+        if (!selectedClub) return;
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(
+          doc(firestore, 'users', _user.uid),
+          {
+            requestedClubId: clubId,
+            requestedClubName: selectedClub.name || null,
+          },
+          { merge: true }
+        );
+      } catch {}
+    };
+    persistRequestedClub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubId, _user?.uid, firestore, clubs]);
+  // After login/account creation, proceed to step 1
+  React.useEffect(() => {
+    if (!isUserLoading && _user && step === 0) {
+      setStep(1);
+      if (!parents.length && acctName) {
+        // prefill first parent name if available
+        setParents([{ name: acctName, birthDate: '', gender: 'male', phoneNumber: '', email: '' } as ParentData]);
+      }
+    }
+  }, [_user, isUserLoading, step, acctName, parents.length]);
   const addParent = () => {
     if (parents.length < 2) {
-      setParents([...parents, { name: '', birthDate: '', gender: 'male', phoneNumber: '', email: '' }]);
+      const next = [...parents, { name: '', birthDate: '', gender: 'male', phoneNumber: '', email: '' } as ParentData];
+      setParents(next);
+      saveDraft({ parents: next });
     }
   };
-
-  const removeParent = (index: number) => setParents(parents.filter((_, i) => i !== index));
+  const handleCreateAccount = async () => {
+    if (!auth || !fstore) return;
+    if (!acctEmail || !acctPassword || !acctName) {
+      toast({ variant: 'destructive', title: '계정 정보 필요', description: '이메일, 비밀번호, 이름을 입력해주세요.' });
+      return;
+    }
+    setIsCreatingAccount(true);
+    try {
+      const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const cred = await createUserWithEmailAndPassword(auth, acctEmail, acctPassword);
+      await updateProfile(cred.user, { displayName: acctName });
+      await setDoc(doc(fstore, 'users', cred.user.uid), {
+        uid: cred.user.uid,
+        email: acctEmail,
+        displayName: acctName,
+        role: 'PARENT',
+        status: 'active',
+        createdAt: serverTimestamp(),
+        provider: 'email',
+      }, { merge: true });
+      toast({ title: '계정 생성 완료', description: '다음 단계로 이동합니다.' });
+      setStep(1);
+    } catch (e: unknown) {
+      toast({ variant: 'destructive', title: '계정 생성 실패', description: (e as any)?.message || '다시 시도해주세요.' });
+    } finally {
+      setIsCreatingAccount(false);
+    }
+  };
+  const removeParent = (index: number) => {
+    const next = parents.filter((_, i) => i !== index);
+    setParents(next);
+    saveDraft({ parents: next });
+  };
   const updateParent = (index: number, field: keyof ParentData, value: string | boolean) => {
     const updated = [...parents];
-    updated[index] = { ...updated[index], [field]: value };
+    const v = field === 'gender' ? (value as 'male' | 'female') : value;
+    updated[index] = { ...updated[index], [field]: v } as ParentData;
     setParents(updated);
+    saveDraft({ parents: updated });
   };
-
   const addChild = () => {
-    setChildren([...children, { name: '', birthDate: '', gender: 'male', grade: '' }]);
+    const next = [...children, { name: '', birthDate: '', gender: 'male', grade: '' } as ChildData];
+    setChildren(next);
+    saveDraft({ children: next });
   };
-
-  const removeChild = (index: number) => setChildren(children.filter((_, i) => i !== index));
+  const removeChild = (index: number) => {
+    const next = children.filter((_, i) => i !== index);
+    setChildren(next);
+    saveDraft({ children: next });
+  };
   const updateChild = (index: number, field: keyof ChildData, value: string | boolean) => {
     const updated = [...children];
-    updated[index] = { ...updated[index], [field]: value };
+    const v = field === 'gender' ? (value as 'male' | 'female') : value;
+    updated[index] = { ...updated[index], [field]: v } as ChildData;
     setChildren(updated);
+    saveDraft({ children: updated });
   };
-
   const handleAgreeAll = (checked: boolean) => {
-    setAgreements({ personal: checked, terms: checked, safety: checked, portrait: checked });
+    const next = { personal: checked, terms: checked, safety: checked, portrait: checked };
+    setAgreements(next);
+    saveDraft({ agreements: next });
   };
-
   const clearSignature = () => {
     signatureRef.current?.clear();
     setSignature(null);
+    saveDraft({ signature: null });
   };
-
   const saveSignature = () => {
     if (signatureRef.current?.isEmpty()) {
       toast({ variant: 'destructive', title: '서명 필요', description: '서명을 작성해주세요.' });
       return false;
     }
-    setSignature(signatureRef.current?.toDataURL() || '');
+    const dataUrl = signatureRef.current?.toDataURL() || '';
+    setSignature(dataUrl);
+    saveDraft({ signature: dataUrl });
     return true;
   };
-
   const validateStep = (currentStep: number): boolean => {
     if (currentStep === 1 && !clubId) {
       toast({ variant: 'destructive', title: '클럽 선택 필요', description: '가입할 체육관을 선택해주세요.' });
       return false;
     }
-    
     if (currentStep === 2) {
       if (parents.length === 0 && children.length === 0) {
         toast({ variant: 'destructive', title: '회원 추가 필요', description: '최소 1명 이상의 가족 구성원을 추가해주세요.' });
         return false;
       }
-      
       for (let i = 0; i < parents.length; i++) {
         const parent = parents[i];
         if (!parent.name || !parent.birthDate || !parent.phoneNumber) {
@@ -133,7 +237,6 @@ export default function FamilyRegisterPage() {
           return false;
         }
       }
-      
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         if (!child.name || !child.birthDate) {
@@ -141,7 +244,6 @@ export default function FamilyRegisterPage() {
           return false;
         }
       }
-      
       if (parents.length === 0 && children.length > 0) {
         if (!externalGuardian.name || !externalGuardian.phoneNumber) {
           toast({ variant: 'destructive', title: '보호자 정보 필요', description: '자녀만 등록하는 경우 보호자 정보가 필수입니다.' });
@@ -149,15 +251,12 @@ export default function FamilyRegisterPage() {
         }
       }
     }
-    
     if (currentStep === 3 && (!agreements.personal || !agreements.terms || !agreements.safety)) {
       toast({ variant: 'destructive', title: '약관 동의 필요', description: '필수 약관에 모두 동의해주세요.' });
       return false;
     }
-    
     return true;
   };
-
   const handleNext = () => {
     if (validateStep(step)) {
       if (step === 4) {
@@ -167,67 +266,61 @@ export default function FamilyRegisterPage() {
       }
     }
   };
-
   const handlePrev = () => setStep(step - 1);
-
   const handleSubmit = async () => {
-    if (!firestore) return;
+    if (!firestore || !_user) return;
     setIsSubmitting(true);
-
     try {
-      const selectedClub = clubs?.find(c => c.id === clubId);
-      if (!selectedClub) throw new Error('클럽을 찾을 수 없습니다.');
-
-      const requestData = {
-        clubId,
-        clubName: selectedClub.name,
-        requestType: 'family',
-        parents: parents.map(p => ({
-          name: p.name,
-          birthDate: p.birthDate,
-          gender: p.gender,
-          phoneNumber: p.phoneNumber,
-          email: p.email || undefined,
-        })),
-        children: children.map(c => ({
-          name: c.name,
-          birthDate: c.birthDate,
-          gender: c.gender,
-          grade: c.grade || undefined,
-        })),
-        externalGuardian: parents.length === 0 && children.length > 0 ? externalGuardian : undefined,
-        agreements: {
-          personal: agreements.personal,
-          terms: agreements.terms,
-          safety: agreements.safety,
-          portrait: agreements.portrait,
-          agreedAt: new Date().toISOString(),
+      // 제출 시점에 단일 문서를 조회하여 clubName 확보 (리스트 깜빡임/캐시 영향 방지)
+      const clubRef = doc(firestore, 'clubs', clubId);
+      const clubSnap = await getDoc(clubRef);
+      if (!clubSnap.exists()) throw new Error('클럽을 찾을 수 없습니다.');
+      const selectedClub = clubSnap.data() as { name?: string };
+      // Use Admin API for registration
+      const response = await fetch('/api/admin/registrations/family', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        signature: signature!,
-        signedAt: new Date().toISOString(),
-        status: 'pending',
-        requestedAt: new Date().toISOString(),
-      };
-
-      await addDoc(collection(firestore, 'familyRegistrationRequests'), requestData);
-      
+        body: JSON.stringify({
+          uid: _user.uid,
+          clubId,
+          clubName: selectedClub.name || '',
+          parents: parents.map(p => ({
+            name: p.name,
+            birthDate: p.birthDate,
+            gender: p.gender,
+            phoneNumber: p.phoneNumber,
+            email: p.email || null,
+          })),
+          children: children.map(c => ({
+            name: c.name,
+            birthDate: c.birthDate,
+            gender: c.gender,
+            grade: c.grade || null,
+          })),
+          externalGuardian: parents.length === 0 && children.length > 0 ? externalGuardian : null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      await clearDraft();
       const message = [];
       if (parents.length > 0) message.push(`부모 ${parents.length}명`);
       if (children.length > 0) message.push(`자녀 ${children.length}명`);
-      
       toast({
         title: '가입 신청 완료',
         description: `${message.join(' + ')} 가입 신청이 완료되었습니다. 클럽의 승인을 기다려주세요.`,
       });
-      
       router.push('/register/success');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '오류 발생', description: '가입 신청에 실패했습니다. 다시 시도해주세요.' });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   if (isClubsLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -235,7 +328,6 @@ export default function FamilyRegisterPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-3xl">
@@ -262,10 +354,9 @@ export default function FamilyRegisterPage() {
                   가족 단위로 관리되며 할인 혜택을 받을 수 있습니다.
                 </AlertDescription>
               </Alert>
-              
               <div>
                 <Label htmlFor="club">가입할 체육관 선택 *</Label>
-                <Select value={clubId} onValueChange={setClubId}>
+                <Select value={clubId} onValueChange={(v) => { setClubId(v); saveDraft({ clubId: v }); }}>
                   <SelectTrigger>
                     <SelectValue placeholder="체육관을 선택하세요" />
                   </SelectTrigger>
@@ -284,7 +375,35 @@ export default function FamilyRegisterPage() {
               </div>
             </div>
           )}
-
+          {/* Step 0: 계정 생성 (비로그인 시) */}
+          {step === 0 && (
+            <div className="space-y-4">
+              <Alert>
+                <AlertDescription>
+                  먼저 로그인 계정을 만듭니다. 생성 후 바로 가족 회원 가입을 계속합니다.
+                </AlertDescription>
+              </Alert>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctName">이름 *</Label>
+                  <Input id="acctName" value={acctName} onChange={(e) => setAcctName(e.target.value)} placeholder="보호자 이름" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctEmail">이메일 *</Label>
+                  <Input id="acctEmail" type="email" value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} placeholder="name@example.com" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctPassword">비밀번호 *</Label>
+                  <Input id="acctPassword" type="password" value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} placeholder="6자 이상" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleCreateAccount} disabled={isCreatingAccount} className="flex-1">
+                  {isCreatingAccount ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />처리 중...</>) : '회원가입하기'}
+                </Button>
+              </div>
+            </div>
+          )}
           {/* Step 2: 가족 구성원 추가 */}
           {step === 2 && (
             <div className="space-y-6">
@@ -303,7 +422,6 @@ export default function FamilyRegisterPage() {
                     </Button>
                   )}
                 </div>
-                
                 {parents.length === 0 && (
                   <Alert>
                     <AlertDescription>
@@ -311,7 +429,6 @@ export default function FamilyRegisterPage() {
                     </AlertDescription>
                   </Alert>
                 )}
-                
                 <div className="space-y-4">
                   {parents.map((parent, index) => (
                     <Card key={index}>
@@ -383,9 +500,7 @@ export default function FamilyRegisterPage() {
                   ))}
                 </div>
               </div>
-
               <Separator />
-
               {/* 자녀 섹션 */}
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -399,7 +514,6 @@ export default function FamilyRegisterPage() {
                     자녀 추가
                   </Button>
                 </div>
-                
                 {children.length === 0 && (
                   <Alert>
                     <AlertDescription>
@@ -407,7 +521,6 @@ export default function FamilyRegisterPage() {
                     </AlertDescription>
                   </Alert>
                 )}
-                
                 <div className="space-y-4">
                   {children.map((child, index) => (
                     <Card key={index}>
@@ -487,7 +600,6 @@ export default function FamilyRegisterPage() {
                   ))}
                 </div>
               </div>
-
               {/* 외부 보호자 정보 */}
               {parents.length === 0 && children.length > 0 && (
                 <>
@@ -499,7 +611,6 @@ export default function FamilyRegisterPage() {
                       자녀만 등록하는 경우 보호자 정보를 입력해주세요.
                     </AlertDescription>
                   </Alert>
-                  
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">보호자 정보</CardTitle>
@@ -545,7 +656,6 @@ export default function FamilyRegisterPage() {
                   </Card>
                 </>
               )}
-
               {/* 등록 요약 */}
               {(parents.length > 0 || children.length > 0) && (
                 <Card className="bg-muted">
@@ -577,7 +687,6 @@ export default function FamilyRegisterPage() {
               )}
             </div>
           )}
-
           {/* Step 3: 약관 동의 */}
           {step === 3 && (
             <div className="space-y-4">
@@ -591,9 +700,7 @@ export default function FamilyRegisterPage() {
                   전체 동의
                 </Label>
               </div>
-              
               <Separator />
-              
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -605,7 +712,6 @@ export default function FamilyRegisterPage() {
                     개인정보 수집 및 이용 동의 (필수)
                   </Label>
                 </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="terms" 
@@ -616,7 +722,6 @@ export default function FamilyRegisterPage() {
                     체육시설 이용 약관 동의 (필수)
                   </Label>
                 </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="safety" 
@@ -627,7 +732,6 @@ export default function FamilyRegisterPage() {
                     안전사고 면책 동의 (필수)
                   </Label>
                 </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="portrait" 
@@ -641,7 +745,6 @@ export default function FamilyRegisterPage() {
               </div>
             </div>
           )}
-
           {/* Step 4: 서명 */}
           {step === 4 && (
             <div className="space-y-4">
@@ -662,7 +765,6 @@ export default function FamilyRegisterPage() {
                   </Button>
                 </div>
               </div>
-              
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>가입 신청 준비 완료</AlertTitle>
@@ -675,8 +777,8 @@ export default function FamilyRegisterPage() {
               </Alert>
             </div>
           )}
-
-          {/* 네비게이션 버튼 */}
+          {/* 네비게이션 버튼 (Step 0에서는 숨김) */}
+          {step !== 0 && (
           <div className="flex gap-3 pt-4">
             {step > 1 && (
               <Button variant="outline" onClick={handlePrev} disabled={isSubmitting} className="flex-1">
@@ -700,6 +802,7 @@ export default function FamilyRegisterPage() {
               )}
             </Button>
           </div>
+          )}
         </CardContent>
       </Card>
     </main>

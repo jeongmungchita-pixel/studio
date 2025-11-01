@@ -1,11 +1,9 @@
 'use client';
-
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
 import { useRole } from '@/hooks/use-role';
 import { LayoutDashboard, Users, Building, Trophy, ClipboardList, UserCog, Shield, User } from 'lucide-react';
-
 interface NavSection {
   id: string;
   label: string;
@@ -13,7 +11,6 @@ interface NavSection {
   basePath: string;
   roles: UserRole[];
 }
-
 const navSections: NavSection[] = [
   {
     id: 'dashboard',
@@ -79,30 +76,25 @@ const navSections: NavSection[] = [
     roles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN, UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER],
   },
 ];
-
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { userRole } = useRole();
-
   const filteredSections = navSections.filter(
     section => userRole && section.roles.includes(userRole)
   );
-
   const isActive = (basePath: string) => {
     if (basePath === '/dashboard' || basePath === '/club-dashboard' || basePath === '/my-profile') {
       return pathname === basePath;
     }
     return pathname.startsWith(basePath);
   };
-
   return (
     <nav className="border-b bg-background">
       <div className="flex h-14 items-center px-6 gap-1">
         {filteredSections.map((section) => {
           const Icon = section.icon;
           const active = isActive(section.basePath);
-          
           return (
             <button
               key={section.id}

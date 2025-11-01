@@ -1,25 +1,21 @@
 'use client';
-
 import React, { Component, ErrorInfo as ReactErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Home, Bug } from 'lucide-react';
 import { errorHandler, ErrorType, ErrorSeverity, ErrorInfo } from '@/services/error-handler';
 import { navigationManager } from '@/services/navigation-manager';
-
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ReactErrorInfo) => void;
 }
-
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
   errorCount: number;
 }
-
 export class ErrorBoundaryEnhanced extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -30,14 +26,12 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
       errorCount: 0
     };
   }
-
   static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       error
     };
   }
-
   componentDidCatch(error: Error, errorInfo: ReactErrorInfo) {
     // ErrorHandler로 에러 처리
     const processedError = errorHandler.handle(error, {
@@ -47,23 +41,18 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
         componentStack: errorInfo.componentStack
       }
     });
-
     this.setState(prevState => ({
       errorInfo: processedError,
       errorCount: prevState.errorCount + 1
     }));
-
     // 부모 컴포넌트에 알림
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-
     // 개발 환경에서는 콘솔에 상세 정보 출력
     if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
   }
-
   handleReset = () => {
     this.setState({
       hasError: false,
@@ -71,15 +60,12 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
       errorInfo: null
     });
   };
-
   handleRefresh = () => {
     window.location.reload();
   };
-
   handleGoHome = () => {
     navigationManager.goHome();
   };
-
   handleReportBug = () => {
     // 버그 리포트 페이지로 이동 또는 모달 열기
     const bugReport = {
@@ -89,26 +75,22 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
       userAgent: navigator.userAgent,
       url: window.location.href
     };
-    
     // 클립보드에 복사
     if (navigator.clipboard) {
       navigator.clipboard.writeText(JSON.stringify(bugReport, null, 2));
       alert('오류 정보가 클립보드에 복사되었습니다.');
     }
   };
-
   render() {
     if (this.state.hasError) {
       // 커스텀 fallback이 있으면 사용
       if (this.props.fallback) {
         return <>{this.props.fallback}</>;
       }
-
       const { errorInfo } = this.state;
       const isRecoverable = errorInfo?.recoverable ?? false;
       const isRetryable = errorInfo?.retryable ?? false;
       const severity = errorInfo?.severity ?? ErrorSeverity.MEDIUM;
-
       return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
           <Card className="max-w-lg w-full">
@@ -135,7 +117,6 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
                 {errorInfo?.userMessage || '예상치 못한 오류가 발생했습니다. 불편을 드려 죄송합니다.'}
               </CardDescription>
             </CardHeader>
-
             <CardContent>
               {/* 개발 환경에서만 상세 정보 표시 */}
               {process.env.NODE_ENV === 'development' && this.state.error && (
@@ -158,7 +139,6 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
                   </details>
                 </div>
               )}
-
               {/* 에러 발생 횟수 표시 */}
               {this.state.errorCount > 1 && (
                 <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
@@ -168,7 +148,6 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
                 </div>
               )}
             </CardContent>
-
             <CardFooter className="flex flex-col gap-2">
               {/* 복구 가능한 경우 */}
               {isRecoverable && (
@@ -180,7 +159,6 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
                   다시 시도
                 </Button>
               )}
-
               {/* 재시도 가능한 경우 */}
               {isRetryable && !isRecoverable && (
                 <Button 
@@ -192,7 +170,6 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
                   페이지 새로고침
                 </Button>
               )}
-
               {/* 홈으로 이동 */}
               <Button 
                 onClick={this.handleGoHome}
@@ -202,7 +179,6 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
                 <Home className="mr-2 h-4 w-4" />
                 홈으로 이동
               </Button>
-
               {/* 버그 리포트 */}
               <Button 
                 onClick={this.handleReportBug}
@@ -218,11 +194,9 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
-
 /**
  * 특정 컴포넌트를 에러 바운더리로 감싸는 HOC
  */
@@ -235,8 +209,6 @@ export function withErrorBoundary<P extends object>(
       <Component {...props} />
     </ErrorBoundaryEnhanced>
   );
-  
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name || 'Component'})`;
-  
   return WrappedComponent;
 }

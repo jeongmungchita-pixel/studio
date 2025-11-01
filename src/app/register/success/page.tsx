@@ -1,14 +1,27 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
+import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
+import { useFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
 export default function RegisterSuccessPage() {
   const router = useRouter();
-
+  const { auth } = useFirebase();
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (auth) {
+          await signOut(auth);
+        }
+      } catch (_: unknown) {
+      } finally {
+        if (!cancelled) router.replace('/login');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [auth, router]);
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-md">
@@ -30,15 +43,7 @@ export default function RegisterSuccessPage() {
               3. 승인 후 클럽 이용이 가능합니다
             </p>
           </div>
-
-          <div className="space-y-2">
-            <Button
-              onClick={() => router.push('/')}
-              className="w-full"
-            >
-              홈으로 돌아가기
-            </Button>
-          </div>
+          {/* 자동 로그아웃 후 로그인으로 이동합니다. */}
         </CardContent>
       </Card>
     </main>

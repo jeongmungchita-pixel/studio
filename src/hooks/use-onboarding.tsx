@@ -1,28 +1,24 @@
 'use client';
-
 import { useEffect, useState, useRef } from 'react';
 import { useUser } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
-
 export type OnboardingStep = 
   | 'register'      // 회원가입 진행 중
   | 'verify'        // 이메일 인증 대기
   | 'approval'      // 관리자 승인 대기
   | 'profile'       // 프로필 설정
   | 'complete';     // 온보딩 완료
-
 export interface OnboardingState {
   step: OnboardingStep;
   progress: number; // 0-100
   nextAction: string;
   isLoading: boolean;
 }
-
 /**
  * 온보딩 프로세스 상태 관리 Hook
  */
 export function useOnboarding() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const [state, setState] = useState<OnboardingState>({
@@ -31,15 +27,13 @@ export function useOnboarding() {
     nextAction: '회원가입을 진행해주세요',
     isLoading: true
   });
-
   useEffect(() => {
     if (isUserLoading) {
       setState(prev => ({ ...prev, isLoading: true }));
       return;
     }
-
     // 사용자 상태에 따른 온보딩 단계 결정
-    if (!user) {
+    if (!_user) {
       // 로그인하지 않은 경우
       if (pathname?.startsWith('/register')) {
         setState({
@@ -56,7 +50,7 @@ export function useOnboarding() {
           isLoading: false
         });
       }
-    } else if (user.status === 'pending') {
+    } else if (_user.status === 'pending') {
       // 승인 대기 중
       setState({
         step: 'approval',
@@ -64,7 +58,7 @@ export function useOnboarding() {
         nextAction: '관리자 승인을 기다려주세요',
         isLoading: false
       });
-    } else if (!user.phoneNumber || !user.displayName) {
+    } else if (!_user.phoneNumber || !_user.displayName) {
       // 프로필 미완성
       setState({
         step: 'profile',
@@ -81,17 +75,14 @@ export function useOnboarding() {
         isLoading: false
       });
     }
-  }, [user, isUserLoading, pathname]);
-
+  }, [_user, isUserLoading, pathname]);
   /**
    * 다음 단계로 이동
    */
   const hasNavigatedRef = useRef(false);
-
   const goToNextStep = () => {
     if (hasNavigatedRef.current) return;
     hasNavigatedRef.current = true;
-
     switch (state.step) {
       case 'register':
         window.location.href = '/register';
@@ -107,25 +98,23 @@ export function useOnboarding() {
         break;
       case 'complete':
         // 역할별 대시보드로 이동
-        if (user) {
-          const defaultRoute = getDefaultRouteByRole(user.role);
+        if (_user) {
+          const defaultRoute = getDefaultRouteByRole(_user.role);
           window.location.href = defaultRoute;
         }
         break;
     }
   };
-
   /**
    * 온보딩 건너뛰기 (가능한 경우에만)
    */
   const skipOnboarding = () => {
-    if (state.step === 'profile' && user) {
+    if (state.step === 'profile' && _user) {
       // 프로필 설정을 나중에 하도록 허용
-      const defaultRoute = getDefaultRouteByRole(user.role);
+      const defaultRoute = getDefaultRouteByRole(_user.role);
       router.push(defaultRoute);
     }
   };
-
   return {
     ...state,
     goToNextStep,
@@ -133,7 +122,6 @@ export function useOnboarding() {
     canSkip: state.step === 'profile' // 프로필 설정만 건너뛸 수 있음
   };
 }
-
 /**
  * 역할별 기본 라우트
  */

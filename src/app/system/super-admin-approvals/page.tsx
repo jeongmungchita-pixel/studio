@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ApprovalActions } from '@/components/approval-actions';
@@ -10,7 +8,6 @@ import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, doc, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { UserRole } from '@/types';
-
 // 로컬 타입: 최고 관리자 요청
 interface SuperAdminRequest {
   id: string;
@@ -24,23 +21,18 @@ interface SuperAdminRequest {
   status: 'pending' | 'approved' | 'rejected';
   userId?: string;
 }
-
-
 export default function SuperAdminApprovalsPage() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [isProcessing, setIsProcessing] = useState(false);
-
   // Firestore에서 최고 관리자 신청 목록 가져오기
   const requestsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'superAdminRequests') : null),
     [firestore]
   );
   const { data: requests, isLoading: isRequestsLoading } = useCollection<SuperAdminRequest>(requestsCollection);
-
   const handleApprove = async (id: string) => {
-    if (!firestore || !user) return;
-    
+    if (!firestore || !_user) return;
     setIsProcessing(true);
     try {
       const request = requests?.find(r => r.id === id);
@@ -48,15 +40,13 @@ export default function SuperAdminApprovalsPage() {
         alert('신청을 찾을 수 없습니다.');
         return;
       }
-
       // SuperAdminRequest 업데이트
       const requestRef = doc(firestore, 'superAdminRequests', id);
       await updateDoc(requestRef, {
         status: 'approved',
-        approvedBy: user.uid,
+        approvedBy: _user.uid,
         approvedAt: new Date().toISOString(),
       });
-
       // 사용자 프로필 업데이트 (이미 존재하는 경우)
       // 비회원 가입인 경우 로그인 시 프로필 생성됨
       if (request.userId && request.userId.trim() !== '') {
@@ -64,23 +54,20 @@ export default function SuperAdminApprovalsPage() {
         await updateDoc(userRef, {
           role: 'SUPER_ADMIN' as UserRole,
           status: 'approved',
-          approvedBy: user.uid,
+          approvedBy: _user.uid,
           approvedAt: new Date().toISOString(),
         });
       } else {
       }
-
       alert('최고 관리자로 승인되었습니다!');
-    } catch (error) {
+    } catch (error: unknown) {
       alert('승인 처리 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);
     }
   };
-
   const handleReject = async (id: string, reason: string) => {
-    if (!firestore || !user) return;
-    
+    if (!firestore || !_user) return;
     setIsProcessing(true);
     try {
       const request = requests?.find(r => r.id === id);
@@ -88,36 +75,32 @@ export default function SuperAdminApprovalsPage() {
         alert('신청을 찾을 수 없습니다.');
         return;
       }
-
       // SuperAdminRequest 업데이트
       const requestRef = doc(firestore, 'superAdminRequests', id);
       await updateDoc(requestRef, {
         status: 'rejected',
-        rejectedBy: user.uid,
+        rejectedBy: _user.uid,
         rejectedAt: new Date().toISOString(),
         rejectionReason: reason,
       });
-
       // 사용자 프로필 업데이트 (이미 존재하는 경우)
       if (request.userId && request.userId.trim() !== '') {
         const userRef = doc(firestore, 'users', request.userId);
         await updateDoc(userRef, {
           status: 'rejected',
-          rejectedBy: user.uid,
+          rejectedBy: _user.uid,
           rejectedAt: new Date().toISOString(),
           rejectionReason: reason,
         });
       } else {
       }
-
       alert('신청이 거부되었습니다.');
-    } catch (error) {
+    } catch (error: unknown) {
       alert('거부 처리 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);
     }
   };
-
   // 로딩 상태
   if (isUserLoading || isRequestsLoading) {
     return (
@@ -126,9 +109,7 @@ export default function SuperAdminApprovalsPage() {
       </div>
     );
   }
-
   const pendingCount = requests?.filter(r => r.status === 'pending').length || 0;
-
   return (
     <main className="flex-1 p-6 space-y-6">
       {/* 헤더 */}
@@ -148,7 +129,6 @@ export default function SuperAdminApprovalsPage() {
           </div>
         )}
       </div>
-
       {/* 경고 메시지 */}
       <Card className="border-red-200 bg-red-50">
         <CardContent className="pt-6">
@@ -161,7 +141,6 @@ export default function SuperAdminApprovalsPage() {
           </div>
         </CardContent>
       </Card>
-
       {/* 통계 */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -175,7 +154,6 @@ export default function SuperAdminApprovalsPage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">승인됨</CardTitle>
@@ -187,7 +165,6 @@ export default function SuperAdminApprovalsPage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">거부됨</CardTitle>
@@ -200,11 +177,9 @@ export default function SuperAdminApprovalsPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* 신청 목록 */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">신청 목록</h2>
-        
         {requests && requests.length > 0 ? (
           <div className="grid gap-4">
             {requests.map((request) => (
@@ -249,7 +224,6 @@ export default function SuperAdminApprovalsPage() {
                         <span>{request.phoneNumber}</span>
                       </div>
                     </div>
-
                     {/* 소속 정보 */}
                     <div className="grid md:grid-cols-2 gap-3">
                       <div className="flex items-center gap-2 text-sm">
@@ -261,7 +235,6 @@ export default function SuperAdminApprovalsPage() {
                         <span>{request.position}</span>
                       </div>
                     </div>
-
                     {/* 신청 사유 */}
                     <div className="border-t pt-3">
                       <div className="flex items-start gap-2 mb-2">
@@ -272,12 +245,10 @@ export default function SuperAdminApprovalsPage() {
                         {request.reason}
                       </p>
                     </div>
-
                     {/* 신청 날짜 */}
                     <div className="text-xs text-muted-foreground">
                       신청일: {new Date(request.requestedAt).toLocaleString()}
                     </div>
-
                     {/* 승인/거부 버튼 */}
                     {request.status === 'pending' && (
                       <div className="pt-3 border-t">
@@ -288,7 +259,6 @@ export default function SuperAdminApprovalsPage() {
                         />
                       </div>
                     )}
-
                     {request.status === 'approved' && (
                       <div className="pt-3 border-t">
                         <p className="text-sm text-green-600 font-semibold">
@@ -296,7 +266,6 @@ export default function SuperAdminApprovalsPage() {
                         </p>
                       </div>
                     )}
-
                     {request.status === 'rejected' && (
                       <div className="pt-3 border-t">
                         <p className="text-sm text-red-600 font-semibold">

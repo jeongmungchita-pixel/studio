@@ -1,12 +1,9 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Payment } from '@/types';
-
 interface IncomeAllocation { month: string; amount: number; allocated: boolean; }
 interface IncomeSplitInfo {
   totalAmount: number;
@@ -51,7 +48,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 const expenseCategories = {
   rent: '월세/임대료',
   salary: '인건비',
@@ -62,74 +58,63 @@ const expenseCategories = {
   maintenance: '유지보수',
   other: '기타',
 };
-
 const getExpenseCategoryLabel = (key: string): string => {
   return expenseCategories[key as keyof typeof expenseCategories] || '기타';
 };
-
 export default function FinancePage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isSplitDialogOpen, setIsSplitDialogOpen] = useState(false);
   const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
-
   // Income form
   const [incomeAmount, setIncomeAmount] = useState('');
   const [incomeDescription, setIncomeDescription] = useState('');
   const [incomeDate, setIncomeDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [incomeCategory, setIncomeCategory] = useState('other');
-
   // Expense form
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [expenseCategory, setExpenseCategory] = useState<keyof typeof expenseCategories>('other');
   const [isRecurring, setIsRecurring] = useState(false);
-
   // Split form
   const [splitMonths, setSplitMonths] = useState('');
-
   // Fetch incomes
   const incomesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'incomes'),
-      where('clubId', '==', user.clubId)
+      where('clubId', '==', _user.clubId)
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: incomes } = useCollection<Income>(incomesQuery);
-
   // Fetch expenses
   const expensesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'expenses'),
-      where('clubId', '==', user.clubId)
+      where('clubId', '==', _user.clubId)
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: expenses } = useCollection<Expense>(expensesQuery);
-
   // Fetch payments (for auto income)
   const paymentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'payments'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('status', '==', 'completed')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: payments } = useCollection<Payment>(paymentsQuery);
-
   // Calculate monthly data
   const monthlyData = useMemo(() => {
     const monthStart = startOfMonth(new Date(selectedMonth));
     const monthEnd = endOfMonth(new Date(selectedMonth));
-
     // Filter incomes for selected month
     const monthIncomes = incomes?.filter((income: Income) => {
       if (income.isSplit && income.splitInfo) {
@@ -141,7 +126,6 @@ export default function FinancePage() {
       const incomeDate = new Date(income.date);
       return incomeDate >= monthStart && incomeDate <= monthEnd;
     }) || [];
-
     // Calculate income considering splits
     const totalIncome = monthIncomes.reduce((sum: number, income: Income) => {
       if (income.isSplit && income.splitInfo) {
@@ -150,15 +134,12 @@ export default function FinancePage() {
       }
       return sum + income.amount;
     }, 0);
-
     // Filter expenses for selected month
     const monthExpenses = expenses?.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= monthStart && expenseDate <= monthEnd;
     }) || [];
-
     const totalExpense = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-
     // Category breakdown
     const incomeByCategory: Record<string, number> = {};
     monthIncomes.forEach((income: Income) => {
@@ -167,12 +148,10 @@ export default function FinancePage() {
         : income.amount;
       incomeByCategory[income.category] = (incomeByCategory[income.category] || 0) + amount;
     });
-
     const expenseByCategory: Record<string, number> = {};
     monthExpenses.forEach(expense => {
       expenseByCategory[expense.category] = (expenseByCategory[expense.category] || 0) + expense.amount;
     });
-
     return {
       totalIncome,
       totalExpense,
@@ -183,15 +162,13 @@ export default function FinancePage() {
       monthExpenses,
     };
   }, [incomes, expenses, selectedMonth]);
-
   const handleAddIncome = async () => {
-    if (!firestore || !user || !incomeAmount || !incomeDescription) return;
-
+    if (!firestore || !_user || !incomeAmount || !incomeDescription) return;
     try {
       const incomeRef = doc(collection(firestore, 'incomes'));
       const incomeData: Income = {
         id: incomeRef.id,
-        clubId: user.clubId!,
+        clubId: _user.clubId!,
         type: 'other',
         category: incomeCategory,
         amount: parseFloat(incomeAmount),
@@ -199,63 +176,53 @@ export default function FinancePage() {
         date: incomeDate,
         isRecurring: false,
         isSplit: false,
-        createdBy: user.uid,
+        createdBy: _user.uid,
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(incomeRef, incomeData);
-
       toast({ title: '수입 등록 완료' });
       setIsIncomeDialogOpen(false);
       setIncomeAmount('');
       setIncomeDescription('');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '등록 실패' });
     }
   };
-
   const handleAddExpense = async () => {
-    if (!firestore || !user || !expenseAmount || !expenseDescription) return;
-
+    if (!firestore || !_user || !expenseAmount || !expenseDescription) return;
     try {
       const expenseRef = doc(collection(firestore, 'expenses'));
       const expenseData: Expense = {
         id: expenseRef.id,
-        clubId: user.clubId!,
+        clubId: _user.clubId!,
         category: expenseCategory,
         amount: parseFloat(expenseAmount),
         description: expenseDescription,
         date: expenseDate,
         isRecurring,
-        createdBy: user.uid,
+        createdBy: _user.uid,
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(expenseRef, expenseData);
-
       toast({ title: '지출 등록 완료' });
       setIsExpenseDialogOpen(false);
       setExpenseAmount('');
       setExpenseDescription('');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '등록 실패' });
     }
   };
-
   const handleSplitIncome = async () => {
     if (!firestore || !selectedIncome || !splitMonths) return;
-
     const months = parseInt(splitMonths);
     if (months < 2 || months > 24) {
       toast({ variant: 'destructive', title: '2~24개월 사이로 입력하세요' });
       return;
     }
-
     try {
       const monthlyAmount = selectedIncome.amount / months;
       const allocations = [];
       const startDate = new Date(selectedIncome.date);
-
       for (let i = 0; i < months; i++) {
         const month = format(addMonths(startDate, i), 'yyyy-MM');
         allocations.push({
@@ -264,7 +231,6 @@ export default function FinancePage() {
           allocated: true,
         });
       }
-
       await updateDoc(doc(firestore, 'incomes', selectedIncome.id), {
         isSplit: true,
         splitInfo: {
@@ -275,51 +241,44 @@ export default function FinancePage() {
           allocations,
         },
       });
-
       toast({ title: `${months}개월 분할 완료` });
       setIsSplitDialogOpen(false);
       setSelectedIncome(null);
       setSplitMonths('');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '분할 실패' });
     }
   };
-
   const handleCancelSplit = async (income: Income) => {
     if (!firestore || !confirm('분할을 취소하시겠습니까?')) return;
-
     try {
       await updateDoc(doc(firestore, 'incomes', income.id), {
         isSplit: false,
         splitInfo: null,
       });
-
       toast({ title: '분할 취소 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '취소 실패' });
     }
   };
-
   const handleDeleteIncome = async (id: string) => {
     if (!firestore || !confirm('삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(firestore, 'incomes', id));
       toast({ title: '삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
   const handleDeleteExpense = async (id: string) => {
     if (!firestore || !confirm('삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(firestore, 'expenses', id));
       toast({ title: '삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -334,7 +293,6 @@ export default function FinancePage() {
           className="w-40"
         />
       </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -348,7 +306,6 @@ export default function FinancePage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">총 지출</CardTitle>
@@ -360,7 +317,6 @@ export default function FinancePage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">순이익</CardTitle>
@@ -373,7 +329,6 @@ export default function FinancePage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Tabs */}
       <Tabs defaultValue="income" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -381,7 +336,6 @@ export default function FinancePage() {
           <TabsTrigger value="expense">지출</TabsTrigger>
           <TabsTrigger value="analysis">분석</TabsTrigger>
         </TabsList>
-
         {/* Income Tab */}
         <TabsContent value="income" className="space-y-4">
           <div className="flex justify-end">
@@ -390,7 +344,6 @@ export default function FinancePage() {
               수입 추가
             </Button>
           </div>
-
           {monthlyData.monthIncomes.map((income) => (
             <Card key={income.id}>
               <CardContent className="p-4">
@@ -458,7 +411,6 @@ export default function FinancePage() {
             </Card>
           ))}
         </TabsContent>
-
         {/* Expense Tab */}
         <TabsContent value="expense" className="space-y-4">
           <div className="flex justify-end">
@@ -467,7 +419,6 @@ export default function FinancePage() {
               지출 추가
             </Button>
           </div>
-
           {monthlyData.monthExpenses.map((expense) => (
             <Card key={expense.id}>
               <CardContent className="p-4">
@@ -495,7 +446,6 @@ export default function FinancePage() {
             </Card>
           ))}
         </TabsContent>
-
         {/* Analysis Tab */}
         <TabsContent value="analysis" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -523,7 +473,6 @@ export default function FinancePage() {
                 ))}
               </CardContent>
             </Card>
-
             {/* Expense by Category */}
             <Card>
               <CardHeader>
@@ -551,7 +500,6 @@ export default function FinancePage() {
           </div>
         </TabsContent>
       </Tabs>
-
       {/* Income Dialog */}
       <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
         <DialogContent>
@@ -601,7 +549,6 @@ export default function FinancePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Expense Dialog */}
       <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
         <DialogContent>
@@ -656,7 +603,6 @@ export default function FinancePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Split Dialog */}
       <Dialog open={isSplitDialogOpen} onOpenChange={setIsSplitDialogOpen}>
         <DialogContent>

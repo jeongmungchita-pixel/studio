@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore } from '@/firebase';
@@ -11,26 +9,21 @@ import { Loader2, CheckCircle2, XCircle, Mail, Calendar } from 'lucide-react';
 import { Invitation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ROUTES } from '@/constants/routes';
-
 export default function InvitePage() {
   const params = useParams();
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
   const token = params.token as string;
-
   const [invite, setInvite] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
-
   // 초대 정보 로드
   useEffect(() => {
     const loadInvite = async () => {
       if (!firestore || !token) return;
-
       try {
         const inviteDoc = await getDoc(doc(firestore, 'federationAdminInvites', token));
-        
-        if (!inviteDoc.exists()) {
+        if (!inviteDoc?.exists()) {
           toast({
             variant: 'destructive',
             title: '초대를 찾을 수 없습니다',
@@ -39,9 +32,7 @@ export default function InvitePage() {
           setLoading(false);
           return;
         }
-
-        const inviteData = { id: inviteDoc.id, ...inviteDoc.data() } as Invitation;
-
+        const inviteData = { id: inviteDoc.id, ...inviteDoc?.data() } as Invitation;
         // 상태 확인
         if (inviteData.status === 'accepted') {
           toast({
@@ -52,7 +43,6 @@ export default function InvitePage() {
           setLoading(false);
           return;
         }
-
         if (inviteData.status === 'expired') {
           toast({
             variant: 'destructive',
@@ -62,7 +52,6 @@ export default function InvitePage() {
           setLoading(false);
           return;
         }
-
         // 만료 시간 확인
         const expiresAt = new Date(inviteData.expiresAt);
         if (expiresAt < new Date()) {
@@ -77,9 +66,8 @@ export default function InvitePage() {
           setLoading(false);
           return;
         }
-
         setInvite(inviteData);
-      } catch (error) {
+      } catch (error: unknown) {
         toast({
           variant: 'destructive',
           title: '오류 발생',
@@ -89,15 +77,12 @@ export default function InvitePage() {
         setLoading(false);
       }
     };
-
     loadInvite();
   }, [firestore, token, toast]);
-
   // 초대 수락하기 - 연맹 관리자 전용 가입 페이지로 이동
   const handleAcceptInvite = () => {
     router.push(ROUTES.INVITE.ACCEPT_TOKEN(token));
   };
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
@@ -105,7 +90,6 @@ export default function InvitePage() {
       </div>
     );
   }
-
   if (!invite) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
@@ -128,7 +112,6 @@ export default function InvitePage() {
       </div>
     );
   }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <Card className="w-full max-w-md">
@@ -161,7 +144,6 @@ export default function InvitePage() {
               </div>
             </div>
           </div>
-
           {/* 안내 메시지 */}
           <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
             <h4 className="text-sm font-semibold text-blue-900 mb-2">
@@ -174,7 +156,6 @@ export default function InvitePage() {
               <li>• 전체 시스템 관리 권한</li>
             </ul>
           </div>
-
           {/* 초대 수락 버튼 */}
           <Button 
             onClick={handleAcceptInvite} 
@@ -184,7 +165,6 @@ export default function InvitePage() {
             <CheckCircle2 className="mr-2 h-5 w-5" />
             초대 수락하고 가입하기
           </Button>
-
           {/* 취소 버튼 */}
           <Button 
             onClick={() => router.push('/login')} 

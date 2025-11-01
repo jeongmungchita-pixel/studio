@@ -1,5 +1,4 @@
 import { APIError } from './api-error';
-
 /**
  * 재시도 옵션 인터페이스
  */
@@ -7,19 +6,17 @@ export interface RetryOptions {
   maxRetries?: number;
   delay?: number;
   backoff?: 'linear' | 'exponential';
-  retryCondition?: (error: any) => boolean;
+  retryCondition?: (error: unknown) => boolean;
 }
-
 /**
  * 기본 재시도 조건
  * 네트워크 오류나 일시적인 서버 오류에 대해서만 재시도
  */
-const defaultRetryCondition = (error: any): boolean => {
+const defaultRetryCondition = (error: unknown): boolean => {
   if (error instanceof APIError) {
     // 5xx 서버 오류나 네트워크 오류에 대해서만 재시도
     return error.statusCode >= 500 || error.statusCode === 0;
   }
-  
   // Firebase 에러 중 재시도 가능한 것들
   const retryableFirebaseCodes = [
     'unavailable',
@@ -28,10 +25,9 @@ const defaultRetryCondition = (error: any): boolean => {
     'aborted',
     'internal',
   ];
-  
-  return retryableFirebaseCodes.includes(error.code);
+  const code = typeof (error as any)?.code === 'string' ? (error as any).code : '';
+  return retryableFirebaseCodes.includes(code);
 };
-
 /**
  * 재시도 로직을 포함한 함수 실행
  */
@@ -45,32 +41,25 @@ export async function withRetry<T>(
     backoff = 'exponential',
     retryCondition = defaultRetryCondition,
   } = options;
-
-  let lastError: any;
-
+  let lastError: Error | unknown;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error) {
+    } catch (error: unknown) {
       lastError = error;
-
       // 마지막 시도이거나 재시도 조건에 맞지 않으면 에러 던지기
       if (attempt === maxRetries || !retryCondition(error)) {
         throw APIError.fromError(error);
       }
-
       // 재시도 전 대기
       const waitTime = backoff === 'exponential' 
         ? delay * Math.pow(2, attempt)
         : delay * (attempt + 1);
-
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
-
   throw APIError.fromError(lastError);
 }
-
 /**
  * 타임아웃을 포함한 함수 실행
  */
@@ -91,7 +80,6 @@ export async function withTimeout<T>(
     }),
   ]);
 }
-
 /**
  * 재시도와 타임아웃을 모두 포함한 함수 실행
  */
@@ -105,30 +93,25 @@ export async function withRetryAndTimeout<T>(
     retryOptions
   );
 }
-
 /**
  * 에러 로깅 유틸리티
  */
-export function logError(error: any, context?: string): void {
+export function logError(error: unknown, context?: string): void {
   const errorInfo = {
     timestamp: new Date().toISOString(),
     context: context || 'Unknown',
     error: error instanceof APIError ? error.toJSON() : {
-      name: error.name || 'Error',
-      message: error.message || 'Unknown error',
-      stack: error.stack,
+      name: typeof (error as any)?.name === 'string' ? (error as any).name : 'Error',
+      message: typeof (error as any)?.message === 'string' ? (error as any).message : 'Unknown error',
+      stack: typeof (error as any)?.stack === 'string' ? (error as any).stack : undefined,
     },
   };
-
   // 개발 환경에서는 콘솔에 출력
   if (process.env.NODE_ENV === 'development') {
-    console.error('API Error:', errorInfo);
   }
-
   // 프로덕션 환경에서는 외부 로깅 서비스로 전송
   // TODO: 외부 로깅 서비스 연동 (예: Sentry, LogRocket 등)
 }
-
 /**
  * 에러 핸들러 래퍼
  * React 컴포넌트나 Hook에서 사용할 수 있는 에러 핸들러
@@ -136,19 +119,15 @@ export function logError(error: any, context?: string): void {
 export function createErrorHandler(
   onError?: (error: APIError) => void
 ) {
-  return (error: any, context?: string) => {
+  return (error: unknown, context?: string) => {
     const apiError = APIError.fromError(error);
-    
     logError(apiError, context);
-    
     if (onError) {
       onError(apiError);
     }
-    
     return apiError;
   };
 }
-
 /**
  * 안전한 비동기 함수 실행
  * 에러가 발생해도 앱이 크래시되지 않도록 보장
@@ -160,15 +139,12 @@ export async function safeAsync<T>(
 ): Promise<T | undefined> {
   try {
     return await fn();
-  } catch (error) {
+  } catch (error: unknown) {
     const apiError = APIError.fromError(error);
-    
     logError(apiError, 'safeAsync');
-    
     if (onError) {
       onError(apiError);
     }
-    
     return fallback;
   }
 }

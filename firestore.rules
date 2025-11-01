@@ -27,6 +27,14 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    // Drafts: 온보딩 중 임시 저장 (본인 전용)
+    match /adultRegistrationDrafts/{uid} {
+      allow read, create, update, delete: if isAuthenticated() && request.auth.uid == uid;
+    }
+    match /familyRegistrationDrafts/{uid} {
+      allow read, create, update, delete: if isAuthenticated() && request.auth.uid == uid;
+    }
     
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
@@ -52,8 +60,16 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().role == 'COACH';
     }
     
+    function isHeadCoach() {
+      return isAuthenticated() && getUserData().role == 'HEAD_COACH';
+    }
+
+    function isAssistantCoach() {
+      return isAuthenticated() && getUserData().role == 'ASSISTANT_COACH';
+    }
+
     function isClubStaff() {
-      return isClubOwner() || isClubManager() || isCoach();
+      return isClubOwner() || isClubManager() || isCoach() || isHeadCoach() || isAssistantCoach();
     }
     
     
@@ -65,9 +81,51 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().clubId == clubId;
     }
 
+    // Helper: resolve requested club from request payload or existing resource
+    function reqClubId() {
+      return request.resource.data.requestedClubId != null
+        ? request.resource.data.requestedClubId
+        : resource.data.requestedClubId;
+    }
+
+    function reqClubName() {
+      return request.resource.data.requestedClubName != null
+        ? request.resource.data.requestedClubName
+        : resource.data.requestedClubName;
+    }
+
+    // Helper: if approver also links a member in the same write, validate by that member's club
+    function memberClubIdFromRequest() {
+      return request.resource.data.linkedMemberId != null
+        ? get(/databases/$(database)/documents/members/$(request.resource.data.linkedMemberId)).data.clubId
+        : null;
+    }
+
+    function matchesApproverClub() {
+      return (
+        (reqClubId() != null && reqClubId() == getUserData().clubId) ||
+        (
+          reqClubName() != null &&
+          getUserData().clubName != null &&
+          reqClubName() == getUserData().clubName
+        ) ||
+        (memberClubIdFromRequest() != null && memberClubIdFromRequest() == getUserData().clubId)
+      );
+    }
+
     // ============================================
     // 👤 Users Collection
     // ============================================
+    
+    // Helper: Check if sensitive fields are being modified
+    function hasSensitiveFields() {
+      let diff = request.resource.data.diff(resource.data).affectedKeys();
+      return 'status' in diff || 
+             'role' in diff || 
+             'linkedMemberId' in diff ||
+             'clubId' in diff ||
+             'clubName' in diff;
+    }
     
     match /users/{userId} {
       // 자기 프로필 읽기: 본인은 항상 가능 (순환 참조 방지)
@@ -80,10 +138,13 @@ service cloud.firestore {
       // 프로필 생성: 본인만
       allow create: if isAuthenticated() && request.auth.uid == userId;
       
-      // 프로필 수정: 본인 또는 관리자 (최적화)
-      allow update: if isAuthenticated() && 
-                       (request.auth.uid == userId || 
-                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'FEDERATION_ADMIN']);
+      // 프로필 수정: 본인은 민감 필드 제외, 관리자는 모두 가능
+      allow update: if isAuthenticated() && (
+                        // 본인: 민감 필드 수정 불가
+                        (request.auth.uid == userId && !hasSensitiveFields()) ||
+                        // 관리자: 모든 필드 수정 가능
+                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_ADMIN', 'FEDERATION_ADMIN']
+                      );
       
       // 프로필 삭제: 관리자만 (최적화)
       allow delete: if isAuthenticated() && 
@@ -99,8 +160,8 @@ service cloud.firestore {
     // ============================================
     
     match /clubs/{clubId} {
-      // 읽기: 인증된 사용자 누구나 (모든 클럽 정보는 공개)
-      allow read: if isAuthenticated();
+      // 읽기: 공개 (가입/등록 페이지에서 클럽 선택을 위해 필요)
+      allow read: if true;
       
       // 생성: 관리자만 (클럽 등록 승인 후 생성)
       allow create: if isAdmin();
@@ -113,35 +174,42 @@ service cloud.firestore {
       // 삭제: 관리자만
       allow delete: if isAdmin();
       
-      // 전체 목록 조회: 인증된 사용자 누구나
-      allow list: if isAuthenticated();
+      // 전체 목록 조회: 공개
+      allow list: if true;
     }
 
     // ============================================
-    // 👥 Members Collection (Domain: Member)
+    // 👥 Members Collection
     // ============================================
     
+    // Helper: Check if member sensitive fields are being modified
+    function hasMemberSensitiveFields() {
+      let diff = request.resource.data.diff(resource.data).affectedKeys();
+      return 'status' in diff || 
+             'userId' in diff || 
+             'clubId' in diff ||
+             'guardianUserIds' in diff;
+    }
+    
     match /members/{memberId} {
-      // 읽기: 관리자, 클럽 스태프, 본인
-      allow read: if isAdmin() || 
-                     isClubStaff() || 
-                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      // 읽기: 클럽 스태프, 관리자, 또는 본인
+      allow read: if isAuthenticated() && (
+                      isAdmin() || 
+                      (isClubStaff() && belongsToClub(resource.data.clubId)) ||
+                      resource.data.userId == request.auth.uid ||
+                      request.auth.uid in resource.data.guardianUserIds
+                    );
       
-      // 생성: 관리자 또는 클럽 스태프 (회원 등록 승인 후)
-      allow create: if isAdmin() || isClubStaff();
+      // 생성: API만 (Admin SDK)
+      allow create: if false;
       
-      // 수정: 관리자, 클럽 스태프, 본인 (제한적)
-      allow update: if isAdmin() || 
-                       isClubStaff() || 
-                       (isAuthenticated() && 
-                        resource.data.userId == request.auth.uid && 
-                        // 본인은 개인정보만 수정 가능
-                        !('status' in request.resource.data.diff(resource.data).affectedKeys()) &&
-                        !('level' in request.resource.data.diff(resource.data).affectedKeys()) &&
-                        !('clubId' in request.resource.data.diff(resource.data).affectedKeys()));
+      // 수정: 본인은 일부 필드만, 스태프/관리자는 API 사용
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid && 
+                       !hasMemberSensitiveFields();
       
-      // 삭제: 관리자만
-      allow delete: if isAdmin();
+      // 삭제: API만 (Admin SDK)
+      allow delete: if false;
       
       // 목록 조회: 관리자 또는 클럽 스태프
       allow list: if isAdmin() || isClubStaff();
@@ -222,38 +290,74 @@ service cloud.firestore {
     }
     
     match /memberRegistrationRequests/{requestId} {
-      // 읽기: 관리자 또는 해당 클럽 스태프
-      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      // 읽기: 관리자 또는 해당 클럽 스태프 (clubId 또는 clubName 기준 허용)
+      allow read: if isAdmin() || (
+        isClubStaff() && (
+          belongsToClub(resource.data.clubId) ||
+          (
+            resource.data.clubName != null &&
+            getUserData().clubName != null &&
+            getUserData().clubName == resource.data.clubName
+          )
+        )
+      );
       
-      // 생성: 누구나 (회원 가입 신청)
-      allow create: if true;
+      // 생성: API만 (회원가입 프로세스)
+      allow create: if false;
       
-      // 수정/삭제: 관리자 또는 해당 클럽 스태프
-      allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      // 수정: API만 (승인/거부 프로세스)
+      allow update: if false;
+      
+      // 삭제: API만
+      allow delete: if false;
     }
     
     // 성인 회원 가입 신청
     match /adultRegistrationRequests/{requestId} {
-      // 읽기: 관리자 또는 해당 클럽 스태프
-      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      // 읽기: 관리자 또는 해당 클럽 스태프 (clubId 또는 clubName 기준 허용)
+      allow read: if isAdmin() || (
+        isClubStaff() && (
+          belongsToClub(resource.data.clubId) ||
+          (
+            resource.data.clubName != null &&
+            getUserData().clubName != null &&
+            getUserData().clubName == resource.data.clubName
+          )
+        )
+      );
       
-      // 생성: 누구나
-      allow create: if true;
+      // 생성: API만 (회원가입 프로세스)
+      allow create: if false;
       
-      // 수정/삭제: 관리자 또는 해당 클럽 스태프
-      allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      // 수정: API만 (승인/거부 프로세스)
+      allow update: if false;
+      
+      // 삭제: API만
+      allow delete: if false;
     }
     
     // 가족 회원 가입 신청
     match /familyRegistrationRequests/{requestId} {
-      // 읽기: 관리자 또는 해당 클럽 스태프
-      allow read: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      // 읽기: 관리자 또는 해당 클럽 스태프 (clubId 또는 clubName 기준 허용)
+      allow read: if isAdmin() || (
+        isClubStaff() && (
+          belongsToClub(resource.data.clubId) ||
+          (
+            resource.data.clubName != null &&
+            getUserData().clubName != null &&
+            getUserData().clubName == resource.data.clubName
+          )
+        )
+      );
       
-      // 생성: 누구나
-      allow create: if true;
+      // 생성: API만 (회원가입 프로세스)
+      allow create: if false;
       
-      // 수정/삭제: 관리자 또는 해당 클럽 스태프
-      allow update, delete: if isAdmin() || (isClubStaff() && belongsToClub(resource.data.clubId));
+      // 수정: API만 (승인/거부 프로세스)
+      allow update: if false;
+      
+      // 삭제: API만
+      allow delete: if false;
     }
     
     // Deprecated: memberRequests는 memberRegistrationRequests로 통합됨
@@ -269,8 +373,10 @@ service cloud.firestore {
       // 읽기: 관리자, 클럽 스태프, 본인
       allow read: if isAdmin() || isClubStaff() || (isAuthenticated() && resource.data.memberId == request.auth.uid);
       
-      // 생성/수정/삭제: 관리자 또는 클럽 스태프
-      allow create, update, delete: if isAdmin() || isClubStaff();
+      // 생성/수정/삭제: API만 (Admin SDK)
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
     
     match /attendance/{attendanceId} {
@@ -296,8 +402,36 @@ service cloud.firestore {
     }
     
     match /pass_templates/{templateId} {
+      // 읽기: 인증된 사용자
       allow read: if isAuthenticated();
+      // 생성/수정/삭제: 관리자 또는 클럽 스태프 (템플릿 관리는 허용)
       allow create, update, delete: if isAdmin() || isClubStaff();
+    }
+    
+    // 이용권 요청 (신규/갱신)
+    match /pass_requests/{requestId} {
+      // 읽기: 관리자, 클럽 스태프, 또는 요청자 본인
+      allow read: if isAdmin() || 
+                     isClubStaff() || 
+                     (isAuthenticated() && resource.data.requestedBy == request.auth.uid);
+      
+      // 생성: 인증된 사용자 (회원/학부모가 신청)
+      allow create: if isAuthenticated();
+      
+      // 수정: API만 (승인/거부 처리)
+      allow update: if false;
+      
+      // 삭제: API만
+      allow delete: if false;
+    }
+    
+    // 레거시: pass_renewal_requests (pass_requests로 통합됨)
+    match /pass_renewal_requests/{requestId} {
+      // 읽기: 기존 로직 유지 (하위호환)
+      allow read: if isAdmin() || isClubStaff();
+      
+      // 쓰기: 모두 차단 (pass_requests 사용)
+      allow create, update, delete: if false;
     }
 
     // ============================================
@@ -400,8 +534,11 @@ service cloud.firestore {
       // 생성: 인증된 사용자
       allow create: if isAuthenticated();
       
-      // 수정/삭제: 관리자 또는 클럽 스태프
-      allow update, delete: if isAdmin() || isClubStaff();
+      // 수정: API만
+      allow update: if false;
+      
+      // 삭제: API만
+      allow delete: if false;
     }
 
     // ============================================
@@ -412,11 +549,14 @@ service cloud.firestore {
       // 읽기: 관리자, 클럽 스태프, 본인
       allow read: if isAdmin() || isClubStaff() || (isAuthenticated() && resource.data.memberId == request.auth.uid);
       
-      // 생성: 인증된 사용자
-      allow create: if isAuthenticated();
+      // 생성: API만
+      allow create: if false;
       
-      // 수정/삭제: 관리자 또는 클럽 스태프
-      allow update, delete: if isAdmin() || isClubStaff();
+      // 수정: API만
+      allow update: if false;
+      
+      // 삭제: API만
+      allow delete: if false;
     }
 
     // ============================================
@@ -427,6 +567,8 @@ service cloud.firestore {
       // 읽기: 관리자, 클럽 스태프, 본인
       allow read: if isAdmin() || isClubStaff() || (isAuthenticated() && resource.data.memberId == request.auth.uid);
       
+      // 생성: API만
+      allow create: if false;
       // 생성: 인증된 사용자
       allow create: if isAuthenticated();
       

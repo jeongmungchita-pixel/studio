@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -9,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Pin, Bell, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 interface Announcement {
   id: string;
   clubId: string;
@@ -23,53 +20,45 @@ interface Announcement {
   createdAt: string;
   updatedAt?: string;
 }
-
 interface Member {
   id: string;
   userId: string;
   clubId: string;
   name: string;
 }
-
 const typeLabels = {
   general: '일반',
   important: '중요',
-  event: '이벤트',
+  _event: '이벤트',
   emergency: '긴급',
 };
-
 const typeColors = {
   general: 'default',
   important: 'secondary',
-  event: 'outline',
+  _event: 'outline',
   emergency: 'destructive',
 } as const;
-
 const typeIcons = {
   general: Bell,
   important: AlertCircle,
-  event: Bell,
+  _event: Bell,
   emergency: AlertCircle,
 };
-
 const getTypeVariant = (t: string) => typeColors[(t as keyof typeof typeColors) || 'general'] || 'default';
 const getTypeLabel = (t: string) => typeLabels[(t as keyof typeof typeLabels) || 'general'] || '일반';
-
 export default function MemberAnnouncementsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
-
   // Fetch member info
   const memberQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !_user?.uid) return null;
     return query(
       collection(firestore, 'members'),
-      where('userId', '==', user.uid)
+      where('userId', '==', _user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, _user?.uid]);
   const { data: members } = useCollection<Member>(memberQuery);
   const member = members?.[0];
-
   // Fetch announcements
   const announcementsQuery = useMemoFirebase(() => {
     if (!firestore || !member?.clubId) return null;
@@ -80,7 +69,6 @@ export default function MemberAnnouncementsPage() {
     );
   }, [firestore, member?.clubId]);
   const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -88,17 +76,14 @@ export default function MemberAnnouncementsPage() {
       </div>
     );
   }
-
   const pinnedAnnouncements = announcements?.filter(a => a.isPinned) || [];
   const regularAnnouncements = announcements?.filter(a => !a.isPinned) || [];
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">공지사항</h1>
         <p className="text-muted-foreground mt-1">클럽의 새로운 소식을 확인하세요</p>
       </div>
-
       {/* Pinned Announcements */}
       {pinnedAnnouncements.length > 0 && (
         <div className="space-y-3">
@@ -145,7 +130,6 @@ export default function MemberAnnouncementsPage() {
           })}
         </div>
       )}
-
       {/* Regular Announcements */}
       <div className="space-y-3">
         {pinnedAnnouncements.length > 0 && regularAnnouncements.length > 0 && (
@@ -155,7 +139,7 @@ export default function MemberAnnouncementsPage() {
           </h2>
         )}
         {regularAnnouncements.map((announcement) => {
-          const Icon = typeIcons[announcement.type];
+          const Icon = typeIcons[announcement.type as keyof typeof typeIcons] || Bell;
           return (
             <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -191,7 +175,6 @@ export default function MemberAnnouncementsPage() {
           );
         })}
       </div>
-
       {(!announcements || announcements.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">

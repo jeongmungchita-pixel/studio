@@ -1,10 +1,8 @@
 'use client';
-
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Home, RefreshCcw } from 'lucide-react';
-
 export default function Error({
   error,
   reset,
@@ -15,7 +13,6 @@ export default function Error({
   useEffect(() => {
     // 에러를 콘솔에 로깅
   }, [error]);
-
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50">
       <Card className="max-w-md w-full">
@@ -43,7 +40,6 @@ export default function Error({
               )}
             </div>
           )}
-          
           <div className="flex flex-col gap-2">
             <Button onClick={reset} className="w-full">
               <RefreshCcw className="mr-2 h-4 w-4" />
@@ -58,7 +54,6 @@ export default function Error({
               홈으로 돌아가기
             </Button>
           </div>
-
           <p className="text-xs text-center text-muted-foreground">
             문제가 계속되면 관리자에게 문의하세요.
           </p>

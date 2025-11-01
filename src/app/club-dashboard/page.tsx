@@ -1,13 +1,11 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { useRole } from '@/hooks/use-role';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { collection, query, where, doc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { Member, GymClass } from '@/types';
+import { Member, GymClass, AdultRegistrationRequest, FamilyRegistrationRequest, MemberRegistrationRequest } from '@/types';
 import { UserRole } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,19 +20,18 @@ import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { getMemberCategoryLabel, getMemberCategoryColor, calculateAge } from '@/lib/member-utils';
 import { ROUTES } from '@/constants/routes';
-
 export default function ClubDashboardPage() {
-    const { user, isUserLoading } = useUser();
+    const { _user, isUserLoading } = useUser();
     const { isClubOwner, isClubManager, canManageClub } = useRole();
     const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
-
     // 접근 제어 - 클럽 관리자만 접근 가능
     useEffect(() => {
         if (!isUserLoading) {
-            if (!user) {
+            if (!_user) {
                 router.push('/login');
                 return;
             }
@@ -43,42 +40,98 @@ export default function ClubDashboardPage() {
                 return;
             }
         }
-    }, [isUserLoading, user, canManageClub, router]);
-
+    }, [isUserLoading, _user, canManageClub, router]);
+    // Initialize search from query param ?q=
+    useEffect(() => {
+        const q = searchParams?.get('q') || '';
+        if (q) setSearchQuery(q);
+    }, [searchParams]);
     // Query for all members (regular and pending) in the club
     const membersQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.clubId) return null;
-        return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
-    }, [firestore, user?.clubId]);
+        if (!firestore || !_user?.clubId) return null;
+        return query(collection(firestore, 'members'), where('clubId', '==', _user.clubId));
+    }, [firestore, _user?.clubId]);
     const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
-    
     // Query for all classes in the club
     const classesQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.clubId) return null;
-        return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
-    }, [firestore, user?.clubId]);
+        if (!firestore || !_user?.clubId) return null;
+        return query(collection(firestore, 'classes'), where('clubId', '==', _user.clubId));
+    }, [firestore, _user?.clubId]);
     const { data: gymClasses, isLoading: areClassesLoading } = useCollection<GymClass>(classesQuery);
-
-    
+    // Registration requests (adult/family/member) for dashboard requests tab
+    const adultRequestsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        if (_user?.clubId) {
+            return query(
+                collection(firestore, 'adultRegistrationRequests'),
+                where('clubId', '==', _user.clubId),
+                where('status', '==', 'pending')
+            );
+        }
+        if (_user?.clubName) {
+            return query(
+                collection(firestore, 'adultRegistrationRequests'),
+                where('clubName', '==', _user.clubName),
+                where('status', '==', 'pending')
+            );
+        }
+        return null;
+    }, [firestore, _user?.clubId, _user?.clubName]);
+    const { data: adultRequests } = useCollection<AdultRegistrationRequest>(adultRequestsQuery);
+    const familyRequestsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        if (_user?.clubId) {
+            return query(
+                collection(firestore, 'familyRegistrationRequests'),
+                where('clubId', '==', _user.clubId),
+                where('status', '==', 'pending')
+            );
+        }
+        if (_user?.clubName) {
+            return query(
+                collection(firestore, 'familyRegistrationRequests'),
+                where('clubName', '==', _user.clubName),
+                where('status', '==', 'pending')
+            );
+        }
+        return null;
+    }, [firestore, _user?.clubId, _user?.clubName]);
+    const { data: familyRequests } = useCollection<FamilyRegistrationRequest>(familyRequestsQuery);
+    const memberRequestsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        if (_user?.clubId) {
+            return query(
+                collection(firestore, 'memberRegistrationRequests'),
+                where('clubId', '==', _user.clubId),
+                where('status', '==', 'pending')
+            );
+        }
+        if (_user?.clubName) {
+            return query(
+                collection(firestore, 'memberRegistrationRequests'),
+                where('clubName', '==', _user.clubName),
+                where('status', '==', 'pending')
+            );
+        }
+        return null;
+    }, [firestore, _user?.clubId, _user?.clubName]);
+    const { data: memberRequests } = useCollection<MemberRegistrationRequest>(memberRequestsQuery);
     // Filter members based on their status and search query
     const filteredMembers = useMemo(() => {
         if (!members) return [];
         if (!searchQuery) return members;
-        const query = searchQuery.toLowerCase();
+        const _query = searchQuery.toLowerCase();
         return members.filter(m => 
-            m.name.toLowerCase().includes(query) ||
-            m.email?.toLowerCase().includes(query) ||
-            m.phoneNumber?.includes(query)
+            m.name.toLowerCase().includes(_query) ||
+            m.email?.toLowerCase().includes(_query) ||
+            m.phoneNumber?.includes(_query)
         );
     }, [members, searchQuery]);
-
     const pendingMembers = useMemo(() => filteredMembers.filter(m => m.status === 'pending'), [filteredMembers]);
     const regularMembers = useMemo(() => filteredMembers.filter(m => m.status === 'active' || m.status === 'inactive'), [filteredMembers]);
-
     // Member statistics by category
     const memberStats = useMemo(() => {
         if (!members) return { total: 0, active: 0, adult: 0, child: 0, adultActive: 0, childActive: 0 };
-        
         const stats = {
             total: members.length,
             active: 0,
@@ -87,55 +140,42 @@ export default function ClubDashboardPage() {
             adultActive: 0,
             childActive: 0,
         };
-        
         members.forEach(member => {
             const memberCategory = member.memberCategory || 
                 (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
-            
             if (member.status === 'active') {
                 stats.active++;
                 if (memberCategory === 'adult') stats.adultActive++;
                 else stats.childActive++;
             }
-            
             if (memberCategory === 'adult') stats.adult++;
             else stats.child++;
         });
-        
         return stats;
     }, [members]);
-
-
     const handleApproval = async (memberId: string, approve: boolean) => {
         if (!firestore) return;
-
         const memberRef = doc(firestore, 'members', memberId);
-
         if (!approve) {
             try {
                 await deleteDoc(memberRef);
                 toast({ title: '요청 거절', description: '가입/갱신 요청이 거절되었습니다.' });
-            } catch (error) {
+            } catch (error: unknown) {
                 toast({ variant: 'destructive', title: '오류', description: '요청 거절 중 오류가 발생했습니다.' });
             }
             return;
         }
-
         // Approve logic
         try {
             const batch = writeBatch(firestore);
-
             // 1. Update member status to 'active'
             batch.update(memberRef, { status: 'active' });
-
             // 2. Find the pending pass for this member and activate it
             const passesRef = collection(firestore, 'member_passes');
             const pendingPassQuery = query(passesRef, where('memberId', '==', memberId), where('status', '==', 'pending'));
-            
             // Because we don't have getDocs in a batch, we do it before. This is not perfectly transactional.
             const { getDocs } = await import('firebase/firestore');
             const pendingPassSnap = await getDocs(pendingPassQuery);
-
             if (!pendingPassSnap.empty) {
                 const passDoc = pendingPassSnap.docs[0];
                 const passRef = doc(firestore, 'member_passes', passDoc.id);
@@ -146,15 +186,12 @@ export default function ClubDashboardPage() {
                 // 3. Update the member's activePassId
                 batch.update(memberRef, { activePassId: passDoc.id });
             }
-
             await batch.commit();
             toast({ title: '승인 완료', description: '요청이 승인되었습니다.' });
-
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ variant: 'destructive', title: '오류', description: '승인 처리 중 오류가 발생했습니다.' });
         }
     };
-    
      const handleStatusChange = async (memberId: string, newStatus: 'active' | 'inactive') => {
         if (!firestore) return;
         const memberRef = doc(firestore, 'members', memberId);
@@ -162,11 +199,10 @@ export default function ClubDashboardPage() {
             await updateDoc(memberRef, { status: newStatus });
             const message = newStatus === 'active' ? '선수 상태가 활성화되었습니다.' : '선수 상태가 비활성화되었습니다.';
             toast({ title: '상태 업데이트 완료', description: message });
-        } catch (error) {
+        } catch (error: unknown) {
             toast({ variant: 'destructive', title: '오류', description: '상태 업데이트 중 오류가 발생했습니다.' });
         }
     };
-
     if (isUserLoading || areMembersLoading || areClassesLoading) {
         return (
           <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -174,12 +210,10 @@ export default function ClubDashboardPage() {
           </div>
         );
     }
-    
-    if (!user || (user.role !== UserRole.CLUB_OWNER && user.role !== UserRole.CLUB_MANAGER)) {
+    if (!_user || (_user.role !== UserRole.CLUB_OWNER && _user.role !== UserRole.CLUB_MANAGER)) {
         redirect('/dashboard');
         return null;
     }
-    
     const getStatusVariant = (status: Member['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
         switch (status) {
         case 'active':
@@ -191,13 +225,11 @@ export default function ClubDashboardPage() {
             return 'secondary';
         }
     };
-    
     const statusTranslations: Record<Member['status'], string> = {
       active: '활동중',
       inactive: '비활동',
       pending: '승인 대기',
     };
-
     const MemberTable = ({ memberList, listType }: { memberList: Member[], listType: 'regular' | 'pending' }) => (
       <Table>
           <TableHeader>
@@ -214,7 +246,6 @@ export default function ClubDashboardPage() {
                   const memberCategory = member.memberCategory || 
                     (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
                   const categoryColors = getMemberCategoryColor(memberCategory);
-                  
                   return (
                    <TableRow key={member.id}>
                       <TableCell className="font-medium">
@@ -264,18 +295,16 @@ export default function ClubDashboardPage() {
           </TableBody>
       </Table>
     );
-
     return (
         <main className="flex-1 p-6 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>클럽 대시보드: {user.clubName}</CardTitle>
+                    <CardTitle>클럽 대시보드: {_user.clubName}</CardTitle>
                     <CardDescription>
-                        {user.displayName} 관리자님, 환영합니다. 클럽의 선수들을 관리하세요.
+                        {_user.displayName} 관리자님, 환영합니다. 클럽의 선수들을 관리하세요.
                     </CardDescription>
                 </CardHeader>
             </Card>
-
             {/* Statistics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -290,7 +319,6 @@ export default function ClubDashboardPage() {
                         </p>
                     </CardContent>
                 </Card>
-                
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">성인 회원</CardTitle>
@@ -303,7 +331,6 @@ export default function ClubDashboardPage() {
                         </p>
                     </CardContent>
                 </Card>
-                
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">주니어 회원</CardTitle>
@@ -316,7 +343,6 @@ export default function ClubDashboardPage() {
                         </p>
                     </CardContent>
                 </Card>
-                
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">클래스</CardTitle>
@@ -330,7 +356,6 @@ export default function ClubDashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-
              <Tabs defaultValue="members" className="w-full">
                 <TabsList>
                     <TabsTrigger value="members">소속 선수 명단</TabsTrigger>
@@ -371,8 +396,79 @@ export default function ClubDashboardPage() {
                             <CardDescription>신규 가입 또는 이용권 갱신을 요청한 선수 목록입니다.</CardDescription>
                         </CardHeader>
                         <CardContent>
+                            {(adultRequests?.length || 0) + (familyRequests?.length || 0) + (memberRequests?.length || 0) > 0 ? (
+                              <div className="mb-6">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-sm text-muted-foreground">가입 요청이 접수되었습니다. 승인 페이지에서 상세 승인 처리를 진행하세요.</p>
+                                  <Button asChild variant="outline" size="sm">
+                                    <Link href={ROUTES.CLUB_DASHBOARD.MEMBER_APPROVALS}>승인 페이지로 이동</Link>
+                                  </Button>
+                                </div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>이름</TableHead>
+                                      <TableHead>분류</TableHead>
+                                      <TableHead>이메일</TableHead>
+                                      <TableHead>신청일</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {(adultRequests || []).map((r) => (
+                                      <TableRow key={`adult-${r.id}`}>
+                                        <TableCell>{r.name}</TableCell>
+                                        <TableCell>성인</TableCell>
+                                        <TableCell>{r.email || '-'}</TableCell>
+                                        <TableCell>{r.requestedAt || '-'}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                    {(familyRequests || []).flatMap((r) => {
+                                      const parents = Array.isArray(r.parents) ? r.parents : [];
+                                      const children = Array.isArray(r.children) ? r.children : [];
+                                      const rows: React.ReactElement[] = [];
+                                      parents.forEach((p, idx: number) => {
+                                        rows.push(
+                                          <TableRow key={`family-parent-${r.id}-${idx}`}>
+                                            <TableCell>{p.name}</TableCell>
+                                            <TableCell>가족-부모</TableCell>
+                                            <TableCell>{p.email || '-'}</TableCell>
+                                            <TableCell>{r.requestedAt || '-'}</TableCell>
+                                          </TableRow>
+                                        );
+                                      });
+                                      children.forEach((c, idx: number) => {
+                                        rows.push(
+                                          <TableRow key={`family-child-${r.id}-${idx}`}>
+                                            <TableCell>{c.name}</TableCell>
+                                            <TableCell>가족-자녀</TableCell>
+                                            <TableCell>-</TableCell>
+                                            <TableCell>{r.requestedAt || '-'}</TableCell>
+                                          </TableRow>
+                                        );
+                                      });
+                                      return rows;
+                                    })}
+                                    {(memberRequests || []).map((r) => (
+                                      <TableRow key={`member-${r.id}`}>
+                                        <TableCell>{r.name}</TableCell>
+                                        <TableCell>일반</TableCell>
+                                        <TableCell>{r.email || '-'}</TableCell>
+                                        <TableCell>{r.requestedAt || '-'}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ) : (
+                              <div className="mb-6 flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">표시할 가입 요청이 없습니다.</p>
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={ROUTES.CLUB_DASHBOARD.MEMBER_APPROVALS}>승인 페이지로 이동</Link>
+                                </Button>
+                              </div>
+                            )}
                             <MemberTable memberList={pendingMembers} listType="pending" />
-                        </CardContent>
+                         </CardContent>
                     </Card>
                 </TabsContent>
                 <TabsContent value="classes">

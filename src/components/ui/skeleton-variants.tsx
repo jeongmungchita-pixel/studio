@@ -1,9 +1,7 @@
 'use client';
-
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
-
 /**
  * 텍스트 스켈레톤
  */
@@ -28,7 +26,6 @@ export function SkeletonText({
     </div>
   );
 }
-
 /**
  * 카드 스켈레톤
  */
@@ -43,7 +40,6 @@ export function SkeletonCard({ className }: { className?: string }) {
     </div>
   );
 }
-
 /**
  * 테이블 스켈레톤
  */
@@ -64,7 +60,6 @@ export function SkeletonTable({
           <Skeleton key={i} className="h-4 flex-1" />
         ))}
       </div>
-      
       {/* 행들 */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex gap-4 p-4 border-b">
@@ -82,7 +77,6 @@ export function SkeletonTable({
     </div>
   );
 }
-
 /**
  * 리스트 스켈레톤
  */
@@ -107,7 +101,6 @@ export function SkeletonList({
     </div>
   );
 }
-
 /**
  * 폼 스켈레톤
  */
@@ -130,7 +123,6 @@ export function SkeletonForm({
     </div>
   );
 }
-
 /**
  * 프로필 스켈레톤
  */
@@ -145,7 +137,6 @@ export function SkeletonProfile({ className }: { className?: string }) {
     </div>
   );
 }
-
 /**
  * 통계 카드 스켈레톤
  */
@@ -162,7 +153,6 @@ export function SkeletonStat({ className }: { className?: string }) {
     </div>
   );
 }
-
 /**
  * 이미지 갤러리 스켈레톤
  */

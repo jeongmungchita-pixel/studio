@@ -1,11 +1,9 @@
 'use client';
-
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
 import { useRole } from '@/hooks/use-role';
 import { LayoutDashboard, Building, Trophy, ClipboardList, Shield, ChevronRight, User } from 'lucide-react';
-
 interface NavSection {
   id: string;
   label: string;
@@ -18,7 +16,6 @@ interface NavSection {
     href: string;
   }[];
 }
-
 const navSections: NavSection[] = [
   {
     id: 'admin',
@@ -75,40 +72,33 @@ const navSections: NavSection[] = [
     roles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN, UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER],
   },
 ];
-
 interface ModernNavProps {
   mobile?: boolean;
   onNavigate?: () => void;
 }
-
 export function ModernNav({ mobile = false, onNavigate }: ModernNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { userRole } = useRole();
-
   const filteredSections = navSections.filter(
     section => userRole && section.roles.includes(userRole)
   );
-
   const isActive = (href: string) => {
     if (href === '/admin' || href === '/club-dashboard' || href === '/my-profile') {
       return pathname === href;
     }
     return pathname.startsWith(href);
   };
-
   const handleNavigate = (href: string) => {
     router.push(href);
     onNavigate?.();
   };
-
   if (mobile) {
     return (
       <div className="space-y-1">
         {filteredSections.map((section) => {
           const Icon = section.icon;
           const active = isActive(section.href);
-          
           return (
             <div key={section.id}>
               <button
@@ -128,7 +118,6 @@ export function ModernNav({ mobile = false, onNavigate }: ModernNavProps) {
                   </span>
                 )}
               </button>
-              
               {section.subItems && active && (
                 <div className="ml-8 mt-1 space-y-1">
                   {section.subItems.map((subItem) => (
@@ -154,13 +143,11 @@ export function ModernNav({ mobile = false, onNavigate }: ModernNavProps) {
       </div>
     );
   }
-
   return (
     <div className="flex items-center gap-1">
       {filteredSections.map((section) => {
         const Icon = section.icon;
         const active = isActive(section.href);
-        
         return (
           <button
             key={section.id}

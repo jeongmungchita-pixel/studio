@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect } from 'react';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
@@ -13,72 +12,57 @@ import { useRole } from '@/hooks/use-role';
 import { usePageLoading } from '@/hooks/use-page-loading';
 import { ErrorFallback } from '@/components/error-fallback';
 import { ROUTES } from '@/constants/routes';
-
 export default function FederationAdminDashboard() {
-  const { user, isUserLoading } = useUser();
-  const { hasRole, isFederationAdmin, isSuperAdmin } = useRole();
+  const { _user, isUserLoading } = useUser();
+  const { _hasRole, isFederationAdmin, isSuperAdmin } = useRole();
   const firestore = useFirestore();
   const router = useRouter();
-
   // 디버깅: 사용자 정보 출력
-
   // 접근 제어 및 리다이렉트 (훅은 항상 최상단에서 호출)
   useEffect(() => {
     if (!isUserLoading) {
       // 로그인하지 않은 경우
-      if (!user) {
+      if (!_user) {
         router.push('/login');
         return;
       }
-      
       // 연맹 관리자 또는 슈퍼 관리자가 아닌 경우
       if (!isFederationAdmin && !isSuperAdmin) {
         router.push('/dashboard');
         return;
       }
     }
-  }, [isUserLoading, user, isFederationAdmin, isSuperAdmin, router]);
-
+  }, [isUserLoading, _user, isFederationAdmin, isSuperAdmin, router]);
   // 전체 회원 수
   const membersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'members') : null),
     [firestore]
   );
   const { data: allMembers, isLoading: isMembersLoading, error: membersError } = useCollection<Member>(membersCollection);
-  
   // 디버깅: 회원 데이터
-
   // 에러는 훅 호출 이후에 일괄 처리
-
   // 전체 클럽 수
   const clubsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'clubs') : null),
     [firestore]
   );
   const { data: allClubs, isLoading: isClubsLoading, error: clubsError } = useCollection<Club>(clubsCollection);
-  
   // 디버깅: 클럽 데이터
-
   // 에러는 훅 호출 이후에 일괄 처리
-
   // 전체 대회
   const competitionsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'competitions') : null),
     [firestore]
   );
   const { data: competitions, isLoading: isCompetitionsLoading, error: competitionsError } = useCollection<GymnasticsCompetition>(competitionsCollection);
-  
   // 디버깅: 대회 데이터
-
   // 에러는 훅 호출 이후에 일괄 처리
-
   // 위원회
   const committeesCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'committees') : null),
     [firestore]
   );
   const { data: committees, isLoading: isCommitteesLoading } = useCollection(committeesCollection);
-
   // 최근 가입 회원 (최근 5명)
   const recentMembersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -89,7 +73,6 @@ export default function FederationAdminDashboard() {
     );
   }, [firestore]);
   const { data: recentMembers } = useCollection<Member>(recentMembersQuery);
-
   // 최근 등록 클럽 (최근 5개)
   const recentClubsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -100,7 +83,6 @@ export default function FederationAdminDashboard() {
     );
   }, [firestore]);
   const { data: recentClubs } = useCollection<Club>(recentClubsQuery);
-
   // 통합 로딩 체크
   const isLoading = usePageLoading(
     isUserLoading,
@@ -109,7 +91,6 @@ export default function FederationAdminDashboard() {
     isCompetitionsLoading,
     isCommitteesLoading
   );
-
   // 로딩 UI
   if (isLoading || isUserLoading) {
     return (
@@ -118,19 +99,15 @@ export default function FederationAdminDashboard() {
       </div>
     );
   }
-
   const firstError = membersError || clubsError || competitionsError;
   if (firstError) {
     return <ErrorFallback error={firstError} title="데이터 조회 오류" />;
   }
-
   // 통계 계산
   const activeCompetitions = competitions?.filter(
     (c) => c.status === 'in_progress'
   ) || [];
-
   const activeClubs = allClubs?.filter((c) => c.status === 'active') || [];
-
   return (
     <div className="p-8 space-y-6">
       {/* 헤더 */}
@@ -140,7 +117,6 @@ export default function FederationAdminDashboard() {
           대한검도연맹 전체 현황 및 관리
         </p>
       </div>
-
       {/* 통계 카드 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/clubs')}>
@@ -155,7 +131,6 @@ export default function FederationAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/members')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -168,7 +143,6 @@ export default function FederationAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/competitions')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -181,7 +155,6 @@ export default function FederationAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border-slate-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/admin/committees')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -195,7 +168,6 @@ export default function FederationAdminDashboard() {
           </CardContent>
         </Card>
       </div>
-
       {/* 빠른 액세스 */}
       <Card className="border-slate-200">
         <CardHeader>
@@ -214,7 +186,6 @@ export default function FederationAdminDashboard() {
                 <div className="text-xs text-slate-500">클럽 등록 및 관리</div>
               </div>
             </Button>
-
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
@@ -226,7 +197,6 @@ export default function FederationAdminDashboard() {
                 <div className="text-xs text-slate-500">전체 회원 조회</div>
               </div>
             </Button>
-
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
@@ -238,7 +208,6 @@ export default function FederationAdminDashboard() {
                 <div className="text-xs text-slate-500">대회 등록 및 운영</div>
               </div>
             </Button>
-
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
@@ -250,7 +219,6 @@ export default function FederationAdminDashboard() {
                 <div className="text-xs text-slate-500">위원회 및 위원 관리</div>
               </div>
             </Button>
-
             <Button
               variant="outline"
               className="justify-start h-auto py-4"
@@ -265,7 +233,6 @@ export default function FederationAdminDashboard() {
           </div>
         </CardContent>
       </Card>
-
       <div className="grid gap-4 md:grid-cols-2">
         {/* 최근 가입 회원 */}
         <Card className="border-slate-200">
@@ -306,7 +273,6 @@ export default function FederationAdminDashboard() {
             )}
           </CardContent>
         </Card>
-
         {/* 최근 등록 클럽 */}
         <Card className="border-slate-200">
           <CardHeader className="flex flex-row items-center justify-between">
@@ -353,7 +319,6 @@ export default function FederationAdminDashboard() {
           </CardContent>
         </Card>
       </div>
-
       {/* 예정된 대회 */}
       {activeCompetitions.length > 0 && (
         <Card className="border-slate-200">

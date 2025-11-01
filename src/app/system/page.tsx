@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
-
 export default function SystemIndexPage() {
   return (
     <main className="flex-1 p-6 flex items-center justify-center">

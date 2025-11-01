@@ -7,7 +7,6 @@ import { Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, H
 import { useUser } from '@/firebase';
 import { LogoutButton } from '@/components/logout-button';
 import { UserRole } from '@/types';
-
 interface SubMenuItem {
   href: string;
   label: string;
@@ -16,7 +15,6 @@ interface SubMenuItem {
   group?: string; // 그룹 (main, operations, finance, system 등)
   roles: UserRole[];
 }
-
 // 섹션별 서브메뉴 정의
 const subMenuItems: SubMenuItem[] = [
   // 시스템 관리 서브메뉴
@@ -41,7 +39,6 @@ const subMenuItems: SubMenuItem[] = [
     section: 'super-admin',
     roles: [UserRole.SUPER_ADMIN] 
   },
-  
   // 클럽 대시보드 - 자주 사용 (항상 표시)
   { 
     href: '/club-dashboard', 
@@ -91,7 +88,14 @@ const subMenuItems: SubMenuItem[] = [
     group: 'main',
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
-
+  { 
+    href: '/club-dashboard/member-approvals', 
+    label: '회원 가입 승인', 
+    icon: UserPlus, 
+    section: 'club-dashboard',
+    group: 'main',
+    roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
+  },
   // 클럽 대시보드 - 운영 관리 (접을 수 있음)
   { 
     href: '/club-dashboard/passes', 
@@ -133,7 +137,6 @@ const subMenuItems: SubMenuItem[] = [
     group: 'operations',
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
-
   // 클럽 대시보드 - 재무/분석 (접을 수 있음)
   { 
     href: '/club-dashboard/finance', 
@@ -151,7 +154,6 @@ const subMenuItems: SubMenuItem[] = [
     group: 'finance',
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
-
   // 클럽 대시보드 - 시스템 (접을 수 있음)
   { 
     href: '/club-dashboard/messages', 
@@ -169,7 +171,6 @@ const subMenuItems: SubMenuItem[] = [
     group: 'system',
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
-  
   // 연맹 관리자 대시보드 서브메뉴
   { 
     href: '/admin', 
@@ -213,7 +214,6 @@ const subMenuItems: SubMenuItem[] = [
     section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
-  
   // 내 정보 서브메뉴
   { 
     href: '/dashboard', 
@@ -264,7 +264,6 @@ const subMenuItems: SubMenuItem[] = [
     section: 'my-profile',
     roles: [UserRole.MEMBER, UserRole.PARENT] 
   },
-  
   // 회원 상세 페이지 서브메뉴
   { 
     href: '/club-dashboard', 
@@ -274,7 +273,6 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
 ];
-
 // 현재 경로에서 섹션 추출
 function getCurrentSection(pathname: string): string {
   if (pathname.startsWith('/super-admin') || pathname.startsWith('/system')) return 'super-admin';
@@ -284,26 +282,20 @@ function getCurrentSection(pathname: string): string {
   if (pathname.startsWith('/dashboard')) return 'dashboard';
   return '';
 }
-
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user: currentUser } = useUser();
+  const { _user: currentUser } = useUser();
   const router = useRouter();
-
   const isActive = (href: string) => {
     return pathname === href;
   };
-  
   const currentSection = getCurrentSection(pathname);
-
   // 현재 섹션의 서브메뉴만 필터링
   const filteredSubMenuItems = subMenuItems.filter(item => 
     item.section === currentSection &&
     currentUser?.role && 
     item.roles.includes(currentUser.role)
   );
-  
-
   // 서브메뉴가 없으면 사이드바를 표시하지 않음
   if (filteredSubMenuItems.length === 0) {
     return (
@@ -332,7 +324,6 @@ export function AppSidebar() {
       </>
     );
   }
-
   return (
     <>
       <SidebarHeader>
@@ -365,7 +356,6 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-
         {/* Operations group (collapsible) */}
         {filteredSubMenuItems.filter(item => item.group === 'operations').length > 0 && (
           <Collapsible defaultOpen={false} className="group/collapsible">
@@ -400,7 +390,6 @@ export function AppSidebar() {
             </SidebarGroup>
           </Collapsible>
         )}
-
         {/* Finance group (collapsible) */}
         {filteredSubMenuItems.filter(item => item.group === 'finance').length > 0 && (
           <Collapsible defaultOpen={false} className="group/collapsible">
@@ -435,7 +424,6 @@ export function AppSidebar() {
             </SidebarGroup>
           </Collapsible>
         )}
-
         {/* System group (collapsible) */}
         {filteredSubMenuItems.filter(item => item.group === 'system').length > 0 && (
           <Collapsible defaultOpen={false} className="group/collapsible">

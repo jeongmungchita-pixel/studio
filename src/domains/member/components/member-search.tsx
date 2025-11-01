@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,11 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Member } from '@/types/member';
 import { filterMembers, sortMembers, getMemberCategory } from '../utils';
 import { Search, Filter, SortAsc, SortDesc, X } from 'lucide-react';
-
 // ============================================
 // 🔍 회원 검색 컴포넌트
 // ============================================
-
 interface MemberSearchProps {
   members: Member[];
   onFilteredMembersChange: (filteredMembers: Member[]) => void;
@@ -21,18 +18,15 @@ interface MemberSearchProps {
   showSort?: boolean;
   className?: string;
 }
-
 interface SearchFilters {
   status: 'all' | 'active' | 'inactive' | 'pending';
   category: 'all' | 'adult' | 'child';
   club: string;
 }
-
 interface SortOptions {
   field: 'name' | 'createdAt' | 'status' | 'age';
   direction: 'asc' | 'desc';
 }
-
 export function MemberSearch({
   members,
   onFilteredMembersChange,
@@ -52,7 +46,6 @@ export function MemberSearch({
     direction: 'asc'
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-
   // 고유 클럽 목록 추출
   const uniqueClubs = useMemo(() => {
     const clubs = Array.from(
@@ -64,42 +57,33 @@ export function MemberSearch({
     );
     return clubs.sort();
   }, [members]);
-
   // 필터링 및 정렬된 회원 목록
   const filteredAndSortedMembers = useMemo(() => {
     let result = [...members];
-
     // 텍스트 검색
     if (searchTerm.trim()) {
       result = filterMembers(result, searchTerm);
     }
-
     // 상태 필터
     if (filters.status !== 'all') {
       result = result.filter(member => member.status === filters.status);
     }
-
     // 카테고리 필터
     if (filters.category !== 'all') {
       result = result.filter(member => getMemberCategory(member) === filters.category);
     }
-
     // 클럽 필터
     if (filters.club !== 'all') {
       result = result.filter(member => member.clubName === filters.club);
     }
-
     // 정렬
     result = sortMembers(result, sortOptions.field, sortOptions.direction);
-
     return result;
   }, [members, searchTerm, filters, sortOptions]);
-
   // 필터링된 결과를 부모 컴포넌트에 전달
   React.useEffect(() => {
     onFilteredMembersChange(filteredAndSortedMembers);
   }, [filteredAndSortedMembers, onFilteredMembersChange]);
-
   // 필터 초기화
   const clearFilters = () => {
     setSearchTerm('');
@@ -113,7 +97,6 @@ export function MemberSearch({
       direction: 'asc'
     });
   };
-
   // 활성 필터 개수
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -122,7 +105,6 @@ export function MemberSearch({
     if (filters.club !== 'all') count++;
     return count;
   }, [filters]);
-
   return (
     <div className={`space-y-4 ${className}`}>
       {/* 검색 입력 */}
@@ -146,7 +128,6 @@ export function MemberSearch({
           </Button>
         )}
       </div>
-
       {/* 필터 및 정렬 컨트롤 */}
       <div className="flex items-center gap-2 flex-wrap">
         {showFilters && (
@@ -165,7 +146,6 @@ export function MemberSearch({
             )}
           </Button>
         )}
-
         {showSort && (
           <div className="flex items-center gap-2">
             <Select
@@ -184,7 +164,6 @@ export function MemberSearch({
                 <SelectItem value="age">나이</SelectItem>
               </SelectContent>
             </Select>
-
             <Button
               variant="outline"
               size="sm"
@@ -203,7 +182,6 @@ export function MemberSearch({
             </Button>
           </div>
         )}
-
         {(activeFiltersCount > 0 || searchTerm) && (
           <Button
             variant="ghost"
@@ -215,13 +193,11 @@ export function MemberSearch({
             초기화
           </Button>
         )}
-
         {/* 결과 개수 */}
         <div className="text-sm text-muted-foreground ml-auto">
           {filteredAndSortedMembers.length}명 / 전체 {members.length}명
         </div>
       </div>
-
       {/* 고급 필터 */}
       {showAdvancedFilters && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -244,7 +220,6 @@ export function MemberSearch({
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <label className="text-sm font-medium mb-2 block">카테고리</label>
             <Select
@@ -263,7 +238,6 @@ export function MemberSearch({
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <label className="text-sm font-medium mb-2 block">클럽</label>
             <Select
@@ -287,12 +261,10 @@ export function MemberSearch({
           </div>
         </div>
       )}
-
       {/* 활성 필터 태그 */}
       {(activeFiltersCount > 0 || searchTerm) && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">활성 필터:</span>
-          
           {searchTerm && (
             <Badge variant="secondary" className="gap-1">
               검색: &quot;{searchTerm}&quot;
@@ -302,7 +274,6 @@ export function MemberSearch({
               />
             </Badge>
           )}
-          
           {filters.status !== 'all' && (
             <Badge variant="secondary" className="gap-1">
               상태: {filters.status}
@@ -312,7 +283,6 @@ export function MemberSearch({
               />
             </Badge>
           )}
-          
           {filters.category !== 'all' && (
             <Badge variant="secondary" className="gap-1">
               카테고리: {filters.category}
@@ -322,7 +292,6 @@ export function MemberSearch({
               />
             </Badge>
           )}
-          
           {filters.club !== 'all' && (
             <Badge variant="secondary" className="gap-1">
               클럽: {filters.club}

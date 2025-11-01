@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useCollection, useUser } from '@/firebase';
 import { collection, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
@@ -14,30 +12,26 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { ErrorFallback } from '@/components/error-fallback';
-
 export default function AdminUsersPage() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-
   const usersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
   const { data: users, isLoading: isUsersLoading, error: usersError } =
     useCollection<UserProfile>(usersCollection);
-
-  if (isUserLoading || !user) {
+  if (isUserLoading || !_user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-
   // This page is for admins only
-  if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.FEDERATION_ADMIN) {
+  if (_user.role !== UserRole.SUPER_ADMIN && _user.role !== UserRole.FEDERATION_ADMIN) {
     router.push('/dashboard');
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -45,22 +39,17 @@ export default function AdminUsersPage() {
       </div>
     );
   }
-
   // 에러 처리
   if (usersError) {
     return <ErrorFallback error={usersError} title="사용자 데이터 조회 오류" />;
   }
-
   const handleApprove = async (userToApprove: UserProfile) => {
     if (!firestore || !userToApprove.clubName) return;
-
     try {
       const batch = writeBatch(firestore);
-
       // 1. Update user status to 'active'
       const userRef = doc(firestore, 'users', userToApprove.uid);
       batch.update(userRef, { status: 'active' });
-
       // 2. Create a new club document
       const clubRef = doc(collection(firestore, 'clubs'));
       const newClub: Club = {
@@ -83,17 +72,14 @@ export default function AdminUsersPage() {
         createdAt: new Date().toISOString(),
       };
       batch.set(clubRef, newClub);
-
       // 3. Update the club-admin's profile with the new clubId
       batch.update(userRef, { clubId: clubRef.id });
-
       await batch.commit();
-
       toast({
         title: '승인 완료',
         description: `${userToApprove.clubName} 클럽이 생성되고 ${userToApprove.displayName} 님의 계정이 승인되었습니다.`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -101,10 +87,9 @@ export default function AdminUsersPage() {
       });
     }
   };
-
   const handleDelete = async (userToDelete: UserProfile) => {
     if (!firestore) return;
-    if (userToDelete.uid === user.uid) {
+    if (userToDelete.uid === _user.uid) {
       toast({
         variant: 'destructive',
         title: '삭제 불가',
@@ -119,7 +104,7 @@ export default function AdminUsersPage() {
         title: '사용자 삭제 완료',
         description: `${userToDelete.displayName} 님의 계정이 삭제되었습니다.`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -127,7 +112,6 @@ export default function AdminUsersPage() {
       });
     }
   };
-
   const getStatusVariant = (status: UserProfile['status']): 'default' | 'destructive' | 'secondary' => {
     switch (status) {
       case 'active':
@@ -140,7 +124,6 @@ export default function AdminUsersPage() {
         return 'secondary';
     }
   };
-
   const getRoleDisplayName = (role: UserProfile['role']) => {
     const roleNames: Record<UserRole, string> = {
       [UserRole.SUPER_ADMIN]: '최고 관리자',
@@ -160,7 +143,6 @@ export default function AdminUsersPage() {
     };
     return roleNames[role as UserRole] || role;
   };
-
   return (
     <main className="flex-1 p-6">
       <Card>
@@ -201,15 +183,13 @@ export default function AdminUsersPage() {
                             승인
                           </Button>
                           <Button size="default"
-                            
                             onClick={() => handleDelete(u)}
                           >
                             거절
                           </Button>
                         </>
-                      ) : u.uid !== user.uid ? ( // Do not show delete button for the current admin's own account
+                      ) : u.uid !== _user.uid ? ( // Do not show delete button for the current admin's own account
                         <Button size="default"
-                          
                           onClick={() => handleDelete(u)}
                         >
                           삭제

@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Users, Building, Trophy, FileText, User } from 'lucide-react';
@@ -12,13 +11,11 @@ import { ROUTES } from '@/constants/routes';
 import { Member } from '@/types/member';
 import { Club } from '@/types/club';
 import { GymnasticsCompetition } from '@/types/business';
-
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const firestore = useFirestore();
-
   // 데이터 로드 - 검색창이 열렸을 때만 로드 (최적화)
   const membersCollection = useMemoFirebase(() => 
     firestore && open ? collection(firestore, 'members') : null, 
@@ -32,11 +29,9 @@ export function GlobalSearch() {
     firestore && open ? collection(firestore, 'competitions') : null, 
     [firestore, open]
   );
-
   const { data: members } = useCollection<Member>(membersCollection);
   const { data: clubs } = useCollection<Club>(clubsCollection);
   const { data: competitions } = useCollection<GymnasticsCompetition>(competitionsCollection);
-
   // 키보드 단축키 (Cmd+K 또는 Ctrl+K)
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -45,30 +40,24 @@ export function GlobalSearch() {
         setOpen((open) => !open);
       }
     };
-
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
   }, []);
-
   // 검색 결과 필터링
   const filteredMembers = members?.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase())
   ).slice(0, 5) || [];
-
   const filteredClubs = clubs?.filter(club =>
     club.name.toLowerCase().includes(searchQuery.toLowerCase())
   ).slice(0, 5) || [];
-
   const filteredCompetitions = competitions?.filter(comp =>
     comp.name.toLowerCase().includes(searchQuery.toLowerCase())
   ).slice(0, 5) || [];
-
   const handleSelect = useCallback((path: string) => {
     setOpen(false);
     setSearchQuery('');
     router.push(path);
   }, [router]);
-
   return (
     <>
       <div className="relative flex-1 md:grow-0">
@@ -81,7 +70,6 @@ export function GlobalSearch() {
           readOnly
         />
       </div>
-
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput 
           placeholder="회원, 클럽, 대회 검색..." 
@@ -90,7 +78,6 @@ export function GlobalSearch() {
         />
         <CommandList>
           <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
-
           {filteredMembers.length > 0 && (
             <CommandGroup heading="회원">
               {filteredMembers.map((member) => (
@@ -109,7 +96,6 @@ export function GlobalSearch() {
               ))}
             </CommandGroup>
           )}
-
           {filteredClubs.length > 0 && (
             <CommandGroup heading="클럽">
               {filteredClubs.map((club) => (
@@ -128,7 +114,6 @@ export function GlobalSearch() {
               ))}
             </CommandGroup>
           )}
-
           {filteredCompetitions.length > 0 && (
             <CommandGroup heading="대회">
               {filteredCompetitions.map((comp) => (
@@ -145,7 +130,6 @@ export function GlobalSearch() {
               ))}
             </CommandGroup>
           )}
-
           <CommandGroup heading="빠른 이동">
             <CommandItem onSelect={() => handleSelect(ROUTES.DASHBOARD)}>
               <FileText className="mr-2 h-4 w-4" />

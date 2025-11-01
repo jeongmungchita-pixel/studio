@@ -1,9 +1,7 @@
 'use client';
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-
 // 페이지 로딩
 export function PageLoading({ message = '로딩 중...' }: { message?: string }) {
   return (
@@ -13,7 +11,6 @@ export function PageLoading({ message = '로딩 중...' }: { message?: string })
     </div>
   );
 }
-
 // 카드 스켈레톤
 export function CardSkeleton({ count = 1 }: { count?: number }) {
   return (
@@ -36,7 +33,6 @@ export function CardSkeleton({ count = 1 }: { count?: number }) {
     </>
   );
 }
-
 // 테이블 스켈레톤
 export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
@@ -47,7 +43,6 @@ export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; column
           <Skeleton key={index} className="h-4 flex-1" />
         ))}
       </div>
-      
       {/* 행들 */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex space-x-4">
@@ -59,7 +54,6 @@ export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; column
     </div>
   );
 }
-
 // 리스트 스켈레톤
 export function ListSkeleton({ count = 5 }: { count?: number }) {
   return (
@@ -77,7 +71,6 @@ export function ListSkeleton({ count = 5 }: { count?: number }) {
     </div>
   );
 }
-
 // 통계 카드 스켈레톤
 export function StatsSkeleton({ count = 4 }: { count?: number }) {
   return (
@@ -98,7 +91,6 @@ export function StatsSkeleton({ count = 4 }: { count?: number }) {
     </div>
   );
 }
-
 // 인라인 로딩 스피너
 export function InlineLoading({ size = 16 }: { size?: number }) {
   return (

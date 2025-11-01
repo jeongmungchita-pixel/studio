@@ -1,25 +1,21 @@
 import { Firestore } from 'firebase/firestore';
 import { BaseAPI } from '../base/base-api';
 import { Club } from '@/types/club';
-
 /**
  * ClubAPI 클래스
  * 클럽 관련 API 작업을 처리합니다.
  */
 export class ClubAPI extends BaseAPI<Club> {
   protected collectionName = 'clubs';
-
   constructor(firestore: Firestore) {
     super(firestore);
   }
-
   /**
    * 클럽 정보 조회
    */
   async getClub(clubId: string) {
     return this.findById(clubId);
   }
-
   /**
    * 클럽 정보 업데이트
    */
@@ -28,7 +24,6 @@ export class ClubAPI extends BaseAPI<Club> {
     const firestoreUpdates = { ...updates } as any;
     return this.update(clubId, firestoreUpdates);
   }
-
   /**
    * 활성 클럽 목록 조회
    */
@@ -38,7 +33,6 @@ export class ClubAPI extends BaseAPI<Club> {
       orderBy: [{ field: 'name', direction: 'asc' }],
     });
   }
-
   /**
    * 클럽 검색
    */
@@ -51,7 +45,6 @@ export class ClubAPI extends BaseAPI<Club> {
       limit,
     });
   }
-
   /**
    * 클럽 회원 수 조회
    */
@@ -64,7 +57,6 @@ export class ClubAPI extends BaseAPI<Club> {
       success: true,
     };
   }
-
   /**
    * 클럽 통계 조회
    */
@@ -75,7 +67,6 @@ export class ClubAPI extends BaseAPI<Club> {
         where: [{ field: 'status', operator: '==', value: 'active' }],
       }),
     ]);
-
     return {
       data: {
         total: totalClubs.data.length,

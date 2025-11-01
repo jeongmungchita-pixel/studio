@@ -1,23 +1,19 @@
 'use client';
-
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
-
 interface SessionConfig {
   idleTimeout?: number; // 유휴 시간 제한 (밀리초)
   warningTime?: number; // 경고 표시 시간 (만료 전 몇 초)
   checkInterval?: number; // 체크 간격
 }
-
 const DEFAULT_CONFIG: SessionConfig = {
   idleTimeout: 30 * 60 * 1000, // 30분
   warningTime: 5 * 60 * 1000, // 5분 전 경고
   checkInterval: 60 * 1000, // 1분마다 체크
 };
-
 /**
  * 세션 관리를 위한 커스텀 훅
  * - 자동 로그아웃 (유휴 시간 초과)
@@ -26,24 +22,20 @@ const DEFAULT_CONFIG: SessionConfig = {
  */
 export function useSessionManager(config: SessionConfig = {}) {
   const auth = useAuth();
-  const { user } = useUser();
+  const { _user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  
   const [isSessionExpiring, setIsSessionExpiring] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  
   const lastActivityRef = useRef<number>(Date.now());
   const warningShownRef = useRef<boolean>(false);
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
   const { 
     idleTimeout = DEFAULT_CONFIG.idleTimeout!,
     warningTime = DEFAULT_CONFIG.warningTime!,
     checkInterval = DEFAULT_CONFIG.checkInterval!
   } = config;
-
   /**
    * 활동 시간 업데이트
    */
@@ -52,14 +44,12 @@ export function useSessionManager(config: SessionConfig = {}) {
     warningShownRef.current = false;
     setIsSessionExpiring(false);
     setTimeRemaining(null);
-    
     // 카운트다운 타이머 정리
     if (countdownTimerRef.current) {
       clearInterval(countdownTimerRef.current);
       countdownTimerRef.current = null;
     }
   }, []);
-
   /**
    * 세션 종료 처리
    */
@@ -73,19 +63,16 @@ export function useSessionManager(config: SessionConfig = {}) {
       clearInterval(countdownTimerRef.current);
       countdownTimerRef.current = null;
     }
-
     // 로그아웃 처리
     try {
       if (auth) {
         await signOut(auth);
       }
-    } catch (error) {
+    } catch (error: unknown) {
     }
-
     // 로컬 스토리지 정리
     localStorage.removeItem('lastActivity');
     localStorage.removeItem('sessionWarningShown');
-    
     // 사용자에게 알림
     let message = '세션이 종료되었습니다.';
     switch (reason) {
@@ -99,17 +86,14 @@ export function useSessionManager(config: SessionConfig = {}) {
         message = '로그아웃되었습니다.';
         break;
     }
-    
     toast({
       title: '세션 종료',
       description: message,
       variant: 'default',
     });
-    
     // 로그인 페이지로 이동
     router.push('/login');
   }, [auth, router, toast]);
-
   /**
    * 세션 연장
    */
@@ -121,40 +105,33 @@ export function useSessionManager(config: SessionConfig = {}) {
       variant: 'default',
     });
   }, [updateActivity, toast]);
-
   /**
    * 세션 체크
    */
   const checkSession = useCallback(async () => {
-    if (!user) return;
-
+    if (!_user) return;
     const now = Date.now();
     const timeSinceActivity = now - lastActivityRef.current;
     const timeUntilTimeout = idleTimeout - timeSinceActivity;
-
     // 세션 만료
     if (timeUntilTimeout <= 0) {
       await endSession('timeout');
       return;
     }
-
     // 경고 표시
     if (timeUntilTimeout <= warningTime && !warningShownRef.current) {
       warningShownRef.current = true;
       setIsSessionExpiring(true);
-      
       // 카운트다운 시작
       const startTime = Date.now();
       countdownTimerRef.current = setInterval(() => {
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, warningTime - elapsed);
         setTimeRemaining(Math.floor(remaining / 1000));
-        
         if (remaining <= 0) {
           endSession('timeout');
         }
       }, 1000);
-      
       toast({
         title: '세션 만료 경고',
         description: `${Math.floor(warningTime / 60000)}분 후 자동 로그아웃됩니다. 계속하려면 페이지를 사용하세요.`,
@@ -169,32 +146,27 @@ export function useSessionManager(config: SessionConfig = {}) {
         ),
       });
     }
-
     // Firebase 토큰 체크
     try {
       if (auth?.currentUser) {
         const token = await auth.currentUser.getIdTokenResult();
-        
         // 토큰 만료 시간 체크 (1시간)
         const expirationTime = new Date(token.expirationTime).getTime();
         const timeUntilExpiry = expirationTime - now;
-        
         if (timeUntilExpiry < 5 * 60 * 1000) { // 5분 미만 남음
           // 토큰 리프레시 시도
           await auth.currentUser.getIdToken(true);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       await endSession('token_expired');
     }
-  }, [user, idleTimeout, warningTime, endSession, extendSession, toast, auth]);
-
+  }, [_user, idleTimeout, warningTime, endSession, extendSession, toast, auth]);
   /**
    * 이벤트 리스너 설정
    */
   useEffect(() => {
-    if (!user) return;
-
+    if (!_user) return;
     // 사용자 활동 감지 이벤트
     const events = [
       'mousedown',
@@ -204,40 +176,32 @@ export function useSessionManager(config: SessionConfig = {}) {
       'touchstart',
       'click',
     ];
-
     const handleActivity = () => {
       updateActivity();
     };
-
     // 이벤트 리스너 등록
     events.forEach(event => {
       document.addEventListener(event, handleActivity);
     });
-
     // 세션 체크 타이머 시작
     sessionTimerRef.current = setInterval(checkSession, checkInterval);
-
     // 초기 체크
     checkSession();
-
     // 페이지 언로드 시 활동 시간 저장
     const handleBeforeUnload = () => {
       localStorage.setItem('lastActivity', String(lastActivityRef.current));
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
-
     // 페이지 로드 시 이전 활동 시간 복원
     const savedActivity = localStorage.getItem('lastActivity');
     if (savedActivity) {
       const savedTime = parseInt(savedActivity, 10);
       const timeSinceSaved = Date.now() - savedTime;
-      
       // 30분 이내면 세션 유지
       if (timeSinceSaved < idleTimeout) {
         lastActivityRef.current = savedTime;
       }
     }
-
     // 다른 탭에서의 로그아웃 감지
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'auth_logout' && e.newValue === 'true') {
@@ -245,7 +209,6 @@ export function useSessionManager(config: SessionConfig = {}) {
       }
     };
     window.addEventListener('storage', handleStorageChange);
-
     return () => {
       // 이벤트 리스너 정리
       events.forEach(event => {
@@ -253,7 +216,6 @@ export function useSessionManager(config: SessionConfig = {}) {
       });
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('storage', handleStorageChange);
-      
       // 타이머 정리
       if (sessionTimerRef.current) {
         clearInterval(sessionTimerRef.current);
@@ -262,8 +224,7 @@ export function useSessionManager(config: SessionConfig = {}) {
         clearInterval(countdownTimerRef.current);
       }
     };
-  }, [user, updateActivity, checkSession, checkInterval, idleTimeout, endSession]);
-
+  }, [_user, updateActivity, checkSession, checkInterval, idleTimeout, endSession]);
   /**
    * 수동 로그아웃
    */
@@ -271,10 +232,8 @@ export function useSessionManager(config: SessionConfig = {}) {
     // 다른 탭에 로그아웃 알림
     localStorage.setItem('auth_logout', 'true');
     setTimeout(() => localStorage.removeItem('auth_logout'), 100);
-    
     await endSession('user_logout');
   }, [endSession]);
-
   return {
     isSessionExpiring,
     timeRemaining,
@@ -283,20 +242,16 @@ export function useSessionManager(config: SessionConfig = {}) {
     updateActivity,
   };
 }
-
 /**
  * 세션 만료 경고 컴포넌트
  */
 export function SessionExpiryWarning() {
   const { isSessionExpiring, timeRemaining, extendSession } = useSessionManager();
-  
   if (!isSessionExpiring || timeRemaining === null) {
     return null;
   }
-  
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
-  
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <div className="bg-destructive text-destructive-foreground p-4 rounded-lg shadow-lg max-w-sm">

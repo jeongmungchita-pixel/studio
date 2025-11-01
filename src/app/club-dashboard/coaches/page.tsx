@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, addDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
@@ -17,12 +15,10 @@ import { Loader2, UserPlus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types';
 import { UserRole } from '@/types';
-
 export default function CoachesPage() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,25 +27,21 @@ export default function CoachesPage() {
     phoneNumber: '',
     role: UserRole.ASSISTANT_COACH,
   });
-
   const emailRegex = /[^@\s]+@[^@\s]+\.[^@\s]+/;
   const isFormValid =
     formData.displayName.trim().length > 0 &&
     emailRegex.test(formData.email) &&
     !!formData.role;
-
   // Fetch coaches for this club
   const coachesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'users'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('role', 'in', [UserRole.HEAD_COACH, UserRole.ASSISTANT_COACH])
     );
-  }, [firestore, user?.clubId]);
-
+  }, [firestore, _user?.clubId]);
   const { data: coaches, isLoading: areCoachesLoading } = useCollection<UserProfile>(coachesQuery);
-
   const sortedCoaches = (coaches || []).slice().sort((a, b) => {
     // HEAD_COACH 먼저, 그 다음 이름순
     const roleRank = (u: UserProfile) => (u.role === UserRole.HEAD_COACH ? 0 : 1);
@@ -57,22 +49,19 @@ export default function CoachesPage() {
     if (rdiff !== 0) return rdiff;
     return (a.displayName || '').localeCompare(b.displayName || '');
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user?.clubId) return;
-
+    if (!firestore || !_user?.clubId) return;
     if (!isFormValid) {
       toast({ variant: 'destructive', title: '입력 확인', description: '이름과 유효한 이메일을 입력하세요.' });
       return;
     }
-
     setIsSubmitting(true);
     try {
       // Prevent duplicate pending request
       const pendingQ = query(
         collection(firestore, 'coach_requests'),
-        where('clubId', '==', user.clubId),
+        where('clubId', '==', _user.clubId),
         where('email', '==', formData.email),
         where('status', '==', 'pending')
       );
@@ -81,11 +70,10 @@ export default function CoachesPage() {
         toast({ variant: 'destructive', title: '중복 요청', description: '해당 이메일로 대기 중인 코치 요청이 있습니다.' });
         return;
       }
-
       // Prevent creating if already a coach exists
       const existingCoachQ = query(
         collection(firestore, 'users'),
-        where('clubId', '==', user.clubId),
+        where('clubId', '==', _user.clubId),
         where('email', '==', formData.email),
         where('role', 'in', [UserRole.HEAD_COACH, UserRole.ASSISTANT_COACH])
       );
@@ -94,22 +82,19 @@ export default function CoachesPage() {
         toast({ variant: 'destructive', title: '이미 등록됨', description: '해당 이메일은 이미 코치로 등록되어 있습니다.' });
         return;
       }
-
       // Create coach account request
       await addDoc(collection(firestore, 'coach_requests'), {
         ...formData,
-        clubId: user.clubId,
-        clubName: user.clubName || '',
-        requestedBy: user.uid,
+        clubId: _user.clubId,
+        clubName: _user.clubName || '',
+        requestedBy: _user.uid,
         requestedAt: new Date().toISOString(),
         status: 'pending',
       });
-
       toast({
         title: '코치 계정 요청 완료',
         description: '최고 관리자의 승인 후 계정이 생성됩니다.',
       });
-
       setIsDialogOpen(false);
       setFormData({
         email: '',
@@ -117,7 +102,7 @@ export default function CoachesPage() {
         phoneNumber: '',
         role: UserRole.ASSISTANT_COACH,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -127,17 +112,15 @@ export default function CoachesPage() {
       setIsSubmitting(false);
     }
   };
-
   const handleDelete = async (coachId: string) => {
     if (!firestore || !confirm('정말 이 코치 계정을 삭제하시겠습니까?')) return;
-
     try {
       await deleteDoc(doc(firestore, 'users', coachId));
       toast({
         title: '삭제 완료',
         description: '코치 계정이 삭제되었습니다.',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -145,7 +128,6 @@ export default function CoachesPage() {
       });
     }
   };
-
   if (isUserLoading || areCoachesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -153,11 +135,9 @@ export default function CoachesPage() {
       </div>
     );
   }
-
   const getRoleName = (role: UserRole) => {
     return role === UserRole.HEAD_COACH ? '수석 코치' : '보조 코치';
   };
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -237,7 +217,6 @@ export default function CoachesPage() {
           </DialogContent>
         </Dialog>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>코치 목록</CardTitle>
@@ -274,7 +253,7 @@ export default function CoachesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {(user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.FEDERATION_ADMIN) && (
+                      {(_user?.role === UserRole.SUPER_ADMIN || _user?.role === UserRole.FEDERATION_ADMIN) && (
                         <Button
                           variant="ghost"
                           size="sm"

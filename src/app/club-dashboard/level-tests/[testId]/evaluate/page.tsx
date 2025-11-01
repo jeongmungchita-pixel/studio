@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { use, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc } from 'firebase/firestore';
@@ -13,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle2, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-
 type TestLevel = {
   id: string
   name: string
@@ -24,14 +21,12 @@ type TestLevel = {
   order: number
   icon?: string
 }
-
 type EvaluationItem = {
   id: string
   name: string
   maxScore: number
   weight: number
 }
-
 type UILevelTest = {
   id: string
   title: string
@@ -46,7 +41,6 @@ type UILevelTest = {
   createdAt: string
   updatedAt?: string
 }
-
 type LevelTestRegistration = {
   id: string
   testId: string
@@ -56,7 +50,6 @@ type LevelTestRegistration = {
   currentLevel?: string
   status: 'pending' | 'approved' | 'rejected'
 }
-
 type LevelTestScore = {
   id: string
   testId: string
@@ -80,25 +73,21 @@ type LevelTestScore = {
   createdAt: string
   rank?: number
 }
-
 export default function EvaluatePage({ params }: { params: Promise<{ testId: string }> }) {
   const { testId } = use(params);
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  
   const [selectedReg, setSelectedReg] = useState<LevelTestRegistration | null>(null);
   const [itemScores, setItemScores] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Fetch test
   const testRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'level_tests', testId) : null),
     [firestore, testId]
   );
   const { data: test } = useDoc<UILevelTest>(testRef);
-
   // Fetch registrations
   const registrationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -109,7 +98,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
     );
   }, [firestore, testId]);
   const { data: registrations } = useCollection<LevelTestRegistration>(registrationsQuery);
-
   // Fetch scores
   const scoresQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -119,44 +107,36 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
     );
   }, [firestore, testId]);
   const { data: scores } = useCollection<LevelTestScore>(scoresQuery);
-
   const handleEvaluate = (reg: LevelTestRegistration) => {
     setSelectedReg(reg);
     setItemScores({});
     setNotes('');
   };
-
   const calculateTotalScore = () => {
     if (!test) return 0;
     return test.evaluationItems.reduce((sum, item) => {
       return sum + (itemScores[item.id] || 0);
     }, 0);
   };
-
   const calculatePercentage = () => {
     if (!test) return 0;
     const maxTotal = test.evaluationItems.reduce((sum, item) => sum + item.maxScore, 0);
     return (calculateTotalScore() / maxTotal) * 100;
   };
-
   const determineLevel = () => {
     if (!test) return null;
     const percentage = calculatePercentage();
     return test.levels.find(level => percentage >= level.minScore && percentage <= level.maxScore);
   };
-
   const handleSubmit = async () => {
-    if (!selectedReg || !test || !firestore || !user) return;
-
+    if (!selectedReg || !test || !firestore || !_user) return;
     const totalScore = calculateTotalScore();
     const percentage = calculatePercentage();
     const achievedLevel = determineLevel();
-
     if (!achievedLevel) {
       toast({ variant: 'destructive', title: '점수를 확인하세요' });
       return;
     }
-
     setIsSubmitting(true);
     try {
       // Save score
@@ -178,22 +158,18 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
         percentage,
         passed: percentage >= (test.levels.find(l => l.name === selectedReg.targetLevel)?.minScore || 0),
         achievedLevel: achievedLevel.name,
-        evaluatorId: user.uid,
-        evaluatorName: user.displayName || user.email || '평가자',
+        evaluatorId: _user.uid,
+        evaluatorName: _user.displayName || _user.email || '평가자',
         notes,
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(scoreRef, scoreData as any);
-
       // Calculate rank for this level
       const levelScores = scores?.filter(s => s.achievedLevel === achievedLevel.name) || [];
       const allScores = [...levelScores, scoreData].sort((a, b) => b.totalScore - a.totalScore);
       const rank = allScores.findIndex(s => s.id === scoreData.id) + 1;
-
       // Update score with rank
       await updateDoc(doc(firestore, 'level_test_scores', scoreRef.id), { rank } as any);
-
       // Update member level if top 3 or passed
       if (rank <= 3 || scoreData.passed) {
         const memberRef = doc(firestore, 'members', selectedReg.memberId);
@@ -205,26 +181,22 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
           levelRank: rank <= 3 ? rank : undefined,
         } as any);
       }
-
       toast({
         title: '평가 완료!',
         description: `${selectedReg.memberName} - ${achievedLevel.name} ${rank <= 3 ? `${rank}위` : '획득'}`,
       });
-
       setSelectedReg(null);
       setItemScores({});
       setNotes('');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const hasScore = (regId: string) => {
     return scores?.some(s => s.registrationId === regId);
   };
-
   if (!test) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -232,20 +204,17 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">{test.title}</h1>
         <p className="text-muted-foreground mt-1">참가자를 평가하세요</p>
       </div>
-
       {/* Participants */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {registrations?.map((reg) => {
           const completed = hasScore(reg.id);
           const score = scores?.find(s => s.registrationId === reg.id);
-
           return (
             <Card key={reg.id} className={completed ? 'border-green-500' : ''}>
               <CardHeader>
@@ -289,7 +258,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
           );
         })}
       </div>
-
       {(!registrations || registrations.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -297,7 +265,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
           </CardContent>
         </Card>
       )}
-
       {/* Evaluation Dialog */}
       <Dialog open={!!selectedReg} onOpenChange={() => setSelectedReg(null)}>
         <DialogContent className="max-w-2xl">
@@ -307,7 +274,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
               목표 레벨: {selectedReg?.targetLevel}
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             {/* Score Inputs */}
             {test.evaluationItems.map((item) => (
@@ -335,7 +301,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
                 />
               </div>
             ))}
-
             {/* Total Score */}
             <div className="p-4 bg-muted rounded-lg space-y-2">
               <div className="flex items-center justify-between">
@@ -358,7 +323,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
                 </div>
               )}
             </div>
-
             {/* Notes */}
             <div className="space-y-2">
               <label className="text-sm font-medium">메모 (선택)</label>
@@ -370,7 +334,6 @@ export default function EvaluatePage({ params }: { params: Promise<{ testId: str
               />
             </div>
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedReg(null)}>
               취소

@@ -1,5 +1,4 @@
 'use client';
-
 import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -19,34 +18,28 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
-
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
   pending: '승인 대기',
 };
-
 const attendanceStatusTranslations: Record<Attendance['status'], string> = {
   present: '출석',
   late: '지각',
   absent: '결석',
   excused: '사유',
 };
-
 export default function ClubDetailsClient({ id: clubId }: { id: string }) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
-
   const clubRef = useMemoFirebase(() => (firestore ? doc(firestore, 'clubs', clubId) : null), [firestore, clubId]);
   const { data: club, isLoading: isClubLoading } = useDoc<Club>(clubRef);
-
   const membersQuery = useMemoFirebase(() => (
     firestore ? query(collection(firestore, 'members'), where('clubId', '==', clubId), where('status', '==', 'active')) : null
   ), [firestore, clubId]);
   const { data: clubMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
-  
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore || !selectedDate) return null;
     const dayStart = startOfDay(selectedDate);
@@ -58,27 +51,20 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
       where('date', '<=', dayEnd.toISOString())
     );
   }, [firestore, clubId, selectedDate]);
-
   const { data: attendanceRecords, isLoading: areAttendanceRecordsLoading } = useCollection<Attendance>(attendanceQuery);
-  
   const memberIds = useMemo(() => clubMembers?.map(m => m.id) || [], [clubMembers]);
-  
   const memberPassesQuery = useMemoFirebase(() => {
     if (!firestore || memberIds.length === 0) return null;
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds));
   }, [firestore, memberIds]);
-
   const { data: memberPasses, isLoading: arePassesLoading } = useCollection<MemberPass>(memberPassesQuery);
-  
   // Check for expired duration-based passes on page load
   useEffect(() => {
     if (!firestore || !memberPasses || memberPasses.length === 0) return;
-    
     const checkAndExpirePasses = async () => {
         const batch = writeBatch(firestore);
         let passesToExpire = 0;
         const now = new Date();
-
         memberPasses.forEach(pass => {
             if (pass.status === 'active' && pass.endDate) {
                 if (now > new Date(pass.endDate)) {
@@ -88,74 +74,56 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
                 }
             }
         });
-
         if (passesToExpire > 0) {
             try {
                 await batch.commit();
                 toast({ title: '이용권 만료 처리', description: `${passesToExpire}개의 기간 만료 이용권이 업데이트되었습니다.` });
-            } catch (error) {
+            } catch (error: unknown) {
             }
         }
     };
-    
     checkAndExpirePasses();
-
   }, [firestore, memberPasses, toast]);
-
-
  const handleStatusChange = async (member: Member, newStatus: Attendance['status']) => {
     if (!firestore || !selectedDate || !member.activePassId) return;
-    
     setIsSubmitting(prevState => ({ ...prevState, [member.id]: true }));
-
     try {
       await runTransaction(firestore, async (transaction) => {
         const dateKey = startOfDay(selectedDate).toISOString();
         const attendanceCollectionRef = collection(firestore, 'attendance');
         const passRef = doc(firestore, 'member_passes', member.activePassId!);
-        
         const passSnap = await transaction.get(passRef);
         if (!passSnap.exists()) throw new Error("이용권을 찾을 수 없습니다.");
-        
         const passData = passSnap.data() as MemberPass;
-        
         // Prevent updates if pass is not session-based
         if (passData.type !== 'session-based' || passData.remainingSessions === undefined) {
              toast({ variant: "destructive", title: "업데이트 불가", description: "기간제 또는 무제한 이용권은 출석으로 차감되지 않습니다." });
              return;
         }
-
         const q = query(attendanceCollectionRef, where('memberId', '==', member.id), where('date', '==', dateKey));
         const attendanceSnap = await getDocs(q); // getDocs is not available in transaction, must be called before
         const existingAttendanceSnap = attendanceSnap.docs[0];
         const existingAttendance = existingAttendanceSnap ? { ...existingAttendanceSnap.data(), id: existingAttendanceSnap.id } as Attendance : null;
-        
         const oldStatus = existingAttendance?.status;
         if (oldStatus === newStatus) return;
-
         let { usageCount = 0, remainingSessions = 0 } = passData;
-
         // Revert old status effect
         if (oldStatus) {
             if (oldStatus === 'present') usageCount = Math.max(0, usageCount - 1);
             if (oldStatus === 'present' || oldStatus === 'absent') remainingSessions++;
         }
-
         // Apply new status effect
         if (newStatus) {
             if (newStatus === 'present') usageCount++;
             if (newStatus === 'present' || newStatus === 'absent') remainingSessions--;
         }
-
         const shouldExpire = (remainingSessions <= 0) || (passData.endDate ? new Date(passData.endDate) < new Date() : false);
         const passUpdate: Partial<MemberPass> = {
             usageCount,
             remainingSessions: Math.max(0, remainingSessions),
             status: shouldExpire ? 'expired' : 'active'
         };
-
         transaction.update(passRef, passUpdate);
-        
         if (existingAttendance) {
             transaction.update(doc(firestore, 'attendance', existingAttendance.id), { status: newStatus });
         } else {
@@ -170,7 +138,6 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
             });
         }
       });
-
       toast({
         title: '출석 상태 변경',
         description: `${member.name}님의 상태가 ${attendanceStatusTranslations[newStatus]}(으)로 업데이트되었습니다.`
@@ -179,14 +146,12 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
         toast({
             variant: "destructive",
             title: "오류 발생",
-            description: (error instanceof Error ? error.message : undefined) || "출석 상태 변경 중 오류가 발생했습니다."
+            description: (error instanceof Error ? error instanceof Error ? error.message : String(error) : undefined) || "출석 상태 변경 중 오류가 발생했습니다."
         });
     } finally {
         setIsSubmitting(prevState => ({ ...prevState, [member.id]: false }));
     }
  };
-
-
   if (isClubLoading || areMembersLoading || arePassesLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -194,30 +159,23 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
       </div>
     );
   }
-
   if (!club) {
     notFound();
   }
-
   const getPassBadge = (pass: MemberPass | undefined) => {
     if (!pass) return <Badge variant="secondary">이용권 없음</Badge>;
-
     if (pass.status === 'expired') return <Badge variant="destructive">만료</Badge>;
-
     if (pass.type === 'session-based') {
       const remaining = pass.remainingSessions ?? 0;
       const used = pass.usageCount ?? 0;
       return <Badge>{`사용 ${used}회 (남은 ${remaining}회)`}</Badge>;
     }
-    
     if (pass.endDate) {
       const remainingDays = Math.ceil((new Date(pass.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
       return <Badge>{`기간권 (${remainingDays > 0 ? `${remainingDays}일 남음` : '만료'})`}</Badge>;
     }
-
     return <Badge>무제한 이용권</Badge>;
   };
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <Card>
@@ -250,7 +208,6 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
           </Button>
         </CardHeader>
       </Card>
-
       <Tabs defaultValue="attendance" className="w-full">
         <TabsList>
           <TabsTrigger value="attendance">출석</TabsTrigger>
@@ -328,7 +285,6 @@ export default function ClubDetailsClient({ id: clubId }: { id: string }) {
                                 const attendanceRecord = attendanceRecords?.find(rec => rec.memberId === member.id);
                                 const pass = memberPasses?.find(p => p.id === member.activePassId);
                                 const isPassInvalid = !pass || pass.status === 'expired';
-
                                 return (
                                   <TableRow key={member.id} className={isPassInvalid ? 'bg-muted/50' : ''}>
                                       <TableCell>

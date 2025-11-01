@@ -1,21 +1,17 @@
 'use client';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldOff, Home, ArrowLeft, Lock, UserX } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { getDefaultRoute } from '@/utils/route-guard';
-
 export default function ForbiddenPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser();
-  
+  const { _user } = useUser();
   // URL 파라미터에서 정보 가져오기
   const attemptedPath = searchParams.get('path') || '';
   const reason = searchParams.get('reason') || 'permission_denied';
-  
   // 거부 이유에 따른 메시지
   const getReasonMessage = () => {
     switch (reason) {
@@ -33,35 +29,30 @@ export default function ForbiddenPage() {
         return '이 페이지에 접근할 권한이 없습니다.';
     }
   };
-
   // 권한별 제안 액션
   const getSuggestedAction = () => {
-    if (!user) {
+    if (!_user) {
       return {
         text: '로그인이 필요합니다.',
         action: () => router.push('/login'),
         buttonText: '로그인하기',
       };
     }
-
-    if (user.status === 'pending') {
+    if (_user.status === 'pending') {
       return {
         text: '계정 승인을 기다리고 있습니다.',
         action: () => router.push('/pending-approval'),
         buttonText: '승인 상태 확인',
       };
     }
-
-    const defaultRoute = getDefaultRoute(user.role, user.status);
+    const defaultRoute = getDefaultRoute(_user.role, _user.status);
     return {
       text: '접근 가능한 페이지로 이동하세요.',
       action: () => router.push(defaultRoute),
       buttonText: '대시보드로 이동',
     };
   };
-
   const suggestedAction = getSuggestedAction();
-
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50">
       <Card className="max-w-md w-full">
@@ -93,9 +84,8 @@ export default function ForbiddenPage() {
               </div>
             </div>
           )}
-
           {/* 현재 사용자 정보 */}
-          {user && (
+          {_user && (
             <div className="rounded-lg border border-slate-200 p-4">
               <div className="flex items-start gap-3">
                 <UserX className="h-5 w-5 text-slate-600 mt-0.5" />
@@ -104,9 +94,9 @@ export default function ForbiddenPage() {
                     현재 권한
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    역할: {user.role || '일반 사용자'}
+                    역할: {_user.role || '일반 사용자'}
                   </p>
-                  {user.status === 'pending' && (
+                  {_user.status === 'pending' && (
                     <p className="text-xs text-orange-600 mt-1">
                       ⚠️ 계정 승인 대기 중
                     </p>
@@ -115,13 +105,11 @@ export default function ForbiddenPage() {
               </div>
             </div>
           )}
-
           {/* 제안 액션 */}
           <div className="space-y-3">
             <p className="text-sm text-center text-slate-600">
               {suggestedAction.text}
             </p>
-            
             <div className="flex flex-col gap-2">
               <Button 
                 onClick={suggestedAction.action}
@@ -129,7 +117,6 @@ export default function ForbiddenPage() {
               >
                 {suggestedAction.buttonText}
               </Button>
-              
               <Button
                 variant="outline"
                 onClick={() => router.back()}
@@ -138,7 +125,6 @@ export default function ForbiddenPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 이전 페이지로 돌아가기
               </Button>
-              
               <Button
                 variant="ghost"
                 onClick={() => router.push('/')}
@@ -149,7 +135,6 @@ export default function ForbiddenPage() {
               </Button>
             </div>
           </div>
-
           {/* 도움말 */}
           <div className="border-t pt-4">
             <p className="text-xs text-center text-muted-foreground">
@@ -164,9 +149,9 @@ export default function ForbiddenPage() {
                 <p className="text-yellow-700 mt-1">
                   거부 이유: {reason}
                 </p>
-                {user && (
+                {_user && (
                   <p className="text-yellow-700">
-                    사용자 역할: {user.role}
+                    사용자 역할: {_user.role}
                   </p>
                 )}
               </div>

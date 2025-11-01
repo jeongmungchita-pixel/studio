@@ -1,18 +1,14 @@
 'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-
 interface ErrorFallbackProps {
   error: Error | { message: string; code?: string };
   title?: string;
   onRetry?: () => void;
 }
-
 export function ErrorFallback({ error, title = '데이터 조회 오류', onRetry }: ErrorFallbackProps) {
   const errorCode = 'code' in error ? error.code : 'unknown';
-  
   return (
     <Card className="border-destructive">
       <CardHeader>
@@ -47,7 +43,6 @@ export function ErrorFallback({ error, title = '데이터 조회 오류', onRetr
     </Card>
   );
 }
-
 /**
  * 인라인 에러 표시 (작은 UI용)
  */

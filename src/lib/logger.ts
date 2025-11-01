@@ -141,7 +141,7 @@ class Logger {
       }
       
       localStorage.setItem('app_logs', JSON.stringify(logs));
-    } catch (error) {
+    } catch (error: unknown) {
       // 로컬 스토리지 저장 실패는 무시
     }
   }
@@ -172,17 +172,17 @@ class Logger {
   }
 
   // 보안 이벤트 전용 로깅
-  security(event: SecurityEvent) {
+  security(_event: SecurityEvent) {
     const entry = this.createLogEntry(
       LogLevel.WARN,
-      event.message,
+      _event.message,
       'SECURITY',
       {
-        type: event.type,
-        userId: event.userId,
-        ip: event.ip,
-        userAgent: event.userAgent,
-        ...event.metadata
+        type: _event.type,
+        userId: _event.userId,
+        ip: _event.ip,
+        userAgent: _event.userAgent,
+        ..._event.metadata
       }
     );
     this.output(entry);
@@ -263,23 +263,23 @@ export const logger = new Logger();
 
 // 전역 에러 핸들러
 if (typeof window !== 'undefined') {
-  window.addEventListener('error', (event) => {
+  window.addEventListener('error', (_event) => {
     logger.error(
-      `Uncaught Error: ${event.message}`,
-      new Error(event.message),
+      `Uncaught Error: ${_event.message}`,
+      new Error(_event.message),
       'GLOBAL_ERROR',
       {
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno
+        filename: _event.filename,
+        lineno: _event.lineno,
+        colno: _event.colno
       }
     );
   });
 
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener('unhandledrejection', (_event) => {
     logger.error(
-      `Unhandled Promise Rejection: ${event.reason}`,
-      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+      `Unhandled Promise Rejection: ${_event.reason}`,
+      _event.reason instanceof Error ? _event.reason : new Error(String(_event.reason)),
       'PROMISE_REJECTION'
     );
   });
@@ -315,7 +315,7 @@ export function measurePerformance<T>(
       logger.performance(operation, duration);
       return result;
     }
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = performance.now() - start;
     logger.error(
       `Performance measurement failed for ${operation}`,

@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
@@ -14,7 +12,6 @@ import { Loader2, Trophy, Calendar, Target, CheckCircle2, Award } from 'lucide-r
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 const statusLabels: Record<'draft' | 'registration-open' | 'registration-closed' | 'in-progress' | 'completed', string> = {
   draft: '준비중',
   'registration-open': '신청중',
@@ -22,26 +19,23 @@ const statusLabels: Record<'draft' | 'registration-open' | 'registration-closed'
   'in-progress': '진행중',
   completed: '완료',
 };
-
 export default function LevelTestsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedTest, setSelectedTest] = useState<LevelTest | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Fetch member info
   const memberQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !_user?.uid) return null;
     return query(
       collection(firestore, 'members'),
-      where('userId', '==', user.uid)
+      where('userId', '==', _user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, _user?.uid]);
   const { data: members } = useCollection<Member>(memberQuery);
   const member = members?.[0];
-
   // Fetch level tests
   const testsQuery = useMemoFirebase(() => {
     if (!firestore || !member?.clubId) return null;
@@ -52,19 +46,16 @@ export default function LevelTestsPage() {
     );
   }, [firestore, member?.clubId]);
   const { data: levelTests, isLoading } = useCollection<LevelTest>(testsQuery);
-  
   // 로딩 스피너는 모든 훅 호출 뒤에서 한 번만 렌더
-
   // Fetch my registrations
   const myRegistrationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !_user?.uid) return null;
     return query(
       collection(firestore, 'level_test_registrations'),
-      where('memberId', '==', user.uid)
+      where('memberId', '==', _user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, _user?.uid]);
   const { data: myRegistrations } = useCollection<LevelTestRegistration>(myRegistrationsQuery);
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -72,15 +63,12 @@ export default function LevelTestsPage() {
       </div>
     );
   }
-
   const handleApply = (test: LevelTest) => {
     setSelectedTest(test);
     setSelectedLevel('');
   };
-
   const handleSubmit = async () => {
-    if (!selectedTest || !firestore || !user || !member || !selectedLevel) return;
-
+    if (!selectedTest || !firestore || !_user || !member || !selectedLevel) return;
     setIsSubmitting(true);
     try {
       const regRef = doc(collection(firestore, 'level_test_registrations'));
@@ -88,7 +76,7 @@ export default function LevelTestsPage() {
         id: regRef.id,
         testId: selectedTest.id,
         testName: selectedTest.name,
-        memberId: user.uid,
+        memberId: _user.uid,
         memberName: member.name,
         clubId: member.clubId,
         currentLevel: member.currentLevel || '',
@@ -97,17 +85,14 @@ export default function LevelTestsPage() {
         registeredAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(regRef, registrationData);
-
       toast({
         title: '신청 완료!',
         description: `${selectedTest.name} 레벨테스트 신청이 완료되었습니다.`,
       });
-
       setSelectedTest(null);
       setSelectedLevel('');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '신청 실패',
@@ -117,26 +102,21 @@ export default function LevelTestsPage() {
       setIsSubmitting(false);
     }
   };
-
   const isRegistered = (testId: string) => {
     return myRegistrations?.some(r => r.testId === testId);
   };
-
   const canRegister = (test: LevelTest) => {
     const now = new Date();
     const regEnd = new Date(test.registrationDeadline);
     return test.status === 'registration-open' && now <= regEnd;
   };
-
   // 상단에서 이미 로딩 처리를 통일함
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">레벨테스트</h1>
         <p className="text-muted-foreground mt-1">레벨을 획득하고 실력을 인정받으세요</p>
       </div>
-
       {/* My Current Level */}
       {member?.currentLevel && (
         <Card>
@@ -155,7 +135,6 @@ export default function LevelTestsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* My Registrations */}
       {myRegistrations && myRegistrations.length > 0 && (
         <Card>
@@ -182,13 +161,11 @@ export default function LevelTestsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Available Tests */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {levelTests?.map((test) => {
           const registered = isRegistered(test.id);
           const canApply = canRegister(test);
-
           return (
             <Card key={test.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -227,7 +204,6 @@ export default function LevelTestsPage() {
                   <Trophy className="h-4 w-4" />
                   <span>신청 마감: {format(new Date(test.registrationDeadline), 'M/d')}</span>
                 </div>
-
                 {canApply && !registered && (
                   <Button onClick={() => handleApply(test)} className="w-full">
                     신청하기
@@ -238,7 +214,6 @@ export default function LevelTestsPage() {
           );
         })}
       </div>
-
       {(!levelTests || levelTests.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -247,7 +222,6 @@ export default function LevelTestsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Application Dialog */}
       <Dialog open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
         <DialogContent className="max-w-lg">
@@ -257,7 +231,6 @@ export default function LevelTestsPage() {
               도전할 레벨을 선택하세요
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-3 py-4">
             {(selectedTest?.criteria || [])
               .sort((a: any, b: any) => a.maxScore - b.maxScore)
@@ -287,7 +260,6 @@ export default function LevelTestsPage() {
                 </div>
               ))}
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedTest(null)}>
               취소

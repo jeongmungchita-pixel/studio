@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +23,9 @@ interface SuperAdminRequest {
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: string;
 }
-
 export default function SuperAdminRegisterPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,21 +37,17 @@ export default function SuperAdminRegisterPage() {
     reason: '', // 신청 사유
     secretCode: '', // 비밀 코드 (보안용)
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!firestore) {
       alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       // SuperAdminRequest 생성 (비회원도 가능, 단 보안 코드 필요)
       const requestData: Omit<SuperAdminRequest, 'id'> = {
-        userId: user?.uid || '', // 로그인 안 했으면 빈 문자열
+        userId: _user?.uid || '', // 로그인 안 했으면 빈 문자열
         name: formData.name,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
@@ -65,20 +58,16 @@ export default function SuperAdminRegisterPage() {
         status: 'pending',
         requestedAt: new Date().toISOString(),
       };
-
-
       // Firestore에 저장
       const docRef = await addDoc(collection(firestore, 'superAdminRequests'), requestData);
-      
       alert('최고관리자 신청이 완료되었습니다. 시스템 관리자의 검토 후 승인됩니다.');
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: unknown) {
       alert('신청에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl border-red-200">
@@ -110,14 +99,12 @@ export default function SuperAdminRegisterPage() {
                 </div>
               </div>
             </div>
-
             {/* 개인 정보 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="h-5 w-5" />
                 신청자 정보
               </h3>
-
               <div className="space-y-2">
                 <Label htmlFor="name">이름 *</Label>
                 <Input
@@ -128,7 +115,6 @@ export default function SuperAdminRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">이메일 *</Label>
                 <Input
@@ -140,7 +126,6 @@ export default function SuperAdminRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="phone">전화번호 *</Label>
                 <Input
@@ -153,13 +138,10 @@ export default function SuperAdminRegisterPage() {
                 />
               </div>
             </div>
-
             <div className="border-t pt-6" />
-
             {/* 소속 정보 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">소속 및 직책</h3>
-
               <div className="space-y-2">
                 <Label htmlFor="organization">소속 기관 *</Label>
                 <Input
@@ -170,7 +152,6 @@ export default function SuperAdminRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="position">직책 *</Label>
                 <Input
@@ -181,7 +162,6 @@ export default function SuperAdminRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="reason">신청 사유 *</Label>
                 <Textarea
@@ -194,13 +174,10 @@ export default function SuperAdminRegisterPage() {
                 />
               </div>
             </div>
-
             <div className="border-t pt-6" />
-
             {/* 보안 코드 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-red-600">보안 인증</h3>
-
               <div className="space-y-2">
                 <Label htmlFor="secretCode">비밀 코드 *</Label>
                 <Input
@@ -216,7 +193,6 @@ export default function SuperAdminRegisterPage() {
                 </p>
               </div>
             </div>
-
             {/* 동의 */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <p className="text-sm text-gray-700">
@@ -225,7 +201,6 @@ export default function SuperAdminRegisterPage() {
                 승인 후 안전하게 보관됩니다.
               </p>
             </div>
-
             {/* 제출 버튼 */}
             <div className="flex gap-3">
               <Button

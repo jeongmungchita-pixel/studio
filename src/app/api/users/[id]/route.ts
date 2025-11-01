@@ -4,7 +4,6 @@
  * PUT /api/users/[id] - 사용자 정보 수정
  * DELETE /api/users/[id] - 사용자 삭제
  */
-
 import { NextRequest } from 'next/server';
 import { 
   successResponse, 
@@ -18,16 +17,13 @@ import {
 import { UserRole } from '@/types/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdmin } from '@/firebase/admin';
-
 // Admin SDK 초기화
 initializeAdmin();
-
 interface RouteParams {
   params: {
     id: string;
   };
 }
-
 /**
  * GET: 사용자 상세 조회
  */
@@ -37,20 +33,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const validation = await validateRequest(request, {
       requireAuth: true
     });
-
     if (!validation.valid) {
       return validation.error!;
     }
-
     const userId = params.id;
-    
     // 권한 확인: 자신의 정보이거나 관리자
     if (validation.user?.uid !== userId) {
       const hasPermission = await validateRequest(request, {
         requireAuth: true,
         minimumRole: UserRole.CLUB_MANAGER
       });
-      
       if (!hasPermission.valid) {
         return errorResponse(
           ApiErrorCode.FORBIDDEN,
@@ -59,30 +51,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         );
       }
     }
-
     // 사용자 조회
     const db = getFirestore();
     const userDoc = await db.collection('users').doc(userId).get();
-
-    if (!userDoc.exists) {
+    if (!userDoc?.exists) {
       return errorResponse(
         ApiErrorCode.NOT_FOUND,
         '사용자를 찾을 수 없습니다.',
         HttpStatus.NOT_FOUND
       );
     }
-
     const userData = {
       id: userDoc.id,
-      ...userDoc.data(),
-      createdAt: userDoc.data()?.createdAt?.toDate?.() || userDoc.data()?.createdAt,
-      updatedAt: userDoc.data()?.updatedAt?.toDate?.() || userDoc.data()?.updatedAt
+      ...userDoc?.data(),
+      createdAt: userDoc?.data()?.createdAt?.toDate?.() || userDoc?.data()?.createdAt,
+      updatedAt: userDoc?.data()?.updatedAt?.toDate?.() || userDoc?.data()?.updatedAt
     };
-
     return successResponse(userData);
   });
 }
-
 /**
  * PUT: 사용자 정보 수정
  */
@@ -92,13 +79,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const validation = await validateRequest(request, {
       requireAuth: true
     });
-
     if (!validation.valid) {
       return validation.error!;
     }
-
     const userId = params.id;
-    
     // 권한 확인: 자신의 정보이거나 관리자
     const isSelf = validation.user?.uid === userId;
     const isAdmin = validation.user?.role && [
@@ -107,7 +91,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       UserRole.CLUB_OWNER,
       UserRole.CLUB_MANAGER
     ].includes(validation.user.role);
-
     if (!isSelf && !isAdmin) {
       return errorResponse(
         ApiErrorCode.FORBIDDEN,
@@ -115,7 +98,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         HttpStatus.FORBIDDEN
       );
     }
-
     // 요청 본문 파싱
     const body = await parseRequestBody<{
       name?: string;
@@ -124,7 +106,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       status?: string;
       clubId?: string;
     }>(request);
-
     if (!body) {
       return errorResponse(
         ApiErrorCode.INVALID_INPUT,
@@ -132,24 +113,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         HttpStatus.BAD_REQUEST
       );
     }
-
     // 사용자 존재 확인
     const db = getFirestore();
     const userDoc = await db.collection('users').doc(userId).get();
-
-    if (!userDoc.exists) {
+    if (!userDoc?.exists) {
       return errorResponse(
         ApiErrorCode.NOT_FOUND,
         '사용자를 찾을 수 없습니다.',
         HttpStatus.NOT_FOUND
       );
     }
-
     // 업데이트 데이터 준비
     const updateData: any = {
       updatedAt: new Date()
     };
-
     // 일반 사용자는 일부 필드만 수정 가능
     if (isSelf && !isAdmin) {
       if (body.name) updateData.name = body.name;
@@ -172,26 +149,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (body.status) updateData.status = body.status;
       if (body.clubId !== undefined) updateData.clubId = body.clubId;
     }
-
     // 업데이트 실행
     await db.collection('users').doc(userId).update(updateData);
-
     // 업데이트된 사용자 정보 반환
     const updatedDoc = await db.collection('users').doc(userId).get();
     const updatedUser = {
       id: updatedDoc.id,
-      ...updatedDoc.data(),
-      createdAt: updatedDoc.data()?.createdAt?.toDate?.() || updatedDoc.data()?.createdAt,
-      updatedAt: updatedDoc.data()?.updatedAt?.toDate?.() || updatedDoc.data()?.updatedAt
+      ...updatedDoc?.data(),
+      createdAt: updatedDoc?.data()?.createdAt?.toDate?.() || updatedDoc?.data()?.createdAt,
+      updatedAt: updatedDoc?.data()?.updatedAt?.toDate?.() || updatedDoc?.data()?.updatedAt
     };
-
     return successResponse(
       updatedUser,
       '사용자 정보가 수정되었습니다.'
     );
   });
 }
-
 /**
  * DELETE: 사용자 삭제
  */
@@ -202,13 +175,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       requireAuth: true,
       requiredRoles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN]
     });
-
     if (!validation.valid) {
       return validation.error!;
     }
-
     const userId = params.id;
-
     // 자기 자신은 삭제 불가
     if (validation.user?.uid === userId) {
       return errorResponse(
@@ -217,21 +187,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         HttpStatus.BAD_REQUEST
       );
     }
-
     // 사용자 존재 확인
     const db = getFirestore();
     const userDoc = await db.collection('users').doc(userId).get();
-
-    if (!userDoc.exists) {
+    if (!userDoc?.exists) {
       return errorResponse(
         ApiErrorCode.NOT_FOUND,
         '사용자를 찾을 수 없습니다.',
         HttpStatus.NOT_FOUND
       );
     }
-
     // 삭제할 사용자의 역할 확인
-    const targetUserRole = userDoc.data()?.role;
+    const targetUserRole = userDoc?.data()?.role;
     if (targetUserRole && !canDeleteUser(validation.user!.role!, targetUserRole)) {
       return errorResponse(
         ApiErrorCode.INSUFFICIENT_PERMISSIONS,
@@ -239,21 +206,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         HttpStatus.FORBIDDEN
       );
     }
-
     // 소프트 삭제 (실제로는 status를 'deleted'로 변경)
     await db.collection('users').doc(userId).update({
       status: 'deleted',
       deletedAt: new Date(),
       deletedBy: validation.user?.uid
     });
-
     return successResponse(
       { id: userId },
       '사용자가 삭제되었습니다.'
     );
   });
 }
-
 /**
  * 역할 부여 권한 확인
  */
@@ -274,13 +238,10 @@ function canAssignRole(assignerRole: UserRole, targetRole: UserRole): boolean {
     [UserRole.PARENT]: 20,
     [UserRole.VENDOR]: 10
   };
-
   const assignerLevel = roleHierarchy[assignerRole] || 0;
   const targetLevel = roleHierarchy[targetRole] || 0;
-
   return assignerLevel > targetLevel;
 }
-
 /**
  * 사용자 삭제 권한 확인
  */

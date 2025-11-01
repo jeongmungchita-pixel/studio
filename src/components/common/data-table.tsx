@@ -1,18 +1,15 @@
 'use client';
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-
 interface Column<T> {
   key: keyof T | string;
   header: string;
   sortable?: boolean;
-  render?: (value: any, item: T) => React.ReactNode;
+  render?: (value: unknown, item: T) => React.ReactNode;
   width?: string;
 }
-
 interface DataTableProps<T> {
   data: T[];
   columns: Column<T>[];
@@ -24,8 +21,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   className?: string;
 }
-
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   data,
   columns,
   loading = false,
@@ -64,7 +60,6 @@ export function DataTable<T extends Record<string, any>>({
       </div>
     );
   }
-
   return (
     <div className={`border rounded-lg ${className}`}>
       <Table>
@@ -109,7 +104,7 @@ export function DataTable<T extends Record<string, any>>({
                   <TableCell key={colIndex}>
                     {column.render 
                       ? column.render(item[column.key as keyof T], item)
-                      : item[column.key as keyof T]
+                      : String(item[column.key as keyof T] ?? '')
                     }
                   </TableCell>
                 ))}

@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { useRole } from '@/hooks/use-role';
@@ -19,9 +17,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { ROUTES } from '@/constants/routes';
 import { useToast } from '@/hooks/use-toast';
-
 export default function SuperAdminDashboard() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const { isSuperAdmin } = useRole();
   const firestore = useFirestore();
   const router = useRouter();
@@ -35,11 +32,10 @@ export default function SuperAdminDashboard() {
   const [confirmText, setConfirmText] = useState('');
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
-
   // 접근 제어
   useEffect(() => {
     if (!isUserLoading) {
-      if (!user) {
+      if (!_user) {
         router.push('/login');
         return;
       }
@@ -48,8 +44,7 @@ export default function SuperAdminDashboard() {
         return;
       }
     }
-  }, [isUserLoading, user, isSuperAdmin, router]);
-
+  }, [isUserLoading, _user, isSuperAdmin, router]);
   // 클럽 오너 신청 목록
   const clubOwnerRequestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -59,9 +54,7 @@ export default function SuperAdminDashboard() {
     );
   }, [firestore]);
   const { data: clubOwnerRequests, isLoading: isRequestsLoading } = useCollection<ClubOwnerRequest>(clubOwnerRequestsQuery);
-  
   // 디버깅 로그
-
   // 최고 관리자 신청 목록
   const superAdminRequestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -71,14 +64,12 @@ export default function SuperAdminDashboard() {
     );
   }, [firestore]);
   const { data: superAdminRequests } = useCollection(superAdminRequestsQuery);
-
   // 연맹 관리자 임명 폼
   const [federationAdminForm, setFederationAdminForm] = useState({
     email: '',
     name: '',
     phoneNumber: '',
   });
-
   // 권한 체크
   if (isUserLoading) {
     return (
@@ -87,17 +78,14 @@ export default function SuperAdminDashboard() {
       </div>
     );
   }
-
-  if (!user || user.role !== UserRole.SUPER_ADMIN) {
+  if (!_user || _user.role !== UserRole.SUPER_ADMIN) {
     router.push('/dashboard');
     return null;
   }
-
   // 클럽 오너 승인
   const handleApproveClubOwner = async (request: ClubOwnerRequest) => {
     if (!firestore) return;
     setIsProcessing(true);
-
     try {
       // 1. 클럽 생성
       const clubData = {
@@ -109,10 +97,9 @@ export default function SuperAdminDashboard() {
         status: 'active',
         createdAt: new Date().toISOString(),
         approvedAt: new Date().toISOString(),
-        approvedBy: user.uid,
+        approvedBy: _user.uid,
       };
       const clubRef = await addDoc(collection(firestore, 'clubs'), clubData);
-
       // 2. 사용자 프로필 업데이트 (이미 존재하는 경우)
       // 비회원 가입인 경우 로그인 시 프로필 생성됨
       if (request.userId && request.userId.trim() !== '') {
@@ -122,25 +109,23 @@ export default function SuperAdminDashboard() {
           status: 'approved',
           clubId: clubRef.id,
           clubName: request.clubName,
-          approvedBy: user.uid,
+          approvedBy: _user.uid,
           approvedAt: new Date().toISOString(),
         });
       } else {
       }
-
       // 3. 신청 상태 업데이트
       const requestRef = doc(firestore, 'clubOwnerRequests', request.id);
       await updateDoc(requestRef, {
         status: 'approved',
-        approvedBy: user.uid,
+        approvedBy: _user.uid,
         approvedAt: new Date().toISOString(),
       });
-
       toast({
         title: '승인 완료',
         description: `${request.clubName} 클럽이 승인되었습니다!`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -150,37 +135,32 @@ export default function SuperAdminDashboard() {
       setIsProcessing(false);
     }
   };
-
   // 클럽 오너 거부
   const handleRejectClubOwner = async () => {
     if (!firestore || !selectedRequestId || !rejectionReason.trim()) return;
     setIsProcessing(true);
-
     try {
       const request = clubOwnerRequests?.find(r => r.id === selectedRequestId);
       if (!request) return;
-
       // 1. 사용자 프로필 업데이트 (이미 존재하는 경우)
       if (request.userId && request.userId.trim() !== '') {
         const userRef = doc(firestore, 'users', request.userId);
         await updateDoc(userRef, {
           status: 'rejected',
-          rejectedBy: user.uid,
+          rejectedBy: _user.uid,
           rejectedAt: new Date().toISOString(),
           rejectionReason,
         });
       } else {
       }
-
       // 2. 신청 상태 업데이트
       const requestRef = doc(firestore, 'clubOwnerRequests', selectedRequestId);
       await updateDoc(requestRef, {
         status: 'rejected',
-        rejectedBy: user.uid,
+        rejectedBy: _user.uid,
         rejectedAt: new Date().toISOString(),
         rejectionReason,
       });
-
       toast({
         title: '거부 완료',
         description: '신청이 거부되었습니다.',
@@ -188,7 +168,7 @@ export default function SuperAdminDashboard() {
       setRejectDialogOpen(false);
       setRejectionReason('');
       setSelectedRequestId(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -198,17 +178,14 @@ export default function SuperAdminDashboard() {
       setIsProcessing(false);
     }
   };
-
   // 연맹 관리자 임명
   const handleAppointFederationAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user) return;
+    if (!firestore || !_user) return;
     setIsProcessing(true);
-
     try {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7일 후 만료
-
       // 초대 생성 (Firestore Trigger가 자동으로 이메일 발송)
       const inviteDocRef = await addDoc(collection(firestore, 'federationAdminInvites'), {
         email: federationAdminForm.email,
@@ -216,30 +193,25 @@ export default function SuperAdminDashboard() {
         phoneNumber: federationAdminForm.phoneNumber,
         inviteToken: '', // 임시값, 아래에서 업데이트
         status: 'pending',
-        invitedBy: user.uid,
-        invitedByName: user.displayName || user.email || '최고 관리자',
+        invitedBy: _user.uid,
+        invitedByName: _user.displayName || _user.email || '최고 관리자',
         invitedAt: new Date().toISOString(),
         expiresAt: expiresAt.toISOString(),
       });
-
       // 생성된 문서 ID를 inviteToken으로 업데이트
       await updateDoc(inviteDocRef, {
         inviteToken: inviteDocRef.id,
       });
-
       // 초대 링크 생성
       const inviteLink = `${window.location.origin}/invite/${inviteDocRef.id}`;
-
       toast({
         title: '초대 생성 완료',
         description: `초대가 생성되었습니다. 초대 관리 페이지에서 링크를 복사하여 전달하세요.`,
       });
-      
       // 초대 관리 페이지로 이동
       router.push('/super-admin/invites');
-      
       setFederationAdminForm({ email: '', name: '', phoneNumber: '' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -249,7 +221,6 @@ export default function SuperAdminDashboard() {
       setIsProcessing(false);
     }
   };
-
   // Firestore 데이터 초기화
   const handleResetFirestore = async () => {
     if (confirmText !== 'RESET') {
@@ -260,33 +231,18 @@ export default function SuperAdminDashboard() {
       });
       return;
     }
-
     setIsResetting(true);
-    console.log('🔥 데이터 리셋 시작...');
-    
     try {
       // Firebase Auth 토큰 가져오기
       const auth = (await import('firebase/auth')).getAuth();
       const currentUser = auth.currentUser;
-      
-      console.log('👤 현재 사용자:', {
-        uid: currentUser?.uid,
-        email: currentUser?.email,
-        emailVerified: currentUser?.emailVerified
-      });
-
       if (!currentUser) {
         throw new Error('로그인이 필요합니다.');
       }
-
       const token = await currentUser.getIdToken(true); // 강제 새로고침
-      console.log('🎫 토큰 획득 성공, 길이:', token.length);
-
       if (!token) {
         throw new Error('인증 토큰을 가져올 수 없습니다.');
       }
-
-      console.log('📡 API 요청 시작...');
       const response = await fetch('/api/admin/reset-firestore', {
         method: 'POST',
         headers: {
@@ -294,53 +250,39 @@ export default function SuperAdminDashboard() {
           'Content-Type': 'application/json',
         },
       });
-
-      console.log('📨 응답 상태:', response.status, response.statusText);
-
       const data = await response.json();
-      console.log('📄 응답 데이터:', data);
-
       if (!response.ok) {
         throw new Error(data.error || data.details || '초기화 실패');
       }
-
       toast({
         title: '초기화 완료',
         description: `Firestore: ${data.totalDeleted}개 문서, Auth: ${data.deletedAuthUsers}개 계정 삭제됨`,
       });
-
       setResetDialogOpen(false);
       setConfirmText('');
-      
       // 페이지 새로고침
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-
-    } catch (error) {
-      console.error('💥 리셋 오류:', error);
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
-        description: error instanceof Error ? error.message : '초기화 중 오류가 발생했습니다.',
+        description: error instanceof Error ? error instanceof Error ? error.message : String(error) : '초기화 중 오류가 발생했습니다.',
       });
     } finally {
       setIsResetting(false);
     }
   };
-
   // 디버깅 정보 가져오기
   const handleDebugInfo = async () => {
     try {
       const auth = (await import('firebase/auth')).getAuth();
       const currentUser = auth.currentUser;
-      
       if (!currentUser) {
         throw new Error('로그인이 필요합니다.');
       }
-
       const token = await currentUser.getIdToken(true);
-      
       const response = await fetch('/api/admin/debug', {
         method: 'GET',
         headers: {
@@ -348,31 +290,24 @@ export default function SuperAdminDashboard() {
           'Content-Type': 'application/json',
         },
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || '디버깅 정보 가져오기 실패');
       }
-
       setDebugInfo(data);
       setShowDebugInfo(true);
-
       toast({
         title: '디버깅 정보 로드 완료',
         description: '콘솔에서 상세 정보를 확인하세요.',
       });
-
-    } catch (error) {
-      console.error('디버깅 정보 오류:', error);
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '디버깅 정보 오류',
-        description: error instanceof Error ? error.message : '알 수 없는 오류',
+        description: error instanceof Error ? error instanceof Error ? error.message : String(error) : '알 수 없는 오류',
       });
     }
   };
-
   return (
     <main className="flex-1 p-8 space-y-8 bg-white">
       {/* Windsurf 스타일 헤더 */}
@@ -420,7 +355,6 @@ export default function SuperAdminDashboard() {
         </div>
         <div className="h-px bg-slate-200" />
       </div>
-
       {/* Windsurf 스타일 통계 카드 */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border border-slate-200 hover:border-slate-300 transition-colors">
@@ -444,7 +378,6 @@ export default function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border border-slate-200 hover:border-slate-300 transition-colors">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -466,7 +399,6 @@ export default function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-
         <Card className="border border-slate-200 hover:border-slate-300 transition-colors">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -486,7 +418,6 @@ export default function SuperAdminDashboard() {
           </CardContent>
         </Card>
       </div>
-
       {/* Windsurf 스타일 탭 */}
       <Tabs defaultValue="clubs" className="space-y-6">
         <TabsList className="bg-slate-50 border border-slate-200 p-1 h-auto">
@@ -512,7 +443,6 @@ export default function SuperAdminDashboard() {
             최고 관리자
           </TabsTrigger>
         </TabsList>
-
         {/* 클럽 승인 탭 */}
         <TabsContent value="clubs" className="space-y-4">
           <div className="space-y-4">
@@ -568,13 +498,11 @@ export default function SuperAdminDashboard() {
                             </div>
                           )}
                         </div>
-
                         {(request as any).clubDescription && (
                           <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                             <p className="text-sm text-slate-700">{(request as any).clubDescription}</p>
                           </div>
                         )}
-
                         {/* 액션 버튼 */}
                         <div className="flex gap-2 pt-2">
                           <Button
@@ -616,7 +544,6 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
         </TabsContent>
-
         {/* 연맹 관리자 임명 탭 */}
         <TabsContent value="federation">
           <Card>
@@ -638,7 +565,6 @@ export default function SuperAdminDashboard() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="email">이메일 *</Label>
                   <Input
@@ -650,7 +576,6 @@ export default function SuperAdminDashboard() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="phone">전화번호</Label>
                   <Input
@@ -661,7 +586,6 @@ export default function SuperAdminDashboard() {
                     placeholder="010-1234-5678"
                   />
                 </div>
-
                 <Button type="submit" disabled={isProcessing}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   연맹 관리자 임명
@@ -670,7 +594,6 @@ export default function SuperAdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* 최고 관리자 승인 탭 */}
         <TabsContent value="super-admin">
           <Card>
@@ -696,7 +619,6 @@ export default function SuperAdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
-
       {/* 거부 다이얼로그 */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
@@ -726,7 +648,6 @@ export default function SuperAdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* 데이터 초기화 확인 다이얼로그 */}
       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
@@ -790,7 +711,6 @@ export default function SuperAdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* 디버깅 정보 다이얼로그 */}
       <Dialog open={showDebugInfo} onOpenChange={setShowDebugInfo}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
@@ -803,19 +723,17 @@ export default function SuperAdminDashboard() {
               Firebase Admin SDK 및 시스템 상태 정보
             </DialogDescription>
           </DialogHeader>
-          
           {debugInfo && (
             <div className="space-y-4">
               {/* 사용자 정보 */}
               <div className="p-4 bg-slate-50 rounded-lg">
                 <h3 className="font-semibold mb-2">사용자 정보</h3>
                 <div className="text-sm space-y-1">
-                  <p><strong>UID:</strong> {debugInfo.user?.uid}</p>
+                  <p><strong>UID:</strong> {debugInfo._user?.uid}</p>
                   <p><strong>이메일:</strong> {debugInfo.user?.email}</p>
-                  <p><strong>역할:</strong> {debugInfo.user?.role}</p>
+                  <p><strong>역할:</strong> {debugInfo._user?.role}</p>
                 </div>
               </div>
-
               {/* Admin SDK 상태 */}
               <div className="p-4 bg-slate-50 rounded-lg">
                 <h3 className="font-semibold mb-2">Firebase Admin SDK</h3>
@@ -825,7 +743,6 @@ export default function SuperAdminDashboard() {
                   <p><strong>Firestore:</strong> {debugInfo.adminSDK?.firestoreAvailable ? '✅ 사용 가능' : '❌ 사용 불가'}</p>
                 </div>
               </div>
-
               {/* 연결 테스트 */}
               {debugInfo.connectionTest && (
                 <div className="p-4 bg-slate-50 rounded-lg">
@@ -837,7 +754,6 @@ export default function SuperAdminDashboard() {
                   </div>
                 </div>
               )}
-
               {/* 통계 */}
               <div className="p-4 bg-slate-50 rounded-lg">
                 <h3 className="font-semibold mb-2">데이터 통계</h3>
@@ -845,14 +761,13 @@ export default function SuperAdminDashboard() {
                   <p><strong>Auth 사용자:</strong> {debugInfo.statistics?.authUsers}명</p>
                   <p><strong>총 Firestore 문서:</strong> {debugInfo.statistics?.totalFirestoreDocuments}개</p>
                 </div>
-                
                 {debugInfo.statistics?.collections && (
                   <div className="mt-3">
                     <p className="font-medium mb-2">컬렉션별 문서 수:</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      {Object.entries(debugInfo.statistics.collections).map(([collection, count]) => (
-                        <div key={collection} className="flex justify-between">
-                          <span>{collection}:</span>
+                      {Object.entries(debugInfo.statistics.collections).map(([_collection, count]) => (
+                        <div key={_collection} className="flex justify-between">
+                          <span>{_collection}:</span>
                           <span>{count as number >= 0 ? `${count}개` : '오류'}</span>
                         </div>
                       ))}
@@ -860,7 +775,6 @@ export default function SuperAdminDashboard() {
                   </div>
                 )}
               </div>
-
               {/* 환경 정보 */}
               <div className="p-4 bg-slate-50 rounded-lg">
                 <h3 className="font-semibold mb-2">환경 정보</h3>
@@ -870,7 +784,6 @@ export default function SuperAdminDashboard() {
                   <p><strong>GOOGLE_APPLICATION_CREDENTIALS:</strong> {debugInfo.environment?.hasGoogleCredentials ? '✅ 설정됨' : '❌ 없음'}</p>
                 </div>
               </div>
-
               {/* JSON 원본 데이터 */}
               <details className="p-4 bg-slate-50 rounded-lg">
                 <summary className="font-semibold cursor-pointer">원본 JSON 데이터</summary>
@@ -880,7 +793,6 @@ export default function SuperAdminDashboard() {
               </details>
             </div>
           )}
-          
           <DialogFooter>
             <Button onClick={() => setShowDebugInfo(false)}>
               닫기

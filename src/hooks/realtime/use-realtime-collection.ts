@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   collection, 
@@ -13,7 +12,6 @@ import {
 import { useFirestore } from '@/firebase';
 import { APIError } from '@/utils/error/api-error';
 import { logError } from '@/utils/error/error-handler';
-
 export interface RealtimeCollectionOptions {
   enabled?: boolean;
   onError?: (error: APIError) => void;
@@ -22,7 +20,6 @@ export interface RealtimeCollectionOptions {
   retryOnError?: boolean;
   maxRetries?: number;
 }
-
 export interface RealtimeCollectionResult<T> {
   data: (T & { id: string })[];
   isLoading: boolean;
@@ -32,7 +29,6 @@ export interface RealtimeCollectionResult<T> {
   refetch: () => void;
   unsubscribe: () => void;
 }
-
 /**
  * 실시간 컬렉션 동기화 Hook
  * Firestore 컬렉션의 실시간 변경사항을 감지하고 상태를 업데이트합니다.
@@ -50,18 +46,14 @@ export function useRealtimeCollection<T extends DocumentData>(
     retryOnError = true,
     maxRetries = 3,
   } = options;
-
   const firestore = useFirestore();
-  
   const [data, setData] = useState<(T & { id: string })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<APIError | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-
   const unsubscribeRef = useRef<Unsubscribe | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   // 연결 해제 함수
   const unsubscribe = useCallback(() => {
     if (unsubscribeRef.current) {
@@ -77,23 +69,19 @@ export function useRealtimeCollection<T extends DocumentData>(
       onDisconnect();
     }
   }, [onDisconnect]);
-
   // 실시간 리스너 설정
   const setupListener = useCallback(() => {
     if (!firestore || !enabled) {
       setIsLoading(false);
       return;
     }
-
     try {
       const collectionRef = collection(firestore, collectionName);
       const q = constraints.length > 0 
         ? query(collectionRef, ...constraints)
         : collectionRef;
-
       setIsLoading(true);
       setError(null);
-
       const unsubscribeFn = onSnapshot(
         q,
         {
@@ -108,22 +96,19 @@ export function useRealtimeCollection<T extends DocumentData>(
                 ...doc.data(),
                 id: doc.id,
               })) as (T & { id: string })[];
-
               setData(documents);
               setIsConnected(true);
               setIsLoading(false);
               setRetryCount(0);
-
               if (onConnect && !isConnected) {
                 onConnect();
               }
             }
-          } catch (err) {
+          } catch (err: unknown) {
             const apiError = APIError.fromError(err);
             setError(apiError);
             setIsLoading(false);
             logError(apiError, `useRealtimeCollection:${collectionName}`);
-            
             if (onError) {
               onError(apiError);
             }
@@ -134,17 +119,13 @@ export function useRealtimeCollection<T extends DocumentData>(
           setError(apiError);
           setIsLoading(false);
           setIsConnected(false);
-          
           logError(apiError, `useRealtimeCollection:${collectionName}`);
-          
           if (onError) {
             onError(apiError);
           }
-
           // 재시도 로직
           if (retryOnError && retryCount < maxRetries) {
             const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 10000); // 최대 10초
-            
             retryTimeoutRef.current = setTimeout(() => {
               setRetryCount(prev => prev + 1);
               setupListener();
@@ -152,14 +133,12 @@ export function useRealtimeCollection<T extends DocumentData>(
           }
         }
       );
-
       unsubscribeRef.current = unsubscribeFn;
-    } catch (err) {
+    } catch (err: unknown) {
       const apiError = APIError.fromError(err);
       setError(apiError);
       setIsLoading(false);
       logError(apiError, `useRealtimeCollection:${collectionName}`);
-      
       if (onError) {
         onError(apiError);
       }
@@ -176,30 +155,25 @@ export function useRealtimeCollection<T extends DocumentData>(
     retryCount,
     isConnected,
   ]);
-
   // 수동 재시도 함수
   const refetch = useCallback(() => {
     unsubscribe();
     setRetryCount(0);
     setupListener();
   }, [unsubscribe, setupListener]);
-
   // 초기 설정 및 정리
   useEffect(() => {
     setupListener();
-
     return () => {
       unsubscribe();
     };
   }, [setupListener, unsubscribe]);
-
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
       unsubscribe();
     };
   }, [unsubscribe]);
-
   return {
     data,
     isLoading,
@@ -210,7 +184,6 @@ export function useRealtimeCollection<T extends DocumentData>(
     unsubscribe,
   };
 }
-
 /**
  * 실시간 컬렉션 Hook의 간편 버전
  * 기본 옵션으로 실시간 컬렉션을 구독합니다.

@@ -17,7 +17,7 @@ interface SimulationUser {
 interface SimulationStep {
   step: number;
   action: string;
-  user: string;
+  _user: string;
   expected: string;
   result?: 'success' | 'fail' | 'pending';
   details?: string;
@@ -54,11 +54,11 @@ class AppFlowSimulator {
         }
       ],
       steps: [
-        { step: 1, action: '회원가입', user: 'new-user-001', expected: '계정 생성 및 이메일 인증' },
-        { step: 2, action: '프로필 작성', user: 'new-user-001', expected: '기본 정보 입력 완료' },
-        { step: 3, action: '클럽 선택', user: 'new-user-001', expected: '클럽 가입 신청' },
-        { step: 4, action: '승인 대기', user: 'new-user-001', expected: '대기 상태로 전환' },
-        { step: 5, action: '클럽 승인', user: 'club-owner', expected: '활성 회원으로 전환' }
+        { step: 1, action: '회원가입', _user: 'new-user-001', expected: '계정 생성 및 이메일 인증' },
+        { step: 2, action: '프로필 작성', _user: 'new-user-001', expected: '기본 정보 입력 완료' },
+        { step: 3, action: '클럽 선택', _user: 'new-user-001', expected: '클럽 가입 신청' },
+        { step: 4, action: '승인 대기', _user: 'new-user-001', expected: '대기 상태로 전환' },
+        { step: 5, action: '클럽 승인', _user: 'club-owner', expected: '활성 회원으로 전환' }
       ]
     });
 
@@ -85,10 +85,10 @@ class AppFlowSimulator {
         }
       ],
       steps: [
-        { step: 1, action: '출석 체크', user: 'coach-001', expected: '출석 데이터 생성' },
-        { step: 2, action: '실시간 동기화', user: 'member-001', expected: '출석 상태 즉시 반영' },
-        { step: 3, action: '공지사항 작성', user: 'coach-001', expected: '공지사항 발행' },
-        { step: 4, action: '알림 수신', user: 'member-001', expected: '푸시 알림 수신' }
+        { step: 1, action: '출석 체크', _user: 'coach-001', expected: '출석 데이터 생성' },
+        { step: 2, action: '실시간 동기화', _user: 'member-001', expected: '출석 상태 즉시 반영' },
+        { step: 3, action: '공지사항 작성', _user: 'coach-001', expected: '공지사항 발행' },
+        { step: 4, action: '알림 수신', _user: 'member-001', expected: '푸시 알림 수신' }
       ]
     });
 
@@ -122,10 +122,10 @@ class AppFlowSimulator {
         }
       ],
       steps: [
-        { step: 1, action: '관리자 페이지 접근', user: 'super-admin', expected: '전체 접근 허용' },
-        { step: 2, action: '클럽 관리 접근', user: 'club-owner', expected: '자신의 클럽만 접근' },
-        { step: 3, action: '관리자 페이지 접근 시도', user: 'member-002', expected: '접근 거부' },
-        { step: 4, action: '권한 상승 시도', user: 'member-002', expected: '보안 이벤트 로깅' }
+        { step: 1, action: '관리자 페이지 접근', _user: 'super-admin', expected: '전체 접근 허용' },
+        { step: 2, action: '클럽 관리 접근', _user: 'club-owner', expected: '자신의 클럽만 접근' },
+        { step: 3, action: '관리자 페이지 접근 시도', _user: 'member-002', expected: '접근 거부' },
+        { step: 4, action: '권한 상승 시도', _user: 'member-002', expected: '보안 이벤트 로깅' }
       ]
     });
 
@@ -144,10 +144,10 @@ class AppFlowSimulator {
         }
       ],
       steps: [
-        { step: 1, action: '첫 번째 데이터 로드', user: 'test-user', expected: '서버에서 데이터 가져오기' },
-        { step: 2, action: '두 번째 데이터 로드', user: 'test-user', expected: '캐시에서 즉시 로드' },
-        { step: 3, action: '데이터 업데이트', user: 'test-user', expected: '낙관적 업데이트' },
-        { step: 4, action: '캐시 무효화', user: 'test-user', expected: '최신 데이터 반영' }
+        { step: 1, action: '첫 번째 데이터 로드', _user: 'test-user', expected: '서버에서 데이터 가져오기' },
+        { step: 2, action: '두 번째 데이터 로드', _user: 'test-user', expected: '캐시에서 즉시 로드' },
+        { step: 3, action: '데이터 업데이트', _user: 'test-user', expected: '낙관적 업데이트' },
+        { step: 4, action: '캐시 무효화', _user: 'test-user', expected: '최신 데이터 반영' }
       ]
     });
   }
@@ -178,7 +178,7 @@ class AppFlowSimulator {
     for (const step of scenario.steps) {
       const startTime = Date.now();
       
-      console.log(`\n${step.step}. ${step.action} (${step.user})`);
+      console.log(`\n${step.step}. ${step.action} (${step._user})`);
       console.log(`   예상: ${step.expected}`);
 
       // 실제 시뮬레이션 로직
@@ -211,72 +211,68 @@ class AppFlowSimulator {
     users: SimulationUser[]
   ): Promise<{ success: boolean; details: string }> {
     
-    const user = users.find(u => u.uid === step.user || u.displayName.includes(step.user));
+    const stepUser = users.find(u => u.uid === step._user || u.displayName.includes(step._user));
+
+    if (!stepUser) {
+      return { success: false, details: `사용자 정보를 찾을 수 없습니다: ${step._user}` };
+    }
     
     // 실제 시뮬레이션 로직
     switch (step.action) {
       case '회원가입':
-        return this.simulateSignup(user);
+        return this.simulateSignup(stepUser);
       
       case '프로필 작성':
-        return this.simulateProfileUpdate(user);
+        return this.simulateProfileUpdate(stepUser);
       
       case '클럽 선택':
-        return this.simulateClubSelection(user);
+        return this.simulateClubSelection(stepUser);
       
       case '출석 체크':
-        return this.simulateAttendance(user);
+        return this.simulateAttendance(stepUser);
       
       case '실시간 동기화':
-        return this.simulateRealtimeSync(user);
+        return this.simulateRealtimeSync(stepUser);
       
       case '관리자 페이지 접근':
       case '클럽 관리 접근':
-        return this.simulateAccessControl(user, step.action);
+        return this.simulateAccessControl(stepUser, step.action);
       
       case '관리자 페이지 접근 시도':
-        return this.simulateUnauthorizedAccess(user);
+        return this.simulateUnauthorizedAccess(stepUser);
       
       case '첫 번째 데이터 로드':
-        return this.simulateDataLoad(user, false);
+        return this.simulateDataLoad(stepUser, false);
       
       case '두 번째 데이터 로드':
-        return this.simulateDataLoad(user, true);
+        return this.simulateDataLoad(stepUser, true);
       
       case '데이터 업데이트':
-        return this.simulateOptimisticUpdate(user);
+        return this.simulateOptimisticUpdate(stepUser);
       
       default:
         return { success: true, details: '시뮬레이션 완료' };
     }
   }
 
-  private async simulateSignup(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateSignup(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     // Firebase Auth 시뮬레이션
     await this.delay(200);
     return { success: true, details: `계정 생성 완료 (${user.email})` };
   }
 
-  private async simulateProfileUpdate(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateProfileUpdate(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     // Firestore 업데이트 시뮬레이션
     await this.delay(150);
     return { success: true, details: '프로필 업데이트 완료' };
   }
 
-  private async simulateClubSelection(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateClubSelection(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     await this.delay(100);
     return { success: true, details: '클럽 가입 신청 완료' };
   }
 
-  private async simulateAttendance(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateAttendance(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     if (user.role !== UserRole.HEAD_COACH && user.role !== UserRole.ASSISTANT_COACH) {
       return { success: false, details: '권한 없음 - 코치만 출석 체크 가능' };
     }
@@ -285,20 +281,16 @@ class AppFlowSimulator {
     return { success: true, details: '출석 데이터 생성 완료' };
   }
 
-  private async simulateRealtimeSync(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateRealtimeSync(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     // 실시간 동기화 시뮬레이션 (매우 빠름)
     await this.delay(50);
     return { success: true, details: '실시간 데이터 동기화 완료' };
   }
 
   private async simulateAccessControl(
-    user?: SimulationUser, 
+    user: SimulationUser, 
     action?: string
   ): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
     await this.delay(80);
     
     if (action === '관리자 페이지 접근') {
@@ -318,9 +310,7 @@ class AppFlowSimulator {
     return { success: false, details: '알 수 없는 접근 요청' };
   }
 
-  private async simulateUnauthorizedAccess(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateUnauthorizedAccess(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     await this.delay(100);
     
     // 보안 이벤트 로깅 시뮬레이션
@@ -330,11 +320,9 @@ class AppFlowSimulator {
   }
 
   private async simulateDataLoad(
-    user?: SimulationUser, 
+    user: SimulationUser, 
     fromCache: boolean = false
   ): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
     if (fromCache) {
       await this.delay(20); // 캐시에서 매우 빠르게
       return { success: true, details: '캐시에서 즉시 로드 (20ms)' };
@@ -344,9 +332,7 @@ class AppFlowSimulator {
     }
   }
 
-  private async simulateOptimisticUpdate(user?: SimulationUser): Promise<{ success: boolean; details: string }> {
-    if (!user) return { success: false, details: '사용자 정보 없음' };
-    
+  private async simulateOptimisticUpdate(user: SimulationUser): Promise<{ success: boolean; details: string }> {
     // 낙관적 업데이트 - UI 즉시 반영
     console.log(`   ⚡ UI 즉시 업데이트`);
     await this.delay(10);

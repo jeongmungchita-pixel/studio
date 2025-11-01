@@ -1,11 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Clock, CheckCircle, XCircle } from 'lucide-react';
-
 interface ApprovalStatusBadgeProps {
   status: 'pending' | 'approved' | 'rejected';
   className?: string;
 }
-
 const statusConfig = {
   pending: {
     label: '승인 대기',
@@ -23,11 +21,9 @@ const statusConfig = {
     icon: XCircle,
   },
 };
-
 export function ApprovalStatusBadge({ status, className = '' }: ApprovalStatusBadgeProps) {
   const config = statusConfig[status];
   const Icon = config.icon;
-
   return (
     <Badge className={`${config.color} border ${className}`}>
       <Icon className="h-3 w-3 mr-1" />

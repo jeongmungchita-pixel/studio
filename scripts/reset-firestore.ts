@@ -203,7 +203,7 @@ async function deleteAllCollections() {
       } else {
         console.log(`  ✅ ${collectionName}: 총 ${deletedCount}개 문서 삭제 완료\n`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ ${collectionName} 삭제 실패:`, error);
       results[collectionName] = -1;
     }
@@ -225,16 +225,16 @@ function printSummary(results: { [key: string]: number }) {
   let emptyCount = 0;
   let errorCount = 0;
 
-  for (const [collection, count] of Object.entries(results)) {
+  for (const [_collection, count] of Object.entries(results)) {
     if (count > 0) {
-      console.log(`✅ ${collection.padEnd(30)} : ${count}개 삭제`);
+      console.log(`✅ ${_collection.padEnd(30)} : ${count}개 삭제`);
       totalDeleted += count;
       successCount++;
     } else if (count === 0) {
-      console.log(`ℹ️  ${collection.padEnd(30)} : 비어있음`);
+      console.log(`ℹ️  ${_collection.padEnd(30)} : 비어있음`);
       emptyCount++;
     } else {
-      console.log(`❌ ${collection.padEnd(30)} : 삭제 실패`);
+      console.log(`❌ ${_collection.padEnd(30)} : 삭제 실패`);
       errorCount++;
     }
   }
@@ -284,7 +284,7 @@ async function main() {
     printSummary(results);
 
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ 오류 발생:', error);
     process.exit(1);
   }

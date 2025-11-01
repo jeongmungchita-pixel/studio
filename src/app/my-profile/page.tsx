@@ -1,14 +1,13 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { Member, MemberPass, PassTemplate } from '@/types';
-import { collection, query, where, doc, writeBatch, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { adminAPI } from '@/utils/api-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,33 +16,50 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-
 export default function MyProfilePage() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PassTemplate | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'bank-transfer' | 'card'>();
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
+  const [passNotes, setPassNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 1. Fetch all members associated with the current guardian user
-  const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'members'), where('guardianIds', 'array-contains', user.uid));
-  }, [firestore, user?.uid]);
-  const { data: members, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
-
+  // 1. Fetch members associated with this account
+  // 1-a) As guardian by user uid (preferred)
+  const membersByGuardianUidQuery = useMemoFirebase(() => {
+    if (!firestore || !_user?.uid) return null;
+    return query(collection(firestore, 'members'), where('guardianUserIds', 'array-contains', _user.uid));
+  }, [firestore, _user?.uid]);
+  const { data: guardianUidMembers, isLoading: areGuardianUidMembersLoading } = useCollection<Member>(membersByGuardianUidQuery);
+  // 1-b) Legacy fallback: guardianIds mistakenly stored as member ids; try user uid just in case
+  const legacyGuardianQuery = useMemoFirebase(() => {
+    if (!firestore || !_user?.uid) return null;
+    return query(collection(firestore, 'members'), where('guardianIds', 'array-contains', _user.uid));
+  }, [firestore, _user?.uid]);
+  const { data: legacyGuardianMembers, isLoading: areLegacyGuardianMembersLoading } = useCollection<Member>(legacyGuardianQuery);
+  // 1-b) As self (individual member linked to this _user)
+  const membersByUserQuery = useMemoFirebase(() => {
+    if (!firestore || !_user?.uid) return null;
+    return query(collection(firestore, 'members'), where('userId', '==', _user.uid));
+  }, [firestore, _user?.uid]);
+  const { data: ownMembers, isLoading: areOwnMembersLoading } = useCollection<Member>(membersByUserQuery);
+  // Merge unique
+  const members = useMemo(() => {
+    const map = new Map<string, Member>();
+    (guardianUidMembers || []).forEach(m => map.set(m.id, m));
+    (legacyGuardianMembers || []).forEach(m => map.set(m.id, m));
+    (ownMembers || []).forEach(m => map.set(m.id, m));
+    return Array.from(map.values());
+  }, [guardianUidMembers, legacyGuardianMembers, ownMembers]);
+  const areMembersLoading = (areGuardianUidMembersLoading || areLegacyGuardianMembersLoading || areOwnMembersLoading);
   const memberIds = useMemo(() => members?.map(m => m.id) || [], [members]);
-
   // 2. Fetch all passes for these members to show history and current status
   const passesQuery = useMemoFirebase(() => {
     if (!firestore || memberIds.length === 0) return null;
     return query(collection(firestore, 'member_passes'), where('memberId', 'in', memberIds), orderBy('startDate', 'desc'));
   }, [firestore, memberIds]);
   const { data: passes, isLoading: arePassesLoading } = useCollection<MemberPass>(passesQuery);
-
   // 3. Fetch available pass templates for the club
   const clubId = useMemo(() => members?.[0]?.clubId, [members]);
   const passTemplatesQuery = useMemoFirebase(() => {
@@ -51,70 +67,42 @@ export default function MyProfilePage() {
     return query(collection(firestore, 'pass_templates'), where('clubId', '==', clubId));
   }, [firestore, clubId]);
   const { data: passTemplates, isLoading: areTemplatesLoading } = useCollection<PassTemplate>(passTemplatesQuery);
-
   const handleRequestPass = async () => {
-    if (!firestore || !selectedMember || !paymentMethod || !selectedTemplate) return;
+    if (!selectedMember || !paymentMethod || !selectedTemplate) return;
     setIsSubmitting(true);
-
     try {
-      const batch = writeBatch(firestore);
-      const newPassRef = doc(collection(firestore, 'member_passes'));
-      
-      const now = new Date();
-      const endDate = new Date(now);
-      endDate.setDate(endDate.getDate() + (selectedTemplate.duration || 0));
-
-      const isSessionBased = selectedTemplate.type === 'session-based';
-
-      const newPass: MemberPass = {
-        id: newPassRef.id,
+      // API를 통한 이용권 요청
+      await adminAPI.passes.requestPass({
+        type: 'new',
         templateId: selectedTemplate.id,
-        templateName: selectedTemplate.name,
         memberId: selectedMember.id,
-        memberName: selectedMember.name,
-        clubId: selectedMember.clubId,
-        type: selectedTemplate.type,
-        startDate: now.toISOString(),
-        endDate: endDate.toISOString(),
-        remainingSessions: isSessionBased ? selectedTemplate.sessionCount : undefined,
-        price: selectedTemplate.price,
-        paymentStatus: 'pending',
-        paymentMethod: paymentMethod,
-        status: 'active',
-        usageCount: 0,
-        createdAt: now.toISOString(),
-      };
-      
-      batch.set(newPassRef, newPass);
-
-      const memberRef = doc(firestore, 'members', selectedMember.id);
-      batch.update(memberRef, { status: 'active' });
-
-      await batch.commit();
-      
+        paymentMethod,
+        notes: passNotes
+      });
       toast({
         title: '이용권 신청 완료',
         description: `${selectedMember.name} 님의 이용권이 신청되었습니다. 클럽 관리자의 승인을 기다려주세요.`
       });
+      // 폼 초기화
       setSelectedMember(null);
       setSelectedTemplate(null);
-    } catch (error) {
+      setPaymentMethod('cash');
+      setPassNotes('');
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
-        description: '이용권 신청 중 오류가 발생했습니다.'
+        description: error instanceof Error ? error.message : String(error) || '이용권 신청 중 오류가 발생했습니다.'
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
   const getPassStatusBadge = (pass: MemberPass | undefined, member: Member) => {
     if (member.status === 'pending') {
       return <Badge variant="destructive">갱신/가입 승인 대기</Badge>;
     }
     if (!pass) return <Badge variant="secondary">이용권 없음</Badge>;
-    
     switch (pass.status) {
       case 'active':
         if (pass.remainingSessions !== undefined) {
@@ -131,15 +119,13 @@ export default function MyProfilePage() {
         return <Badge variant="secondary">이용권 없음</Badge>;
     }
   };
-
   const openModal = (member: Member) => {
       setSelectedMember(member);
       setSelectedTemplate(null);
-      setPaymentMethod(undefined);
+      setPaymentMethod('cash');
+      setPassNotes('');
   }
-
   const isLoading = isUserLoading || areMembersLoading || arePassesLoading || areTemplatesLoading;
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -147,27 +133,25 @@ export default function MyProfilePage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
              <Image
-                src={user?.photoURL || 'https://picsum.photos/seed/user/64/64'}
-                alt={user?.displayName || 'User'}
+                src={_user?.photoURL || 'https://picsum.photos/seed/user/64/64'}
+                alt={_user?.displayName || 'User'}
                 width={64}
                 height={64}
                 className="rounded-full"
               />
             <div>
-              <CardTitle className="text-2xl">{user?.displayName}님</CardTitle>
+              <CardTitle className="text-2xl">{_user?.displayName}님</CardTitle>
               <CardDescription>학부모 계정</CardDescription>
             </div>
           </div>
         </CardHeader>
       </Card>
-
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">소속 선수/가족 목록</h2>
         {members && members.length > 0 ? members.map(member => {
@@ -175,7 +159,6 @@ export default function MyProfilePage() {
            const currentPass = memberPasses.find(p => p.status === 'active');
            const hasPendingPayment = memberPasses.some(p => p.paymentStatus === 'pending');
            const canRequestNewPass = !currentPass && !hasPendingPayment && member.status !== 'pending';
-
           return (
             <Card key={member.id}>
                 <CardHeader>
@@ -229,7 +212,6 @@ export default function MyProfilePage() {
             </Card>
         )}
       </div>
-
        <Dialog open={!!selectedMember} onOpenChange={(isOpen) => !isOpen && setSelectedMember(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -263,17 +245,16 @@ export default function MyProfilePage() {
                     {(!passTemplates || passTemplates.length === 0) && <p className="text-sm text-muted-foreground col-span-full text-center">신청 가능한 이용권이 없습니다.</p>}
                 </div>
               </div>
-
               {selectedTemplate && (
                 <div>
                     <Label className="font-semibold">결제 방법 선택</Label>
                     <RadioGroup 
                         className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4"
-                        onValueChange={(value: 'bank-transfer' | 'card') => setPaymentMethod(value)}
+                        onValueChange={(value) => setPaymentMethod(value as 'cash' | 'card' | 'transfer')}
                         value={paymentMethod}
                     >
-                        <Label htmlFor="bank-transfer" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                            <RadioGroupItem value="bank-transfer" id="bank-transfer" className="sr-only" />
+                        <Label htmlFor="transfer" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                            <RadioGroupItem value="transfer" id="transfer" className="sr-only" />
                             <Landmark className="mb-3 h-6 w-6" />
                             계좌 이체
                         </Label>
@@ -283,6 +264,18 @@ export default function MyProfilePage() {
                             현장 카드 결제
                         </Label>
                     </RadioGroup>
+                </div>
+              )}
+              {selectedTemplate && (
+                <div>
+                  <Label className="font-semibold">비고 (선택사항)</Label>
+                  <textarea
+                    className="w-full mt-2 p-3 border rounded-md text-sm"
+                    rows={2}
+                    value={passNotes}
+                    onChange={(e) => setPassNotes(e.target.value)}
+                    placeholder="추가 사항이 있으면 입력해주세요"
+                  />
                 </div>
               )}
               <p className="mt-2 text-sm text-muted-foreground">

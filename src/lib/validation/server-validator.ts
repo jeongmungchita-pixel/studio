@@ -1,32 +1,24 @@
 import { z } from 'zod';
 import { UserRole } from '@/types/auth';
 import { APIError } from '@/utils/error/api-error';
-
 /**
  * 서버사이드 검증 스키마 정의
  */
-
 // 기본 검증 스키마
 export const BaseSchemas = {
   // ID 검증 (Firebase UID 형식)
   firebaseId: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/),
-  
   // 이메일 검증
   email: z.string().email().max(254),
-  
   // 전화번호 검증 (한국 형식)
   phoneNumber: z.string().regex(/^01[0-9]-?[0-9]{4}-?[0-9]{4}$/),
-  
   // 날짜 검증
   isoDate: z.string().datetime(),
-  
   // URL 검증
   url: z.string().url().max(2048),
-  
   // 파일 크기 검증 (바이트)
   fileSize: z.number().min(0).max(10 * 1024 * 1024), // 10MB
 };
-
 // 사용자 관련 스키마
 export const UserSchemas = {
   // 사용자 생성
@@ -45,7 +37,6 @@ export const UserSchemas = {
       relationship: z.string().max(20),
     }).optional(),
   }),
-
   // 사용자 업데이트
   updateUser: z.object({
     displayName: z.string().min(2).max(50).trim().optional(),
@@ -60,14 +51,12 @@ export const UserSchemas = {
       relationship: z.string().max(20),
     }).optional(),
   }),
-
   // 역할 변경 (관리자만)
   updateRole: z.object({
     userId: BaseSchemas.firebaseId,
     newRole: z.nativeEnum(UserRole),
     reason: z.string().min(10).max(500),
   }),
-
   // 사용자 상태 변경
   updateStatus: z.object({
     userId: BaseSchemas.firebaseId,
@@ -75,7 +64,6 @@ export const UserSchemas = {
     reason: z.string().min(5).max(500).optional(),
   }),
 };
-
 // 클럽 관련 스키마
 export const ClubSchemas = {
   // 클럽 생성
@@ -90,7 +78,6 @@ export const ClubSchemas = {
     licenseNumber: z.string().min(5).max(50).optional(),
     maxMembers: z.number().min(1).max(10000).optional(),
   }),
-
   // 클럽 업데이트
   updateClub: z.object({
     name: z.string().min(2).max(100).trim().optional(),
@@ -102,7 +89,6 @@ export const ClubSchemas = {
     maxMembers: z.number().min(1).max(10000).optional(),
   }),
 };
-
 // 이벤트 관련 스키마
 export const EventSchemas = {
   // 이벤트 생성
@@ -121,7 +107,6 @@ export const EventSchemas = {
     message: "종료일은 시작일보다 늦어야 합니다",
     path: ["endDate"],
   }),
-
   // 이벤트 참가 신청
   registerEvent: z.object({
     eventId: BaseSchemas.firebaseId,
@@ -133,7 +118,6 @@ export const EventSchemas = {
     }),
   }),
 };
-
 /**
  * 서버사이드 검증 클래스
  */
@@ -144,12 +128,11 @@ export class ServerValidator {
   static validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
     try {
       return schema.parse(data);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map(err => 
+        const errorMessages = error.issues.map(err => 
           `${err.path.join('.')}: ${err.message}`
         ).join(', ');
-        
         throw new APIError(
           `검증 실패: ${errorMessages}`,
           'VALIDATION_ERROR',
@@ -159,7 +142,6 @@ export class ServerValidator {
       throw error;
     }
   }
-
   /**
    * 안전한 검증 (에러를 반환)
    */
@@ -173,19 +155,18 @@ export class ServerValidator {
       if (result.success) {
         return { success: true, data: result.data };
       } else {
-        const errorMessages = result.error.errors.map(err => 
+        const errorMessages = result.error.issues.map(err => 
           `${err.path.join('.')}: ${err.message}`
         ).join(', ');
         return { success: false, error: errorMessages };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : '알 수 없는 오류' 
+        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : '알 수 없는 오류' 
       };
     }
   }
-
   /**
    * 권한 기반 검증
    */
@@ -203,11 +184,9 @@ export class ServerValidator {
         403
       );
     }
-
     // 데이터 검증
     return this.validate(schema, data);
   }
-
   /**
    * 파일 업로드 검증
    */
@@ -224,10 +203,8 @@ export class ServerValidator {
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
-
     const maxSize = 10 * 1024 * 1024; // 10MB
     const maxNameLength = 255;
-
     if (!allowedTypes.includes(file.type)) {
       throw new APIError(
         '허용되지 않는 파일 형식입니다',
@@ -235,7 +212,6 @@ export class ServerValidator {
         400
       );
     }
-
     if (file.size > maxSize) {
       throw new APIError(
         '파일 크기가 너무 큽니다 (최대 10MB)',
@@ -243,7 +219,6 @@ export class ServerValidator {
         400
       );
     }
-
     if (file.name.length > maxNameLength) {
       throw new APIError(
         '파일명이 너무 깁니다',
@@ -251,14 +226,12 @@ export class ServerValidator {
         400
       );
     }
-
     // 악성 파일명 패턴 검사
     const dangerousPatterns = [
       /\.\./,           // 디렉토리 순회
       /[<>:"|?*]/,      // 특수 문자
       /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i, // Windows 예약어
     ];
-
     if (dangerousPatterns.some(pattern => pattern.test(file.name))) {
       throw new APIError(
         '안전하지 않은 파일명입니다',
@@ -267,7 +240,6 @@ export class ServerValidator {
       );
     }
   }
-
   /**
    * 입력 데이터 정화 (XSS 방지)
    */
@@ -278,19 +250,16 @@ export class ServerValidator {
       .replace(/on\w+=/gi, '') // 이벤트 핸들러 제거
       .trim();
   }
-
   /**
    * SQL 인젝션 방지 (NoSQL 인젝션 포함)
    */
-  static sanitizeQuery(query: Record<string, any>): Record<string, any> {
-    const sanitized: Record<string, any> = {};
-
-    for (const [key, value] of Object.entries(query)) {
+  static sanitizeQuery(_query: Record<string, unknown>): Record<string, unknown> {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(_query)) {
       // 키 검증
       if (!/^[a-zA-Z0-9_.-]+$/.test(key)) {
         continue; // 안전하지 않은 키는 제외
       }
-
       // 값 검증 및 정화
       if (typeof value === 'string') {
         sanitized[key] = this.sanitizeInput(value);
@@ -303,10 +272,8 @@ export class ServerValidator {
       }
       // 다른 타입은 제외
     }
-
     return sanitized;
   }
-
   /**
    * 레이트 리미팅 검증
    */
@@ -318,7 +285,6 @@ export class ServerValidator {
   ): void {
     const now = Date.now();
     const record = storage.get(identifier);
-
     if (!record || now > record.resetTime) {
       // 새로운 윈도우 시작
       storage.set(identifier, {
@@ -327,7 +293,6 @@ export class ServerValidator {
       });
       return;
     }
-
     if (record.count >= maxRequests) {
       throw new APIError(
         '요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.',
@@ -335,11 +300,9 @@ export class ServerValidator {
         429
       );
     }
-
     record.count++;
   }
 }
-
 /**
  * 검증 미들웨어 팩토리
  */
@@ -348,7 +311,6 @@ export function createValidationMiddleware<T>(schema: z.ZodSchema<T>) {
     return ServerValidator.validate(schema, data);
   };
 }
-
 /**
  * 권한 검증 미들웨어 팩토리
  */

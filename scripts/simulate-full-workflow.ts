@@ -104,7 +104,7 @@ async function step1_RegisterClubOwner() {
 
     console.log('\n✅ Step 1 완료: 클럽 오너 등록 완료 (승인 대기)');
     return { uid: userRecord.uid, requestId: requestRef.id };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Step 1 실패:', error);
     throw error;
   }
@@ -162,7 +162,7 @@ async function step2_ApproveClubOwner(uid: string, requestId: string) {
 
     console.log('\n✅ Step 2 완료: 클럽 오너 승인 완료');
     return clubRef.id;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Step 2 실패:', error);
     throw error;
   }
@@ -180,15 +180,15 @@ async function step3_RegisterMembers(clubId: string) {
 
   for (let i = 0; i < TEST_DATA.members.length; i++) {
     const memberData = TEST_DATA.members[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       // Auth 사용자 생성
       console.log('  1️⃣  Auth 사용자 생성...');
       const userRecord = await auth.createUser({
-        email: memberData.email,
-        password: memberData.password,
-        displayName: memberData.name,
+        email: memberData?.email,
+        password: memberData?.password,
+        displayName: memberData?.name,
       });
       console.log(`  ✅ Auth 사용자: ${userRecord.uid}`);
 
@@ -199,18 +199,18 @@ async function step3_RegisterMembers(clubId: string) {
         id: requestRef.id,
         userId: userRecord.uid,
         clubId: clubId,
-        name: memberData.name,
-        email: memberData.email,
-        dateOfBirth: memberData.dateOfBirth,
-        gender: memberData.gender,
-        phoneNumber: memberData.phoneNumber,
+        name: memberData?.name,
+        email: memberData?.email,
+        dateOfBirth: memberData?.dateOfBirth,
+        gender: memberData?.gender,
+        phoneNumber: memberData?.phoneNumber,
         status: 'pending',
         requestedAt: new Date().toISOString(),
       });
       console.log(`  ✅ 가입 신청: ${requestRef.id}`);
 
       memberIds.push(userRecord.uid);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 가입 실패:`, error);
     }
   }
@@ -230,7 +230,7 @@ async function step4_ApproveMembers(clubId: string, memberUids: string[]) {
   for (let i = 0; i < memberUids.length; i++) {
     const uid = memberUids[i];
     const memberData = TEST_DATA.members[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       // members 컬렉션에 추가
@@ -238,11 +238,11 @@ async function step4_ApproveMembers(clubId: string, memberUids: string[]) {
       const memberRef = db.collection('members').doc();
       await memberRef.set({
         id: memberRef.id,
-        name: memberData.name,
-        email: memberData.email,
-        dateOfBirth: memberData.dateOfBirth,
-        gender: memberData.gender,
-        phoneNumber: memberData.phoneNumber,
+        name: memberData?.name,
+        email: memberData?.email,
+        dateOfBirth: memberData?.dateOfBirth,
+        gender: memberData?.gender,
+        phoneNumber: memberData?.phoneNumber,
         clubId: clubId,
         clubName: TEST_DATA.clubOwner.clubName,
         status: 'active',
@@ -261,9 +261,9 @@ async function step4_ApproveMembers(clubId: string, memberUids: string[]) {
       await db.collection('users').doc(uid).set({
         id: uid,
         uid: uid,
-        email: memberData.email,
-        displayName: memberData.name,
-        phoneNumber: memberData.phoneNumber,
+        email: memberData?.email,
+        displayName: memberData?.name,
+        phoneNumber: memberData?.phoneNumber,
         photoURL: `https://picsum.photos/seed/${uid}/40/40`,
         role: 'MEMBER',
         provider: 'email',
@@ -286,7 +286,7 @@ async function step4_ApproveMembers(clubId: string, memberUids: string[]) {
         });
         console.log(`  ✅ 신청 승인`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 승인 실패:`, error);
     }
   }
@@ -318,7 +318,7 @@ async function step5_CreatePassTemplate(clubId: string) {
 
     console.log('\n✅ Step 5 완료: 이용권 템플릿 생성 완료');
     return templateRef.id;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Step 5 실패:', error);
     throw error;
   }
@@ -353,7 +353,7 @@ async function step6_CreateCompetition(clubId: string) {
 
     console.log('\n✅ Step 6 완료: 대회 개최 완료');
     return compRef.id;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Step 6 실패:', error);
     throw error;
   }
@@ -370,7 +370,7 @@ async function step7_IssuePassesToMembers(clubId: string, templateId: string, me
   for (let i = 0; i < memberIds.length; i++) {
     const memberId = memberIds[i];
     const memberData = TEST_DATA.members[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       const passRef = db.collection('member_passes').doc();
@@ -392,7 +392,7 @@ async function step7_IssuePassesToMembers(clubId: string, templateId: string, me
         createdAt: new Date().toISOString(),
       });
       console.log(`  ✅ 이용권 발급: ${passRef.id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 이용권 발급 실패:`, error);
     }
   }
@@ -431,7 +431,7 @@ async function step8_CreateClasses(clubId: string) {
       });
       classIds.push(classRef.id);
       console.log(`✅ 수업 생성: ${classData.name} (${classRef.id})`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`❌ ${classData.name} 생성 실패:`, error);
     }
   }
@@ -448,12 +448,12 @@ async function step9_RecordAttendance(clubId: string, memberIds: string[], class
   console.log('✅ Step 9: 출석 체크');
   console.log('='.repeat(80));
 
-  const today = new Date().toISOString().split('T')[0];
+  const _today = new Date().toISOString().split('T')[0];
 
   for (let i = 0; i < memberIds.length; i++) {
     const memberId = memberIds[i];
     const memberData = TEST_DATA.members[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       const attendanceRef = db.collection('attendance').doc();
@@ -462,7 +462,7 @@ async function step9_RecordAttendance(clubId: string, memberIds: string[], class
         memberId: memberId,
         clubId: clubId,
         classId: classId,
-        date: today,
+        date: _today,
         status: 'present',
         checkInTime: new Date().toISOString(),
         createdAt: new Date().toISOString(),
@@ -478,14 +478,14 @@ async function step9_RecordAttendance(clubId: string, memberIds: string[], class
 
       if (!passesSnapshot.empty) {
         const passDoc = passesSnapshot.docs[0];
-        const passData = passDoc.data();
+        const passData = passDoc?.data();
         await passDoc.ref.update({
           remainingSessions: (passData.remainingSessions || 0) - 1,
           attendanceCount: (passData.attendanceCount || 0) + 1,
         });
         console.log(`  ✅ 이용권 업데이트: 잔여 ${passData.remainingSessions - 1}회`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 출석 체크 실패:`, error);
     }
   }
@@ -516,7 +516,7 @@ async function step10_CreateAnnouncement(clubId: string) {
 
     console.log('\n✅ Step 10 완료: 공지사항 작성 완료');
     return announcementRef.id;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Step 10 실패:', error);
     throw error;
   }
@@ -547,7 +547,7 @@ async function step11_CreateLevelTest(clubId: string) {
 
     console.log('\n✅ Step 11 완료: 승급 심사 생성 완료');
     return testRef.id;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Step 11 실패:', error);
     throw error;
   }
@@ -564,7 +564,7 @@ async function step12_RegisterForCompetition(competitionId: string, memberIds: s
   for (let i = 0; i < memberIds.length; i++) {
     const memberId = memberIds[i];
     const memberData = TEST_DATA.members[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       const regRef = db.collection('competition_registrations').doc();
@@ -572,18 +572,18 @@ async function step12_RegisterForCompetition(competitionId: string, memberIds: s
         id: regRef.id,
         competitionId: competitionId,
         memberId: memberId,
-        memberName: memberData.name,
+        memberName: memberData?.name,
         clubId: createdClubId,
         clubName: TEST_DATA.clubOwner.clubName,
-        gender: memberData.gender,
-        birthDate: memberData.dateOfBirth,
-        age: new Date().getFullYear() - parseInt(memberData.dateOfBirth.split('-')[0]),
+        gender: memberData?.gender,
+        birthDate: memberData?.dateOfBirth,
+        age: new Date().getFullYear() - parseInt(memberData?.dateOfBirth.split('-')[0]),
         registeredEvents: ['품새', '겨루기'],
         status: 'pending',
         registeredAt: new Date().toISOString(),
       });
       console.log(`  ✅ 대회 신청: ${regRef.id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 대회 신청 실패:`, error);
     }
   }
@@ -600,15 +600,15 @@ async function step13_SaveCompetitionResults(competitionId: string, memberIds: s
   console.log('='.repeat(80));
 
   const results = [
-    { rank: 1, medal: 'gold', event: '품새', score: 9.5 },
-    { rank: 2, medal: 'silver', event: '품새', score: 9.2 },
+    { rank: 1, medal: 'gold', _event: '품새', score: 9.5 },
+    { rank: 2, medal: 'silver', _event: '품새', score: 9.2 },
   ];
 
   for (let i = 0; i < memberIds.length; i++) {
     const memberId = memberIds[i];
     const memberData = TEST_DATA.members[i];
     const result = results[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       // 대회 신청 문서 찾기
@@ -625,7 +625,7 @@ async function step13_SaveCompetitionResults(competitionId: string, memberIds: s
         await regDoc.ref.update({
           status: 'completed',
           results: {
-            [result.event]: {
+            [result._event]: {
               rank: result.rank,
               medal: result.medal,
               score: result.score,
@@ -634,9 +634,9 @@ async function step13_SaveCompetitionResults(competitionId: string, memberIds: s
           completedAt: new Date().toISOString(),
         });
         
-        console.log(`  ✅ 결과 저장: ${result.rank}위 (${result.medal}) - ${result.event} ${result.score}점`);
+        console.log(`  ✅ 결과 저장: ${result.rank}위 (${result.medal}) - ${result._event} ${result.score}점`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 결과 저장 실패:`, error);
     }
   }
@@ -648,7 +648,7 @@ async function step13_SaveCompetitionResults(competitionId: string, memberIds: s
       completedAt: new Date().toISOString(),
     });
     console.log('\n✅ 대회 상태: completed로 변경');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ 대회 상태 업데이트 실패:', error);
   }
 
@@ -666,7 +666,7 @@ async function step14_CreatePayments(clubId: string, memberIds: string[]) {
   for (let i = 0; i < memberIds.length; i++) {
     const memberId = memberIds[i];
     const memberData = TEST_DATA.members[i];
-    console.log(`\n회원 ${i + 1}: ${memberData.name}`);
+    console.log(`\n회원 ${i + 1}: ${memberData?.name}`);
 
     try {
       // 이용권 찾기
@@ -678,7 +678,7 @@ async function step14_CreatePayments(clubId: string, memberIds: string[]) {
 
       if (!passesSnapshot.empty) {
         const passDoc = passesSnapshot.docs[0];
-        const passData = passDoc.data();
+        const passData = passDoc?.data();
 
         // 결제 생성
         const paymentRef = db.collection('payments').doc();
@@ -696,7 +696,7 @@ async function step14_CreatePayments(clubId: string, memberIds: string[]) {
         
         console.log(`  ✅ 결제 생성: ${paymentRef.id} (300,000원)`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`  ❌ 회원 ${i + 1} 결제 생성 실패:`, error);
     }
   }
@@ -805,7 +805,7 @@ async function main() {
     printSummary();
 
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ 시뮬레이션 실패:', error);
     process.exit(1);
   }

@@ -2,17 +2,14 @@
  * 사용자 서비스
  * 사용자 관련 비즈니스 로직을 처리합니다.
  */
-
 import { apiClient } from './api-client';
 import { UserProfile, UserRole } from '@/types/auth';
 import { PaginatedResponse } from '@/types/api';
-
 export interface UserFilters {
   role?: UserRole;
   status?: 'pending' | 'active' | 'inactive' | 'deleted';
   clubId?: string;
 }
-
 export interface CreateUserData {
   email: string;
   name: string;
@@ -20,20 +17,16 @@ export interface CreateUserData {
   clubId?: string;
   phoneNumber?: string;
 }
-
 export interface UpdateUserData {
   name?: string;
   phoneNumber?: string;
   role?: UserRole;
-  status?: string;
+  status?: 'pending' | 'active' | 'inactive';
   clubId?: string;
 }
-
 export class UserService {
   private static instance: UserService;
-
   private constructor() {}
-
   /**
    * 싱글톤 인스턴스 반환
    */
@@ -43,7 +36,6 @@ export class UserService {
     }
     return UserService.instance;
   }
-
   /**
    * 사용자 목록 조회
    */
@@ -64,7 +56,6 @@ export class UserService {
       loadingKey: 'fetch-users'
     });
   }
-
   /**
    * 사용자 상세 조회
    */
@@ -73,7 +64,6 @@ export class UserService {
       loadingKey: 'fetch-user'
     });
   }
-
   /**
    * 사용자 생성
    */
@@ -82,7 +72,6 @@ export class UserService {
       loadingKey: 'create-user'
     });
   }
-
   /**
    * 사용자 정보 수정
    */
@@ -91,7 +80,6 @@ export class UserService {
       loadingKey: 'update-user'
     });
   }
-
   /**
    * 사용자 삭제
    */
@@ -100,7 +88,6 @@ export class UserService {
       loadingKey: 'delete-user'
     });
   }
-
   /**
    * 내 정보 조회
    */
@@ -110,7 +97,6 @@ export class UserService {
       cache: 'no-cache'
     });
   }
-
   /**
    * 내 정보 수정
    */
@@ -119,7 +105,6 @@ export class UserService {
       loadingKey: 'update-my-profile'
     });
   }
-
   /**
    * 프로필 이미지 업로드
    */
@@ -128,7 +113,6 @@ export class UserService {
       loadingKey: 'upload-profile-image'
     });
   }
-
   /**
    * 역할별 사용자 조회
    */
@@ -136,7 +120,6 @@ export class UserService {
     const response = await this.getUsers(1, 100, { role });
     return response.items;
   }
-
   /**
    * 클럽별 사용자 조회
    */
@@ -144,17 +127,15 @@ export class UserService {
     const response = await this.getUsers(1, 100, { clubId });
     return response.items;
   }
-
   /**
    * 사용자 검색
    */
-  async searchUsers(query: string): Promise<UserProfile[]> {
+  async searchUsers(_query: string): Promise<UserProfile[]> {
     return apiClient.get<UserProfile[]>('/users/search', {
-      params: { q: query },
+      params: { q: _query },
       loadingKey: 'search-users'
     });
   }
-
   /**
    * 사용자 상태 변경
    */
@@ -164,35 +145,30 @@ export class UserService {
   ): Promise<UserProfile> {
     return this.updateUser(userId, { status });
   }
-
   /**
    * 사용자 역할 변경
    */
   async changeUserRole(userId: string, role: UserRole): Promise<UserProfile> {
     return this.updateUser(userId, { role });
   }
-
   /**
    * 사용자 클럽 변경
    */
   async changeUserClub(userId: string, clubId: string | null): Promise<UserProfile> {
     return this.updateUser(userId, { clubId: clubId || undefined });
   }
-
   /**
    * 사용자 활성화
    */
   async activateUser(userId: string): Promise<UserProfile> {
     return this.changeUserStatus(userId, 'active');
   }
-
   /**
    * 사용자 비활성화
    */
   async deactivateUser(userId: string): Promise<UserProfile> {
     return this.changeUserStatus(userId, 'inactive');
   }
-
   /**
    * 대량 사용자 생성
    */
@@ -201,7 +177,6 @@ export class UserService {
       loadingKey: 'create-bulk-users'
     });
   }
-
   /**
    * 사용자 내보내기 (CSV)
    */
@@ -209,7 +184,6 @@ export class UserService {
     const params = filters ? { ...filters } : {};
     await apiClient.download('/users/export', 'users.csv');
   }
-
   /**
    * 사용자 통계 조회
    */
@@ -223,11 +197,10 @@ export class UserService {
       loadingKey: 'fetch-user-stats'
     });
   }
-
   /**
    * 권한 확인
    */
-  hasPermission(user: UserProfile, requiredRole: UserRole): boolean {
+  hasPermission(_user: UserProfile, requiredRole: UserRole): boolean {
     const roleHierarchy: Record<UserRole, number> = {
       [UserRole.SUPER_ADMIN]: 100,
       [UserRole.FEDERATION_ADMIN]: 90,
@@ -244,13 +217,10 @@ export class UserService {
       [UserRole.PARENT]: 20,
       [UserRole.VENDOR]: 10
     };
-
-    const userLevel = roleHierarchy[user.role] || 0;
+    const userLevel = _user.role ? roleHierarchy[_user.role] ?? 0 : 0;
     const requiredLevel = roleHierarchy[requiredRole] || 0;
-
     return userLevel >= requiredLevel;
   }
-
   /**
    * 캐시 초기화
    */
@@ -258,6 +228,5 @@ export class UserService {
     // 필요시 구현
   }
 }
-
 // 전역 인스턴스 export
 export const userService = UserService.getInstance();

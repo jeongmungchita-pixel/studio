@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
@@ -20,7 +18,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 const eventFormSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요'),
   description: z.string().min(1, '설명을 입력하세요'),
@@ -31,9 +28,7 @@ const eventFormSchema = z.object({
   registrationFee: z.number().optional(),
   maxParticipants: z.number().optional(),
 });
-
 type EventFormValues = z.infer<typeof eventFormSchema>;
-
 type UIEventRegistration = {
   id: string
   eventId: string
@@ -45,9 +40,7 @@ type UIEventRegistration = {
   paymentStatus: 'pending' | 'paid' | 'cancelled'
   createdAt: string
 }
-
 // Display uses ClubEvent directly
-
 const eventTypeLabels: Record<ClubEvent['type'], string> = {
   competition: '대회',
   workshop: '워크숍',
@@ -55,7 +48,6 @@ const eventTypeLabels: Record<ClubEvent['type'], string> = {
   social: '소셜',
   training: '훈련',
 };
-
 const statusLabels: Record<ClubEvent['status'], string> = {
   draft: '초안',
   published: '게시됨',
@@ -65,17 +57,13 @@ const statusLabels: Record<ClubEvent['status'], string> = {
   completed: '완료',
   cancelled: '취소',
 };
-
 export default function ClubEventsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ClubEvent | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ClubEvent | null>(null);
-  
-
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
@@ -87,18 +75,16 @@ export default function ClubEventsPage() {
       registrationEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     },
   });
-
   // Fetch events
   const eventsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'events'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: events, isLoading: areEventsLoading } = useCollection<ClubEvent>(eventsQuery);
-
   // Fetch registrations for selected event
   const registrationsQuery = useMemoFirebase(() => {
     if (!firestore || !selectedEvent) return null;
@@ -108,10 +94,8 @@ export default function ClubEventsPage() {
     );
   }, [firestore, selectedEvent?.id]);
   const { data: registrations } = useCollection<EventRegistration>(registrationsQuery);
-
   const onSubmit = async (values: EventFormValues) => {
-    if (!firestore || !user?.clubId) return;
-
+    if (!firestore || !_user?.clubId) return;
     try {
       if (editingEvent) {
         // Update
@@ -134,7 +118,7 @@ export default function ClubEventsPage() {
           id: eventRef.id,
           title: values.title,
           description: values.description,
-          clubId: user.clubId,
+          clubId: _user.clubId,
           currentParticipants: 0,
           registrationStart: values.registrationStart,
           registrationEnd: values.registrationEnd,
@@ -151,38 +135,33 @@ export default function ClubEventsPage() {
       setIsDialogOpen(false);
       form.reset();
       setEditingEvent(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };
-
-  const handleEdit = (event: ClubEvent) => {
-    setEditingEvent(event);
+  const handleEdit = (_event: ClubEvent) => {
+    setEditingEvent(_event);
     form.reset({
-      title: event.title,
-      description: event.description,
-      type: event.type,
-      status: event.status,
-      registrationStart: event.registrationStart.split('T')[0],
-      registrationEnd: event.registrationEnd.split('T')[0],
-      registrationFee: event.registrationFee,
-      maxParticipants: event.maxParticipants,
+      title: _event.title,
+      description: _event.description,
+      type: _event.type,
+      status: _event.status,
+      registrationStart: _event.registrationStart.split('T')[0],
+      registrationEnd: _event.registrationEnd.split('T')[0],
+      registrationFee: _event.registrationFee,
+      maxParticipants: _event.maxParticipants,
     });
     setIsDialogOpen(true);
   };
-
   const handleDelete = async (eventId: string) => {
     if (!firestore || !confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(firestore, 'events', eventId));
       toast({ title: '이벤트 삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
-  
-
   if (areEventsLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -190,7 +169,6 @@ export default function ClubEventsPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -209,27 +187,26 @@ export default function ClubEventsPage() {
           새 이벤트 생성
         </Button>
       </div>
-
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events?.map((event) => (
-          <Card key={event.id} className="hover:shadow-lg transition-shadow">
+        {events?.map((_event) => (
+          <Card key={_event.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge>{eventTypeLabels[event.type]}</Badge>
+                    <Badge>{eventTypeLabels[_event.type as keyof typeof eventTypeLabels]}</Badge>
                     <Badge variant={
-                      event.status === 'registration-open' ? 'default' :
-                      event.status === 'registration-closed' ? 'destructive' :
-                      event.status === 'in-progress' ? 'secondary' :
-                      event.status === 'completed' ? 'secondary' :
-                      event.status === 'cancelled' ? 'destructive' : 'outline'
-                    }>{statusLabels[event.status]}</Badge>
+                      _event.status === 'registration-open' ? 'default' :
+                      _event.status === 'registration-closed' ? 'destructive' :
+                      _event.status === 'in-progress' ? 'secondary' :
+                      _event.status === 'completed' ? 'secondary' :
+                      _event.status === 'cancelled' ? 'destructive' : 'outline'
+                    }>{statusLabels[_event.status as keyof typeof statusLabels]}</Badge>
                   </div>
-                  <CardTitle className="text-lg">{event.title}</CardTitle>
+                  <CardTitle className="text-lg">{_event.title}</CardTitle>
                   <CardDescription className="line-clamp-2 mt-2">
-                    {event.description}
+                    {_event.description}
                   </CardDescription>
                 </div>
               </div>
@@ -241,7 +218,7 @@ export default function ClubEventsPage() {
                   가격
                 </span>
                 <span className="font-semibold">
-                  {(event.registrationFee ?? 0).toLocaleString()}원
+                  {(_event.registrationFee ?? 0).toLocaleString()}원
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -250,8 +227,8 @@ export default function ClubEventsPage() {
                   신청자
                 </span>
                 <span className="font-semibold">
-                  {event.currentParticipants}
-                  {event.maxParticipants && `/${event.maxParticipants}`}명
+                  {_event.currentParticipants}
+                  {_event.maxParticipants && `/${_event.maxParticipants}`}명
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -260,7 +237,7 @@ export default function ClubEventsPage() {
                   신청 마감
                 </span>
                 <span className="font-semibold">
-                  {format(new Date(event.registrationEnd), 'MM/dd', { locale: ko })}
+                  {format(new Date(_event.registrationEnd), 'MM/dd', { locale: ko })}
                 </span>
               </div>
               <div className="flex gap-2 pt-2">
@@ -268,7 +245,7 @@ export default function ClubEventsPage() {
                   size="sm"
                   variant="outline"
                   className="flex-1"
-                  onClick={() => setSelectedEvent(event)}
+                  onClick={() => setSelectedEvent(_event)}
                 >
                   <Users className="h-4 w-4 mr-1" />
                   신청자 보기
@@ -276,14 +253,14 @@ export default function ClubEventsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleEdit(event)}
+                  onClick={() => handleEdit(_event)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => handleDelete(event.id)}
+                  onClick={() => handleDelete(_event.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -292,7 +269,6 @@ export default function ClubEventsPage() {
           </Card>
         ))}
       </div>
-
       {(!events || events.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -304,7 +280,6 @@ export default function ClubEventsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -329,7 +304,6 @@ export default function ClubEventsPage() {
                   </FormItem>
                 )}
               />
-              
               <FormField
                 control={form.control}
                 name="description"
@@ -343,7 +317,6 @@ export default function ClubEventsPage() {
                   </FormItem>
                 )}
               />
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -362,7 +335,6 @@ export default function ClubEventsPage() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="status"
@@ -381,7 +353,6 @@ export default function ClubEventsPage() {
                   )}
                 />
               </div>
-
               <FormField
                 control={form.control}
                 name="registrationFee"
@@ -400,7 +371,6 @@ export default function ClubEventsPage() {
                   </FormItem>
                 )}
               />
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -415,7 +385,6 @@ export default function ClubEventsPage() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="registrationEnd"
@@ -430,7 +399,6 @@ export default function ClubEventsPage() {
                   )}
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -451,9 +419,6 @@ export default function ClubEventsPage() {
                   )}
                 />
               </div>
-
-              
-
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   취소
@@ -466,7 +431,6 @@ export default function ClubEventsPage() {
           </Form>
         </DialogContent>
       </Dialog>
-
       {/* Registrations Dialog */}
       <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
         <DialogContent className="max-w-3xl">

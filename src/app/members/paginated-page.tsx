@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import Image from 'next/image';
 import { useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -13,16 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw, Users, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Member } from '@/types';
-
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
   pending: '승인대기',
 };
-
 export default function PaginatedMembersPage() {
   const firestore = useFirestore();
-  
   // 페이지네이션된 쿼리 생성
   const membersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -31,7 +26,6 @@ export default function PaginatedMembersPage() {
       orderBy('createdAt', 'desc') // 최신순 정렬
     );
   }, [firestore]);
-
   // 페이지네이션 훅 사용
   const {
     data: members,
@@ -48,7 +42,6 @@ export default function PaginatedMembersPage() {
     pageSize: 20, // 한 페이지에 20명씩
     enabled: !!firestore
   });
-
   const getStatusVariant = (status: Member['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'active':
@@ -61,7 +54,6 @@ export default function PaginatedMembersPage() {
         return 'outline';
     }
   };
-
   if (error) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -79,7 +71,6 @@ export default function PaginatedMembersPage() {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* 헤더 */}
@@ -101,7 +92,6 @@ export default function PaginatedMembersPage() {
           </Badge>
         </div>
       </div>
-
       {/* 회원 테이블 */}
       <Card>
         <CardHeader>
@@ -176,7 +166,6 @@ export default function PaginatedMembersPage() {
                   )}
                 </TableBody>
               </Table>
-
               {/* 페이지네이션 컨트롤 */}
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2">
@@ -199,7 +188,6 @@ export default function PaginatedMembersPage() {
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
-
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {isLoading && (
                     <div className="flex items-center gap-2">
@@ -215,7 +203,6 @@ export default function PaginatedMembersPage() {
           )}
         </CardContent>
       </Card>
-
       {/* 성능 정보 (개발 모드에서만 표시) */}
       {process.env.NODE_ENV === 'development' && (
         <Card className="border-dashed">

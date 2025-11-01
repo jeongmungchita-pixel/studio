@@ -3,7 +3,6 @@
  * GET /api/users - 사용자 목록 조회
  * POST /api/users - 사용자 생성
  */
-
 import { NextRequest } from 'next/server';
 import { 
   successResponse, 
@@ -20,10 +19,8 @@ import {
 import { UserRole } from '@/types/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeAdmin } from '@/firebase/admin';
-
 // Admin SDK 초기화
 initializeAdmin();
-
 /**
  * GET: 사용자 목록 조회
  */
@@ -34,50 +31,41 @@ export async function GET(request: NextRequest) {
       requireAuth: true,
       minimumRole: UserRole.CLUB_MANAGER
     });
-
     if (!validation.valid) {
       return validation.error!;
     }
-
     // 파라미터 파싱
     const { page, pageSize, offset } = parsePaginationParams(request);
     const { sortBy, sortOrder } = parseSortParams(request);
     const filters = parseFilterParams(request, ['role', 'status', 'clubId']);
-
     // Firestore 쿼리 구성
     const db = getFirestore();
-    let query = db.collection('users') as FirebaseFirestore.Query;
-
+    let _query = db.collection('users') as FirebaseFirestore.Query;
     // 필터 적용
     if (filters.role) {
-      query = query.where('role', '==', filters.role);
+      _query = _query.where('role', '==', filters.role);
     }
     if (filters.status) {
-      query = query.where('status', '==', filters.status);
+      _query = _query.where('status', '==', filters.status);
     }
     if (filters.clubId) {
-      query = query.where('clubId', '==', filters.clubId);
+      _query = _query.where('clubId', '==', filters.clubId);
     }
-
     // 정렬 적용
-    query = query.orderBy(sortBy, sortOrder);
-
+    _query = _query.orderBy(sortBy, sortOrder);
     // 전체 개수 조회
-    const countSnapshot = await query.count().get();
+    const countSnapshot = await _query.count().get();
     const total = countSnapshot.data().count;
-
     // 페이지네이션 적용
-    query = query.limit(pageSize).offset(offset);
-
+    _query = _query.limit(pageSize).offset(offset);
     // 데이터 조회
-    const snapshot = await query.get();
+    const snapshot = await _query.get();
     const users = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
       updatedAt: doc.data().updatedAt?.toDate?.() || doc.data().updatedAt
     }));
-
     // 응답 반환
     return successResponse({
       items: users,
@@ -89,7 +77,6 @@ export async function GET(request: NextRequest) {
     });
   });
 }
-
 /**
  * POST: 사용자 생성
  */
@@ -100,11 +87,9 @@ export async function POST(request: NextRequest) {
       requireAuth: true,
       requiredRoles: [UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN, UserRole.CLUB_OWNER]
     });
-
     if (!validation.valid) {
       return validation.error!;
     }
-
     // 요청 본문 파싱
     const body = await parseRequestBody<{
       email: string;
@@ -113,7 +98,6 @@ export async function POST(request: NextRequest) {
       clubId?: string;
       phoneNumber?: string;
     }>(request);
-
     if (!body) {
       return errorResponse(
         ApiErrorCode.INVALID_INPUT,
@@ -121,7 +105,6 @@ export async function POST(request: NextRequest) {
         HttpStatus.BAD_REQUEST
       );
     }
-
     // 필수 필드 검증
     if (!body.email || !body.name || !body.role) {
       return errorResponse(
@@ -130,7 +113,6 @@ export async function POST(request: NextRequest) {
         HttpStatus.BAD_REQUEST
       );
     }
-
     // 이메일 중복 확인
     const db = getFirestore();
     const existingUser = await db
@@ -138,7 +120,6 @@ export async function POST(request: NextRequest) {
       .where('email', '==', body.email)
       .limit(1)
       .get();
-
     if (!existingUser.empty) {
       return errorResponse(
         ApiErrorCode.ALREADY_EXISTS,
@@ -146,7 +127,6 @@ export async function POST(request: NextRequest) {
         HttpStatus.CONFLICT
       );
     }
-
     // 권한 검증: 자신보다 높은 권한 부여 불가
     const userRole = validation.user?.role;
     if (userRole && !canAssignRole(userRole, body.role)) {
@@ -156,7 +136,6 @@ export async function POST(request: NextRequest) {
         HttpStatus.FORBIDDEN
       );
     }
-
     // 사용자 생성
     const newUser = {
       email: body.email,
@@ -169,13 +148,11 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
       createdBy: validation.user?.uid
     };
-
     const docRef = await db.collection('users').add(newUser);
     const createdUser = {
       id: docRef.id,
       ...newUser
     };
-
     return successResponse(
       createdUser,
       '사용자가 생성되었습니다.',
@@ -183,7 +160,6 @@ export async function POST(request: NextRequest) {
     );
   });
 }
-
 /**
  * 역할 부여 권한 확인
  */
@@ -204,10 +180,8 @@ function canAssignRole(assignerRole: UserRole, targetRole: UserRole): boolean {
     [UserRole.PARENT]: 20,
     [UserRole.VENDOR]: 10
   };
-
   const assignerLevel = roleHierarchy[assignerRole] || 0;
   const targetLevel = roleHierarchy[targetRole] || 0;
-
   // 자신보다 낮은 권한만 부여 가능
   return assignerLevel > targetLevel;
 }

@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, doc, setDoc, orderBy } from 'firebase/firestore';
@@ -16,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { format, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
-
 const EVENT_NAMES: Record<string, string> = {
   FX: '마루운동',
   PH: '안마',
@@ -27,7 +24,6 @@ const EVENT_NAMES: Record<string, string> = {
   UB: '이단평행봉',
   BB: '평균대',
 };
-
 const statusLabels = {
   draft: '준비중',
   open: '오픈',
@@ -38,15 +34,13 @@ const statusLabels = {
   completed: '완료',
   cancelled: '취소',
 };
-
 export default function CompetitionsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedCompetition, setSelectedCompetition] = useState<GymnasticsCompetition | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Fetch competitions
   const competitionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -56,45 +50,39 @@ export default function CompetitionsPage() {
     );
   }, [firestore]);
   const { data: competitions, isLoading } = useCollection<GymnasticsCompetition>(competitionsQuery);
-
   // Fetch my registrations
   const myRegistrationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !_user?.uid) return null;
     return query(
       collection(firestore, 'competition_registrations'),
-      where('memberId', '==', user.uid)
+      where('memberId', '==', _user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, _user?.uid]);
   const { data: myRegistrations } = useCollection<CompetitionRegistration>(myRegistrationsQuery);
-
   // Fetch member info
   const memberQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !_user?.uid) return null;
     return query(
       collection(firestore, 'members'),
-      where('userId', '==', user.uid)
+      where('userId', '==', _user.uid)
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, _user?.uid]);
   const { data: members } = useCollection<Member>(memberQuery);
   const member = members?.[0];
-
   const handleApply = (competition: GymnasticsCompetition) => {
     setSelectedCompetition(competition);
     setSelectedEvents([]);
   };
-
   const handleSubmit = async () => {
-    if (!selectedCompetition || !firestore || !user || !member || selectedEvents.length === 0) return;
-
+    if (!selectedCompetition || !firestore || !_user || !member || selectedEvents.length === 0) return;
     setIsSubmitting(true);
     try {
       const regRef = doc(collection(firestore, 'competition_registrations'));
       const age = member.dateOfBirth ? differenceInYears(new Date(), new Date(member.dateOfBirth)) : undefined;
-
       const registrationData: CompetitionRegistration = {
         id: regRef.id,
         competitionId: selectedCompetition.id,
-        memberId: user.uid,
+        memberId: _user.uid,
         memberName: member.name,
         clubName: member.clubName || '',
         categoryId: selectedCompetition.categories?.[0]?.id || 'general',
@@ -104,17 +92,14 @@ export default function CompetitionsPage() {
         age,
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(regRef, registrationData);
-
       toast({
         title: '신청 완료!',
         description: `${selectedCompetition.title} 시합 신청이 완료되었습니다.`,
       });
-
       setSelectedCompetition(null);
       setSelectedEvents([]);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '신청 실패',
@@ -124,11 +109,9 @@ export default function CompetitionsPage() {
       setIsSubmitting(false);
     }
   };
-
   const isRegistered = (competitionId: string) => {
     return myRegistrations?.some(r => r.competitionId === competitionId && r.status !== 'rejected');
   };
-
   const canRegister = (competition: GymnasticsCompetition) => {
     if (!competition.registrationStart || !competition.registrationEnd) return false;
     const now = new Date();
@@ -136,7 +119,6 @@ export default function CompetitionsPage() {
     const regEnd = new Date(competition.registrationEnd);
     return competition.status === 'registration_open' && now >= regStart && now <= regEnd;
   };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -144,14 +126,12 @@ export default function CompetitionsPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">시합</h1>
         <p className="text-muted-foreground mt-1">기계체조 시합에 참가하세요</p>
       </div>
-
       {/* My Registrations */}
       {myRegistrations && myRegistrations.length > 0 && (
         <Card>
@@ -185,13 +165,11 @@ export default function CompetitionsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Available Competitions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {competitions?.map((competition) => {
           const registered = isRegistered(competition.id);
           const canApply = canRegister(competition);
-
           return (
             <Card key={competition.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -236,7 +214,6 @@ export default function CompetitionsPage() {
                     신청: {competition.registrationStart ? format(new Date(competition.registrationStart), 'M/d') : ''} ~ {competition.registrationEnd ? format(new Date(competition.registrationEnd), 'M/d') : ''}
                   </span>
                 </div>
-
                 <div className="flex gap-2 pt-2">
                   {competition.status === 'in_progress' && (
                     <Link href={`/scoreboard/${competition.id}`} className="flex-1">
@@ -261,7 +238,6 @@ export default function CompetitionsPage() {
           );
         })}
       </div>
-
       {(!competitions || competitions.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -270,7 +246,6 @@ export default function CompetitionsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Application Dialog */}
       <Dialog open={!!selectedCompetition} onOpenChange={() => setSelectedCompetition(null)}>
         <DialogContent className="max-w-2xl">
@@ -280,47 +255,45 @@ export default function CompetitionsPage() {
               참가할 종목을 선택하세요
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-3">
               {selectedCompetition?.events?.
                 filter(event => (member?.gender === 'male' ? event.gender !== 'female' : event.gender !== 'male'))
-                .map((event) => (
+                .map((_event) => (
                   <div
-                    key={event.id}
+                    key={_event.id}
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedEvents.includes(event.id)
+                      selectedEvents.includes(_event.id)
                         ? 'border-blue-500 bg-blue-50'
                         : 'hover:bg-muted'
                     }`}
                     onClick={() => {
                       setSelectedEvents(prev =>
-                        prev.includes(event.id)
-                          ? prev.filter(id => id !== event.id)
-                          : [...prev, event.id]
+                        prev.includes(_event.id)
+                          ? prev.filter(id => id !== _event.id)
+                          : [...prev, _event.id]
                       );
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <Checkbox checked={selectedEvents.includes(event.id)} />
+                      <Checkbox checked={selectedEvents.includes(_event.id)} />
                       <div>
-                        <p className="font-semibold">{EVENT_NAMES[event.code || ''] || event.name}</p>
-                        <p className="text-xs text-muted-foreground">{event.code}</p>
+                        <p className="font-semibold">{EVENT_NAMES[_event.code || ''] || _event.name}</p>
+                        <p className="text-xs text-muted-foreground">{_event.code}</p>
                       </div>
                     </div>
                   </div>
                 ))}
             </div>
-
             {selectedEvents.length > 0 && (
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm font-semibold mb-2">선택한 종목 ({selectedEvents.length}개)</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedEvents.map(eventId => {
-                    const event = selectedCompetition?.events?.find(e => e.id === eventId);
+                    const _event = selectedCompetition?.events?.find(e => e.id === eventId);
                     return (
                       <Badge key={eventId}>
-                        {EVENT_NAMES[(event?.code || '') as string] || event?.name}
+                        {EVENT_NAMES[(_event?.code || '') as string] || _event?.name}
                       </Badge>
                     );
                   })}
@@ -328,7 +301,6 @@ export default function CompetitionsPage() {
               </div>
             )}
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedCompetition(null)}>
               취소

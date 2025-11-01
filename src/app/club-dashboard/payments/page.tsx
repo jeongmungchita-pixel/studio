@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, useMemo, useCallback } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
@@ -20,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { calculateAge } from '@/lib/member-utils';
-
 const statusLabels = {
   pending: '입금 대기',
   completed: '입금 완료',
@@ -28,7 +25,6 @@ const statusLabels = {
   refunded: '환불',
   cancelled: '취소',
 };
-
 const statusColors = {
   pending: 'secondary',
   completed: 'default',
@@ -36,7 +32,6 @@ const statusColors = {
   refunded: 'outline',
   cancelled: 'outline',
 } as const;
-
 const typeLabels = {
   pass: '이용권',
   event: '이벤트',
@@ -44,19 +39,15 @@ const typeLabels = {
   merchandise: '용품',
   other: '기타',
 };
-
 export default function PaymentsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child'>('all');
-  
   // Transaction dialogs
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
-
   type TransactionTypeLocal = 'income' | 'expense';
   type TransactionCategoryLocal =
     | 'membership_fee'
@@ -71,57 +62,49 @@ export default function PaymentsPage() {
     | 'marketing'
     | 'maintenance'
     | 'other_expense';
-
   // Transaction form
   const [transactionType, setTransactionType] = useState<TransactionTypeLocal>('income');
   const [transactionCategory, setTransactionCategory] = useState<TransactionCategoryLocal>('other_income');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionDescription, setTransactionDescription] = useState('');
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
-  
-
   // Fetch bank account
   const bankAccountQuery = useMemoFirebase(
-    () => (firestore && user?.clubId ? doc(firestore, 'club_bank_accounts', user.clubId) : null),
-    [firestore, user?.clubId]
+    () => (firestore && _user?.clubId ? doc(firestore, 'club_bank_accounts', _user.clubId) : null),
+    [firestore, _user?.clubId]
   );
-
   // Fetch payments
   const paymentsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'payments'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: payments, isLoading } = useCollection<Payment>(paymentsQuery);
-
   // Fetch members to get category info
   const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
-  }, [firestore, user?.clubId]);
+    if (!firestore || !_user?.clubId) return null;
+    return query(collection(firestore, 'members'), where('clubId', '==', _user.clubId));
+  }, [firestore, _user?.clubId]);
   const { data: members } = useCollection<Member>(membersQuery);
-
   // Fetch financial transactions
   const transactionsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'financial_transactions'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('isCancelled', '==', false),
       orderBy('date', 'desc')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: transactions } = useCollection<FinancialTransaction>(transactionsQuery);
-
   // Create member map for quick lookup
   const memberMap = useMemo(() => {
     if (!members) return new Map();
     return new Map(members.map(m => [m.id, m]));
   }, [members]);
-
   // Get member category
   const getMemberCategory = useCallback((memberId?: string): 'adult' | 'child' | null => {
     if (!memberId) return null;
@@ -129,37 +112,31 @@ export default function PaymentsPage() {
     if (!member) return null;
     return member.memberCategory || (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
   }, [memberMap]);
-
   // Filter payments by category
   const filteredPayments = useMemo(() => {
     if (!payments) return [];
     if (categoryFilter === 'all') return payments;
     return payments.filter(p => getMemberCategory(p.memberId) === categoryFilter);
   }, [payments, categoryFilter, getMemberCategory]);
-
   const handleVerify = async (payment: Payment, approved: boolean) => {
-    if (!firestore || !user) return;
-
+    if (!firestore || !_user) return;
     setIsProcessing(true);
     try {
       await updateDoc(doc(firestore, 'payments', payment.id), {
         status: approved ? 'completed' : 'failed',
-        verifiedBy: user.uid,
+        verifiedBy: _user.uid,
         verifiedAt: new Date().toISOString(),
         paymentDate: approved ? new Date().toISOString() : undefined,
       });
-
       // 승인 시 이용권 활성화 및 회원 정보 업데이트
       if (approved && payment.targetType === 'pass' && payment.targetId) {
         const now = new Date();
-        
         // 이용권 활성화
         await updateDoc(doc(firestore, 'member_passes', payment.targetId), {
           status: 'active',
           startDate: now.toISOString(),
           updatedAt: now.toISOString(),
         });
-
         // 회원의 activePassId 업데이트
         if (payment.memberId) {
           await updateDoc(doc(firestore, 'members', payment.memberId), {
@@ -168,38 +145,32 @@ export default function PaymentsPage() {
           });
         }
       }
-
       toast({
         title: approved ? '입금 확인 완료' : '입금 거부',
         description: approved
           ? '이용권이 갱신되었습니다.'
           : '입금이 거부되었습니다.',
       });
-
       setSelectedPayment(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '처리 실패' });
     } finally {
       setIsProcessing(false);
     }
   };
-
   // 거래 추가
   const handleAddTransaction = async () => {
-    if (!firestore || !user?.clubId) return;
-    
+    if (!firestore || !_user?.clubId) return;
     const amount = parseFloat(transactionAmount);
     if (isNaN(amount) || amount <= 0) {
       toast({ variant: 'destructive', title: '올바른 금액을 입력하세요' });
       return;
     }
-
     setIsProcessing(true);
     try {
       const { addDoc } = await import('firebase/firestore');
-      
       const transactionData: Omit<FinancialTransaction, 'id'> = {
-        clubId: user.clubId,
+        clubId: _user.clubId,
         type: transactionType,
         category: transactionCategory,
         amount,
@@ -209,52 +180,43 @@ export default function PaymentsPage() {
         status: 'completed',
         isCancelled: false,
         createdAt: new Date().toISOString(),
-        recordedBy: user.uid,
-        recordedByName: user.displayName || user.email || '관리자',
+        recordedBy: _user.uid,
+        recordedByName: _user.displayName || _user.email || '관리자',
       };
-
       await addDoc(collection(firestore, 'financial_transactions'), transactionData);
-
       toast({
         title: '등록 완료',
         description: `${transactionType === 'income' ? '수입' : '지출'}이 등록되었습니다.`,
       });
-
       // Reset form
       setTransactionAmount('');
       setTransactionDescription('');
       setTransactionDate(new Date().toISOString().split('T')[0]);
       setIsAddTransactionOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '등록 실패' });
     } finally {
       setIsProcessing(false);
     }
   };
-
   // 분할 기능 제거됨
-
   // Statistics by category
   const stats = useMemo(() => {
     if (!payments) return { all: { pending: 0, completed: 0, total: 0 }, adult: { pending: 0, completed: 0, total: 0 }, child: { pending: 0, completed: 0, total: 0 } };
-    
     const result = {
       all: { pending: 0, completed: 0, total: 0 },
       adult: { pending: 0, completed: 0, total: 0 },
       child: { pending: 0, completed: 0, total: 0 },
     };
-
     payments.forEach(p => {
       const category = getMemberCategory(p.memberId);
       const amount = p.amount;
-
       // All
       if (p.status === 'pending') result.all.pending++;
       if (p.status === 'completed') {
         result.all.completed++;
         result.all.total += amount;
       }
-
       // By category
       if (category === 'adult') {
         if (p.status === 'pending') result.adult.pending++;
@@ -270,13 +232,10 @@ export default function PaymentsPage() {
         }
       }
     });
-
     return result;
   }, [payments, getMemberCategory]);
-
   const pendingPayments = filteredPayments.filter(p => p.status === 'pending');
   const completedPayments = filteredPayments.filter(p => p.status === 'completed');
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -284,7 +243,6 @@ export default function PaymentsPage() {
       </div>
     );
   }
-
   // 카테고리 라벨
   const categoryLabels: Record<TransactionCategoryLocal, string> = {
     membership_fee: '회원권',
@@ -300,11 +258,9 @@ export default function PaymentsPage() {
     maintenance: '유지보수',
     other_expense: '기타 지출',
   };
-
   const getCategoryLabel = (cat: string): string => {
     return categoryLabels[cat as TransactionCategoryLocal] || '기타';
   };
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -323,7 +279,6 @@ export default function PaymentsPage() {
           </Button>
         </div>
       </div>
-
       {/* Filter Tabs */}
       <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as 'all' | 'adult' | 'child')} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -340,7 +295,6 @@ export default function PaymentsPage() {
             주니어
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="all" className="space-y-6">
           {/* Summary - All */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -376,7 +330,6 @@ export default function PaymentsPage() {
             </Card>
           </div>
         </TabsContent>
-
         <TabsContent value="adult" className="space-y-6">
           {/* Summary - Adult */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -412,7 +365,6 @@ export default function PaymentsPage() {
             </Card>
           </div>
         </TabsContent>
-
         <TabsContent value="child" className="space-y-6">
           {/* Summary - Child */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -449,7 +401,6 @@ export default function PaymentsPage() {
           </div>
         </TabsContent>
       </Tabs>
-
       {/* Pending Payments */}
       {pendingPayments.length > 0 && (
         <div className="space-y-3">
@@ -491,7 +442,6 @@ export default function PaymentsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                
                 <div className="flex gap-2">
                   <Button
                     onClick={() => handleVerify(payment, true)}
@@ -516,7 +466,6 @@ export default function PaymentsPage() {
           ))}
         </div>
       )}
-
       {/* Completed Payments */}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -553,14 +502,12 @@ export default function PaymentsPage() {
                   <p className="text-2xl font-bold text-green-600">
                     {payment.amount.toLocaleString()}원
                   </p>
-                  
                 </div>
               </div>
             </CardHeader>
           </Card>
         ))}
       </div>
-
       {(!payments || payments.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -569,7 +516,6 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Financial Transactions */}
       {transactions && transactions.length > 0 && (
         <div className="space-y-3">
@@ -585,7 +531,6 @@ export default function PaymentsPage() {
                         {transaction.type === 'income' ? '수입' : '지출'}
                       </Badge>
                       <Badge variant="outline">{getCategoryLabel(transaction.category)}</Badge>
-                      
                     </div>
                     <p className="font-medium">{transaction.description}</p>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -596,7 +541,6 @@ export default function PaymentsPage() {
                     <p className={`text-2xl font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                       {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()}원
                     </p>
-                    
                   </div>
                 </div>
               </CardHeader>
@@ -604,7 +548,6 @@ export default function PaymentsPage() {
           ))}
         </div>
       )}
-
       {/* Add Transaction Dialog */}
       <Dialog open={isAddTransactionOpen} onOpenChange={setIsAddTransactionOpen}>
         <DialogContent className="sm:max-w-md">
@@ -681,7 +624,6 @@ export default function PaymentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Split Transaction Dialog 제거됨 */}
     </main>
   );

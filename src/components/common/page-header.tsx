@@ -1,11 +1,9 @@
 'use client';
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Plus } from 'lucide-react';
-
 interface PageHeaderProps {
   title: string;
   description?: string;
@@ -32,7 +30,6 @@ interface PageHeaderProps {
   children?: React.ReactNode;
   className?: string;
 }
-
 export function PageHeader({
   title,
   description,
@@ -58,7 +55,6 @@ export function PageHeader({
               {backButton.label || '뒤로'}
             </Button>
           )}
-          
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
@@ -68,13 +64,11 @@ export function PageHeader({
                 </Badge>
               )}
             </div>
-            
             {description && (
               <p className="text-muted-foreground mt-1">{description}</p>
             )}
           </div>
         </div>
-
         <div className="flex items-center gap-2">
           {secondaryActions.map((action, index) => (
             <Button
@@ -87,7 +81,6 @@ export function PageHeader({
               {action.label}
             </Button>
           ))}
-          
           {primaryAction && (
             <Button
               onClick={primaryAction.onClick}
@@ -100,7 +93,6 @@ export function PageHeader({
           )}
         </div>
       </div>
-
       {children && (
         <>
           <Separator />

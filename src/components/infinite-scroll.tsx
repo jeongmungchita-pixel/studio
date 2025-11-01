@@ -1,9 +1,7 @@
 'use client';
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { Loader2 } from 'lucide-react';
-
 interface InfiniteScrollProps {
   hasNextPage?: boolean;
   isFetchingNextPage: boolean;
@@ -14,7 +12,6 @@ interface InfiniteScrollProps {
   rootMargin?: string;
   className?: string;
 }
-
 /**
  * 무한 스크롤 컴포넌트
  */
@@ -29,25 +26,20 @@ export function InfiniteScroll({
   className,
 }: InfiniteScrollProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
-
   const { isIntersecting } = useIntersectionObserver(loadMoreRef, {
     threshold,
     rootMargin,
   });
-
   useEffect(() => {
     if (isIntersecting && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
   return (
     <div className={className}>
       {children}
-      
       {/* 로딩 트리거 */}
       <div ref={loadMoreRef} className="h-1" />
-      
       {/* 로딩 인디케이터 */}
       {isFetchingNextPage && (
         loader || (
@@ -59,7 +51,6 @@ export function InfiniteScroll({
     </div>
   );
 }
-
 /**
  * 무한 스크롤 리스트 아이템 컴포넌트
  */
@@ -74,7 +65,6 @@ interface InfiniteScrollListProps<T> {
   className?: string;
   itemClassName?: string;
 }
-
 export function InfiniteScrollList<T>({
   pages = [],
   renderItem,
@@ -87,7 +77,6 @@ export function InfiniteScrollList<T>({
   itemClassName,
 }: InfiniteScrollListProps<T>) {
   const items = pages.flatMap(page => page.items);
-
   if (items.length === 0 && !isFetchingNextPage) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -95,7 +84,6 @@ export function InfiniteScrollList<T>({
       </div>
     );
   }
-
   return (
     <InfiniteScroll
       hasNextPage={hasNextPage}
@@ -111,7 +99,6 @@ export function InfiniteScrollList<T>({
     </InfiniteScroll>
   );
 }
-
 /**
  * 그리드 형태의 무한 스크롤
  */
@@ -127,7 +114,6 @@ interface InfiniteScrollGridProps<T> {
   emptyMessage?: string;
   className?: string;
 }
-
 export function InfiniteScrollGrid<T>({
   pages = [],
   renderItem,
@@ -141,7 +127,6 @@ export function InfiniteScrollGrid<T>({
   className,
 }: InfiniteScrollGridProps<T>) {
   const items = pages.flatMap(page => page.items);
-
   if (items.length === 0 && !isFetchingNextPage) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -149,9 +134,7 @@ export function InfiniteScrollGrid<T>({
       </div>
     );
   }
-
   const gridClassName = `grid grid-cols-${columns} gap-${gap}`;
-
   return (
     <InfiniteScroll
       hasNextPage={hasNextPage}

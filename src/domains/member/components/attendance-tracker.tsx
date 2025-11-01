@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +9,9 @@ import { AvatarImage } from '@/components/optimized-image';
 import { CheckCircle, XCircle, Clock, AlertCircle, CalendarIcon, TrendingUp } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 // ============================================
 // 📅 출석 추적 컴포넌트
 // ============================================
-
 interface AttendanceTrackerProps {
   member: Member;
   attendanceRecords: Attendance[];
@@ -23,7 +20,6 @@ interface AttendanceTrackerProps {
   variant?: 'calendar' | 'list' | 'summary';
   className?: string;
 }
-
 export function AttendanceTracker({
   member,
   attendanceRecords,
@@ -33,7 +29,6 @@ export function AttendanceTracker({
   className
 }: AttendanceTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  
   // 출석 상태별 아이콘 및 색상
   const getStatusIcon = (status: Attendance['status']) => {
     switch (status) {
@@ -49,7 +44,6 @@ export function AttendanceTracker({
         return null;
     }
   };
-
   const getStatusLabel = (status: Attendance['status']) => {
     const labels = {
       present: '출석',
@@ -59,7 +53,6 @@ export function AttendanceTracker({
     };
     return labels[status];
   };
-
   const getStatusColor = (status: Attendance['status']) => {
     const colors = {
       present: 'bg-green-100 text-green-800',
@@ -69,14 +62,12 @@ export function AttendanceTracker({
     };
     return colors[status];
   };
-
   // 선택된 월의 출석 기록
   const monthlyRecords = attendanceRecords.filter(record => {
     const recordDate = new Date(record.date);
     return recordDate.getMonth() === selectedDate.getMonth() && 
            recordDate.getFullYear() === selectedDate.getFullYear();
   });
-
   // 출석률 계산
   const calculateAttendanceRate = () => {
     if (monthlyRecords.length === 0) return 0;
@@ -85,12 +76,10 @@ export function AttendanceTracker({
     ).length;
     return Math.round((presentCount / monthlyRecords.length) * 100);
   };
-
   // 오늘 출석 기록
   const todayRecord = attendanceRecords.find(record => 
     isSameDay(new Date(record.date), new Date())
   );
-
   // 캘린더 변형
   if (variant === 'calendar') {
     return (
@@ -138,7 +127,6 @@ export function AttendanceTracker({
                 }}
               />
             </div>
-
             {/* 출석 통계 및 상세 정보 */}
             <div className="space-y-4">
               {/* 월간 통계 */}
@@ -149,21 +137,18 @@ export function AttendanceTracker({
                   </div>
                   <div className="text-sm text-green-700">출석</div>
                 </div>
-                
                 <div className="text-center p-3 bg-yellow-50 rounded-lg">
                   <div className="text-2xl font-bold text-yellow-600">
                     {monthlyRecords.filter(r => r.status === 'late').length}
                   </div>
                   <div className="text-sm text-yellow-700">지각</div>
                 </div>
-                
                 <div className="text-center p-3 bg-red-50 rounded-lg">
                   <div className="text-2xl font-bold text-red-600">
                     {monthlyRecords.filter(r => r.status === 'absent').length}
                   </div>
                   <div className="text-sm text-red-700">결석</div>
                 </div>
-                
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">
                     {monthlyRecords.filter(r => r.status === 'excused').length}
@@ -171,7 +156,6 @@ export function AttendanceTracker({
                   <div className="text-sm text-blue-700">사유결석</div>
                 </div>
               </div>
-
               {/* 오늘 출석 상태 */}
               <div className="p-4 border rounded-lg">
                 <h4 className="font-medium mb-2">오늘 출석</h4>
@@ -207,7 +191,6 @@ export function AttendanceTracker({
       </Card>
     );
   }
-
   // 목록 변형
   if (variant === 'list') {
     return (
@@ -238,7 +221,6 @@ export function AttendanceTracker({
                       )}
                     </div>
                   </div>
-                  
                   <div className="text-right">
                     <Badge className={getStatusColor(record.status)}>
                       {getStatusLabel(record.status)}
@@ -258,14 +240,12 @@ export function AttendanceTracker({
       </Card>
     );
   }
-
   // 요약 변형
   return (
     <Card className={className}>
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
           <AvatarImage src={member.photoURL} alt={member.name} size={48} />
-          
           <div className="flex-1">
             <h3 className="font-semibold">{member.name}</h3>
             <div className="flex items-center gap-4 mt-1">
@@ -275,7 +255,6 @@ export function AttendanceTracker({
                   출석률 {calculateAttendanceRate()}%
                 </span>
               </div>
-              
               {todayRecord && (
                 <div className="flex items-center gap-1">
                   {getStatusIcon(todayRecord.status)}
@@ -286,13 +265,11 @@ export function AttendanceTracker({
               )}
             </div>
           </div>
-
           {!todayRecord && onCheckIn && (
             <Button size="sm" onClick={() => onCheckIn(member.id)}>
               출석 체크
             </Button>
           )}
-          
           {todayRecord && !todayRecord.checkOutTime && onCheckOut && (
             <Button size="sm" variant="outline" onClick={() => onCheckOut(todayRecord.id)}>
               퇴실 체크

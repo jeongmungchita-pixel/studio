@@ -1,8 +1,8 @@
+'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileQuestion, Home, ArrowLeft } from 'lucide-react';
-
 export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50">
@@ -35,7 +35,6 @@ export default function NotFound() {
               이전 페이지로
             </Button>
           </div>
-
           <div className="rounded-lg bg-slate-100 p-4">
             <p className="text-sm text-slate-700 font-semibold mb-2">
               자주 찾는 페이지
