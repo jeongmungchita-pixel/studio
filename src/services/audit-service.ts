@@ -67,7 +67,7 @@ export class AuditService {
       userAgent: this.getUserAgent(),
     };
     // 중요도가 높은 로그는 즉시 처리
-    if (fullLog.severity === 'critical' || fullLog.severity === 'error') {
+    if (fullLog.severity === 'critical' || fullLog.severity === 'error' || fullLog.severity === 'warning') {
       await this.writeLog(fullLog);
     } else {
       // 큐에 추가하고 배치 처리
@@ -234,7 +234,7 @@ export class AuditService {
     }
     // 접근 거부 패턴
     const deniedAccess = logs.filter(l => l.action === 'access_denied');
-    if (deniedAccess.length > 10) {
+    if (deniedAccess.length >= 5) {
       anomalies.push('Frequent access denials');
     }
     return anomalies;

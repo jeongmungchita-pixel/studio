@@ -68,6 +68,8 @@ export class SecurityAudit {
   private static events: SecurityEvent[] = [];
   private static maxEvents = 10000; // 메모리 제한
   private static riskThreshold = 70; // 위험 점수 임계값
+  // 동일 밀리초 타임스탬프에 대한 결정적 정렬을 보장하기 위한 모노토닉 카운터
+  private static lastTimestamp = 0;
   /**
    * 보안 이벤트 로깅
    */
@@ -83,11 +85,16 @@ export class SecurityAudit {
       action?: string;
     }
   ): SecurityEvent {
+    // 모노토닉 타임스탬프 생성 (동일 ms 충돌 방지)
+    const now = Date.now();
+    const monotonic = Math.max(now, this.lastTimestamp + 1);
+    this.lastTimestamp = monotonic;
+
     const _event: SecurityEvent = {
       id: this.generateEventId(),
       type,
       severity: this.calculateSeverity(type, details),
-      timestamp: new Date(),
+      timestamp: new Date(monotonic),
       userId: context?.userId,
       userRole: context?.userRole,
       ipAddress: context?.ipAddress,

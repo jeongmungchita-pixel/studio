@@ -221,7 +221,11 @@ export function useUser(): UserHookResult {
       setIsUserLoading(false); // Set loading false after all async operations are done
     });
     // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        (unsubscribe as any)();
+      }
+    };
   }, [auth, firestore]);
   return { _user, isUserLoading };
 }

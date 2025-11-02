@@ -13,9 +13,9 @@ describe('LRUCache - Simple Tests', () => {
     expect(cache.get('key1')).toBe('value1');
   });
 
-  it('should return undefined for missing keys', () => {
+  it('should return null for missing keys', () => {
     const cache = new LRUCache<string>({ maxSize: 10 });
-    expect(cache.get('missing')).toBeUndefined();
+    expect(cache.get('missing')).toBeNull();
   });
 
   it('should check if key exists', () => {

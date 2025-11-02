@@ -87,17 +87,21 @@ export const commonValidationRules = {
   },
   futureDate: (value: string) => {
     if (!value) return null;
-    const inputDate = new Date(value);
+    // Parse as local date (avoid UTC timezone shift)
+    const [y, m, d] = value.split('-').map(Number);
+    const inputDate = new Date(y, (m || 1) - 1, d || 1);
     const _today = new Date();
     _today.setHours(0, 0, 0, 0);
-    return inputDate >= _today ? null : '오늘 이후의 날짜를 선택해주세요.';
+    return inputDate.getTime() >= _today.getTime() ? null : '오늘 이후의 날짜를 선택해주세요.';
   },
   pastDate: (value: string) => {
     if (!value) return null;
-    const inputDate = new Date(value);
+    // Parse as local date (avoid UTC timezone shift)
+    const [y, m, d] = value.split('-').map(Number);
+    const inputDate = new Date(y, (m || 1) - 1, d || 1);
     const _today = new Date();
     _today.setHours(23, 59, 59, 999);
-    return inputDate <= _today ? null : '오늘 이전의 날짜를 선택해주세요.';
+    return inputDate.getTime() <= _today.getTime() ? null : '오늘 이전의 날짜를 선택해주세요.';
   }
 };
 // 폼 상태 관리 헬퍼

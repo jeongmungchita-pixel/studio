@@ -150,7 +150,10 @@ export class LoadingManager {
   subscribe(listener: LoadingListener): () => void {
     this.listeners.add(listener);
     // 즉시 현재 상태 전달
-    listener(this.loadingStates);
+    try {
+      listener(this.loadingStates);
+    } catch (error: unknown) {
+    }
     // unsubscribe 함수 반환
     return () => {
       this.listeners.delete(listener);

@@ -9,61 +9,64 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 
 let env: RulesTestEnvironment;
+const shouldRun = !!process.env.FIRESTORE_EMULATOR_HOST;
 
-beforeAll(async () => {
-  env = await initializeTestEnvironment({
-    projectId: 'demo-test',
-    firestore: { rules: readFileSync('firestore.rules', 'utf8') },
+if (shouldRun) {
+  beforeAll(async () => {
+    env = await initializeTestEnvironment({
+      projectId: 'demo-test',
+      firestore: { rules: readFileSync('firestore.rules', 'utf8') },
+    });
+
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+
+      await setDoc(doc(db, 'users', 'staff1'), {
+        uid: 'staff1',
+        email: 'staff1@example.com',
+        role: 'CLUB_OWNER',
+        clubId: 'clubA',
+        clubName: '헬스킹A',
+        status: 'active',
+      });
+
+      await setDoc(doc(db, 'members', 'mA1'), {
+        id: 'mA1',
+        name: '성인 회원',
+        clubId: 'clubA',
+        memberCategory: 'adult',
+        memberType: 'individual',
+        status: 'active',
+      });
+
+      await setDoc(doc(db, 'users', 'member1'), {
+        uid: 'member1',
+        email: 'member1@example.com',
+        role: 'MEMBER',
+        status: 'pending',
+        requestedClubId: 'clubA',
+        requestedClubName: '헬스킹A',
+      });
+
+      await setDoc(doc(db, 'users', 'member2'), {
+        uid: 'member2',
+        email: 'member2@example.com',
+        role: 'MEMBER',
+        status: 'pending',
+      });
+    });
   });
+}
 
-  // Seed baseline documents bypassing security rules
-  await env.withSecurityRulesDisabled(async (context) => {
-    const db = context.firestore();
-
-    // staff user (club owner)
-    await setDoc(doc(db, 'users', 'staff1'), {
-      uid: 'staff1',
-      email: 'staff1@example.com',
-      role: 'CLUB_OWNER',
-      clubId: 'clubA',
-      clubName: '헬스킹A',
-      status: 'active',
-    });
-
-    // member to link
-    await setDoc(doc(db, 'members', 'mA1'), {
-      id: 'mA1',
-      name: '성인 회원',
-      clubId: 'clubA',
-      memberCategory: 'adult',
-      memberType: 'individual',
-      status: 'active',
-    });
-
-    // pending users
-    await setDoc(doc(db, 'users', 'member1'), {
-      uid: 'member1',
-      email: 'member1@example.com',
-      role: 'MEMBER',
-      status: 'pending',
-      requestedClubId: 'clubA',
-      requestedClubName: '헬스킹A',
-    });
-
-    await setDoc(doc(db, 'users', 'member2'), {
-      uid: 'member2',
-      email: 'member2@example.com',
-      role: 'MEMBER',
-      status: 'pending',
-    });
+if (shouldRun) {
+  afterAll(async () => {
+    if (env) {
+      await env.cleanup();
+    }
   });
-});
+}
 
-afterAll(async () => {
-  await env.cleanup();
-});
-
-describe('Firestore rules: users approval by club staff', () => {
+(!shouldRun ? describe.skip : describe)('Firestore rules: users approval by club staff', () => {
   it('allows club staff to approve pending→active when requested club matches staff club (by id/name)', async () => {
     const staffCtx = env.authenticatedContext('staff1');
     const db = staffCtx.firestore();

@@ -4,12 +4,17 @@ import { FirebaseProvider, initializeFirebase } from '@/firebase';
 import { usePathname } from 'next/navigation';
 import { MainLayout } from '@/components/layout/main-layout';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { registerDefaultServices } from '@/services/container';
+import { useEffect } from 'react';
 export function RootLayoutClient({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  useEffect(() => {
+    registerDefaultServices();
+  }, []);
   const isPublicPage =
     pathname === '/login' ||
     pathname === '/pending-approval' ||

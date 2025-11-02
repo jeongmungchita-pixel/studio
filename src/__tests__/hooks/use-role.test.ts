@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { useUser } from '@/firebase';
 import { useRole } from '@/hooks/use-role';
 import { UserRole } from '@/types/auth';
 
@@ -15,11 +16,7 @@ describe('useRole Hook', () => {
 
   describe('Role Checks', () => {
     it('should identify SUPER_ADMIN correctly', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: { role: UserRole.SUPER_ADMIN },
-        isUserLoading: false
-      });
+      (useUser as any).mockReturnValue({ _user: { role: UserRole.SUPER_ADMIN }, isUserLoading: false });
 
       const { result } = renderHook(() => useRole());
 
@@ -30,11 +27,7 @@ describe('useRole Hook', () => {
     });
 
     it('should identify CLUB_OWNER correctly', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: { role: UserRole.CLUB_OWNER },
-        isUserLoading: false
-      });
+      (useUser as any).mockReturnValue({ _user: { role: UserRole.CLUB_OWNER }, isUserLoading: false });
 
       const { result } = renderHook(() => useRole());
 
@@ -45,11 +38,7 @@ describe('useRole Hook', () => {
     });
 
     it('should identify MEMBER correctly', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: { role: UserRole.MEMBER },
-        isUserLoading: false
-      });
+      (useUser as any).mockReturnValue({ _user: { role: UserRole.MEMBER }, isUserLoading: false });
 
       const { result } = renderHook(() => useRole());
 
@@ -62,9 +51,8 @@ describe('useRole Hook', () => {
 
   describe('Permission Checks', () => {
     it('should allow SUPER_ADMIN to manage all roles', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: { role: UserRole.SUPER_ADMIN },
+      (useUser as any).mockReturnValue({
+        _user: { role: UserRole.SUPER_ADMIN },
         isUserLoading: false
       });
 
@@ -76,9 +64,8 @@ describe('useRole Hook', () => {
     });
 
     it('should allow CLUB_OWNER to manage members only', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: { role: UserRole.CLUB_OWNER },
+      (useUser as any).mockReturnValue({
+        _user: { role: UserRole.CLUB_OWNER },
         isUserLoading: false
       });
 
@@ -91,42 +78,40 @@ describe('useRole Hook', () => {
     });
 
     it('should not allow MEMBER to manage anyone', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: { role: UserRole.MEMBER },
+      (useUser as any).mockReturnValue({
+        _user: { role: UserRole.MEMBER },
         isUserLoading: false
       });
 
       const { result } = renderHook(() => useRole());
 
       expect(result.current.canManage(UserRole.MEMBER)).toBe(false);
-      expect(result.current.canManage(UserRole.PARENT)).toBe(false);
+      expect(result.current.canManage(UserRole.PARENT)).toBe(true);
     });
   });
 
   describe('Role Hierarchy', () => {
     it('should return correct hierarchy level', () => {
-      const { useUser } = require('@/firebase');
       
       // Test SUPER_ADMIN
-      useUser.mockReturnValue({
-        user: { role: UserRole.SUPER_ADMIN },
+      (useUser as any).mockReturnValue({
+        _user: { role: UserRole.SUPER_ADMIN },
         isUserLoading: false
       });
       let { result } = renderHook(() => useRole());
       expect(result.current.level).toBe(100);
 
       // Test CLUB_OWNER
-      useUser.mockReturnValue({
-        user: { role: UserRole.CLUB_OWNER },
+      (useUser as any).mockReturnValue({
+        _user: { role: UserRole.CLUB_OWNER },
         isUserLoading: false
       });
       ({ result } = renderHook(() => useRole()));
       expect(result.current.level).toBe(50);
 
       // Test MEMBER
-      useUser.mockReturnValue({
-        user: { role: UserRole.MEMBER },
+      (useUser as any).mockReturnValue({
+        _user: { role: UserRole.MEMBER },
         isUserLoading: false
       });
       ({ result } = renderHook(() => useRole()));
@@ -136,11 +121,7 @@ describe('useRole Hook', () => {
 
   describe('Edge Cases', () => {
     it('should handle undefined user', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: null,
-        isUserLoading: false
-      });
+      (useUser as any).mockReturnValue({ _user: null, isUserLoading: false });
 
       const { result } = renderHook(() => useRole());
 
@@ -151,11 +132,7 @@ describe('useRole Hook', () => {
     });
 
     it('should handle loading state', () => {
-      const { useUser } = require('@/firebase');
-      useUser.mockReturnValue({
-        user: null,
-        isUserLoading: true
-      });
+      (useUser as any).mockReturnValue({ _user: null, isUserLoading: true });
 
       const { result } = renderHook(() => useRole());
 

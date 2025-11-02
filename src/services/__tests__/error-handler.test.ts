@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ErrorHandler, ErrorType, ErrorSeverity } from '../error-handler';
+import { navigationManager } from '../navigation-manager';
 import { FirebaseError } from 'firebase/app';
 
 describe('ErrorHandler', () => {
@@ -8,6 +9,32 @@ describe('ErrorHandler', () => {
   beforeEach(() => {
     errorHandler = ErrorHandler.getInstance();
     vi.clearAllMocks();
+  });
+
+  describe('Recovery flags (no side-effects for non-recoverable types)', () => {
+    it('AUTHENTICATION errors should be non-recoverable and not trigger navigation', () => {
+      const spy = vi.spyOn(navigationManager, 'goToLogin').mockImplementation(() => {});
+      const err: any = new Error('auth issue');
+      err.code = 'auth/user-not-found';
+      const res = errorHandler.handle(err);
+      expect(res.type).toBe(ErrorType.AUTHENTICATION);
+      expect(res.recoverable).toBe(false);
+      expect(res.retryable).toBe(false);
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    it('AUTHORIZATION errors should be non-recoverable and not trigger navigation', () => {
+      const spy = vi.spyOn(navigationManager, 'navigate').mockImplementation(() => {});
+      const err: any = new Error('denied');
+      err.code = 'permission-denied';
+      const res = errorHandler.handle(err);
+      expect(res.type).toBe(ErrorType.AUTHORIZATION);
+      expect(res.recoverable).toBe(false);
+      expect(res.retryable).toBe(false);
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
   });
 
   afterEach(() => {
@@ -195,7 +222,7 @@ describe('ErrorHandler', () => {
       {
         code: 'auth/network-request-failed',
         expectedType: ErrorType.NETWORK,
-        expectedMessage: '네트워크 연결 오류가 발생했습니다.',
+        expectedMessage: '네트워크 연결을 확인해주세요.',
         expectedSeverity: ErrorSeverity.MEDIUM,
       },
       {

@@ -216,9 +216,10 @@ export class AuthService {
     const adminRoutes = ['/admin', '/super-admin', '/system'];
     const clubRoutes = ['/club-dashboard'];
     const memberRoutes = ['/my-profile', '/events', '/competitions'];
-    const publicRoutes = ['/login', '/register', '/'];
-    // 공개 라우트는 모두 접근 가능
-    if (publicRoutes.some(r => route.startsWith(r))) return true;
+    // 공개 라우트 처리: '/'는 정확히 일치할 때만 허용, 나머지는 접두사 허용
+    if (route === '/') return true;
+    const publicPrefixes = ['/login', '/register'];
+    if (publicPrefixes.some((r) => route.startsWith(r))) return true;
     // SUPER_ADMIN은 모든 라우트 접근 가능
     if (userRole === UserRole.SUPER_ADMIN) return true;
     // FEDERATION_ADMIN은 관리자 라우트 접근 가능

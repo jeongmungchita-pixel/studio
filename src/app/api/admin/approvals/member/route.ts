@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase-admin';
 import { withAuth, isClubStaff, isAdmin, AuthenticatedRequest } from '@/middleware/auth';
+import { ApiError } from '@/lib/api-error';
 /**
  * POST /api/admin/approvals/member
  * Approve general member registration request
@@ -10,19 +11,13 @@ export async function POST(request: NextRequest) {
     const { user } = _req;
     // Check if user has permission (admin or club staff)
     if (!isAdmin(user!.role) && !isClubStaff(user!.role)) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      );
+      throw ApiError.forbidden('Insufficient permissions');
     }
     // Parse request body
     const body = await _req.json();
     const { requestId } = body;
     if (!requestId) {
-      return NextResponse.json(
-        { error: 'Request ID is required' },
-        { status: 400 }
-      );
+      throw ApiError.badRequest('Request ID is required');
     }
     const db = getAdminFirestore();
     try {
@@ -32,19 +27,19 @@ export async function POST(request: NextRequest) {
         const requestRef = db.collection('memberRegistrationRequests').doc(requestId);
         const requestSnap = await transaction.get(requestRef);
         if (!requestSnap.exists) {
-          throw new Error('Registration request not found');
+          throw ApiError.notFound('Registration request not found');
         }
         const requestData = requestSnap.data()!;
         // Check if already approved
         if (requestData.status === 'approved') {
-          throw new Error('Request already approved');
+          throw ApiError.conflict('Request already approved');
         }
         // Check club permission for staff
         if (!isAdmin(user!.role)) {
           const userClubId = user!.clubId;
           const requestClubId = requestData.clubId;
           if (!userClubId || userClubId !== requestClubId) {
-            throw new Error('Cannot approve request for different club');
+            throw ApiError.forbidden('Cannot approve request for different club');
           }
         }
         // 2. Create member document
@@ -147,13 +142,12 @@ export async function POST(request: NextRequest) {
         requestId,
       });
     } catch (error: unknown) {
-      return NextResponse.json(
-        { 
-          error: 'Failed to approve registration',
-          details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) 
-        },
-        { status: 500 }
-      );
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal('Failed to approve registration', {
+        originalError: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 }

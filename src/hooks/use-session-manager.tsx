@@ -8,6 +8,7 @@ interface SessionConfig {
   idleTimeout?: number; // 유휴 시간 제한 (밀리초)
   warningTime?: number; // 경고 표시 시간 (만료 전 몇 초)
   checkInterval?: number; // 체크 간격
+  now?: () => number; // 테스트 용 시간 주입
 }
 const DEFAULT_CONFIG: SessionConfig = {
   idleTimeout: 30 * 60 * 1000, // 30분
@@ -27,7 +28,8 @@ export function useSessionManager(config: SessionConfig = {}) {
   const { toast } = useToast();
   const [isSessionExpiring, setIsSessionExpiring] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const lastActivityRef = useRef<number>(Date.now());
+  const nowFn = useRef<() => number>(config.now ?? (() => Date.now()));
+  const lastActivityRef = useRef<number>(nowFn.current());
   const warningShownRef = useRef<boolean>(false);
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,7 +42,7 @@ export function useSessionManager(config: SessionConfig = {}) {
    * 활동 시간 업데이트
    */
   const updateActivity = useCallback(() => {
-    lastActivityRef.current = Date.now();
+    lastActivityRef.current = nowFn.current();
     warningShownRef.current = false;
     setIsSessionExpiring(false);
     setTimeRemaining(null);
@@ -110,7 +112,7 @@ export function useSessionManager(config: SessionConfig = {}) {
    */
   const checkSession = useCallback(async () => {
     if (!_user) return;
-    const now = Date.now();
+    const now = nowFn.current();
     const timeSinceActivity = now - lastActivityRef.current;
     const timeUntilTimeout = idleTimeout - timeSinceActivity;
     // 세션 만료
@@ -123,9 +125,9 @@ export function useSessionManager(config: SessionConfig = {}) {
       warningShownRef.current = true;
       setIsSessionExpiring(true);
       // 카운트다운 시작
-      const startTime = Date.now();
+      const startTime = nowFn.current();
       countdownTimerRef.current = setInterval(() => {
-        const elapsed = Date.now() - startTime;
+        const elapsed = nowFn.current() - startTime;
         const remaining = Math.max(0, warningTime - elapsed);
         setTimeRemaining(Math.floor(remaining / 1000));
         if (remaining <= 0) {
@@ -196,7 +198,7 @@ export function useSessionManager(config: SessionConfig = {}) {
     const savedActivity = localStorage.getItem('lastActivity');
     if (savedActivity) {
       const savedTime = parseInt(savedActivity, 10);
-      const timeSinceSaved = Date.now() - savedTime;
+      const timeSinceSaved = nowFn.current() - savedTime;
       // 30분 이내면 세션 유지
       if (timeSinceSaved < idleTimeout) {
         lastActivityRef.current = savedTime;
@@ -240,6 +242,7 @@ export function useSessionManager(config: SessionConfig = {}) {
     extendSession,
     logout,
     updateActivity,
+    __test: config.now ? { triggerCheck: checkSession } : undefined,
   };
 }
 /**

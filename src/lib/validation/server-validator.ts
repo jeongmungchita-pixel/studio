@@ -245,9 +245,9 @@ export class ServerValidator {
    */
   static sanitizeInput(input: string): string {
     return input
-      .replace(/[<>]/g, '') // HTML 태그 제거
+      .replace(/[<>]/g, '') // HTML 태그 각괄호 제거 (레거시 호환)
       .replace(/javascript:/gi, '') // JavaScript 프로토콜 제거
-      .replace(/on\w+=/gi, '') // 이벤트 핸들러 제거
+      .replace(/on\w+=/gi, '') // 인라인 이벤트 핸들러 제거
       .trim();
   }
   /**

@@ -20,7 +20,6 @@ describe('NavigationManager', () => {
       writable: true,
       configurable: true,
     });
-
     // NavigationManager 인스턴스 초기화
     // @ts-ignore - private constructor 접근
     NavigationManager.instance = null;
@@ -36,6 +35,29 @@ describe('NavigationManager', () => {
       const instance1 = NavigationManager.getInstance();
       const instance2 = NavigationManager.getInstance();
       expect(instance1).toBe(instance2);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('queues navigation when already navigating and processes later', async () => {
+      // force navigating state via private access by triggering a navigation
+      navigationManager.navigate('/first');
+      // enqueue another while navigating
+      navigationManager.navigate('/second');
+      // simulate window path update for first
+      window.location.pathname = '/first';
+      // wait a bit for internal setTimeout to process queue
+      await new Promise((r) => setTimeout(r, 120));
+      // after processing, last href should be second
+      expect(window.location.href).toBe('/second');
+    });
+
+    it('trims history to max size', () => {
+      for (let i = 0; i < 20; i++) {
+        navigationManager.navigate(`/p${i}`, { force: true, skipCheck: true });
+      }
+      const history = navigationManager.getHistory();
+      expect(history.length).toBeLessThanOrEqual(10);
     });
   });
 
@@ -97,6 +119,12 @@ describe('NavigationManager', () => {
       expect(window.location.replace).toHaveBeenCalledWith('/pending-approval');
     });
 
+    it('inactive 상태일 때 inactive로 이동해야 함', () => {
+      const _user = { role: UserRole.MEMBER, status: 'inactive' as const, isAuthenticated: true };
+      navigationManager.navigateByRole(_user);
+      expect(window.location.replace).toHaveBeenCalledWith('/inactive');
+    });
+
     it('인증되지 않은 사용자는 로그인 페이지로 이동해야 함', () => {
       const _user = { isAuthenticated: false };
       navigationManager.navigateByRole(_user);
@@ -114,6 +142,8 @@ describe('NavigationManager', () => {
     });
 
     it('goHome이 홈으로 이동해야 함', () => {
+      // 현재 경로가 '/'이면 네비게이션을 스킵하므로 다른 경로로 설정
+      window.location.pathname = '/not-home';
       navigationManager.goHome();
       expect(window.location.replace).toHaveBeenCalledWith('/');
     });
@@ -121,6 +151,13 @@ describe('NavigationManager', () => {
     it('goToLogin이 로그인 페이지로 이동해야 함', () => {
       navigationManager.goToLogin();
       expect(window.location.href).toBe('/login');
+    });
+
+    it('goForward이 앞으로 이동을 호출해야 함', () => {
+      const fwd = vi.spyOn(window.history, 'forward');
+      navigationManager.goForward();
+      expect(fwd).toHaveBeenCalled();
+      fwd.mockRestore();
     });
   });
 

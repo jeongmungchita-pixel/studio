@@ -1,5 +1,71 @@
 # Federation 워크스페이스 룰
+첫번째 원칙 : 토큰사용량을 지정해주면 지정사용량까지 
+두번째 아래원칙을 따른다 
 
+{
+  "cascade": {
+    "turboMode": {
+      "value": true,
+      "locked": true
+    },
+    "autoConfirmEdits": {
+      "value": true,
+      "locked": true
+    },
+    "fastContextAgent": {
+      "value": true,
+      "locked": true
+    },
+    "toolInvocationLimit": {
+      "value": 15,
+      "locked": true
+    },
+    "commands": {
+      "allowList": {
+        "value": ["npm", "vitest", "git"],
+        "locked": true
+      },
+      "denyList": {
+        "value": ["rm", "shutdown", "reboot"],
+        "locked": true
+      }
+    }
+  },
+  "agentPolicy": {
+    "askBeforeWrite": {
+      "value": false,
+      "locked": true
+    }
+  },
+  "testing": {
+    "coverageMode": {
+      "value": "full",
+      "locked": true
+    }
+  },
+  "search": {
+    "maxWorkspaceFileCount": {
+      "value": 0,
+      "locked": true
+    }
+  },
+  "editor": {
+    "inlineSuggest": {
+      "value": true,
+      "locked": true
+    },
+    "maxTokenizationLineLength": {
+      "value": 20000,
+      "locked": true
+    }
+  },
+  "files": {
+    "autoSave": {
+      "value": "onFocusChange",
+      "locked": true
+    }
+  }
+}
 ## 1. 아키텍처 원칙
 
 ### 1.1 읽기/쓰기 분리

@@ -2,7 +2,7 @@
  * 사용자 서비스
  * 사용자 관련 비즈니스 로직을 처리합니다.
  */
-import { apiClient } from './api-client';
+import { apiClient, ApiClient } from './api-client';
 import { UserProfile, UserRole } from '@/types/auth';
 import { PaginatedResponse } from '@/types/api';
 export interface UserFilters {
@@ -26,7 +26,10 @@ export interface UpdateUserData {
 }
 export class UserService {
   private static instance: UserService;
-  private constructor() {}
+  private readonly api: ApiClient;
+  private constructor(api: ApiClient = apiClient) {
+    this.api = api;
+  }
   /**
    * 싱글톤 인스턴스 반환
    */
@@ -46,7 +49,7 @@ export class UserService {
     sortBy: string = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<PaginatedResponse<UserProfile>> {
-    return apiClient.getPaginated<UserProfile>('/users', {
+    return this.api.getPaginated<UserProfile>('/users', {
       page,
       pageSize,
       sortBy,
@@ -60,7 +63,7 @@ export class UserService {
    * 사용자 상세 조회
    */
   async getUser(userId: string): Promise<UserProfile> {
-    return apiClient.get<UserProfile>(`/users/${userId}`, {
+    return this.api.get<UserProfile>(`/users/${userId}`, {
       loadingKey: 'fetch-user'
     });
   }
@@ -68,7 +71,7 @@ export class UserService {
    * 사용자 생성
    */
   async createUser(data: CreateUserData): Promise<UserProfile> {
-    return apiClient.post<UserProfile>('/users', data, {
+    return this.api.post<UserProfile>('/users', data, {
       loadingKey: 'create-user'
     });
   }
@@ -76,7 +79,7 @@ export class UserService {
    * 사용자 정보 수정
    */
   async updateUser(userId: string, data: UpdateUserData): Promise<UserProfile> {
-    return apiClient.put<UserProfile>(`/users/${userId}`, data, {
+    return this.api.put<UserProfile>(`/users/${userId}`, data, {
       loadingKey: 'update-user'
     });
   }
@@ -84,7 +87,7 @@ export class UserService {
    * 사용자 삭제
    */
   async deleteUser(userId: string): Promise<{ id: string }> {
-    return apiClient.delete<{ id: string }>(`/users/${userId}`, {
+    return this.api.delete<{ id: string }>(`/users/${userId}`, {
       loadingKey: 'delete-user'
     });
   }
@@ -92,7 +95,7 @@ export class UserService {
    * 내 정보 조회
    */
   async getMyProfile(): Promise<UserProfile> {
-    return apiClient.get<UserProfile>('/users/me', {
+    return this.api.get<UserProfile>('/users/me', {
       loadingKey: 'fetch-my-profile',
       cache: 'no-cache'
     });
@@ -101,7 +104,7 @@ export class UserService {
    * 내 정보 수정
    */
   async updateMyProfile(data: Pick<UpdateUserData, 'name' | 'phoneNumber'>): Promise<UserProfile> {
-    return apiClient.put<UserProfile>('/users/me', data, {
+    return this.api.put<UserProfile>('/users/me', data, {
       loadingKey: 'update-my-profile'
     });
   }
@@ -109,7 +112,7 @@ export class UserService {
    * 프로필 이미지 업로드
    */
   async uploadProfileImage(userId: string, file: File): Promise<{ url: string }> {
-    return apiClient.upload('/users/profile-image', file, { userId }, {
+    return this.api.upload('/users/profile-image', file, { userId }, {
       loadingKey: 'upload-profile-image'
     });
   }
@@ -131,7 +134,7 @@ export class UserService {
    * 사용자 검색
    */
   async searchUsers(_query: string): Promise<UserProfile[]> {
-    return apiClient.get<UserProfile[]>('/users/search', {
+    return this.api.get<UserProfile[]>('/users/search', {
       params: { q: _query },
       loadingKey: 'search-users'
     });
@@ -173,7 +176,7 @@ export class UserService {
    * 대량 사용자 생성
    */
   async createBulkUsers(users: CreateUserData[]): Promise<UserProfile[]> {
-    return apiClient.post<UserProfile[]>('/users/bulk', { users }, {
+    return this.api.post<UserProfile[]>('/users/bulk', { users }, {
       loadingKey: 'create-bulk-users'
     });
   }
@@ -182,7 +185,7 @@ export class UserService {
    */
   async exportUsers(filters?: UserFilters): Promise<void> {
     const params = filters ? { ...filters } : {};
-    await apiClient.download('/users/export', 'users.csv');
+    await this.api.download('/users/export', 'users.csv');
   }
   /**
    * 사용자 통계 조회
@@ -193,7 +196,7 @@ export class UserService {
     byStatus: Record<string, number>;
     recentlyActive: number;
   }> {
-    return apiClient.get('/users/stats', {
+    return this.api.get('/users/stats', {
       loadingKey: 'fetch-user-stats'
     });
   }

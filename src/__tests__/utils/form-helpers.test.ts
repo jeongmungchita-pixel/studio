@@ -1,10 +1,11 @@
+import { vi } from 'vitest';
 import { createArrayUpdater, createFormValidator, commonValidationRules, createFormState, childValidationRules } from '@/utils/form-helpers';
 
 describe('Form Helpers', () => {
   describe('createArrayUpdater', () => {
     it('should update item correctly', () => {
       const items = [{ id: 1, name: 'test' }];
-      const setItems = jest.fn();
+      const setItems = vi.fn();
       const updater = createArrayUpdater(items, setItems);
 
       updater.updateItem(0, 'name', 'updated');
@@ -14,7 +15,7 @@ describe('Form Helpers', () => {
 
     it('should add item correctly', () => {
       const items = [{ id: 1, name: 'test' }];
-      const setItems = jest.fn();
+      const setItems = vi.fn();
       const updater = createArrayUpdater(items, setItems);
 
       updater.addItem({ id: 2, name: 'new' });
@@ -27,7 +28,7 @@ describe('Form Helpers', () => {
 
     it('should remove item correctly', () => {
       const items = [{ id: 1, name: 'test' }, { id: 2, name: 'test2' }];
-      const setItems = jest.fn();
+      const setItems = vi.fn();
       const updater = createArrayUpdater(items, setItems);
 
       updater.removeItem(0);
@@ -38,9 +39,9 @@ describe('Form Helpers', () => {
 
   describe('createFormValidator', () => {
     const rules = {
-      name: (value: string) => value ? null : 'Name is required',
-      email: (value: string) => value.includes('@') ? null : 'Invalid email'
-    };
+      name: (value: unknown) => (typeof value === 'string' && value.trim().length > 0) ? null : 'Name is required',
+      email: (value: unknown) => (typeof value === 'string' && value.includes('@')) ? null : 'Invalid email'
+    } as Record<'name' | 'email', (value: unknown) => string | null>;
 
     it('should validate field correctly', () => {
       const validator = createFormValidator(rules);
@@ -112,12 +113,22 @@ describe('Form Helpers', () => {
     });
 
     it('should validate child birth date', () => {
-      const _today = new Date().toISOString().split('T')[0];
-      const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      const today = new Date();
+      const fmt = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const todayStr = fmt(today);
+      const futureDateStr = fmt(new Date(today.getTime() + 86400000));
       
       expect(childValidationRules.birthDate('')).toBe('필수 입력 항목입니다.');
       expect(childValidationRules.birthDate('invalid')).toBe('올바른 날짜 형식(YYYY-MM-DD)이 아닙니다.');
-      expect(childValidationRules.birthDate(futureDate)).toBe('오늘 이전의 날짜를 선택해주세요.');
+      // For birthDate (pastDate), future should be invalid
+      expect(childValidationRules.birthDate(futureDateStr)).toBe('오늘 이전의 날짜를 선택해주세요.');
+      // Today is valid
+      expect(childValidationRules.birthDate(todayStr)).toBe(null);
       expect(childValidationRules.birthDate('2020-01-01')).toBe(null);
     });
   });

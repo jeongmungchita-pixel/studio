@@ -53,23 +53,22 @@ describe('AuthService', () => {
     it('should allow FEDERATION_ADMIN to access admin routes', () => {
       expect(authService.canAccessRoute(UserRole.FEDERATION_ADMIN, '/admin')).toBe(true);
       expect(authService.canAccessRoute(UserRole.FEDERATION_ADMIN, '/my-profile')).toBe(true);
-      // Note: Due to publicRoutes containing '/', all routes starting with '/' return true
-      expect(authService.canAccessRoute(UserRole.FEDERATION_ADMIN, '/club-dashboard')).toBe(true);
+      // club-dashboard는 클럽 역할 전용, FEDERATION_ADMIN은 접근 불가
+      expect(authService.canAccessRoute(UserRole.FEDERATION_ADMIN, '/club-dashboard')).toBe(false);
     });
 
     it('should allow CLUB_OWNER to access club routes', () => {
       expect(authService.canAccessRoute(UserRole.CLUB_OWNER, '/club-dashboard')).toBe(true);
       expect(authService.canAccessRoute(UserRole.CLUB_OWNER, '/my-profile')).toBe(true);
-      // Note: Due to publicRoutes containing '/', all routes starting with '/' return true
-      expect(authService.canAccessRoute(UserRole.CLUB_OWNER, '/admin')).toBe(true);
+      // admin은 관리자 전용, CLUB_OWNER는 접근 불가
+      expect(authService.canAccessRoute(UserRole.CLUB_OWNER, '/admin')).toBe(false);
     });
 
     it('should allow MEMBER to access member routes only', () => {
       expect(authService.canAccessRoute(UserRole.MEMBER, '/my-profile')).toBe(true);
       expect(authService.canAccessRoute(UserRole.MEMBER, '/events')).toBe(true);
-      // Note: Due to publicRoutes containing '/', all routes starting with '/' return true
-      expect(authService.canAccessRoute(UserRole.MEMBER, '/club-dashboard')).toBe(true);
-      expect(authService.canAccessRoute(UserRole.MEMBER, '/admin')).toBe(true);
+      expect(authService.canAccessRoute(UserRole.MEMBER, '/club-dashboard')).toBe(false);
+      expect(authService.canAccessRoute(UserRole.MEMBER, '/admin')).toBe(false);
     });
 
     it('should allow everyone to access public routes', () => {

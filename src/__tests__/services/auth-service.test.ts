@@ -24,51 +24,51 @@ describe('AuthService', () => {
     });
   });
 
-  describe('getRedirectUrl', () => {
+  describe('getRedirectUrlByRole', () => {
     it('should return correct URL for SUPER_ADMIN', () => {
-      const url = authService.getRedirectUrl(UserRole.SUPER_ADMIN);
+      const url = authService.getRedirectUrlByRole(UserRole.SUPER_ADMIN);
       expect(url).toBe('/super-admin');
     });
 
     it('should return correct URL for FEDERATION_ADMIN', () => {
-      const url = authService.getRedirectUrl(UserRole.FEDERATION_ADMIN);
+      const url = authService.getRedirectUrlByRole(UserRole.FEDERATION_ADMIN);
       expect(url).toBe('/admin');
     });
 
     it('should return correct URL for CLUB_OWNER', () => {
-      const url = authService.getRedirectUrl(UserRole.CLUB_OWNER);
+      const url = authService.getRedirectUrlByRole(UserRole.CLUB_OWNER);
       expect(url).toBe('/club-dashboard');
     });
 
     it('should return correct URL for MEMBER', () => {
-      const url = authService.getRedirectUrl(UserRole.MEMBER);
+      const url = authService.getRedirectUrlByRole(UserRole.MEMBER);
       expect(url).toBe('/my-profile');
     });
 
     it('should return correct URL for PARENT', () => {
-      const url = authService.getRedirectUrl(UserRole.PARENT);
+      const url = authService.getRedirectUrlByRole(UserRole.PARENT);
       expect(url).toBe('/my-profile');
     });
   });
 
-  describe('hasPermission', () => {
+  describe('canAccessRoute (permission)', () => {
     it('should allow SUPER_ADMIN to access admin routes', () => {
-      const hasPermission = authService.hasPermission(UserRole.SUPER_ADMIN, '/admin');
+      const hasPermission = authService.canAccessRoute(UserRole.SUPER_ADMIN, '/admin');
       expect(hasPermission).toBe(true);
     });
 
     it('should allow CLUB_OWNER to access club-dashboard', () => {
-      const hasPermission = authService.hasPermission(UserRole.CLUB_OWNER, '/club-dashboard');
+      const hasPermission = authService.canAccessRoute(UserRole.CLUB_OWNER, '/club-dashboard');
       expect(hasPermission).toBe(true);
     });
 
-    it('should deny MEMBER access to admin routes', () => {
-      const hasPermission = authService.hasPermission(UserRole.MEMBER, '/admin');
+    it('should NOT allow MEMBER access to admin routes', () => {
+      const hasPermission = authService.canAccessRoute(UserRole.MEMBER, '/admin');
       expect(hasPermission).toBe(false);
     });
 
-    it('should deny PARENT access to club-dashboard', () => {
-      const hasPermission = authService.hasPermission(UserRole.PARENT, '/club-dashboard');
+    it('should NOT allow PARENT access to club-dashboard', () => {
+      const hasPermission = authService.canAccessRoute(UserRole.PARENT, '/club-dashboard');
       expect(hasPermission).toBe(false);
     });
 
@@ -82,8 +82,8 @@ describe('AuthService', () => {
       ];
 
       roles.forEach(role => {
-        const hasPermission = authService.hasPermission(role, '/my-profile');
-        expect(hasPermission).toBe(true);
+        const allowed = authService.canAccessRoute(role, '/my-profile');
+        expect(allowed).toBe(true);
       });
     });
   });
