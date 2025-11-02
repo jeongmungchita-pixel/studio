@@ -50,7 +50,7 @@ const subMenuItems: SubMenuItem[] = [
   },
   { 
     href: '/club-dashboard/approvals', 
-    label: '회원 관리', 
+    label: '회원 승인', 
     icon: Users, 
     section: 'club-dashboard',
     group: 'main',
@@ -81,8 +81,8 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
   { 
-    href: '/club-dashboard/announcements', 
-    label: '공지사항', 
+    href: '/announcements', 
+    label: '공지사항 관리', 
     icon: Bell, 
     section: 'club-dashboard',
     group: 'main',
@@ -114,7 +114,7 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
   { 
-    href: '/club-dashboard/events', 
+    href: '/events', 
     label: '이벤트 관리', 
     icon: PartyPopper, 
     section: 'club-dashboard',
@@ -122,8 +122,8 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
   },
   { 
-    href: '/club-dashboard/level-tests', 
-    label: '레벨테스트', 
+    href: '/level-tests', 
+    label: '레벨테스트 관리', 
     icon: Award, 
     section: 'club-dashboard',
     group: 'operations',
@@ -148,7 +148,7 @@ const subMenuItems: SubMenuItem[] = [
   },
   { 
     href: '/club-dashboard/analytics', 
-    label: '통계 분석', 
+    label: '클럽 통계', 
     icon: TrendingUp, 
     section: 'club-dashboard',
     group: 'finance',
@@ -174,7 +174,7 @@ const subMenuItems: SubMenuItem[] = [
   // 연맹 관리자 대시보드 서브메뉴
   { 
     href: '/admin', 
-    label: '대시보드', 
+    label: '연맹 대시보드', 
     icon: Home, 
     section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
@@ -215,21 +215,21 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/admin/competitions/results', 
-    label: '시합 결과', 
+    href: '/competitions', 
+    label: '시합 관리', 
     icon: Trophy, 
     section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
     href: '/admin/statistics', 
-    label: '통계 분석', 
+    label: '연맹 통계', 
     icon: BarChart3, 
     section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
   { 
-    href: '/admin/certificates', 
+    href: '/certificates', 
     label: '인증서 관리', 
     icon: Award, 
     section: 'admin',
@@ -238,7 +238,7 @@ const subMenuItems: SubMenuItem[] = [
   // 내 정보 서브메뉴
   { 
     href: '/member', 
-    label: '대시보드', 
+    label: '내 대시보드', 
     icon: Home, 
     section: 'member',
     roles: [UserRole.MEMBER, UserRole.PARENT] 
@@ -252,7 +252,7 @@ const subMenuItems: SubMenuItem[] = [
   },
   { 
     href: '/member/media', 
-    label: '미디어', 
+    label: '내 미디어', 
     icon: Camera, 
     section: 'member',
     roles: [UserRole.MEMBER, UserRole.PARENT] 
@@ -279,15 +279,15 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.MEMBER, UserRole.PARENT] 
   },
   { 
-    href: '/competitions/certificates', 
-    label: '인증서', 
+    href: '/certificates', 
+    label: '내 인증서', 
     icon: Award, 
     section: 'member',
     roles: [UserRole.MEMBER, UserRole.PARENT] 
   },
   { 
     href: '/level-tests', 
-    label: '레벨테스트', 
+    label: '레벨테스트 결과', 
     icon: Award, 
     section: 'member',
     roles: [UserRole.MEMBER] 
@@ -314,13 +314,7 @@ const subMenuItems: SubMenuItem[] = [
     roles: [UserRole.MEMBER, UserRole.PARENT] 
   },
   // 회원 상세 페이지 서브메뉴
-  { 
-    href: '/club-dashboard', 
-    label: '클럽 대시보드로', 
-    icon: ArrowLeft, 
-    section: 'member-detail',
-    roles: [UserRole.CLUB_OWNER, UserRole.CLUB_MANAGER] 
-  },
+  // (필요시 추가)
 ];
 // 현재 경로에서 섹션 추출
 function getCurrentSection(pathname: string): string {
@@ -328,7 +322,15 @@ function getCurrentSection(pathname: string): string {
   if (pathname.startsWith('/club-dashboard')) return 'club-dashboard';
   if (pathname.startsWith('/admin')) return 'admin'; // 연맹 관리자 섹션 (모든 /admin/* 포함)
   if (pathname.startsWith('/my-profile')) return 'my-profile';
+  if (pathname.startsWith('/member')) return 'member';
   if (pathname.startsWith('/dashboard')) return 'dashboard';
+  // 통합 경로 처리
+  if (pathname.startsWith('/events') || pathname.startsWith('/competitions') || 
+      pathname.startsWith('/certificates') || pathname.startsWith('/level-tests') || 
+      pathname.startsWith('/announcements')) {
+    // 역할에 따라 섹션 결정 (여기서는 단순화)
+    return 'member';
+  }
   return '';
 }
 export function AppSidebar() {
