@@ -16,7 +16,7 @@ try {
   initializeApp({
     credential: cert(serviceAccountPath)
   });
-} catch (error) {
+} catch (error: unknown) {
   console.log('Firebase already initialized or error:', error);
 }
 
@@ -28,12 +28,12 @@ const db = getFirestore();
 function calculateAge(dateOfBirth?: string): number {
   if (!dateOfBirth) return 0;
   
-  const today = new Date();
+  const _today = new Date();
   const birth = new Date(dateOfBirth);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
+  let age = _today.getFullYear() - birth.getFullYear();
+  const monthDiff = _today.getMonth() - birth.getMonth();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+  if (monthDiff < 0 || (monthDiff === 0 && _today.getDate() < birth.getDate())) {
     age--;
   }
   
@@ -119,7 +119,7 @@ async function migrateMemberCategories() {
     console.log(`  - 총: ${membersSnapshot.size}명`);
     console.log('='.repeat(50) + '\n');
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ 마이그레이션 실패:', error);
     throw error;
   }

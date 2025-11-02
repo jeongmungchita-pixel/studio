@@ -1,21 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, query, where, DocumentData } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import { UserProfile, UserRole } from '@/types';
-
+import { ApprovalRequest } from '@/types/common';
 export interface UserHookResult {
-  user: (User & UserProfile & { clubId?: string; _profileError?: boolean }) | null;
+  _user: (User & UserProfile & { clubId?: string; _profileError?: boolean }) | null;
   isUserLoading: boolean;
 }
-
 export function useUser(): UserHookResult {
   const auth = useAuth();
   const firestore = useFirestore();
-  const [user, setUser] = useState<(User & UserProfile & { clubId?: string }) | null>(null);
+  const [_user, setUser] = useState<(User & UserProfile & { clubId?: string }) | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
-
   useEffect(() => {
     if (!auth || !firestore) {
       // Firebase services are not available yet.
@@ -23,7 +21,6 @@ export function useUser(): UserHookResult {
       setIsUserLoading(true);
       return;
     }
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setIsUserLoading(true); // Set loading true at the start of auth state change
       if (firebaseUser) {
@@ -31,23 +28,25 @@ export function useUser(): UserHookResult {
         try {
             const userSnap = await getDoc(userRef);
             let userProfileData: UserProfile & { clubId?: string };
-
             if (userSnap.exists()) {
               userProfileData = userSnap.data() as UserProfile;
             } else {
               // 프로필이 없는 경우: 비회원 가입 승인 확인
               // 병렬로 모든 승인 요청 확인
               const [clubOwnerResult, superAdminResult, memberResult] = await Promise.allSettled([
-                // clubOwnerRequests 확인
+                // clubOwnerRequests 확인 (pending 상태도 포함)
                 (async () => {
                   const clubOwnerRequestsRef = collection(firestore, 'clubOwnerRequests');
                   const q = query(
                     clubOwnerRequestsRef, 
-                    where('email', '==', firebaseUser.email),
-                    where('status', '==', 'approved')
+                    where('email', '==', firebaseUser.email)
                   );
                   const querySnapshot = await getDocs(q);
-                  return !querySnapshot.empty ? { data: querySnapshot.docs[0].data(), type: 'clubOwner' } : null;
+                  if (!querySnapshot.empty) {
+                    const requestData = querySnapshot.docs[0].data();
+                    return { data: requestData, type: 'clubOwner', status: requestData.status };
+                  }
+                  return null;
                 })(),
                 // superAdminRequests 확인
                 (async () => {
@@ -72,26 +71,26 @@ export function useUser(): UserHookResult {
                   return !querySnapshot.empty ? { data: querySnapshot.docs[0].data(), type: 'member' } : null;
                 })()
               ]);
-              
               // 결과 중에서 유효한 요청 찾기 (우선순위: clubOwner > superAdmin > member)
-              let approvedRequest: any = null;
+              let approvedRequest: DocumentData | null = null;
               let requestType: 'clubOwner' | 'superAdmin' | 'member' | null = null;
-              
+              let requestStatus: 'pending' | 'approved' | 'rejected' = 'pending';
               if (clubOwnerResult.status === 'fulfilled' && clubOwnerResult.value) {
-                approvedRequest = clubOwnerResult.value.data;
+                approvedRequest = clubOwnerResult.value.data as DocumentData;
                 requestType = 'clubOwner';
+                requestStatus = clubOwnerResult.value.status || 'pending';
               } else if (superAdminResult.status === 'fulfilled' && superAdminResult.value) {
-                approvedRequest = superAdminResult.value.data;
+                approvedRequest = superAdminResult.value.data as DocumentData;
                 requestType = 'superAdmin';
+                requestStatus = 'approved'; // superAdmin은 approved만 조회
               } else if (memberResult.status === 'fulfilled' && memberResult.value) {
-                approvedRequest = memberResult.value.data;
+                approvedRequest = memberResult.value.data as DocumentData;
                 requestType = 'member';
+                requestStatus = 'approved'; // member도 approved만 조회
               }
-              
               let defaultProfile: UserProfile;
-              
               if (approvedRequest && requestType === 'clubOwner') {
-                // 승인된 클럽 오너 신청이 있으면 CLUB_OWNER로 설정
+                // 클럽 오너 신청이 있으면 CLUB_OWNER로 설정 (pending 또는 approved)
                 // 클럽 ID 찾기
                 let clubId = '';
                 try {
@@ -101,9 +100,8 @@ export function useUser(): UserHookResult {
                   if (!clubSnapshot.empty) {
                     clubId = clubSnapshot.docs[0].id;
                   }
-                } catch (error) {
+                } catch (error: unknown) {
                 }
-                
                 defaultProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
@@ -114,7 +112,7 @@ export function useUser(): UserHookResult {
                   clubId: clubId || undefined,
                   clubName: approvedRequest.clubName,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                  status: 'active',
+                  status: requestStatus === 'approved' ? 'active' : 'pending', // 요청 상태에 따라 설정
                   createdAt: new Date().toISOString(),
                 };
               } else if (approvedRequest && requestType === 'superAdmin') {
@@ -146,7 +144,7 @@ export function useUser(): UserHookResult {
                   createdAt: new Date().toISOString(),
                 };
               } else {
-                // 승인된 요청이 없으면 기본 MEMBER
+                // 승인된 요청이 없으면 기본 MEMBER, pending 상태
                 defaultProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
@@ -154,16 +152,14 @@ export function useUser(): UserHookResult {
                   photoURL: firebaseUser.photoURL || `https://picsum.photos/seed/${firebaseUser.uid}/40/40`,
                   role: UserRole.MEMBER,
                   provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-                  status: 'active',
+                  status: 'pending', // 승인 대기 상태
                   createdAt: new Date().toISOString(),
                 };
               }
-              
               // Firestore에 저장
               await setDoc(userRef, defaultProfile);
               userProfileData = defaultProfile;
             }
-
             // If the user has a clubName, find their clubId
             if (userProfileData.clubName && (
                 userProfileData.role === UserRole.CLUB_OWNER || 
@@ -178,28 +174,23 @@ export function useUser(): UserHookResult {
                         userProfileData.clubId = clubDoc.id;
                     } else {
                     }
-                } catch (error) {
+                } catch (error: unknown) {
                     // clubId 조회 실패해도 로그인은 계속 진행
                 }
             }
-            
             // FEDERATION_ADMIN은 clubId가 필요 없음 (전체 클럽 접근 가능)
             if (userProfileData.role === UserRole.FEDERATION_ADMIN || 
                 userProfileData.role === UserRole.SUPER_ADMIN) {
             }
-            
             setUser({ 
               ...firebaseUser, 
               ...userProfileData,
               phoneNumber: firebaseUser.phoneNumber ?? userProfileData.phoneNumber
             } as User & UserProfile & { clubId?: string });
-
-        } catch (error) {
-            
+        } catch (error: unknown) {
             // Firebase Auth 세션 유효성 체크
             try {
               await firebaseUser.reload(); // 세션 갱신 시도
-              
               // 세션이 유효하면 기본 프로필 제공
               const basicProfile: UserProfile = {
                 uid: firebaseUser.uid,
@@ -211,15 +202,13 @@ export function useUser(): UserHookResult {
                 status: 'pending',
                 createdAt: new Date().toISOString(),
               };
-              
               setUser({ 
                 ...firebaseUser, 
                 ...basicProfile,
                 phoneNumber: firebaseUser.phoneNumber ?? undefined,
                 _profileError: true // 프로필 에러 플래그
               } as User & UserProfile & { clubId?: string; _profileError?: boolean });
-              
-            } catch (reloadError) {
+            } catch (reloadError: unknown) {
               // 세션도 무효하면 로그아웃
               await signOut(auth);
               setUser(null);
@@ -231,10 +220,12 @@ export function useUser(): UserHookResult {
       }
       setIsUserLoading(false); // Set loading false after all async operations are done
     });
-
     // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        (unsubscribe as any)();
+      }
+    };
   }, [auth, firestore]);
-
-  return { user, isUserLoading };
+  return { _user, isUserLoading };
 }

@@ -2,7 +2,6 @@
  * 글로벌 로딩 상태 관리 시스템
  * 모든 로딩 상태를 중앙에서 관리하고 추적합니다.
  */
-
 export interface LoadingState {
   key: string;
   message?: string;
@@ -10,15 +9,12 @@ export interface LoadingState {
   startTime: number;
   estimatedTime?: number;
 }
-
 export interface LoadingOptions {
   message?: string;
   estimatedTime?: number;
   showProgress?: boolean;
 }
-
 type LoadingListener = (states: Map<string, LoadingState>) => void;
-
 export class LoadingManager {
   private static instance: LoadingManager;
   private loadingStates: Map<string, LoadingState> = new Map();
@@ -33,9 +29,7 @@ export class LoadingManager {
     'initialization': '초기화 중...',
     'processing': '처리 중...'
   };
-
   private constructor() {}
-
   /**
    * 싱글톤 인스턴스 반환
    */
@@ -45,7 +39,6 @@ export class LoadingManager {
     }
     return LoadingManager.instance;
   }
-
   /**
    * 로딩 시작
    */
@@ -57,21 +50,16 @@ export class LoadingManager {
       startTime: Date.now(),
       estimatedTime: options.estimatedTime
     };
-
     this.loadingStates.set(key, state);
     this.notifyListeners();
-
     // 디버깅 로그
     if (process.env.NODE_ENV === 'development') {
-      console.log('⏳ Loading started:', key, state);
     }
-
     // 예상 시간이 있으면 자동 진행률 업데이트
     if (options.estimatedTime && options.showProgress) {
       this.startProgressSimulation(key, options.estimatedTime);
     }
   }
-
   /**
    * 로딩 종료
    */
@@ -79,17 +67,13 @@ export class LoadingManager {
     const state = this.loadingStates.get(key);
     if (state) {
       const duration = Date.now() - state.startTime;
-      
       // 디버깅 로그
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Loading completed:', key, `(${duration}ms)`);
       }
-
       this.loadingStates.delete(key);
       this.notifyListeners();
     }
   }
-
   /**
    * 진행률 업데이트
    */
@@ -104,7 +88,6 @@ export class LoadingManager {
       this.notifyListeners();
     }
   }
-
   /**
    * 메시지 업데이트
    */
@@ -116,7 +99,6 @@ export class LoadingManager {
       this.notifyListeners();
     }
   }
-
   /**
    * 로딩 중인지 확인
    */
@@ -126,7 +108,6 @@ export class LoadingManager {
     }
     return this.loadingStates.size > 0;
   }
-
   /**
    * 특정 패턴의 로딩 상태 확인
    */
@@ -138,28 +119,24 @@ export class LoadingManager {
     }
     return false;
   }
-
   /**
    * 모든 로딩 상태 가져오기
    */
   getLoadingStates(): LoadingState[] {
     return Array.from(this.loadingStates.values());
   }
-
   /**
    * 특정 로딩 상태 가져오기
    */
   getLoadingState(key: string): LoadingState | undefined {
     return this.loadingStates.get(key);
   }
-
   /**
    * 활성 로딩 개수
    */
   getActiveCount(): number {
     return this.loadingStates.size;
   }
-
   /**
    * 모든 로딩 종료
    */
@@ -167,21 +144,21 @@ export class LoadingManager {
     this.loadingStates.clear();
     this.notifyListeners();
   }
-
   /**
    * 리스너 등록
    */
   subscribe(listener: LoadingListener): () => void {
     this.listeners.add(listener);
     // 즉시 현재 상태 전달
-    listener(this.loadingStates);
-    
+    try {
+      listener(this.loadingStates);
+    } catch (error: unknown) {
+    }
     // unsubscribe 함수 반환
     return () => {
       this.listeners.delete(listener);
     };
   }
-
   /**
    * 리스너들에게 알림
    */
@@ -189,12 +166,10 @@ export class LoadingManager {
     this.listeners.forEach(listener => {
       try {
         listener(this.loadingStates);
-      } catch (error) {
-        console.error('Error in loading listener:', error);
+      } catch (error: unknown) {
       }
     });
   }
-
   /**
    * 기본 메시지 가져오기
    */
@@ -203,7 +178,6 @@ export class LoadingManager {
     const category = key.split('-')[0];
     return this.defaultMessages[category] || '로딩 중...';
   }
-
   /**
    * 진행률 시뮬레이션
    */
@@ -212,29 +186,24 @@ export class LoadingManager {
     const steps = estimatedTime / interval;
     const increment = 90 / steps; // 90%까지만 자동 진행
     let currentProgress = 0;
-
     const timer = setInterval(() => {
       if (!this.loadingStates.has(key)) {
         clearInterval(timer);
         return;
       }
-
       currentProgress += increment;
       if (currentProgress >= 90) {
         clearInterval(timer);
         currentProgress = 90;
       }
-
       this.updateProgress(key, currentProgress);
     }, interval);
   }
-
   /**
    * 로딩 시간 측정
    */
   measureLoading<T>(key: string, fn: () => Promise<T>, options?: LoadingOptions): Promise<T> {
     this.startLoading(key, options);
-    
     return fn()
       .then(result => {
         this.stopLoading(key);
@@ -245,7 +214,6 @@ export class LoadingManager {
         throw error;
       });
   }
-
   /**
    * 여러 작업 동시 로딩
    */
@@ -256,7 +224,6 @@ export class LoadingManager {
     tasks.forEach(task => {
       this.startLoading(task.key, task.options);
     });
-
     try {
       // 모든 작업 실행
       const results = await Promise.all(
@@ -265,13 +232,12 @@ export class LoadingManager {
         )
       );
       return results;
-    } catch (error) {
+    } catch (error: unknown) {
       // 에러 발생 시 모든 로딩 중지
       tasks.forEach(task => this.stopLoading(task.key));
       throw error;
     }
   }
-
   /**
    * 순차적 작업 로딩
    */
@@ -279,7 +245,6 @@ export class LoadingManager {
     tasks: Array<{ key: string; fn: () => Promise<T>; options?: LoadingOptions }>
   ): Promise<T[]> {
     const results: T[] = [];
-    
     for (const task of tasks) {
       this.startLoading(task.key, task.options);
       try {
@@ -289,26 +254,13 @@ export class LoadingManager {
         this.stopLoading(task.key);
       }
     }
-    
     return results;
   }
-
   /**
    * 디버그 정보 출력
    */
   debug(): void {
-    console.log('🔍 LoadingManager Debug:', {
-      activeCount: this.loadingStates.size,
-      states: Array.from(this.loadingStates.entries()).map(([key, state]) => ({
-        key,
-        message: state.message,
-        progress: state.progress,
-        duration: Date.now() - state.startTime
-      })),
-      listenersCount: this.listeners.size
-    });
   }
 }
-
 // 전역 인스턴스 export
 export const loadingManager = LoadingManager.getInstance();

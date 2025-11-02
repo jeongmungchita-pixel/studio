@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useMemo } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
@@ -9,54 +7,46 @@ import { Member, Attendance, MemberPass } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Users, TrendingUp, Calendar, Award, UserCheck } from 'lucide-react';
 import { startOfMonth, endOfMonth, differenceInYears } from 'date-fns';
-
 export default function AnalyticsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
-
   // Fetch members
   const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'members'),
-      where('clubId', '==', user.clubId)
+      where('clubId', '==', _user.clubId)
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: members, isLoading: membersLoading } = useCollection<Member>(membersQuery);
-
   // Fetch attendance this month
   const monthStart = startOfMonth(new Date()).toISOString();
   const monthEnd = endOfMonth(new Date()).toISOString();
-  
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'attendance'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('date', '>=', monthStart),
       where('date', '<=', monthEnd)
     );
-  }, [firestore, user?.clubId, monthStart, monthEnd]);
+  }, [firestore, _user?.clubId, monthStart, monthEnd]);
   const { data: attendances } = useCollection<Attendance>(attendanceQuery);
-
   // Fetch active passes
   const passesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'member_passes'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('status', '==', 'active')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: passes } = useCollection<MemberPass>(passesQuery);
-
   // Calculate statistics
   const stats = useMemo(() => {
     if (!members) return null;
-
     const totalMembers = members.length;
     const activeMembers = passes?.length || 0;
-    
     // New members this month
     const newMembers = members.filter(m => {
       const created = (m as any).createdAt as string | undefined;
@@ -64,19 +54,16 @@ export default function AnalyticsPage() {
       const createdDate = new Date(created);
       return createdDate >= new Date(monthStart) && createdDate <= new Date(monthEnd);
     }).length;
-
     // Attendance stats
     const presentCount = attendances?.filter(a => a.status === 'present').length || 0;
     const totalAttendance = attendances?.length || 0;
     const attendanceRate = totalAttendance > 0 ? (presentCount / totalAttendance) * 100 : 0;
-
     // Level distribution
     const levelDist: Record<string, number> = {};
     members.forEach(m => {
       const level = (m as any).currentLevel || '미설정';
       levelDist[level] = (levelDist[level] || 0) + 1;
     });
-
     // Age distribution
     const ageDist: Record<string, number> = {
       '유아 (0-6세)': 0,
@@ -85,7 +72,6 @@ export default function AnalyticsPage() {
       '고등 (16-18세)': 0,
       '성인 (19세+)': 0,
     };
-    
     members.forEach(m => {
       if (!m.dateOfBirth) return;
       const age = differenceInYears(new Date(), new Date(m.dateOfBirth));
@@ -95,13 +81,11 @@ export default function AnalyticsPage() {
       else if (age <= 18) ageDist['고등 (16-18세)']++;
       else ageDist['성인 (19세+)']++;
     });
-
     // Gender distribution
     const genderDist = {
       male: members.filter(m => m.gender === 'male').length,
       female: members.filter(m => m.gender === 'female').length,
     };
-
     return {
       totalMembers,
       activeMembers,
@@ -113,7 +97,6 @@ export default function AnalyticsPage() {
       genderDist,
     };
   }, [members, passes, attendances, monthStart, monthEnd]);
-
   if (membersLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -121,16 +104,13 @@ export default function AnalyticsPage() {
       </div>
     );
   }
-
   if (!stats) return null;
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">통계 및 분석</h1>
         <p className="text-muted-foreground mt-1">클럽 운영 현황을 한눈에 확인하세요</p>
       </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -145,7 +125,6 @@ export default function AnalyticsPage() {
             </p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">활성 회원</CardTitle>
@@ -158,7 +137,6 @@ export default function AnalyticsPage() {
             </p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">이번 달 출석</CardTitle>
@@ -171,7 +149,6 @@ export default function AnalyticsPage() {
             </p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">활동률</CardTitle>
@@ -187,7 +164,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Level Distribution */}
@@ -215,7 +191,6 @@ export default function AnalyticsPage() {
             ))}
           </CardContent>
         </Card>
-
         {/* Age Distribution */}
         <Card>
           <CardHeader>
@@ -241,7 +216,6 @@ export default function AnalyticsPage() {
             ))}
           </CardContent>
         </Card>
-
         {/* Gender Distribution */}
         <Card>
           <CardHeader>
@@ -283,7 +257,6 @@ export default function AnalyticsPage() {
             </div>
           </CardContent>
         </Card>
-
         {/* Monthly Trend */}
         <Card>
           <CardHeader>

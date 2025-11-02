@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,31 +20,26 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTargetCategoryLabel } from '@/lib/member-utils';
-import { FirebaseDebug } from '@/components/debug/firebase-debug';
+// FirebaseDebug removed - debugging integrated into ErrorManager
 import { ROUTES } from '@/constants/routes';
-
-
 const classFormSchema = z.object({
   name: z.string().min(1, '클래스 이름을 입력해주세요.'),
-  dayOfWeek: z.enum(['월', '화', '수', '목', '금', '토', '일'], { required_error: '요일을 선택해주세요.'}),
+  dayOfWeek: z.enum(['월', '화', '수', '목', '금', '토', '일'], { message: '요일을 선택해주세요.'}),
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'HH:MM 형식으로 시간을 입력해주세요.'),
   capacity: z.number().int().positive('정원은 0보다 커야 합니다.'),
-  targetCategory: z.enum(['adult', 'child', 'all']).optional(),
+  targetCategory: z.enum(['adult', 'child', 'all'], { message: '대상 회원을 선택해주세요.' }).optional(),
 });
-
 type ClassFormValues = z.infer<typeof classFormSchema>;
 const daysOfWeek: Array<ClassFormValues['dayOfWeek']> = ['월', '화', '수', '목', '금', '토', '일'];
 type DayOfWeek = (typeof daysOfWeek)[number]
-
 type UIGymClass = GymClass & {
   dayOfWeek: DayOfWeek
   time: string
   capacity: number
   memberIds: string[]
 }
-
 export default function ClassesPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -54,24 +48,19 @@ export default function ClassesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingClass, setDeletingClass] = useState<UIGymClass | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'adult' | 'child' | 'general'>('all');
-
   // 전역 에러 핸들러 추가
   useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
+    const handleError = (_event: ErrorEvent) => {
     };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const handleUnhandledRejection = (_event: PromiseRejectionEvent) => {
     };
-
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
     return () => {
       window.removeEventListener('error', handleError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
-
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
@@ -82,27 +71,21 @@ export default function ClassesPage() {
       targetCategory: 'all',
     },
   });
-
   // 컴포넌트 마운트 시 디버깅 정보
   useEffect(() => {
   }, []);
-
   // 사용자나 firestore 상태 변경 시 로깅
   useEffect(() => {
-  }, [user, firestore]);
-
+  }, [_user, firestore]);
   const classesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
-  }, [firestore, user?.clubId]);
+    if (!firestore || !_user?.clubId) return null;
+    return query(collection(firestore, 'classes'), where('clubId', '==', _user.clubId));
+  }, [firestore, _user?.clubId]);
   const { data: classes, isLoading } = useCollection<UIGymClass>(classesQuery);
-
   // Filter and sort classes
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
-    
     let filtered: UIGymClass[] = classes;
-    
     // Apply category filter
     if (categoryFilter !== 'all') {
       if (categoryFilter === 'general') {
@@ -111,7 +94,6 @@ export default function ClassesPage() {
         filtered = filtered.filter(c => c.targetCategory === categoryFilter);
       }
     }
-    
     // Sort by day of week and time
     const dayOrder: Record<DayOfWeek, number> = { '월': 0, '화': 1, '수': 2, '목': 3, '금': 4, '토': 5, '일': 6 };
     return filtered.sort((a, b) => {
@@ -120,10 +102,8 @@ export default function ClassesPage() {
       return a.time.localeCompare(b.time);
     });
   }, [classes, categoryFilter]);
-
   const handleOpenDialog = (gymClass: UIGymClass | null = null) => {
     setEditingClass(gymClass);
-    
     // Reset form with proper values
     if (gymClass) {
       form.reset({
@@ -142,12 +122,9 @@ export default function ClassesPage() {
         targetCategory: 'all',
       });
     }
-    
     setIsDialogOpen(true);
   };
-
   const onSubmit = async (values: ClassFormValues) => {
-    
     // 강제로 Firebase 재초기화 시도
     if (!firestore) {
       toast({ 
@@ -157,8 +134,7 @@ export default function ClassesPage() {
       });
       return;
     }
-    
-    if (!user) {
+    if (!_user) {
       toast({ 
         variant: 'destructive', 
         title: '로그인 필요', 
@@ -166,8 +142,7 @@ export default function ClassesPage() {
       });
       return;
     }
-    
-    if (!user.clubId) {
+    if (!_user.clubId) {
       toast({ 
         variant: 'destructive', 
         title: '클럽 정보 없음', 
@@ -175,14 +150,12 @@ export default function ClassesPage() {
       });
       return;
     }
-    
     setIsSubmitting(true);
-    
     // 추가 검증: Firestore 연결 테스트
     try {
       const testRef = doc(firestore, 'test', 'connection');
       // 실제로 읽기 시도하지 않고 reference만 생성해서 연결 확인
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ 
         variant: 'destructive', 
         title: 'Firebase 연결 실패', 
@@ -191,12 +164,10 @@ export default function ClassesPage() {
       setIsSubmitting(false);
       return;
     }
-
     try {
       if (editingClass) {
         // Update existing class
         const classRef = doc(firestore, 'classes', editingClass.id);
-        
         const updatedData: Partial<GymClass> = {
           name: values.name,
           dayOfWeek: values.dayOfWeek,
@@ -209,10 +180,9 @@ export default function ClassesPage() {
       } else {
         // Create new class
         const newClassRef = doc(collection(firestore, 'classes'));
-        
         const classData: GymClass = {
             id: newClassRef.id,
-            clubId: user.clubId,
+            clubId: _user.clubId,
             name: values.name,
             dayOfWeek: values.dayOfWeek,
             time: values.time,
@@ -223,11 +193,9 @@ export default function ClassesPage() {
         await setDoc(newClassRef, classData as any);
         toast({ title: '클래스 생성 완료', description: `'${values.name}' 클래스가 생성되었습니다.` });
       }
-      
       setIsDialogOpen(false);
       form.reset();
       setEditingClass(null);
-      
     } catch (error: unknown) {
       const e = error as { code?: string; message?: string } | undefined;
       let errorMessage = '저장 중 오류가 발생했습니다.';
@@ -238,7 +206,6 @@ export default function ClassesPage() {
       } else if (e?.message) {
         errorMessage = `오류: ${e.message}`;
       }
-      
       toast({ 
         variant: 'destructive', 
         title: '저장 실패', 
@@ -248,19 +215,16 @@ export default function ClassesPage() {
       setIsSubmitting(false);
     }
   };
-  
   const handleDelete = async () => {
     if (!firestore || !deletingClass) return;
     try {
       await deleteDoc(doc(firestore, 'classes', deletingClass.id));
       toast({ title: '삭제 완료', description: `'${deletingClass.name}' 클래스가 삭제되었습니다.` });
       setDeletingClass(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '오류 발생', description: '삭제 중 오류가 발생했습니다.' });
     }
   };
-
-
   return (
     <main className="flex-1 p-6 space-y-6">
         {/* 디버깅용 테스트 버튼 */}
@@ -295,7 +259,6 @@ export default function ClassesPage() {
             </Button>
           </div>
         </div>
-        
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-4">
@@ -312,7 +275,6 @@ export default function ClassesPage() {
                 새 클래스 생성
               </Button>
             </div>
-            
             {/* Filter Tabs */}
             <div className="flex gap-2 mt-4">
               <Button
@@ -422,7 +384,6 @@ export default function ClassesPage() {
             )}
           </CardContent>
         </Card>
-
         <Dialog 
           open={isDialogOpen} 
           onOpenChange={(open: boolean) => {
@@ -450,7 +411,6 @@ export default function ClassesPage() {
             <Form {...form}>
               <form 
                 onSubmit={(e) => {
-                  
                   // React Hook Form의 handleSubmit 호출
                   form.handleSubmit((values) => {
                     onSubmit(values);
@@ -522,15 +482,17 @@ export default function ClassesPage() {
                           <Input 
                             type="number" 
                             placeholder="예: 10"
-                            value={field.value}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            value={field.value ?? ''}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              field.onChange(v === '' ? undefined : parseInt(v) || 0);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
                   <FormField
                     control={form.control}
                     name="targetCategory"
@@ -562,7 +524,6 @@ export default function ClassesPage() {
                       </FormItem>
                     )}
                   />
-                  
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button type="button" variant="outline">취소</Button>
@@ -571,14 +532,10 @@ export default function ClassesPage() {
                     type="button"
                     disabled={isSubmitting}
                     onClick={async (e) => {
-                      
                       e.preventDefault();
                       e.stopPropagation();
-                      
-                      
                       // 수동으로 폼 검증 및 제출
                       const isValid = await form.trigger();
-                      
                       if (isValid) {
                         const values = form.getValues();
                         await onSubmit(values as any);
@@ -594,7 +551,6 @@ export default function ClassesPage() {
             </Form>
           </DialogContent>
         </Dialog>
-
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!deletingClass} onOpenChange={(open: boolean) => { if (!open) setDeletingClass(null); }}>
           <AlertDialogContent>
@@ -614,8 +570,6 @@ export default function ClassesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        
-        <FirebaseDebug />
     </main>
   );
 }

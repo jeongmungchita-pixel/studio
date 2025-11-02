@@ -1,4 +1,6 @@
 {
     "IDX.aI.showChatInEditorTab": true,
-    "IDX.agenticWorkspace": true
+    "IDX.agenticWorkspace": true,
+    "editor.experimental.asyncTokenization": false,
+    "editor.experimentalGpuAcceleration": "on"
 }

@@ -6,7 +6,6 @@
 export function usePageLoading(...loadings: boolean[]): boolean {
   return loadings.some(loading => loading === true);
 }
-
 /**
  * 로딩 상태와 에러 상태를 함께 관리하는 훅
  */

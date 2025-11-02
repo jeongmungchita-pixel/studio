@@ -53,7 +53,7 @@ async function testInviteEmail() {
     
     console.log('\n✅ 테스트 완료!\n');
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ 테스트 실패:', error);
     process.exit(1);
   }

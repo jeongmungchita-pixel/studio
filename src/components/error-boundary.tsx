@@ -1,22 +1,18 @@
 'use client';
-
 import React, { Component, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Home, RefreshCcw, Shield } from 'lucide-react';
-
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
-
 interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
 }
-
 /**
  * 인증 관련 에러를 우아하게 처리하는 Error Boundary
  */
@@ -25,67 +21,55 @@ export class AuthErrorBoundary extends Component<Props, State> {
     super(props);
     this.state = { hasError: false };
   }
-
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
-
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅
-    
     // 부모 컴포넌트에 에러 전달
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-
     // Firebase 에러인 경우 특별 처리
     if (error.message?.includes('Firebase') || error.message?.includes('auth')) {
       // Firebase 에러 추적
       this.logFirebaseError(error);
     }
   }
-
   private logFirebaseError(error: Error) {
     // 프로덕션에서는 에러 추적 서비스로 전송
     const errorLog = {
       type: 'AUTH_ERROR',
-      message: error.message,
+      message: (error as any).message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
       userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'SSR',
     };
-    
     // TODO: Sentry, LogRocket 등으로 전송
   }
-
   private handleReset = () => {
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
-
   private handleGoHome = () => {
     window.location.href = '/';
   };
-
   private handleRelogin = () => {
     // 로컬 스토리지 클리어 후 로그인 페이지로
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = '/login';
   };
-
   render() {
     if (this.state.hasError) {
       // 커스텀 fallback이 있으면 사용
       if (this.props.fallback) {
         return <>{this.props.fallback}</>;
       }
-
       const { error } = this.state;
       const isAuthError = error?.message?.toLowerCase().includes('auth') || 
                          error?.message?.toLowerCase().includes('permission');
       const isNetworkError = error?.message?.toLowerCase().includes('network') ||
                             error?.message?.toLowerCase().includes('fetch');
-
       return (
         <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50">
           <Card className="max-w-md w-full">
@@ -129,7 +113,6 @@ export class AuthErrorBoundary extends Component<Props, State> {
                   )}
                 </div>
               )}
-              
               <div className="flex flex-col gap-2">
                 {isAuthError ? (
                   <>
@@ -170,7 +153,6 @@ export class AuthErrorBoundary extends Component<Props, State> {
                   </>
                 )}
               </div>
-
               <p className="text-xs text-center text-muted-foreground">
                 문제가 계속되면 관리자에게 문의하세요.
                 {error && (
@@ -184,11 +166,9 @@ export class AuthErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
-
 /**
  * 일반 에러 바운더리
  */
@@ -197,24 +177,19 @@ export class ErrorBoundary extends Component<Props, State> {
     super(props);
     this.state = { hasError: false };
   }
-
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
-
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
   }
-
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return <>{this.props.fallback}</>;
       }
-
       return (
         <div className="flex items-center justify-center p-8">
           <Card className="w-full max-w-md">
@@ -236,7 +211,6 @@ export class ErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-
     return this.props.children;
   }
 }

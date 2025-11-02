@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo } from 'react';
-export const dynamic = 'force-dynamic';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -14,13 +13,10 @@ import { Loader2, Users, CheckCircle2, XCircle, MessageSquare, LayoutGrid, Calen
 import { differenceInYears } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-
 type AttendanceStatus = 'present' | 'absent' | 'excused' | 'late' | null;
-
 const daysOfWeek = ['전체', '월', '화', '수', '목', '금', '토', '일'] as const;
-
 export default function ClassStatusPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedDay, setSelectedDay] = useState<typeof daysOfWeek[number]>('전체');
@@ -29,44 +25,38 @@ export default function ClassStatusPage() {
   const [attendanceNotes, setAttendanceNotes] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'calendar'>('grid');
-
   // Fetch all classes for this club
   const classesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'classes'), where('clubId', '==', user.clubId));
-  }, [firestore, user?.clubId]);
+    if (!firestore || !_user?.clubId) return null;
+    return query(collection(firestore, 'classes'), where('clubId', '==', _user.clubId));
+  }, [firestore, _user?.clubId]);
   const { data: classes, isLoading: areClassesLoading } = useCollection<GymClass>(classesQuery);
-
   // Fetch all members for this club
   const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId));
-  }, [firestore, user?.clubId]);
+    if (!firestore || !_user?.clubId) return null;
+    return query(collection(firestore, 'members'), where('clubId', '==', _user.clubId));
+  }, [firestore, _user?.clubId]);
   const { data: allMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
-
   // Fetch today's attendance records
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayAttendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'attendance'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       where('date', '>=', todayStart.toISOString())
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: todayAttendance } = useCollection<Attendance>(todayAttendanceQuery);
-
   const dayLabelToNumber = (label: string): number | null => {
     const map: Record<string, number> = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
     return map[label] ?? null;
   };
-
   const numberToDayLabel = (num: number): string => {
     const map = ['일', '월', '화', '수', '목', '금', '토'] as const;
     return map[num] ?? '';
   };
-
   // Filter classes by selected day
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
@@ -75,30 +65,25 @@ export default function ClassStatusPage() {
     if (dayNum === null) return classes;
     return classes.filter(cls => cls.schedule?.some(s => s.dayOfWeek === dayNum));
   }, [classes, selectedDay]);
-
   // Get members for each class
   const getClassMembers = (_classItem: GymClass): Member[] => {
     return [] as Member[];
   };
-
   const getMemberAge = (dateOfBirth?: string) => {
     if (!dateOfBirth) return null;
     return differenceInYears(new Date(), new Date(dateOfBirth));
   };
-
   // Check if member has attendance today
   const hasTodayAttendance = (memberId: string) => {
     if (!todayAttendance) return false;
     return todayAttendance.some(att => att.memberId === memberId);
   };
-
   // Get today's attendance status for member
   const getTodayAttendanceStatus = (memberId: string): AttendanceStatus => {
     if (!todayAttendance) return null;
     const attendance = todayAttendance.find(att => att.memberId === memberId);
     return attendance?.status || null;
   };
-
   const handleClassClick = (classItem: GymClass) => {
     setSelectedClass(classItem);
     // Initialize attendance states for all members
@@ -108,18 +93,15 @@ export default function ClassStatusPage() {
     setAttendanceStates(initialStates);
     setAttendanceNotes(initialNotes);
   };
-
   const handleAttendanceToggle = (memberId: string, status: AttendanceStatus) => {
     setAttendanceStates(prev => ({
       ...prev,
       [memberId]: prev[memberId] === status ? null : status
     }));
   };
-
   const handleSubmitAllAttendance = async () => {
-    if (!firestore || !selectedClass || !user?.clubId) return;
+    if (!firestore || !selectedClass || !_user?.clubId) return;
     setIsSubmitting(true);
-
     try {
       const attendancePromises = Object.entries(attendanceStates)
         .filter(([_, status]) => status !== null)
@@ -131,28 +113,25 @@ export default function ClassStatusPage() {
             id: attendanceRef.id,
             memberId,
             memberName: member?.name || '회원',
-            clubId: user.clubId!,
+            clubId: _user.clubId!,
             date: nowIso.split('T')[0],
             checkInTime: nowIso,
             status: (status as Exclude<AttendanceStatus, null>) || 'present',
-            recordedBy: user.uid,
+            recordedBy: _user.uid,
             createdAt: nowIso,
           };
           return setDoc(attendanceRef, attendanceData);
         });
-
       await Promise.all(attendancePromises);
-
       const checkedCount = Object.values(attendanceStates).filter(s => s !== null).length;
       toast({ 
         title: '출석 체크 완료', 
         description: `${checkedCount}명의 출석이 기록되었습니다.` 
       });
-
       setSelectedClass(null);
       setAttendanceStates({});
       setAttendanceNotes({});
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 
@@ -162,9 +141,7 @@ export default function ClassStatusPage() {
       setIsSubmitting(false);
     }
   };
-
   const isLoading = areClassesLoading || areMembersLoading;
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -191,7 +168,6 @@ export default function ClassStatusPage() {
           </Button>
         </div>
       </div>
-
       {/* Day Filter Tabs */}
       <Tabs value={selectedDay} onValueChange={(value) => setSelectedDay(value as typeof daysOfWeek[number])}>
         <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 gap-1">
@@ -202,7 +178,6 @@ export default function ClassStatusPage() {
           ))}
         </TabsList>
       </Tabs>
-
       {/* Classes View */}
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
@@ -230,7 +205,7 @@ export default function ClassStatusPage() {
                     <p className="text-xs text-center text-muted-foreground py-4">클래스 없음</p>
                   ) : (
                     dayClasses.map((classItem) => {
-                      const classMembers = getClassMembers(classItem);
+                      const _classMembers = getClassMembers(classItem);
                       return (
                         <div
                           key={classItem.id}
@@ -258,7 +233,7 @@ export default function ClassStatusPage() {
         /* Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredClasses.map((classItem) => {
-            const classMembers = getClassMembers(classItem);
+            const _classMembers = getClassMembers(classItem);
             return (
               <Card 
                 key={classItem.id} 
@@ -280,14 +255,14 @@ export default function ClassStatusPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {classMembers.length === 0 ? (
+                  {_classMembers.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       등록된 회원이 없습니다.
                     </p>
                   ) : (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
-                        {classMembers.map((member) => {
+                        {_classMembers.map((member) => {
                           const age = getMemberAge(member.dateOfBirth);
                           return (
                             <div 
@@ -313,7 +288,6 @@ export default function ClassStatusPage() {
           })}
         </div>
       )}
-
       {/* Attendance Dialog */}
       <Dialog open={!!selectedClass} onOpenChange={(open) => !open && setSelectedClass(null)}>
         <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
@@ -325,14 +299,12 @@ export default function ClassStatusPage() {
               {selectedClass?.schedule && selectedClass?.schedule[0] ? `${numberToDayLabel(selectedClass.schedule[0].dayOfWeek)}요일 ${selectedClass.schedule[0].startTime}~${selectedClass.schedule[0].endTime}` : '스케줄 미정'} | 각 회원의 출석 상태를 선택하세요
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-3 py-4">
             {selectedClass && getClassMembers(selectedClass).map((member) => {
               const age = getMemberAge(member.dateOfBirth);
               const currentStatus = attendanceStates[member.id];
               const todayStatus = getTodayAttendanceStatus(member.id);
               const hasAttendanceToday = hasTodayAttendance(member.id);
-              
               return (
                 <Card key={member.id} className={`p-4 ${hasAttendanceToday ? 'border-2 border-primary/30 bg-primary/5' : ''}`}>
                   <div className="space-y-3">
@@ -358,7 +330,6 @@ export default function ClassStatusPage() {
                           <p className="text-sm text-muted-foreground">{age}세</p>
                         )}
                       </div>
-                      
                       <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
@@ -369,7 +340,6 @@ export default function ClassStatusPage() {
                           <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           출석
                         </Button>
-                        
                         <Button
                           size="sm"
                           variant={currentStatus === 'absent' ? 'default' : 'outline'}
@@ -379,7 +349,6 @@ export default function ClassStatusPage() {
                           <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           결석
                         </Button>
-                        
                         <Button
                           size="sm"
                           variant={currentStatus === 'late' ? 'default' : 'outline'}
@@ -388,7 +357,6 @@ export default function ClassStatusPage() {
                         >
                           ⏰ 지각
                         </Button>
-                        
                         <Button
                           size="sm"
                           variant={currentStatus === 'excused' ? 'default' : 'outline'}
@@ -400,7 +368,6 @@ export default function ClassStatusPage() {
                         </Button>
                       </div>
                     </div>
-                    
                     {/* Show note input when excused is selected */}
                     {currentStatus === 'excused' && (
                       <div className="space-y-2 pt-2 border-t">
@@ -424,7 +391,6 @@ export default function ClassStatusPage() {
               );
             })}
           </div>
-
           <DialogFooter className="flex gap-2">
             <Button
               type="button"

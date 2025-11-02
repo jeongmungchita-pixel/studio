@@ -1,17 +1,19 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Users, ArrowRight } from 'lucide-react';
-
+import { User, Users, ArrowRight, ArrowLeft } from 'lucide-react';
 export default function RegisterLandingPage() {
   const router = useRouter();
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-4xl space-y-8">
+        {/* 상단 뒤로가기 */}
+        <div>
+          <Button variant="ghost" onClick={() => router.push('/login')} className="pl-0">
+            <ArrowLeft className="mr-2 h-4 w-4" /> 뒤로가기
+          </Button>
+        </div>
         {/* 헤더 */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold">회원 가입</h1>
@@ -19,7 +21,6 @@ export default function RegisterLandingPage() {
             가입 유형을 선택하세요
           </p>
         </div>
-
         {/* 가입 유형 선택 */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* 성인 개인 회원 */}
@@ -57,7 +58,6 @@ export default function RegisterLandingPage() {
               </Button>
             </CardContent>
           </Card>
-
           {/* 가족 회원 */}
           <Card 
             className="cursor-pointer hover:shadow-lg transition-all hover:border-primary border-2 border-primary/50 relative"
@@ -103,7 +103,6 @@ export default function RegisterLandingPage() {
             </CardContent>
           </Card>
         </div>
-
         {/* 안내 문구 */}
         <div className="text-center text-sm text-muted-foreground space-y-1">
           <p>가입 후 클럽의 승인이 필요합니다.</p>

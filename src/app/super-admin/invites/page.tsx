@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, updateDoc, doc, deleteDoc } from 'firebase/firestore';
@@ -16,7 +14,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 // 로컬 타입: 연맹 관리자 초대
 interface FederationAdminInvite {
   id: string;
@@ -28,28 +25,24 @@ interface FederationAdminInvite {
   expiresAt: string;
   inviteToken: string;
 }
-
 const statusLabels = {
   pending: '대기중',
   accepted: '수락됨',
   expired: '만료됨',
   cancelled: '취소됨',
 };
-
 const statusColors = {
   pending: 'secondary',
   accepted: 'default',
   expired: 'destructive',
   cancelled: 'outline',
 } as const;
-
 export default function InvitesManagementPage() {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-
   // 초대 목록 조회
   const invitesQuery = useMemoFirebase(
     () =>
@@ -62,7 +55,6 @@ export default function InvitesManagementPage() {
     [firestore]
   );
   const { data: invites, isLoading: isInvitesLoading } = useCollection<FederationAdminInvite>(invitesQuery);
-
   if (isUserLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -70,12 +62,10 @@ export default function InvitesManagementPage() {
       </div>
     );
   }
-
-  if (!user || user.role !== UserRole.SUPER_ADMIN) {
+  if (!_user || _user.role !== UserRole.SUPER_ADMIN) {
     router.push('/dashboard');
     return null;
   }
-
   // 초대 링크 복사
   const copyInviteLink = (token: string) => {
     const link = `${window.location.origin}/invite/${token}`;
@@ -85,22 +75,19 @@ export default function InvitesManagementPage() {
       description: '초대 링크가 클립보드에 복사되었습니다.',
     });
   };
-
   // 초대 취소
   const handleCancelInvite = async (inviteId: string) => {
     if (!firestore) return;
     if (!confirm('이 초대를 취소하시겠습니까?')) return;
-
     try {
       await updateDoc(doc(firestore, 'federationAdminInvites', inviteId), {
         status: 'cancelled',
       });
-
       toast({
         title: '초대 취소',
         description: '초대가 취소되었습니다.',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -108,20 +95,17 @@ export default function InvitesManagementPage() {
       });
     }
   };
-
   // 초대 삭제
   const handleDeleteInvite = async (inviteId: string) => {
     if (!firestore) return;
     if (!confirm('이 초대를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-
     try {
       await deleteDoc(doc(firestore, 'federationAdminInvites', inviteId));
-
       toast({
         title: '삭제 완료',
         description: '초대가 삭제되었습니다.',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -129,7 +113,6 @@ export default function InvitesManagementPage() {
       });
     }
   };
-
   // 검색 필터링
   const filteredInvites = invites?.filter((invite) => {
     const searchLower = searchQuery.toLowerCase();
@@ -139,7 +122,6 @@ export default function InvitesManagementPage() {
       (invite.phoneNumber?.toLowerCase() || '').includes(searchLower)
     );
   });
-
   // 통계
   const stats = {
     total: invites?.length || 0,
@@ -147,7 +129,6 @@ export default function InvitesManagementPage() {
     accepted: invites?.filter((i) => i.status === 'accepted').length || 0,
     expired: invites?.filter((i) => i.status === 'expired').length || 0,
   };
-
   return (
     <main className="flex-1 p-8 space-y-8 bg-white">
       {/* 헤더 */}
@@ -158,7 +139,6 @@ export default function InvitesManagementPage() {
             연맹 관리자 초대 현황을 확인하고 관리하세요
           </p>
         </div>
-        
         {/* 이메일 설정 안내 */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
@@ -171,10 +151,8 @@ export default function InvitesManagementPage() {
             </div>
           </div>
         </div>
-        
         <div className="h-px bg-slate-200" />
       </div>
-
       {/* 통계 카드 */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
@@ -185,7 +163,6 @@ export default function InvitesManagementPage() {
             <p className="text-3xl font-semibold text-slate-900">{stats.total}</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600">대기중</CardTitle>
@@ -194,7 +171,6 @@ export default function InvitesManagementPage() {
             <p className="text-3xl font-semibold text-yellow-600">{stats.pending}</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600">수락됨</CardTitle>
@@ -203,7 +179,6 @@ export default function InvitesManagementPage() {
             <p className="text-3xl font-semibold text-green-600">{stats.accepted}</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600">만료됨</CardTitle>
@@ -213,7 +188,6 @@ export default function InvitesManagementPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* 초대 목록 */}
       <Card>
         <CardHeader>
@@ -235,7 +209,6 @@ export default function InvitesManagementPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-sm"
           />
-
           {/* 테이블 */}
           {isInvitesLoading ? (
             <div className="flex justify-center py-8">

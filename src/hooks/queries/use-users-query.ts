@@ -1,12 +1,12 @@
 /**
  * 사용자 관련 React Query 훅
  */
-
 import {
   useQuery,
   useMutation,
   useInfiniteQuery,
   useQueryClient,
+  QueryClient,
   UseQueryOptions,
   UseMutationOptions,
   UseInfiniteQueryOptions,
@@ -14,7 +14,6 @@ import {
 import { userService, UserFilters, CreateUserData, UpdateUserData } from '@/services/user-service';
 import { UserProfile } from '@/types/auth';
 import { PaginatedResponse } from '@/types/api';
-
 // 쿼리 키 팩토리
 export const userKeys = {
   all: ['users'] as const,
@@ -26,7 +25,6 @@ export const userKeys = {
   me: () => ['user', 'me'] as const,
   stats: () => [...userKeys.all, 'stats'] as const,
 };
-
 /**
  * 사용자 목록 조회
  */
@@ -42,7 +40,6 @@ export function useUsersQuery(
     ...options,
   });
 }
-
 /**
  * 사용자 상세 조회
  */
@@ -57,7 +54,6 @@ export function useUserQuery(
     ...options,
   });
 }
-
 /**
  * 내 정보 조회
  */
@@ -71,7 +67,6 @@ export function useMyProfileQuery(
     ...options,
   });
 }
-
 /**
  * 무한 스크롤 사용자 목록
  */
@@ -93,7 +88,6 @@ export function useUsersInfiniteQuery(
     ...options,
   });
 }
-
 /**
  * 사용자 생성 뮤테이션
  */
@@ -101,20 +95,17 @@ export function useCreateUserMutation(
   options?: UseMutationOptions<UserProfile, Error, CreateUserData>
 ) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: CreateUserData) => userService.createUser(data),
     onSuccess: (newUser) => {
       // 목록 캐시 무효화
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
-      
       // 새 사용자를 캐시에 추가
       queryClient.setQueryData(userKeys.detail(newUser.uid), newUser);
     },
     ...options,
   });
 }
-
 /**
  * 사용자 수정 뮤테이션
  */
@@ -122,14 +113,12 @@ export function useUpdateUserMutation(
   options?: UseMutationOptions<UserProfile, Error, { userId: string; data: UpdateUserData }>
 ) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ userId, data }) => userService.updateUser(userId, data),
-    onMutate: async ({ userId, data }): Promise<{ previousUser: UserProfile | undefined }> => {
+    onMutate: async ({ userId, data }): Promise<any> => {
       // 이전 데이터 백업
       await queryClient.cancelQueries({ queryKey: userKeys.detail(userId) });
       const previousUser = queryClient.getQueryData<UserProfile>(userKeys.detail(userId));
-
       // 옵티미스틱 업데이트
       if (previousUser) {
         queryClient.setQueryData(userKeys.detail(userId), {
@@ -137,13 +126,12 @@ export function useUpdateUserMutation(
           ...data,
         });
       }
-
       return { previousUser };
     },
-    onError: (err, { userId }, context) => {
+    onError: (err, { userId }, context: unknown) => {
       // 롤백
-      if (context?.previousUser) {
-        queryClient.setQueryData(userKeys.detail(userId), context.previousUser);
+      if ((context as any)?.previousUser) {
+        queryClient.setQueryData(userKeys.detail(userId), (context as any).previousUser);
       }
     },
     onSettled: (data, error, { userId }) => {
@@ -154,7 +142,6 @@ export function useUpdateUserMutation(
     ...options,
   });
 }
-
 /**
  * 사용자 삭제 뮤테이션
  */
@@ -162,33 +149,30 @@ export function useDeleteUserMutation(
   options?: UseMutationOptions<{ id: string }, Error, string>
 ) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (userId: string) => userService.deleteUser(userId),
-    onMutate: async (userId): Promise<{ previousLists: [readonly unknown[], unknown][] }> => {
+    onMutate: async (userId): Promise<any> => {
       // 목록에서 옵티미스틱 제거
       await queryClient.cancelQueries({ queryKey: userKeys.lists() });
-      
       const previousLists = queryClient.getQueriesData({ queryKey: userKeys.lists() });
-      
       queryClient.setQueriesData(
         { queryKey: userKeys.lists() },
-        (old: any) => {
+        (old: unknown) => {
           if (!old) return old;
           return {
             ...old,
-            items: old.items?.filter((user: UserProfile) => user.uid !== userId),
-            total: old.total - 1,
+            items: (old as any).items?.filter((_user: UserProfile) => _user.uid !== userId),
+            total: (old as any).total - 1,
           };
         }
       );
-
       return { previousLists };
     },
-    onError: (err, userId, context) => {
+    onError: (err, userId, context: unknown) => {
       // 롤백
-      if (context?.previousLists) {
-        context.previousLists.forEach(([queryKey, data]) => {
+      const ctx = context as { previousLists?: Array<[unknown[], unknown]> };
+      if (ctx?.previousLists) {
+        ctx.previousLists.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
@@ -200,7 +184,6 @@ export function useDeleteUserMutation(
     ...options,
   });
 }
-
 /**
  * 내 프로필 수정 뮤테이션
  */
@@ -208,25 +191,22 @@ export function useUpdateMyProfileMutation(
   options?: UseMutationOptions<UserProfile, Error, Pick<UpdateUserData, 'name' | 'phoneNumber'>>
 ) {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data) => userService.updateMyProfile(data),
-    onMutate: async (data): Promise<{ previousProfile: UserProfile | undefined }> => {
+    onMutate: async (data): Promise<any> => {
       await queryClient.cancelQueries({ queryKey: userKeys.me() });
       const previousProfile = queryClient.getQueryData<UserProfile>(userKeys.me());
-
       if (previousProfile) {
         queryClient.setQueryData(userKeys.me(), {
           ...previousProfile,
           ...data,
         });
       }
-
       return { previousProfile };
     },
-    onError: (err, data, context) => {
-      if (context?.previousProfile) {
-        queryClient.setQueryData(userKeys.me(), context.previousProfile);
+    onError: (err, data, context: unknown) => {
+      if ((context as any)?.previousProfile) {
+        queryClient.setQueryData(userKeys.me(), (context as any).previousProfile);
       }
     },
     onSettled: () => {
@@ -235,7 +215,6 @@ export function useUpdateMyProfileMutation(
     ...options,
   });
 }
-
 /**
  * 사용자 통계 조회
  */
@@ -244,26 +223,24 @@ export function useUserStatsQuery(
 ) {
   return useQuery({
     queryKey: userKeys.stats(),
-    queryFn: () => userService.getUserStats(),
+    queryFn: () => userService.getStatistics(),
     staleTime: 1000 * 60 * 30, // 30분
     ...options,
   });
 }
-
 /**
  * 프리페치 헬퍼
  */
-export async function prefetchUser(queryClient: any, userId: string) {
+export async function prefetchUser(queryClient: QueryClient, userId: string) {
   await queryClient.prefetchQuery({
     queryKey: userKeys.detail(userId),
     queryFn: () => userService.getUser(userId),
     staleTime: 1000 * 60 * 5,
   });
 }
-
-export async function prefetchUsers(queryClient: any, page = 1, pageSize = 20, filters?: UserFilters) {
+export async function prefetchUsers(queryClient: QueryClient, page = 1, pageSize = 20, filters?: UserFilters) {
   await queryClient.prefetchQuery({
-    queryKey: userKeys.list({ ...filters, page, pageSize } as any),
+    queryKey: userKeys.list({ ...filters, page, pageSize } as UserFilters & { page: number; pageSize: number }),
     queryFn: () => userService.getUsers(page, pageSize, filters),
     staleTime: 1000 * 60 * 5,
   });

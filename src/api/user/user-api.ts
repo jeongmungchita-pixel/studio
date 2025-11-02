@@ -1,32 +1,27 @@
 import { Firestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { BaseAPI } from '../base/base-api';
 import { UserProfile, UserRole } from '@/types/auth';
-
 /**
  * UserAPI 클래스
  * 사용자 관련 API 작업을 처리합니다.
  */
 export class UserAPI extends BaseAPI<UserProfile> {
   protected collectionName = 'users';
-
   constructor(firestore: Firestore) {
     super(firestore);
   }
-
   /**
    * 사용자 프로필 조회
    */
   async getUserProfile(uid: string) {
     return this.findById(uid);
   }
-
   /**
    * 사용자 프로필 업데이트
    */
   async updateProfile(uid: string, updates: Partial<UserProfile>) {
     return this.update(uid, updates);
   }
-
   /**
    * 역할별 사용자 목록 조회
    */
@@ -36,7 +31,6 @@ export class UserAPI extends BaseAPI<UserProfile> {
       orderBy: [{ field: 'displayName', direction: 'asc' }],
     });
   }
-
   /**
    * 클럽별 사용자 목록 조회
    */
@@ -46,7 +40,6 @@ export class UserAPI extends BaseAPI<UserProfile> {
       orderBy: [{ field: 'displayName', direction: 'asc' }],
     });
   }
-
   /**
    * 활성 사용자 목록 조회
    */
@@ -56,7 +49,6 @@ export class UserAPI extends BaseAPI<UserProfile> {
       orderBy: [{ field: 'createdAt', direction: 'desc' }],
     });
   }
-
   /**
    * 사용자 검색
    */
@@ -79,19 +71,16 @@ export class UserAPI extends BaseAPI<UserProfile> {
         limit,
       }),
     ]);
-
     // 중복 제거 및 결합
     const allResults = [...nameResults.data, ...emailResults.data];
-    const uniqueResults = allResults.filter((user, index, self) => 
-      index === self.findIndex(u => u.id === user.id)
+    const uniqueResults = allResults.filter((_user, index, self) => 
+      index === self.findIndex(u => u.id === _user.id)
     );
-
     return {
       data: uniqueResults.slice(0, limit),
       success: true,
     };
   }
-
   /**
    * 사용자 통계 조회
    */
@@ -105,7 +94,6 @@ export class UserAPI extends BaseAPI<UserProfile> {
         where: [{ field: 'status', operator: '==', value: 'pending' }],
       }),
     ]);
-
     return {
       data: {
         total: totalUsers.data.length,

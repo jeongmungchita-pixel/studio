@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection } from 'firebase/firestore';
@@ -12,18 +10,15 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Member } from '@/types';
-
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
   pending: '승인대기',
 };
-
 export default function MembersPage() {
   const firestore = useFirestore();
   const membersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
   const { data: members, isLoading } = useCollection<Member>(membersCollection);
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -31,7 +26,6 @@ export default function MembersPage() {
       </div>
     );
   }
-  
   const getStatusVariant = (status: Member['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'active':
@@ -43,7 +37,6 @@ export default function MembersPage() {
         return 'secondary';
     }
   };
-
   return (
     <main className="flex-1 p-6">
       <Card>

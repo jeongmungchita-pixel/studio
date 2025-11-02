@@ -1,18 +1,15 @@
 // ============================================
 // 🛣️ 라우트 상수 정의
 // ============================================
-
 // 기본 라우트
 export const ROUTES = {
   // 홈 및 대시보드
   HOME: '/',
   DASHBOARD: '/dashboard',
-  
   // 인증
   LOGIN: '/login',
   PENDING_APPROVAL: '/pending-approval',
   PROFILE_SETUP: '/profile-setup',
-  
   // 관리자
   ADMIN: {
     ROOT: '/admin',
@@ -24,14 +21,12 @@ export const ROUTES = {
     USERS: '/admin/users',
     APPROVALS: '/admin/approvals',
   },
-  
   // 슈퍼 관리자
   SUPER_ADMIN: {
     ROOT: '/super-admin',
     INVITES: '/super-admin/invites',
     APPROVALS: '/system/super-admin-approvals',
   },
-  
   // 클럽 대시보드
   CLUB_DASHBOARD: {
     ROOT: '/club-dashboard',
@@ -53,7 +48,6 @@ export const ROUTES = {
     PAYMENTS: '/club-dashboard/payments',
     SETTINGS: '/club-dashboard/settings',
   },
-  
   // 개인 프로필
   MY_PROFILE: {
     ROOT: '/my-profile',
@@ -62,7 +56,6 @@ export const ROUTES = {
     ADD_FAMILY: '/my-profile/add-family',
     ADD_FAMILY_MEMBER: '/my-profile/add-family-member',
   },
-  
   // 회원가입
   REGISTER: {
     ROOT: '/register',
@@ -74,7 +67,6 @@ export const ROUTES = {
     SUCCESS: '/register/success',
     SUPER_ADMIN: '/register/super-admin',
   },
-  
   // 공통 기능
   MEMBERS: '/members',
   CLUBS: '/clubs',
@@ -84,7 +76,6 @@ export const ROUTES = {
   EVENTS: '/events',
   LEVEL_TESTS: '/level-tests',
   ANNOUNCEMENTS: '/announcements',
-  
   // 초대 시스템
   INVITE: {
     ROOT: '/invite',
@@ -92,24 +83,20 @@ export const ROUTES = {
     ACCEPT_TOKEN: (token: string) => `/invite/accept/${token}`,
     VIEW_TOKEN: (token: string) => `/invite/${token}`,
   },
-  
   // 시스템 관리
   SYSTEM: {
     ROOT: '/system',
     SUPER_ADMIN_APPROVALS: '/system/super-admin-approvals',
   },
-  
   // 설정 및 초기화
   SETUP: {
     INITIAL_ADMIN: '/setup/initial-admin',
   },
-  
   // API 엔드포인트
   API: {
     ROOT: '/api',
     ADMIN_RESET: '/api/admin/reset-firestore',
   },
-  
   // 동적 라우트 헬퍼
   DYNAMIC: {
     MEMBER_DETAIL: (id: string) => `/members/${id}`,
@@ -123,7 +110,6 @@ export const ROUTES = {
     SCOREBOARD: (id: string) => `/scoreboard/${id}`,
   },
 } as const;
-
 // 라우트 유틸리티 함수들
 export const getRouteWithParams = (route: string, params: Record<string, string>): string => {
   let result = route;
@@ -132,11 +118,9 @@ export const getRouteWithParams = (route: string, params: Record<string, string>
   });
   return result;
 };
-
 export const isValidRoute = (path: string): boolean => {
   // 모든 라우트를 평면화하여 확인
   const flatRoutes: string[] = [];
-
   const flatten = (obj: unknown): void => {
     if (!obj) return;
     if (typeof obj === 'string') {
@@ -149,9 +133,7 @@ export const isValidRoute = (path: string): boolean => {
       });
     }
   };
-
   flatten(ROUTES);
-
   // 정확한 매치 또는 동적 라우트 매치
   return flatRoutes.some((route) => {
     if (route === path) return true;
@@ -161,7 +143,6 @@ export const isValidRoute = (path: string): boolean => {
     return regex.test(path);
   });
 };
-
 export const getRouteGroup = (path: string): string | null => {
   if (path.startsWith('/admin')) return 'ADMIN';
   if (path.startsWith('/club-dashboard')) return 'CLUB_DASHBOARD';
@@ -169,7 +150,6 @@ export const getRouteGroup = (path: string): string | null => {
   if (path === '/login' || path === '/register') return 'AUTH';
   return null;
 };
-
 // 라우트 그룹
 export const ROUTE_GROUPS = {
   ADMIN: [
@@ -182,7 +162,6 @@ export const ROUTE_GROUPS = {
     ROUTES.ADMIN.USERS,
     ROUTES.ADMIN.APPROVALS,
   ],
-  
   CLUB_DASHBOARD: [
     ROUTES.CLUB_DASHBOARD.ROOT,
     ROUTES.CLUB_DASHBOARD.ANALYTICS,
@@ -202,7 +181,6 @@ export const ROUTE_GROUPS = {
     ROUTES.CLUB_DASHBOARD.PAYMENTS,
     ROUTES.CLUB_DASHBOARD.SETTINGS,
   ],
-  
   PUBLIC: [
     ROUTES.HOME,
     ROUTES.LOGIN,
@@ -218,7 +196,6 @@ export const ROUTE_GROUPS = {
     ROUTES.INVITE.ROOT,
     ROUTES.SETUP.INITIAL_ADMIN,
   ],
-  
   PROTECTED: [
     ROUTES.DASHBOARD,
     ROUTES.MY_PROFILE.ROOT,
@@ -233,25 +210,20 @@ export const ROUTE_GROUPS = {
     ROUTES.PROFILE_SETUP,
   ],
 } as const;
-
 // 라우트 유틸리티 함수
 export const routeUtils = {
   isAdminRoute: (path: string): boolean => {
     return ROUTE_GROUPS.ADMIN.some(route => path.startsWith(route));
   },
-  
   isClubDashboardRoute: (path: string): boolean => {
     return ROUTE_GROUPS.CLUB_DASHBOARD.some(route => path.startsWith(route));
   },
-  
   isPublicRoute: (path: string): boolean => {
     return ROUTE_GROUPS.PUBLIC.some(route => path === route || path.startsWith(route + '/'));
   },
-  
   isProtectedRoute: (path: string): boolean => {
     return ROUTE_GROUPS.PROTECTED.some(route => path === route || path.startsWith(route + '/'));
   },
-  
   getRouteGroup: (path: string): string | null => {
     if (routeUtils.isAdminRoute(path)) return 'admin';
     if (routeUtils.isClubDashboardRoute(path)) return 'club-dashboard';

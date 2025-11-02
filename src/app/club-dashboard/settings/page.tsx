@@ -1,11 +1,8 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-
 interface ClubBankAccount {
   clubId: string;
   bankName: string;
@@ -15,7 +12,6 @@ interface ClubBankAccount {
   createdAt: string;
   updatedAt?: string;
 }
-
 interface NaverCloudConfig {
   clubId: string;
   serviceId: string;
@@ -34,18 +30,15 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, CreditCard, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
 export default function ClubSettingsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   // Bank Account State
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [isSavingBank, setIsSavingBank] = useState(false);
-
   // Naver Cloud State
   const [serviceId, setServiceId] = useState('');
   const [accessKey, setAccessKey] = useState('');
@@ -53,21 +46,18 @@ export default function ClubSettingsPage() {
   const [senderPhone, setSenderPhone] = useState('');
   const [kakaoSenderId, setKakaoSenderId] = useState('');
   const [isSavingNaver, setIsSavingNaver] = useState(false);
-
   // Fetch bank account
   const bankAccountRef = useMemoFirebase(
-    () => (firestore && user?.clubId ? doc(firestore, 'club_bank_accounts', user.clubId) : null),
-    [firestore, user?.clubId]
+    () => (firestore && _user?.clubId ? doc(firestore, 'club_bank_accounts', _user.clubId) : null),
+    [firestore, _user?.clubId]
   );
   const { data: bankAccount } = useDoc<ClubBankAccount>(bankAccountRef);
-
   // Fetch naver cloud config
   const naverConfigRef = useMemoFirebase(
-    () => (firestore && user?.clubId ? doc(firestore, 'naver_cloud_configs', user.clubId) : null),
-    [firestore, user?.clubId]
+    () => (firestore && _user?.clubId ? doc(firestore, 'naver_cloud_configs', _user.clubId) : null),
+    [firestore, _user?.clubId]
   );
   const { data: naverConfig } = useDoc<NaverCloudConfig>(naverConfigRef);
-
   // Load data
   useEffect(() => {
     if (bankAccount) {
@@ -76,7 +66,6 @@ export default function ClubSettingsPage() {
       setAccountHolder(bankAccount.accountHolder);
     }
   }, [bankAccount]);
-
   useEffect(() => {
     if (naverConfig) {
       setServiceId(naverConfig.serviceId);
@@ -86,17 +75,15 @@ export default function ClubSettingsPage() {
       setKakaoSenderId(naverConfig.kakaoSenderId || '');
     }
   }, [naverConfig]);
-
   const handleSaveBankAccount = async () => {
-    if (!firestore || !user?.clubId || !bankName || !accountNumber || !accountHolder) {
+    if (!firestore || !_user?.clubId || !bankName || !accountNumber || !accountHolder) {
       toast({ variant: 'destructive', title: '모든 필드를 입력하세요' });
       return;
     }
-
     setIsSavingBank(true);
     try {
       const accountData: ClubBankAccount = {
-        clubId: user.clubId,
+        clubId: _user.clubId,
         bankName,
         accountNumber,
         accountHolder,
@@ -104,27 +91,23 @@ export default function ClubSettingsPage() {
         createdAt: bankAccount?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
-      await setDoc(doc(firestore, 'club_bank_accounts', user.clubId), accountData);
-
+      await setDoc(doc(firestore, 'club_bank_accounts', _user.clubId), accountData);
       toast({ title: '계좌 정보 저장 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSavingBank(false);
     }
   };
-
   const handleSaveNaverConfig = async () => {
-    if (!firestore || !user?.clubId || !serviceId || !accessKey || !secretKey || !senderPhone) {
+    if (!firestore || !_user?.clubId || !serviceId || !accessKey || !secretKey || !senderPhone) {
       toast({ variant: 'destructive', title: '필수 필드를 입력하세요' });
       return;
     }
-
     setIsSavingNaver(true);
     try {
       const configData: NaverCloudConfig = {
-        clubId: user.clubId,
+        clubId: _user.clubId,
         serviceId,
         accessKey,
         secretKey,
@@ -134,30 +117,25 @@ export default function ClubSettingsPage() {
         createdAt: naverConfig?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
-      await setDoc(doc(firestore, 'naver_cloud_configs', user.clubId), configData);
-
+      await setDoc(doc(firestore, 'naver_cloud_configs', _user.clubId), configData);
       toast({ title: '네이버 클라우드 설정 저장 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     } finally {
       setIsSavingNaver(false);
     }
   };
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">클럽 설정</h1>
         <p className="text-muted-foreground mt-1">계좌 정보 및 문자 발송 설정</p>
       </div>
-
       <Tabs defaultValue="bank" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="bank">계좌 정보</TabsTrigger>
           <TabsTrigger value="message">문자 발송 설정</TabsTrigger>
         </TabsList>
-
         {/* Bank Account Tab */}
         <TabsContent value="bank">
           <Card>
@@ -180,7 +158,6 @@ export default function ClubSettingsPage() {
                   placeholder="예: 국민은행"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="accountNumber">계좌번호</Label>
                 <Input
@@ -190,7 +167,6 @@ export default function ClubSettingsPage() {
                   placeholder="예: 123-456-789012"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="accountHolder">예금주</Label>
                 <Input
@@ -200,7 +176,6 @@ export default function ClubSettingsPage() {
                   placeholder="예: 홍길동"
                 />
               </div>
-
               {bankAccount && (
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm font-semibold mb-2">현재 등록된 계좌</p>
@@ -208,7 +183,6 @@ export default function ClubSettingsPage() {
                   <p className="text-sm text-muted-foreground">예금주: {bankAccount.accountHolder}</p>
                 </div>
               )}
-
               <Button onClick={handleSaveBankAccount} disabled={isSavingBank} className="w-full">
                 {isSavingBank ? (
                   <>
@@ -225,7 +199,6 @@ export default function ClubSettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* Naver Cloud Tab */}
         <TabsContent value="message">
           <Card>
@@ -249,7 +222,6 @@ export default function ClubSettingsPage() {
                   <li>발신번호 등록 및 승인</li>
                 </ol>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="serviceId">Service ID *</Label>
                 <Input
@@ -259,7 +231,6 @@ export default function ClubSettingsPage() {
                   placeholder="ncp:sms:kr:..."
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="accessKey">Access Key *</Label>
                 <Input
@@ -270,7 +241,6 @@ export default function ClubSettingsPage() {
                   type="password"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="secretKey">Secret Key *</Label>
                 <Input
@@ -281,7 +251,6 @@ export default function ClubSettingsPage() {
                   type="password"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="senderPhone">발신번호 *</Label>
                 <Input
@@ -291,7 +260,6 @@ export default function ClubSettingsPage() {
                   placeholder="01012345678 (하이픈 없이)"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="kakaoSenderId">카카오 발신프로필 키 (선택)</Label>
                 <Input
@@ -301,7 +269,6 @@ export default function ClubSettingsPage() {
                   placeholder="알림톡 사용 시 입력"
                 />
               </div>
-
               {naverConfig && (
                 <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm font-semibold text-green-900 mb-1">✅ 설정 완료</p>
@@ -315,7 +282,6 @@ export default function ClubSettingsPage() {
                   )}
                 </div>
               )}
-
               <Button onClick={handleSaveNaverConfig} disabled={isSavingNaver} className="w-full">
                 {isSavingNaver ? (
                   <>

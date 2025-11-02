@@ -1,15 +1,11 @@
 'use client';
-
 import { useState, useCallback, useEffect } from 'react';
-
-// Disable static generation for this page
-export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,24 +19,22 @@ import { useNavigation } from '@/hooks/use-navigation';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 import { useLoading } from '@/hooks/use-loading';
 import { ButtonLoader } from '@/components/loading-indicator';
-
 const formSchema = z.object({
   email: z.string().email({ message: '유효하지 않은 이메일 주소입니다.' }),
   password: z.string().min(6, { message: '비밀번호는 6자 이상이어야 합니다.' }),
 });
-
 type FormValues = z.infer<typeof formSchema>;
-
 export default function LoginPage() {
   const { auth, firestore } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = typeof window !== 'undefined' ? (searchParams?.get('next') || '') : '';
   const { navigate, navigateByRole } = useNavigation();
   const { handleError } = useErrorHandler({ component: 'LoginPage' });
   const { measureLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,16 +42,28 @@ export default function LoginPage() {
       password: '',
     },
   });
-
-  // 이미 로그인된 사용자 자동 리다이렉트 (NavigationManager 사용)
+  // 이미 로그인된 사용자 자동 리다이렉트
   useEffect(() => {
     if (isUserLoading) return;
-    if (!user) return;
-
-    // NavigationManager를 통한 역할 기반 리다이렉트
-    navigateByRole();
-  }, [user, isUserLoading, navigateByRole]);
-
+    if (!_user) return;
+    // 현재 경로가 /login이 아니면 리턴 (무한루프 방지)
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      return;
+    }
+    // 사용자 상태에 따른 리다이렉션
+    if (nextPath) {
+      window.location.href = nextPath;
+      return;
+    }
+    if (_user.status === 'pending') {
+      // window.location 사용하여 완전히 페이지 이동
+      window.location.href = '/pending-approval';
+    } else if (_user.status === 'active') {
+      // 역할별 리다이렉션
+      const path = getRedirectPath(_user.role as UserRole);
+      window.location.href = path;
+    }
+  }, [_user, isUserLoading, nextPath]);
   // 역할별 리다이렉트 경로 헬퍼 함수
   const getRedirectPath = (role: UserRole): string => {
     switch (role) {
@@ -72,47 +78,40 @@ export default function LoginPage() {
         return '/my-profile';
     }
   };
-
   // Force logout function - 컴포넌트 최상위에 위치
   const forceLogout = useCallback(async () => {
     // 먼저 스토리지 삭제
     localStorage.clear();
     sessionStorage.clear();
-    
     try {
       if (auth) {
         await signOut(auth);
       }
-    } catch (error) {
+    } catch (error: unknown) {
     } finally {
       // 완전히 새로운 페이지로 이동 (캐시 무시)
       router.push('/login');
     }
   }, [auth, router]);
-
   const onSubmit = async (values: FormValues) => {
     if (!auth || !firestore) return;
-    
     setIsSubmitting(true);
-    
     try {
       await measureLoading('auth-login', async () => {
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-        const user = userCredential.user;
-        
+        const _user = userCredential.user;
         // 사용자 프로필 가져오기
-        const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-        if (userDoc.exists()) {
-          const userProfile = userDoc.data() as UserProfile;
-          
+        const userDoc = await getDoc(doc(firestore, 'users', _user.uid));
+        if (userDoc?.exists()) {
+          const userProfile = userDoc?.data() as UserProfile;
           // NavigationManager를 통한 리다이렉트
-          const targetPath = userProfile.status === 'pending' 
+          const targetPath = nextPath || (userProfile.status === 'pending' 
             ? '/pending-approval'
-            : getRedirectPath(userProfile.role);
+            : getRedirectPath(userProfile.role));
           navigate(targetPath, { replace: true });
         } else {
           // 프로필이 없으면 기본 페이지로
-          navigate('/my-profile', { replace: true });
+          navigate(nextPath || '/my-profile', { replace: true });
         }
       }, { message: '로그인 중...' });
     } catch (error: unknown) {
@@ -122,20 +121,17 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
-
   const handleGoogleSignIn = async () => {
     if (!auth || !firestore) return;
     setIsSubmitting(true);
     const provider = new GoogleAuthProvider();
     try {
       const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
-      
+      const _user = userCredential.user;
       // 사용자 프로필 가져오기
-      const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userProfile = userDoc.data() as UserProfile;
-        
+      const userDoc = await getDoc(doc(firestore, 'users', _user.uid));
+      if (userDoc?.exists()) {
+        const userProfile = userDoc?.data() as UserProfile;
         // NavigationManager를 통한 리다이렉트
         const targetPath = userProfile.status === 'pending' 
           ? '/pending-approval'
@@ -152,7 +148,6 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
-
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -160,9 +155,8 @@ export default function LoginPage() {
       </div>
     );
   }
-
   // If user is already logged in, show loading (redirect will happen automatically)
-  if (user) {
+  if (_user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -172,12 +166,10 @@ export default function LoginPage() {
       </div>
     );
   }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-white p-4">
       {/* Windsurf 스타일 배경 그리드 */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-      
       <Card className="w-full max-w-md border border-slate-200 shadow-sm relative bg-white">
         <CardHeader className="space-y-6 pt-12 pb-8">
           <div className="flex flex-col items-center gap-6">
@@ -196,7 +188,6 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-          
           <div className="text-center space-y-2">
             <h2 className="text-xl font-semibold text-slate-900">로그인</h2>
             <p className="text-sm text-slate-600">계정에 액세스하려면 정보를 입력하세요</p>
@@ -282,7 +273,6 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pb-8 pt-6">
           <div className="w-full h-px bg-slate-100" />
-          
           {/* 일반 회원 가입 */}
           <div className="text-center space-y-3">
             <p className="text-sm text-slate-600">
@@ -298,9 +288,7 @@ export default function LoginPage() {
               </Button>
             </Link>
           </div>
-
           <div className="w-full h-px bg-slate-100" />
-
           {/* 관리자 가입 */}
           <div className="text-center space-y-3">
             <p className="text-sm text-slate-600">

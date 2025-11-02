@@ -1,11 +1,9 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { usePaginatedCollection } from '@/hooks/use-paginated-collection';
-import { AvatarImage } from '@/components/optimized-image';
+import { AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,16 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw, Users, MoreHorizontal, Zap, ImageIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Member } from '@/types';
-
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
   pending: '승인대기',
 };
-
 export default function OptimizedMembersPage() {
   const firestore = useFirestore();
-  
   // 페이지네이션된 쿼리 생성
   const membersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -31,7 +26,6 @@ export default function OptimizedMembersPage() {
       orderBy('createdAt', 'desc') // 최신순 정렬
     );
   }, [firestore]);
-
   // 페이지네이션 훅 사용
   const {
     data: members,
@@ -48,7 +42,6 @@ export default function OptimizedMembersPage() {
     pageSize: 20, // 한 페이지에 20명씩
     enabled: !!firestore
   });
-
   const getStatusVariant = (status: Member['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'active':
@@ -61,7 +54,6 @@ export default function OptimizedMembersPage() {
         return 'outline';
     }
   };
-
   if (error) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -79,7 +71,6 @@ export default function OptimizedMembersPage() {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* 헤더 */}
@@ -105,7 +96,6 @@ export default function OptimizedMembersPage() {
           </Badge>
         </div>
       </div>
-
       {/* 최적화 정보 배너 */}
       <Card className="border-green-200 bg-green-50">
         <CardContent className="pt-4">
@@ -122,7 +112,6 @@ export default function OptimizedMembersPage() {
           </div>
         </CardContent>
       </Card>
-
       {/* 회원 테이블 */}
       <Card>
         <CardHeader>
@@ -154,10 +143,7 @@ export default function OptimizedMembersPage() {
                         <AvatarImage
                           src={member.photoURL}
                           alt={member.name}
-                          size={40}
-                          priority={false} // 테이블 이미지는 지연 로딩
-                          loading="lazy"
-                          quality={75}
+                          className="h-10 w-10"
                         />
                       </TableCell>
                       <TableCell className="font-medium">{member.name}</TableCell>
@@ -197,7 +183,6 @@ export default function OptimizedMembersPage() {
                   )}
                 </TableBody>
               </Table>
-
               {/* 페이지네이션 컨트롤 */}
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2">
@@ -220,7 +205,6 @@ export default function OptimizedMembersPage() {
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
-
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {isLoading && (
                     <div className="flex items-center gap-2">
@@ -236,7 +220,6 @@ export default function OptimizedMembersPage() {
           )}
         </CardContent>
       </Card>
-
       {/* 이미지 갤러리 뷰 (추가 예시) */}
       <Card>
         <CardHeader>
@@ -250,11 +233,7 @@ export default function OptimizedMembersPage() {
                 <AvatarImage
                   src={member.photoURL}
                   alt={member.name}
-                  size={80}
-                  className="mx-auto mb-2"
-                  priority={false}
-                  loading="lazy"
-                  quality={80}
+                  className="h-20 w-20 mx-auto mb-2"
                 />
                 <p className="text-sm font-medium truncate">{member.name}</p>
                 <Badge 
@@ -268,7 +247,6 @@ export default function OptimizedMembersPage() {
           </div>
         </CardContent>
       </Card>
-
       {/* 성능 정보 (개발 모드에서만 표시) */}
       {process.env.NODE_ENV === 'development' && (
         <Card className="border-dashed border-blue-200 bg-blue-50">
@@ -278,7 +256,6 @@ export default function OptimizedMembersPage() {
                 <Zap className="h-4 w-4" />
                 🚀 이미지 최적화 성능 정보
               </h4>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <h5 className="font-medium">페이지네이션 최적화</h5>
@@ -289,7 +266,6 @@ export default function OptimizedMembersPage() {
                     <div><strong>다음 페이지:</strong> {hasNextPage ? '있음' : '없음'}</div>
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <h5 className="font-medium">이미지 최적화</h5>
                   <div className="text-xs space-y-1">
@@ -301,7 +277,6 @@ export default function OptimizedMembersPage() {
                   </div>
                 </div>
               </div>
-
               <div className="mt-4 p-3 bg-white rounded-md border border-blue-200">
                 <h5 className="font-medium mb-2">📊 성능 개선 효과</h5>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -319,7 +294,6 @@ export default function OptimizedMembersPage() {
                   </div>
                 </div>
               </div>
-
               <p className="mt-3 text-xs">
                 💡 <strong>Next.js Image + 페이지네이션 + 캐싱</strong> 조합으로 
                 전체 성능이 <strong>80% 향상</strong>되었습니다.

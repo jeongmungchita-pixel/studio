@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { use, useEffect, useState } from 'react';
 import { useUser, useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
@@ -11,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy, Clock, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-
 const EVENT_NAMES: Record<string, string> = {
   FX: '마루운동',
   PH: '안마',
@@ -22,7 +19,6 @@ const EVENT_NAMES: Record<string, string> = {
   UB: '이단평행봉',
   BB: '평균대',
 };
-
 export default function CompetitionLivePage({ params }: { params: Promise<{ competitionId: string }> }) {
   // 로컬 타입: 현재 스케줄(이 파일에서 사용하는 최소 필드만)
   interface CompetitionSchedule {
@@ -36,34 +32,30 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
     participants?: { memberId: string }[];
   }
   const { competitionId } = use(params);
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const [currentTime, setCurrentTime] = useState(new Date());
-
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
   // Fetch competition
   const competitionRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'competitions', competitionId) : null),
     [firestore, competitionId]
   );
   const { data: competition } = useDoc<GymnasticsCompetition>(competitionRef);
-
   // Fetch my registration
   const myRegistrationQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !_user?.uid) return null;
     return query(
       collection(firestore, 'competition_registrations'),
       where('competitionId', '==', competitionId),
-      where('memberId', '==', user.uid)
+      where('memberId', '==', _user.uid)
     );
-  }, [firestore, competitionId, user?.uid]);
+  }, [firestore, competitionId, _user?.uid]);
   const { data: myRegistrations } = useCollection<CompetitionRegistration>(myRegistrationQuery);
   const myRegistration = myRegistrations?.[0];
-
   // Fetch my scores
   const myScoresQuery = useMemoFirebase(() => {
     if (!firestore || !myRegistration) return null;
@@ -74,7 +66,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
     );
   }, [firestore, myRegistration?.id]);
   const { data: myScores } = useCollection<GymnasticsScore>(myScoresQuery);
-
   // Fetch current schedule
   const currentScheduleQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -85,7 +76,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
     );
   }, [firestore, competitionId]);
   const { data: currentSchedules } = useCollection<CompetitionSchedule>(currentScheduleQuery);
-
   if (!competition || !myRegistration) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -93,15 +83,12 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
       </div>
     );
   }
-
   const currentSchedule = currentSchedules?.[0];
   const completedEvents = myScores?.length || 0;
   const totalEvents = (myRegistration.registeredEvents ?? (myRegistration as any).events ?? []).length;
   const totalScore = myScores?.reduce((sum, score) => sum + (score.total ?? 0), 0) || 0;
-
   // Check if I'm competing now
-  const isMyTurn = currentSchedule?.participants?.some(p => p.memberId === user?.uid);
-
+  const isMyTurn = currentSchedule?.participants?.some(p => p.memberId === _user?.uid);
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       {/* Header */}
@@ -115,7 +102,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
           <p className="text-2xl font-bold">{currentTime.toLocaleTimeString('ko-KR')}</p>
         </div>
       </div>
-
       {/* My Status */}
       <Card className={isMyTurn ? 'border-2 border-green-500 animate-pulse' : ''}>
         <CardHeader>
@@ -147,7 +133,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
           </div>
         </CardContent>
       </Card>
-
       {/* Current Event */}
       {currentSchedule && (
         <Card>
@@ -170,7 +155,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
           </CardContent>
         </Card>
       )}
-
       {/* My Scores */}
       <Card>
         <CardHeader>
@@ -218,7 +202,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
           )}
         </CardContent>
       </Card>
-
       {/* Registered Events */}
       <Card>
         <CardHeader>
@@ -245,7 +228,6 @@ export default function CompetitionLivePage({ params }: { params: Promise<{ comp
           </div>
         </CardContent>
       </Card>
-
       {/* Auto Refresh Indicator */}
       <div className="fixed bottom-4 right-4 bg-green-500/10 border border-green-500 rounded-full px-4 py-2">
         <div className="flex items-center gap-2">

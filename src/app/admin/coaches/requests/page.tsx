@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, updateDoc, doc } from 'firebase/firestore';
@@ -14,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-
 interface CoachRequest {
   id: string;
   email: string;
@@ -28,44 +25,40 @@ interface CoachRequest {
   status: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
 }
-
 export default function AdminCoachRequestsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
-
   const requestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'coach_requests'), orderBy('requestedAt', 'desc'));
   }, [firestore]);
   const { data: requests, isLoading } = useCollection<CoachRequest>(requestsQuery);
-
-  const handleApprove = async (req: CoachRequest) => {
+  const handleApprove = async (_req: CoachRequest) => {
     if (!firestore) return;
     try {
-      await updateDoc(doc(firestore, 'coach_requests', req.id), {
+      await updateDoc(doc(firestore, 'coach_requests', _req.id), {
         status: 'approved',
       });
-      toast({ title: '승인 완료', description: `${req.displayName} 요청 승인` });
-    } catch (e) {
+      toast({ title: '승인 완료', description: `${_req.displayName} 요청 승인` });
+    } catch (e: unknown) {
       toast({ variant: 'destructive', title: '오류', description: '승인 처리 중 오류가 발생했습니다.' });
     }
   };
-
-  const handleReject = async (req: CoachRequest) => {
+  const handleReject = async (_req: CoachRequest) => {
     if (!firestore) return;
+    const reason = rejectReason[_req.id] || '요청이 거절되었습니다.';
     try {
-      await updateDoc(doc(firestore, 'coach_requests', req.id), {
+      await updateDoc(doc(firestore, 'coach_requests', _req.id), {
         status: 'rejected',
-        rejectionReason: rejectReason[req.id] || '',
+        rejectionReason: reason,
       });
-      toast({ title: '거절 완료', description: `${req.displayName} 요청 거절` });
-    } catch (e) {
+      toast({ title: '거부 완료', description: `${_req.displayName} 요청 거부` });
+    } catch (e: unknown) {
       toast({ variant: 'destructive', title: '오류', description: '거절 처리 중 오류가 발생했습니다.' });
     }
   };
-
   return (
     <RequireAnyRole roles={[UserRole.SUPER_ADMIN, UserRole.FEDERATION_ADMIN]}>
       <main className="flex-1 p-6 space-y-6">
@@ -75,7 +68,6 @@ export default function AdminCoachRequestsPage() {
             <p className="text-muted-foreground mt-1">클럽에서 요청한 코치 계정을 승인/거절합니다</p>
           </div>
         </div>
-
         <Card>
           <CardHeader>
             <CardTitle>요청 목록</CardTitle>
@@ -98,33 +90,33 @@ export default function AdminCoachRequestsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {requests.map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell className="font-medium">{req.displayName}</TableCell>
-                      <TableCell>{req.email}</TableCell>
-                      <TableCell>{req.clubName || '-'}</TableCell>
+                  {requests.map((_req) => (
+                    <TableRow key={_req.id}>
+                      <TableCell className="font-medium">{_req.displayName}</TableCell>
+                      <TableCell>{_req.email}</TableCell>
+                      <TableCell>{_req.clubName || '-'}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{req.role === UserRole.HEAD_COACH ? '수석 코치' : '보조 코치'}</Badge>
+                        <Badge variant="secondary">{_req.role === UserRole.HEAD_COACH ? '수석 코치' : '보조 코치'}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={
-                          req.status === 'approved' ? 'default' :
-                          req.status === 'pending' ? 'secondary' : 'outline'
+                          _req.status === 'approved' ? 'default' :
+                          _req.status === 'pending' ? 'secondary' : 'outline'
                         }>
-                          {req.status === 'approved' ? '승인' : req.status === 'pending' ? '대기중' : '거절'}
+                          {_req.status === 'approved' ? '승인' : _req.status === 'pending' ? '대기중' : '거절'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        {req.status === 'pending' ? (
+                        {_req.status === 'pending' ? (
                           <div className="flex items-center justify-end gap-2">
                             <Input
                               placeholder="거절 사유(선택)"
-                              value={rejectReason[req.id] || ''}
-                              onChange={(e) => setRejectReason(prev => ({ ...prev, [req.id]: e.target.value }))}
+                              value={rejectReason[_req.id] || ''}
+                              onChange={(e) => setRejectReason(prev => ({ ...prev, [_req.id]: e.target.value }))}
                               className="max-w-[200px]"
                             />
-                            <Button size="sm" variant="outline" onClick={() => handleReject(req)}>거절</Button>
-                            <Button size="sm" onClick={() => handleApprove(req)}>승인</Button>
+                            <Button size="sm" variant="outline" onClick={() => handleReject(_req)}>거절</Button>
+                            <Button size="sm" onClick={() => handleApprove(_req)}>승인</Button>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>

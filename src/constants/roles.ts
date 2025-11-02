@@ -1,11 +1,8 @@
 'use client';
-
 import { UserRole } from '@/types/auth';
-
 // ============================================
 // 👥 역할 및 권한 상수
 // ============================================
-
 // 역할별 표시 이름
 export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.SUPER_ADMIN]: '최고 관리자',
@@ -23,7 +20,6 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.PARENT]: '학부모',
   [UserRole.VENDOR]: '벤더',
 };
-
 // 역할별 색상 (배지용)
 export const ROLE_COLORS: Record<UserRole, string> = {
   [UserRole.SUPER_ADMIN]: '#dc2626', // red-600
@@ -41,11 +37,9 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   [UserRole.PARENT]: '#9333ea', // purple-600
   [UserRole.VENDOR]: '#c2410c', // orange-700
 };
-
 // ============================================
 // 🏛️ 역할 계층 구조 (Role Hierarchy)
 // ============================================
-
 /**
  * 역할 계층 구조 - 숫자가 높을수록 상위 권한
  * 상위 역할은 하위 역할의 모든 권한을 포함함
@@ -66,7 +60,6 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   [UserRole.PARENT]: 5,                  // 학부모
   [UserRole.VENDOR]: 1,                  // 벤더 (최소 권한)
 };
-
 /**
  * 역할 간 권한 상속 확인
  * @param userRole 사용자 역할
@@ -76,7 +69,6 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
 export function hasRoleOrHigher(userRole: UserRole, requiredRole: UserRole): boolean {
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 }
-
 /**
  * 사용자가 특정 권한을 가지고 있는지 확인
  * @param userRole 사용자 역할
@@ -86,7 +78,6 @@ export function hasRoleOrHigher(userRole: UserRole, requiredRole: UserRole): boo
 export function hasPermission(userRole: UserRole, permission: UserRole[]): boolean {
   return permission.includes(userRole);
 }
-
 /**
  * 사용자가 다른 사용자를 관리할 수 있는지 확인
  * @param managerRole 관리자 역할
@@ -96,7 +87,6 @@ export function hasPermission(userRole: UserRole, permission: UserRole[]): boole
 export function canManageRole(managerRole: UserRole, targetRole: UserRole): boolean {
   return ROLE_HIERARCHY[managerRole] > ROLE_HIERARCHY[targetRole];
 }
-
 /**
  * 역할의 상위 역할들 가져오기
  * @param role 기준 역할
@@ -109,7 +99,6 @@ export function getSuperiorRoles(role: UserRole): UserRole[] {
     .map(([roleKey, _]) => roleKey as UserRole)
     .sort((a, b) => ROLE_HIERARCHY[b] - ROLE_HIERARCHY[a]);
 }
-
 /**
  * 역할의 하위 역할들 가져오기
  * @param role 기준 역할
@@ -122,7 +111,6 @@ export function getSubordinateRoles(role: UserRole): UserRole[] {
     .map(([roleKey, _]) => roleKey as UserRole)
     .sort((a, b) => ROLE_HIERARCHY[b] - ROLE_HIERARCHY[a]);
 }
-
 /**
  * 역할의 레벨 가져오기
  * @param role 역할
@@ -131,7 +119,6 @@ export function getSubordinateRoles(role: UserRole): UserRole[] {
 export function getRoleLevel(role: UserRole): number {
   return ROLE_HIERARCHY[role];
 }
-
 /**
  * 최고 권한 역할인지 확인
  * @param role 역할
@@ -140,7 +127,6 @@ export function getRoleLevel(role: UserRole): number {
 export function isTopRole(role: UserRole): boolean {
   return role === UserRole.SUPER_ADMIN;
 }
-
 /**
  * 관리자 역할인지 확인 (레벨 70 이상)
  * @param role 역할
@@ -149,7 +135,6 @@ export function isTopRole(role: UserRole): boolean {
 export function isAdminRole(role: UserRole): boolean {
   return ROLE_HIERARCHY[role] >= 70;
 }
-
 /**
  * 클럽 관련 역할인지 확인
  * @param role 역할
@@ -161,7 +146,6 @@ export function isClubRole(role: UserRole): boolean {
     (ROLE_GROUPS.COACHING as readonly UserRole[]).includes(role)
   );
 }
-
 // 역할 그룹
 export const ROLE_GROUPS = {
   ADMIN: [
@@ -169,34 +153,28 @@ export const ROLE_GROUPS = {
     UserRole.FEDERATION_ADMIN,
     UserRole.FEDERATION_SECRETARIAT,
   ],
-  
   COMMITTEE: [
     UserRole.COMMITTEE_CHAIR,
     UserRole.COMMITTEE_MEMBER,
   ],
-  
   CLUB_MANAGEMENT: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
     UserRole.CLUB_STAFF,
     UserRole.MEDIA_MANAGER,
   ],
-  
   COACHING: [
     UserRole.HEAD_COACH,
     UserRole.ASSISTANT_COACH,
   ],
-  
   MEMBERS: [
     UserRole.MEMBER,
     UserRole.PARENT,
   ],
-  
   EXTERNAL: [
     UserRole.VENDOR,
   ],
 } as const;
-
 // 권한 매트릭스
 export const PERMISSIONS = {
   // 클럽 관리
@@ -204,47 +182,40 @@ export const PERMISSIONS = {
     UserRole.SUPER_ADMIN,
     UserRole.FEDERATION_ADMIN,
   ],
-  
   // 회원 관리
   MANAGE_ALL_MEMBERS: [
     UserRole.SUPER_ADMIN,
     UserRole.FEDERATION_ADMIN,
   ],
-  
   MANAGE_CLUB_MEMBERS: [
     UserRole.SUPER_ADMIN,
     UserRole.FEDERATION_ADMIN,
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
   ],
-  
   // 대회 관리
   MANAGE_COMPETITIONS: [
     UserRole.SUPER_ADMIN,
     UserRole.FEDERATION_ADMIN,
     UserRole.COMMITTEE_CHAIR,
   ],
-  
   // 위원회 관리
   MANAGE_COMMITTEES: [
     UserRole.SUPER_ADMIN,
     UserRole.FEDERATION_ADMIN,
   ],
-  
   // 심사위원 관리
   MANAGE_JUDGES: [
     UserRole.SUPER_ADMIN,
     UserRole.FEDERATION_ADMIN,
     UserRole.COMMITTEE_CHAIR,
   ],
-  
   // 클럽 운영
   MANAGE_CLASSES: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
     UserRole.HEAD_COACH,
   ],
-  
   MANAGE_ATTENDANCE: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
@@ -252,24 +223,20 @@ export const PERMISSIONS = {
     UserRole.HEAD_COACH,
     UserRole.ASSISTANT_COACH,
   ],
-  
   MANAGE_PASSES: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
   ],
-  
   MANAGE_PAYMENTS: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
   ],
-  
   // 미디어 관리
   MANAGE_MEDIA: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
     UserRole.MEDIA_MANAGER,
   ],
-  
   // 메시지 발송
   SEND_MESSAGES: [
     UserRole.CLUB_OWNER,
@@ -277,14 +244,12 @@ export const PERMISSIONS = {
     UserRole.CLUB_STAFF,
     UserRole.HEAD_COACH,
   ],
-  
   // 레벨 테스트
   MANAGE_LEVEL_TESTS: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
     UserRole.HEAD_COACH,
   ],
-  
   EVALUATE_LEVEL_TESTS: [
     UserRole.CLUB_OWNER,
     UserRole.CLUB_MANAGER,
@@ -292,14 +257,12 @@ export const PERMISSIONS = {
     UserRole.ASSISTANT_COACH,
   ],
 } as const;
-
 // 권한 체크 유틸리티
 export const roleUtils = {
   hasPermission: (userRole: UserRole, permission: keyof typeof PERMISSIONS): boolean => {
     const allowed = PERMISSIONS[permission] as readonly UserRole[];
     return allowed.includes(userRole);
   },
-  
   getRoleGroup: (role: UserRole): string | null => {
     for (const [groupName, roles] of Object.entries(ROLE_GROUPS)) {
       if ((roles as readonly UserRole[]).includes(role)) {
@@ -308,26 +271,21 @@ export const roleUtils = {
     }
     return null;
   },
-  
   getRoleLabel: (role: UserRole): string => {
     return ROLE_LABELS[role] || role;
   },
-  
   getRoleColor: (role: UserRole): string => {
     return ROLE_COLORS[role] || '#6b7280'; // gray-500 as default
   },
-  
   isAdminRole: (role: UserRole): boolean => {
     return (ROLE_GROUPS.ADMIN as readonly UserRole[]).includes(role);
   },
-  
   isClubRole: (role: UserRole): boolean => {
     return (
       (ROLE_GROUPS.CLUB_MANAGEMENT as readonly UserRole[]).includes(role) ||
       (ROLE_GROUPS.COACHING as readonly UserRole[]).includes(role)
     );
   },
-  
   isMemberRole: (role: UserRole): boolean => {
     return (ROLE_GROUPS.MEMBERS as readonly UserRole[]).includes(role);
   },

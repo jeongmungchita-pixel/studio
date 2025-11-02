@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, use } from 'react';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
@@ -14,15 +12,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Calculator } from 'lucide-react';
-
 interface PageProps {
   params: Promise<{ competitionId: string }>;
 }
-
 export default function ScoringPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const competitionId = resolvedParams.competitionId;
-  
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedEvent, setSelectedEvent] = useState<string>('');
@@ -35,7 +30,6 @@ export default function ScoringPage({ params }: PageProps) {
     eScore4: string;
     deductions: string;
   }>>({});
-
   // Fetch competition
   const competitionQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -46,7 +40,6 @@ export default function ScoringPage({ params }: PageProps) {
   }, [firestore, competitionId]);
   const { data: competitions } = useCollection<GymnasticsCompetition>(competitionQuery);
   const competition = competitions?.[0];
-
   // Fetch approved registrations
   const registrationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -57,55 +50,42 @@ export default function ScoringPage({ params }: PageProps) {
     );
   }, [firestore, competitionId]);
   const { data: registrations, isLoading } = useCollection<CompetitionRegistration>(registrationsQuery);
-
   const calculateFinalScore = (regId: string) => {
     const score = scores[regId];
     if (!score) return 0;
-
     const d1 = parseFloat(score.dScore1) || 0;
     const d2 = parseFloat(score.dScore2) || 0;
     const dFinal = (d1 + d2) / 2;
-
     const e1 = parseFloat(score.eScore1) || 0;
     const e2 = parseFloat(score.eScore2) || 0;
     const e3 = parseFloat(score.eScore3) || 0;
     const e4 = parseFloat(score.eScore4) || 0;
-    
     // E점수: 최고/최저 제외하고 평균
     const eScores = [e1, e2, e3, e4].sort((a, b) => a - b);
     const eFinal = (eScores[1] + eScores[2]) / 2;
-
     const deductions = parseFloat(score.deductions) || 0;
-    
     return Math.max(0, dFinal + eFinal - deductions);
   };
-
   const handleSaveScore = async (registration: CompetitionRegistration) => {
     if (!firestore || !selectedEvent) return;
-
     const score = scores[registration.id];
     if (!score) {
       toast({ variant: 'destructive', title: '점수를 입력하세요' });
       return;
     }
-
     try {
       const d1 = parseFloat(score.dScore1) || 0;
       const d2 = parseFloat(score.dScore2) || 0;
       const dFinal = (d1 + d2) / 2;
-
       const e1 = parseFloat(score.eScore1) || 0;
       const e2 = parseFloat(score.eScore2) || 0;
       const e3 = parseFloat(score.eScore3) || 0;
       const e4 = parseFloat(score.eScore4) || 0;
       const eScores = [e1, e2, e3, e4].sort((a, b) => a - b);
       const eFinal = (eScores[1] + eScores[2]) / 2;
-
       const deductions = parseFloat(score.deductions) || 0;
       const finalScore = Math.max(0, dFinal + eFinal - deductions);
-
-      const event = competition?.events?.find(e => e.id === selectedEvent);
-      
+      const _event = competition?.events?.find(e => e.id === selectedEvent);
       const scoreRef = doc(collection(firestore, 'gymnastics_scores'));
       const scoreData: GymnasticsScore = {
         id: scoreRef.id,
@@ -116,31 +96,26 @@ export default function ScoringPage({ params }: PageProps) {
         memberName: registration.memberName || '',
         clubName: registration.clubName || '',
         eventId: selectedEvent,
-        eventName: event?.name || '',
+        eventName: _event?.name || '',
         difficulty: dFinal,
         execution: eFinal,
         penalty: deductions,
         total: finalScore,
         createdAt: new Date().toISOString(),
       };
-
       await setDoc(scoreRef, scoreData);
-
       toast({ 
         title: '점수 저장 완료', 
-        description: `${registration.memberName} - ${event?.name}: ${finalScore.toFixed(2)}점` 
+        description: `${registration.memberName} - ${_event?.name}: ${finalScore.toFixed(2)}점` 
       });
-
       // 점수 초기화
       const newScores = { ...scores };
       delete newScores[registration.id];
       setScores(newScores);
-
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -148,7 +123,6 @@ export default function ScoringPage({ params }: PageProps) {
       </div>
     );
   }
-
   if (!competition) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -156,37 +130,34 @@ export default function ScoringPage({ params }: PageProps) {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">{competition.title}</h1>
         <p className="text-muted-foreground mt-1">점수 입력 시스템</p>
       </div>
-
       <Tabs value={selectedEvent} onValueChange={setSelectedEvent}>
         <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
-          {(competition?.events || []).map((event: any) => (
-            <TabsTrigger key={event.id} value={event.id}>
-              {event.name}
+          {(competition?.events || []).map((_event: any) => (
+            <TabsTrigger key={_event.id} value={_event.id}>
+              {_event.name}
             </TabsTrigger>
           ))}
         </TabsList>
-
-        {(competition?.events || []).map((event: any) => (
-          <TabsContent key={event.id} value={event.id} className="space-y-4">
+        {(competition?.events || []).map((_event: any) => (
+          <TabsContent key={_event.id} value={_event.id} className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  {event.name} ({event.code})
-                  <Badge variant={event.gender === 'male' ? 'default' : 'secondary'}>
-                    {event.gender === 'male' ? '남자' : event.gender === 'female' ? '여자' : '공통'}
+                  {_event.name} ({_event.code})
+                  <Badge variant={_event.gender === 'male' ? 'default' : 'secondary'}>
+                    {_event.gender === 'male' ? '남자' : _event.gender === 'female' ? '여자' : '공통'}
                   </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {registrations
-                  ?.filter(reg => reg.registeredEvents?.includes(event.id))
+                  ?.filter(reg => reg.registeredEvents?.includes(_event.id))
                   .map((registration) => {
                     const regScore = scores[registration.id] || {
                       dScore1: '',
@@ -197,7 +168,6 @@ export default function ScoringPage({ params }: PageProps) {
                       eScore4: '',
                       deductions: '',
                     };
-
                     return (
                       <Card key={registration.id} className="p-4">
                         <div className="space-y-4">
@@ -217,7 +187,6 @@ export default function ScoringPage({ params }: PageProps) {
                               </div>
                             )}
                           </div>
-
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* D점수 (난이도) */}
                             <div className="space-y-2">
@@ -255,7 +224,6 @@ export default function ScoringPage({ params }: PageProps) {
                                 </div>
                               </div>
                             </div>
-
                             {/* E점수 (실시) */}
                             <div className="space-y-2">
                               <Label className="text-green-600 font-semibold">E점수 (실시)</Label>
@@ -282,7 +250,6 @@ export default function ScoringPage({ params }: PageProps) {
                                 ))}
                               </div>
                             </div>
-
                             {/* 감점 */}
                             <div className="space-y-2">
                               <Label className="text-red-600 font-semibold">감점</Label>
@@ -303,7 +270,6 @@ export default function ScoringPage({ params }: PageProps) {
                               </p>
                             </div>
                           </div>
-
                           <div className="flex justify-end gap-2">
                             <Button
                               onClick={() => {
@@ -329,8 +295,7 @@ export default function ScoringPage({ params }: PageProps) {
                       </Card>
                     );
                   })}
-
-                {registrations?.filter(reg => reg.registeredEvents?.includes(event.id)).length === 0 && (
+                {registrations?.filter(reg => reg.registeredEvents?.includes(_event.id)).length === 0 && (
                   <p className="text-center text-muted-foreground py-8">
                     이 종목에 참가자가 없습니다
                   </p>

@@ -1,16 +1,13 @@
 'use client';
 import { getAuth } from 'firebase/auth';
 import { User } from 'firebase/auth';
-
 // ============================================
 // 🔥 Firebase 에러 처리 유틸리티
 // ============================================
-
 interface FirebaseError {
   code: string;
   message: string;
 }
-
 /**
  * Firebase 에러인지 확인
  */
@@ -23,7 +20,6 @@ export function isFirebaseError(error: unknown): error is FirebaseError {
     typeof (error as any).code === 'string'
   );
 }
-
 /**
  * Firebase 에러 메시지를 한국어로 변환
  */
@@ -50,37 +46,29 @@ export function getErrorMessage(error: unknown): string {
         return '알 수 없는 오류가 발생했습니다.';
     }
   }
-  
   if (error instanceof Error) {
-    return error.message;
+    return (error as any).message;
   }
-  
   if (typeof error === 'string') {
     return error;
   }
-  
   return '알 수 없는 오류가 발생했습니다.';
 }
-
 /**
  * Firebase 에러를 처리하고 로깅
  */
 export function handleFirebaseError(error: unknown): string {
   const message = getErrorMessage(error);
-  
   if (isFirebaseError(error)) {
   } else {
   }
-  
   return message;
 }
-
 type SecurityRuleContext = {
   path: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
   requestResourceData?: any;
 };
-
 interface FirebaseAuthToken {
   name: string | null;
   email: string | null;
@@ -93,12 +81,10 @@ interface FirebaseAuthToken {
     tenant: string | null;
   };
 }
-
 interface FirebaseAuthObject {
   uid: string;
   token: FirebaseAuthToken;
 }
-
 interface SecurityRuleRequest {
   auth: FirebaseAuthObject | null;
   method: string;
@@ -107,7 +93,6 @@ interface SecurityRuleRequest {
     data: unknown;
   };
 }
-
 /**
  * Builds a security-rule-compliant auth object from the Firebase User.
  * @param currentUser The currently authenticated Firebase user.
@@ -117,7 +102,6 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
   if (!currentUser) {
     return null;
   }
-
   const token: FirebaseAuthToken = {
     name: currentUser.displayName,
     email: currentUser.email,
@@ -125,9 +109,10 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
     phone_number: currentUser.phoneNumber,
     sub: currentUser.uid,
     firebase: {
-      identities: currentUser.providerData.reduce((acc: Record<string, string[]>, p: any) => {
-        if (p.providerId) {
-          acc[p.providerId] = [p.uid];
+      identities: currentUser.providerData.reduce((acc: Record<string, string[]>, p: unknown) => {
+        const provider = p as any;
+        if (provider.providerId) {
+          acc[provider.providerId] = [provider.uid];
         }
         return acc;
       }, {} as Record<string, string[]>),
@@ -135,13 +120,11 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
       tenant: currentUser.tenantId,
     },
   };
-
   return {
     uid: currentUser.uid,
     token: token,
   };
 }
-
 /**
  * Builds the complete, simulated request object for the error message.
  * It safely tries to get the current authenticated user.
@@ -161,7 +144,6 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
     // This will catch errors if the Firebase app is not yet initialized.
     // In this case, we'll proceed without auth information.
   }
-
   return {
     auth: authObject,
     method: context.operation,
@@ -169,7 +151,6 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
     resource: context.requestResourceData ? { data: context.requestResourceData } : undefined,
   };
 }
-
 /**
  * Builds the final, formatted error message for the LLM.
  * @param requestObject The simulated request object.
@@ -179,7 +160,6 @@ function buildErrorMessage(requestObject: SecurityRuleRequest): string {
   return `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:
 ${JSON.stringify(requestObject, null, 2)}`;
 }
-
 /**
  * A custom error class designed to be consumed by an LLM for debugging.
  * It structures the error information to mimic the request object
@@ -187,7 +167,6 @@ ${JSON.stringify(requestObject, null, 2)}`;
  */
 export class FirestorePermissionError extends Error {
   public readonly request: SecurityRuleRequest;
-
   constructor(context: SecurityRuleContext) {
     const requestObject = buildRequestObject(context);
     super(buildErrorMessage(requestObject));

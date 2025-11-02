@@ -95,6 +95,12 @@ npm run quality:gate
 - **[프로젝트 거버넌스](./docs/PROJECT_GOVERNANCE.md)** - 팀 협업 및 의사결정 프로세스
 - **[정리 완료 보고서](./docs/CLEANUP_REPORT.md)** - 코드 정리 결과
 
+### 테스트 및 품질 문서
+- **[🎯 테스팅 전략](./docs/TESTING_STRATEGY.md)** - 90% 커버리지 달성 종합 전략
+- **[📋 테스트 로드맵](./docs/TEST_COVERAGE_ROADMAP.md)** - 8주 상세 실행 계획
+- **[🔧 테스트 구현 가이드](./docs/TEST_IMPLEMENTATION_GUIDE.md)** - 실무 코드 예제 및 패턴
+- **[📊 프로젝트 트래커](./docs/TEST_PROJECT_TRACKER.md)** - 실시간 진행 상황 추적
+
 ### 배포 정보
 📖 **배포 가이드**: [docs/DEPLOYMENT_INFO.md](./docs/DEPLOYMENT_INFO.md)
 
@@ -105,7 +111,7 @@ npm run quality:gate
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Latest-orange)](https://firebase.google.com/)
-[![Test Coverage](https://img.shields.io/badge/Coverage-80%25+-green)](https://github.com)
+[![Test Coverage](https://img.shields.io/badge/Coverage-10%25-yellow)](https://github.com) [![Target Coverage](https://img.shields.io/badge/Target-90%25-blue)](./docs/TEST_COVERAGE_ROADMAP.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 
 ---

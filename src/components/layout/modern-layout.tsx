@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
@@ -10,41 +9,36 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { RoleBadge } from '@/components/role-badge';
-import { ModernNav } from '@/components/layout/modern-nav';
-import { GlobalSearch } from '@/components/layout/global-search';
+// import { ModernNav } from '@/components/layout/modern-nav';
+// import { GlobalSearch } from '@/components/layout/global-search';
 import { LogoutButton } from '@/components/logout-button';
-
 interface ModernLayoutProps {
   children: React.ReactNode;
 }
-
 export function ModernLayout({ children }: ModernLayoutProps) {
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const { userRole } = useRole();
-
   useEffect(() => {
     if (isUserLoading) return;
-
-    if (!user) {
+    if (!_user) {
       if (pathname !== '/login' && pathname !== '/setup/initial-admin') {
         router.push('/login');
       }
       return;
     }
-
     // Role-based page access control (not login redirect)
-    if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.status === 'pending') {
+    if ((_user.role === UserRole.CLUB_OWNER || _user.role === UserRole.CLUB_MANAGER) && _user.status === 'pending') {
       if (pathname !== '/login') {
         router.push('/login');
       }
-    } else if (user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) {
+    } else if (_user.role === UserRole.CLUB_OWNER || _user.role === UserRole.CLUB_MANAGER) {
       // Club owners should not access federation admin pages
       if (pathname === '/dashboard' || pathname.startsWith('/admin') || pathname.startsWith('/super-admin')) {
         router.push('/club-dashboard');
       }
-    } else if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.FEDERATION_ADMIN) {
+    } else if (_user.role === UserRole.SUPER_ADMIN || _user.role === UserRole.FEDERATION_ADMIN) {
       // Admins should not access club dashboard
       if (pathname.startsWith('/club-dashboard')) {
         router.push('/admin');
@@ -54,8 +48,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
         router.push('/admin');
       }
     }
-  }, [user, isUserLoading, pathname, router]);
-
+  }, [_user, isUserLoading, pathname, router]);
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -63,27 +56,23 @@ export function ModernLayout({ children }: ModernLayoutProps) {
       </div>
     );
   }
-
-  if (!user && (pathname === '/login' || pathname === '/setup/initial-admin')) {
+  if (!_user && (pathname === '/login' || pathname === '/setup/initial-admin')) {
     return <>{children}</>;
   }
-
-  if (!user) {
+  if (!_user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-
-  if ((user.role === UserRole.CLUB_OWNER || user.role === UserRole.CLUB_MANAGER) && user.status === 'pending') {
+  if ((_user.role === UserRole.CLUB_OWNER || _user.role === UserRole.CLUB_MANAGER) && _user.status === 'pending') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-white">
       {/* Windsurf 스타일 헤더 */}
@@ -98,20 +87,17 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               </div>
               <span className="text-sm font-semibold text-slate-900">KGF 넥서스</span>
             </div>
-
             {/* 네비게이션 */}
             <nav className="flex-1">
-              <ModernNav />
+              {/* <ModernNav /> */}
             </nav>
           </div>
-
           {/* 우측: 검색 + 사용자 */}
           <div className="flex items-center gap-3">
             {/* 검색 */}
             <div className="hidden md:block">
-              <GlobalSearch />
+              {/* <GlobalSearch /> */}
             </div>
-
             {/* 사용자 메뉴 */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -121,13 +107,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                   className="gap-2 px-2 h-8 hover:bg-slate-100"
                 >
                   <Avatar className="h-6 w-6">
-                    <AvatarImage src={user.photoURL} alt={user.displayName} />
+                    <AvatarImage src={_user.photoURL} alt={_user.displayName} />
                     <AvatarFallback className="text-xs bg-slate-200 text-slate-700">
-                      {user.displayName?.[0] || 'U'}
+                      {_user.displayName?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="hidden lg:inline text-sm text-slate-700">
-                    {user.displayName}
+                    {_user.displayName}
                   </span>
                   <ChevronDown className="h-3 w-3 text-slate-400" />
                 </Button>
@@ -135,8 +121,8 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium">{user.displayName}</p>
-                    <p className="text-xs text-slate-500">{user.email}</p>
+                    <p className="text-sm font-medium">{_user.displayName}</p>
+                    <p className="text-xs text-slate-500">{_user.email}</p>
                     {userRole && (
                       <div className="mt-1">
                         <RoleBadge role={userRole} />
@@ -161,7 +147,6 @@ export function ModernLayout({ children }: ModernLayoutProps) {
           </div>
         </div>
       </header>
-
       {/* 메인 콘텐츠 - Windsurf 스타일 */}
       <main className="mx-auto max-w-screen-2xl">
         {children}

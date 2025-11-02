@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import Image from 'next/image';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -18,31 +16,25 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ROUTES } from '@/constants/routes';
-
 const statusTranslations: Record<Member['status'], string> = {
   active: '활동중',
   inactive: '비활동',
   pending: '승인대기',
 };
-
 export default function MembersPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
-
   const membersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'members') : null), [firestore]);
   const { data: members, isLoading, error: membersError } = useCollection<Member>(membersCollection);
-
   // 에러 처리
   if (membersError) {
     return <ErrorFallback error={membersError} title="회원 데이터 조회 오류" />;
   }
-
   const handleDelete = async () => {
     if (!firestore || !memberToDelete) return;
-
     try {
       await deleteDoc(doc(firestore, 'members', memberToDelete.id));
       toast({
@@ -51,7 +43,7 @@ export default function MembersPage() {
       });
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -59,10 +51,8 @@ export default function MembersPage() {
       });
     }
   };
-
   const handleStatusChange = async (member: Member, newStatus: Member['status']) => {
     if (!firestore) return;
-
     try {
       await updateDoc(doc(firestore, 'members', member.id), {
         status: newStatus,
@@ -72,7 +62,7 @@ export default function MembersPage() {
         title: '상태 변경 완료',
         description: `${member.name}님의 상태가 ${statusTranslations[newStatus]}(으)로 변경되었습니다.`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -80,7 +70,6 @@ export default function MembersPage() {
       });
     }
   };
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -88,7 +77,6 @@ export default function MembersPage() {
       </div>
     );
   }
-  
   const getStatusVariant = (status: Member['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'active':
@@ -100,7 +88,6 @@ export default function MembersPage() {
         return 'secondary';
     }
   };
-
   return (
     <main className="flex-1 p-6">
       <Card>
@@ -194,7 +181,6 @@ export default function MembersPage() {
           </Table>
         </CardContent>
       </Card>
-
       {/* 삭제 확인 다이얼로그 */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

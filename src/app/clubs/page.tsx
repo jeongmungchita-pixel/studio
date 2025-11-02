@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
 import { useCollection, useFirestore } from '@/firebase';
@@ -12,10 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, MapPin, Loader2, Building2, Mail } from 'lucide-react';
 import { useMemo } from 'react';
-
 export default function ClubsPage() {
   const firestore = useFirestore();
-  
   // 승인된 클럽만 조회
   const clubsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -25,14 +21,12 @@ export default function ClubsPage() {
     );
   }, [firestore]);
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsQuery);
-
   // 전체 회원 조회 (클럽별 회원 수 계산용)
   const membersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'members') : null),
     [firestore]
   );
   const { data: allMembers, isLoading: isMembersLoading } = useCollection<Member>(membersCollection);
-
   // 클럽별 회원 수 계산
   const clubMemberCounts = useMemo(() => {
     if (!allMembers) return {};
@@ -44,7 +38,6 @@ export default function ClubsPage() {
     });
     return counts;
   }, [allMembers]);
-
   if (isClubsLoading || isMembersLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -52,7 +45,6 @@ export default function ClubsPage() {
       </div>
     );
   }
-
   return (
     <div className="p-8 space-y-6">
       {/* 헤더 */}
@@ -70,7 +62,6 @@ export default function ClubsPage() {
           </Badge>
         </div>
       </div>
-
       {/* 클럽 카드 그리드 */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {clubs?.map((club) => (
@@ -93,7 +84,6 @@ export default function ClubsPage() {
                 </div>
               </div>
             </CardHeader>
-            
             <CardContent className="flex-grow space-y-3 pt-0">
               {/* 담당자 정보 */}
               <div className="space-y-2 text-sm">
@@ -110,7 +100,6 @@ export default function ClubsPage() {
                   </div>
                 )}
               </div>
-
               {/* 회원 수 */}
               <div className="pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
@@ -121,7 +110,6 @@ export default function ClubsPage() {
                 </div>
               </div>
             </CardContent>
-            
             <CardFooter className="pt-3">
               <Link href={ROUTES.DYNAMIC.CLUB_DETAIL(club.id)} className="w-full">
                 <Button variant="outline" size="sm" className="w-full">
@@ -132,7 +120,6 @@ export default function ClubsPage() {
           </Card>
         ))}
       </div>
-
       {/* 클럽이 없을 때 */}
       {clubs && clubs.length === 0 && (
         <Card className="border-slate-200">

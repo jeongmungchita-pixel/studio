@@ -79,8 +79,8 @@ async function migrateMembers() {
     // memberCategory가 없는 경우 나이로 판단하여 추가
     if (!data.memberCategory && data.dateOfBirth) {
       const birthDate = new Date(data.dateOfBirth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
+      const _today = new Date();
+      const age = _today.getFullYear() - birthDate.getFullYear();
       
       const memberCategory = age >= 19 ? 'adult' : 'child';
       
@@ -114,7 +114,7 @@ async function main() {
     
     console.log('✅ 모든 마이그레이션 완료!');
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ 마이그레이션 실패:', error);
     process.exit(1);
   }

@@ -5,7 +5,6 @@ export {
   type RealtimeCollectionOptions,
   type RealtimeCollectionResult,
 } from './use-realtime-collection';
-
 export {
   useRealtimeDocument,
   useRealtimeUserProfile,
@@ -13,7 +12,6 @@ export {
   type RealtimeDocumentOptions,
   type RealtimeDocumentResult,
 } from './use-realtime-document';
-
 export {
   useConnectionStatus,
   useOnlineStatus,

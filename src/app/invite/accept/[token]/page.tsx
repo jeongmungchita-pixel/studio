@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth, useFirestore } from '@/firebase';
@@ -13,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, Mail } from 'lucide-react';
 import { Invitation, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-
 export default function FederationAdminSignupPage() {
   const params = useParams();
   const router = useRouter();
@@ -21,28 +18,23 @@ export default function FederationAdminSignupPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const token = params.token as string;
-
   const [invite, setInvite] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
-
   // 폼 상태
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-
   // 초대 정보 로드
   useEffect(() => {
     const loadInvite = async () => {
       if (!firestore || !token) return;
-
       try {
         const inviteDoc = await getDoc(doc(firestore, 'federationAdminInvites', token));
-        
-        if (!inviteDoc.exists()) {
+        if (!inviteDoc?.exists()) {
           toast({
             variant: 'destructive',
             title: '초대를 찾을 수 없습니다',
@@ -51,9 +43,7 @@ export default function FederationAdminSignupPage() {
           router.push('/login');
           return;
         }
-
-        const inviteData = { id: inviteDoc.id, ...inviteDoc.data() } as Invitation;
-
+        const inviteData = { id: inviteDoc.id, ...inviteDoc?.data() } as Invitation;
         // 상태 확인
         if (inviteData.status === 'accepted') {
           toast({
@@ -64,7 +54,6 @@ export default function FederationAdminSignupPage() {
           router.push('/login');
           return;
         }
-
         if (inviteData.status === 'expired') {
           toast({
             variant: 'destructive',
@@ -74,7 +63,6 @@ export default function FederationAdminSignupPage() {
           router.push('/login');
           return;
         }
-
         // 만료 시간 확인
         const expiresAt = new Date(inviteData.expiresAt);
         if (expiresAt < new Date()) {
@@ -89,12 +77,11 @@ export default function FederationAdminSignupPage() {
           router.push('/login');
           return;
         }
-
         setInvite(inviteData);
         setEmail(inviteData.email);
         setDisplayName(inviteData.email.split('@')[0]);
         setPhoneNumber('');
-      } catch (error) {
+      } catch (error: unknown) {
         toast({
           variant: 'destructive',
           title: '오류 발생',
@@ -105,15 +92,12 @@ export default function FederationAdminSignupPage() {
         setLoading(false);
       }
     };
-
     loadInvite();
   }, [firestore, token, toast, router]);
-
   // 회원가입
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !firestore || !invite) return;
-
     if (password !== confirmPassword) {
       toast({
         variant: 'destructive',
@@ -122,7 +106,6 @@ export default function FederationAdminSignupPage() {
       });
       return;
     }
-
     if (password.length < 6) {
       toast({
         variant: 'destructive',
@@ -131,39 +114,33 @@ export default function FederationAdminSignupPage() {
       });
       return;
     }
-
     setProcessing(true);
-
     try {
       // 1. Firebase Auth 계정 생성
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
+      const _user = userCredential.user;
       // 2. Firestore에 사용자 프로필 생성
-      await setDoc(doc(firestore, 'users', user.uid), {
-        id: user.uid,
-        uid: user.uid,
+      await setDoc(doc(firestore, 'users', _user.uid), {
+        id: _user.uid,
+        uid: _user.uid,
         email: email,
         displayName: displayName,
         phoneNumber: phoneNumber,
-        photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
+        photoURL: _user.photoURL || `https://picsum.photos/seed/${_user.uid}/40/40`,
         provider: 'email',
         role: UserRole.FEDERATION_ADMIN,
         status: 'active',
         createdAt: new Date().toISOString(),
       });
-
       // 3. 초대 상태 업데이트
       await updateDoc(doc(firestore, 'federationAdminInvites', token), {
         status: 'accepted',
         acceptedAt: new Date().toISOString(),
       });
-
       toast({
         title: '환영합니다!',
         description: '연맹 관리자 계정이 생성되었습니다.',
       });
-
       // 대시보드로 이동 (완전한 페이지 새로고침)
       setTimeout(() => {
         window.location.href = '/admin';
@@ -177,7 +154,6 @@ export default function FederationAdminSignupPage() {
       } else if (code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
-
       toast({
         variant: 'destructive',
         title: '회원가입 실패',
@@ -187,24 +163,19 @@ export default function FederationAdminSignupPage() {
       setProcessing(false);
     }
   };
-
   // 로그인 (기존 계정)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !firestore || !invite) return;
-
     setProcessing(true);
-
     try {
       // 1. 로그인
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
+      const _user = userCredential.user;
       // 2. 사용자 프로필 업데이트 (연맹 관리자 권한 부여)
-      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocRef = doc(firestore, 'users', _user.uid);
       const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists()) {
+      if (userDoc?.exists()) {
         // 기존 사용자 프로필 업데이트
         await updateDoc(userDocRef, {
           role: UserRole.FEDERATION_ADMIN,
@@ -213,29 +184,26 @@ export default function FederationAdminSignupPage() {
       } else {
         // 프로필이 없으면 생성
         await setDoc(userDocRef, {
-          id: user.uid,
-          uid: user.uid,
-          email: user.email!,
-          displayName: user.displayName || invite.email.split('@')[0],
+          id: _user.uid,
+          uid: _user.uid,
+          email: _user.email!,
+          displayName: _user.displayName || invite.email.split('@')[0],
           phoneNumber: '',
-          photoURL: user.photoURL || `https://picsum.photos/seed/${user.uid}/40/40`,
+          photoURL: _user.photoURL || `https://picsum.photos/seed/${_user.uid}/40/40`,
           provider: 'email',
           role: UserRole.FEDERATION_ADMIN,
           status: 'active',
         });
       }
-
       // 3. 초대 상태 업데이트
       await updateDoc(doc(firestore, 'federationAdminInvites', token), {
         status: 'accepted',
         acceptedAt: new Date().toISOString(),
       });
-
       toast({
         title: '환영합니다!',
         description: '연맹 관리자 권한이 부여되었습니다.',
       });
-
       setTimeout(() => {
         // 완전한 페이지 새로고침으로 리다이렉트
         window.location.href = '/admin';
@@ -246,7 +214,6 @@ export default function FederationAdminSignupPage() {
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
         errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
       }
-
       toast({
         variant: 'destructive',
         title: '로그인 실패',
@@ -256,7 +223,6 @@ export default function FederationAdminSignupPage() {
       setProcessing(false);
     }
   };
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
@@ -264,11 +230,9 @@ export default function FederationAdminSignupPage() {
       </div>
     );
   }
-
   if (!invite) {
     return null; // 이미 리다이렉트됨
   }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <Card className="w-full max-w-md">
@@ -289,7 +253,6 @@ export default function FederationAdminSignupPage() {
               <span className="text-slate-600">{invite.email}</span>
             </div>
           </div>
-
           {/* 탭 */}
           <div className="flex gap-2 border-b">
             <button
@@ -313,7 +276,6 @@ export default function FederationAdminSignupPage() {
               로그인
             </button>
           </div>
-
           {/* 회원가입 폼 */}
           {mode === 'signup' && (
             <form onSubmit={handleSignup} className="space-y-4">
@@ -327,7 +289,6 @@ export default function FederationAdminSignupPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">이메일 *</Label>
                 <Input
@@ -340,7 +301,6 @@ export default function FederationAdminSignupPage() {
                   disabled
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber">전화번호</Label>
                 <Input
@@ -351,7 +311,6 @@ export default function FederationAdminSignupPage() {
                   placeholder="010-1234-5678"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="password">비밀번호 *</Label>
                 <Input
@@ -363,7 +322,6 @@ export default function FederationAdminSignupPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">비밀번호 확인 *</Label>
                 <Input
@@ -375,7 +333,6 @@ export default function FederationAdminSignupPage() {
                   required
                 />
               </div>
-
               <Button type="submit" className="w-full" disabled={processing}>
                 {processing ? (
                   <>
@@ -391,7 +348,6 @@ export default function FederationAdminSignupPage() {
               </Button>
             </form>
           )}
-
           {/* 로그인 폼 */}
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
@@ -410,7 +366,6 @@ export default function FederationAdminSignupPage() {
                   초대된 이메일로만 로그인할 수 있습니다
                 </p>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="login-password">비밀번호 *</Label>
                 <Input
@@ -422,7 +377,6 @@ export default function FederationAdminSignupPage() {
                   required
                 />
               </div>
-
               <Button type="submit" className="w-full" disabled={processing}>
                 {processing ? (
                   <>

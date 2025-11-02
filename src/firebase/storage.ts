@@ -1,7 +1,5 @@
 'use client';
-
 import { FirebaseStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
 /**
  * Uploads a file to Firebase Storage and returns the download URL.
  * @param storage The Firebase Storage instance.
@@ -16,11 +14,9 @@ export async function uploadImage(storage: FirebaseStorage, path: string, file: 
   }
   const fullPath = `${path}.${fileExtension}`;
   const storageRef = ref(storage, fullPath);
-  
   const metadata = {
     contentType: file.type,
   };
-
   const snapshot = await uploadBytes(storageRef, file, metadata);
   const downloadURL = await getDownloadURL(snapshot.ref);
   return downloadURL;

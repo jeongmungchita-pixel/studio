@@ -63,7 +63,7 @@ const EXPECTED_SCHEMAS = {
 };
 
 interface ValidationIssue {
-  collection: string;
+  _collection: string;
   documentId: string;
   field: string;
   issue: string;
@@ -99,7 +99,7 @@ async function validateCollection(collectionName: string): Promise<ValidationIss
     for (const field of schema.required) {
       if (!(field in data) || data[field] === null || data[field] === undefined) {
         issues.push({
-          collection: collectionName,
+          _collection: collectionName,
           documentId: doc.id,
           field,
           issue: '필수 필드 누락',
@@ -113,7 +113,7 @@ async function validateCollection(collectionName: string): Promise<ValidationIss
     for (const field of Object.keys(data)) {
       if (!allExpectedFields.includes(field)) {
         issues.push({
-          collection: collectionName,
+          _collection: collectionName,
           documentId: doc.id,
           field,
           issue: '예상치 못한 필드',
@@ -130,7 +130,7 @@ async function validateCollection(collectionName: string): Promise<ValidationIss
           const allowedValuesArray = Array.isArray(allowedValues) ? allowedValues : [];
           if (!allowedValuesArray.includes(data[field])) {
             issues.push({
-              collection: collectionName,
+              _collection: collectionName,
               documentId: doc.id,
               field,
               issue: '잘못된 enum 값',
@@ -145,7 +145,7 @@ async function validateCollection(collectionName: string): Promise<ValidationIss
     // 4. 타입 체크
     if ('id' in data && data.id !== doc.id) {
       issues.push({
-        collection: collectionName,
+        _collection: collectionName,
         documentId: doc.id,
         field: 'id',
         issue: 'id 필드가 문서 ID와 불일치',
@@ -174,15 +174,15 @@ function generateFixSuggestions(issues: ValidationIssue[]): string {
 
   // 컬렉션별로 그룹화
   const issuesByCollection = issues.reduce((acc, issue) => {
-    if (!acc[issue.collection]) {
-      acc[issue.collection] = [];
+    if (!acc[issue._collection]) {
+      acc[issue._collection] = [];
     }
-    acc[issue.collection].push(issue);
+    acc[issue._collection].push(issue);
     return acc;
   }, {} as Record<string, ValidationIssue[]>);
 
-  for (const [collection, collectionIssues] of Object.entries(issuesByCollection)) {
-    suggestions += `\n📦 ${collection} (${collectionIssues.length}개 이슈)\n`;
+  for (const [_collection, collectionIssues] of Object.entries(issuesByCollection)) {
+    suggestions += `\n📦 ${_collection} (${collectionIssues.length}개 이슈)\n`;
     suggestions += '-'.repeat(80) + '\n';
 
     // 이슈 타입별로 그룹화
@@ -230,10 +230,10 @@ async function autoFixIssues(issues: ValidationIssue[], dryRun: boolean = true):
   for (const issue of issues) {
     // id 필드 불일치 수정
     if (issue.field === 'id' && issue.issue === 'id 필드가 문서 ID와 불일치') {
-      console.log(`${dryRun ? '[시뮬레이션]' : '[수정]'} ${issue.collection}/${issue.documentId}: id 필드 수정`);
+      console.log(`${dryRun ? '[시뮬레이션]' : '[수정]'} ${issue._collection}/${issue.documentId}: id 필드 수정`);
       
       if (!dryRun) {
-        await db.collection(issue.collection).doc(issue.documentId).update({
+        await db.collection(issue._collection).doc(issue.documentId).update({
           id: issue.documentId
         });
       }
@@ -242,17 +242,17 @@ async function autoFixIssues(issues: ValidationIssue[], dryRun: boolean = true):
 
     // 필수 필드 누락 - 기본값 추가
     if (issue.issue === '필수 필드 누락') {
-      const defaultValues: Record<string, any> = {
+      const defaultValues: Record<string, unknown> = {
         id: issue.documentId,
         status: 'pending',
         createdAt: new Date().toISOString(),
       };
 
       if (issue.field in defaultValues) {
-        console.log(`${dryRun ? '[시뮬레이션]' : '[수정]'} ${issue.collection}/${issue.documentId}: ${issue.field} 기본값 추가`);
+        console.log(`${dryRun ? '[시뮬레이션]' : '[수정]'} ${issue._collection}/${issue.documentId}: ${issue.field} 기본값 추가`);
         
         if (!dryRun) {
-          await db.collection(issue.collection).doc(issue.documentId).update({
+          await db.collection(issue._collection).doc(issue.documentId).update({
             [issue.field]: defaultValues[issue.field]
           });
         }
@@ -303,7 +303,7 @@ async function main() {
     }
 
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ 오류 발생:', error);
     process.exit(1);
   }

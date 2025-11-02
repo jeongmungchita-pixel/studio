@@ -1,0 +1,45 @@
+
+> nextn@0.1.0 dev
+> next dev --turbopack -p 9002 --port 3000
+
+ ⚠ The config property `experimental.turbo` is deprecated. Move this setting to `config.turbopack` or run `npx @next/codemod@latest next-experimental-turbo-to-turbopack .`
+   ▲ Next.js 15.5.6 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://172.30.1.51:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · turbo
+
+ ✓ Starting...
+ ✓ Compiled middleware in 59ms
+ ✓ Ready in 627ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1646ms
+ GET / 200 in 266ms
+ GET / 200 in 1915ms
+ ✓ Compiled /login in 345ms
+ GET /login 200 in 418ms
+ GET /login 200 in 313ms
+ GET /favicon.ico?favicon.7ed73651.ico 200 in 439ms
+ GET /favicon.ico?favicon.7ed73651.ico 200 in 223ms
+ ✓ Compiled /super-admin in 212ms
+ GET /super-admin 200 in 283ms
+ GET /super-admin 200 in 42ms
+ ✓ Compiled /club-dashboard in 202ms
+ GET /club-dashboard 200 in 243ms
+ ✓ Compiled /admin in 168ms
+ GET /admin 200 in 205ms
+ ✓ Compiled /dashboard in 159ms
+ GET /dashboard 200 in 193ms
+ ✓ Compiled /my-profile in 183ms
+ GET /my-profile 200 in 221ms
+ ✓ Compiled /events in 155ms
+ GET /events 200 in 188ms
+ ✓ Compiled /competitions in 205ms
+ GET /competitions 200 in 243ms
+ GET /super-admin 200 in 49ms
+ GET /club-dashboard 200 in 33ms
+ GET /admin 200 in 36ms
+ GET /my-profile 200 in 35ms
+ ✓ Compiled /super-admin/invites in 160ms
+ GET /super-admin/invites 200 in 194ms

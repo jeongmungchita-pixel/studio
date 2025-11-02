@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +11,9 @@ import { Users, UserPlus } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-
 export default function AddFamilyMemberPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,12 +24,10 @@ export default function AddFamilyMemberPage() {
     birthDate: '',
     relationship: 'child' as 'parent' | 'child',
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user) return;
+    if (!firestore || !_user) return;
     setIsSubmitting(true);
-
     try {
       // Firestore에 가족 회원 추가 (승인 대기 상태)
       await addDoc(collection(firestore, 'members'), {
@@ -40,21 +35,20 @@ export default function AddFamilyMemberPage() {
         email: formData.email,
         phoneNumber: formData.phoneNumber,
         birthDate: formData.birthDate,
-        guardianIds: [user.uid], // 부모 UID
-        clubId: user.clubId,
+        guardianIds: [_user.uid], // 부모 UID
+        clubId: _user.clubId,
         memberType: 'family',
         familyRole: formData.relationship, // 'parent' or 'child'
         status: 'pending', // 클럽 오너 승인 필요
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      
       toast({
         title: '신청 완료',
         description: '가족 회원 추가 신청이 완료되었습니다! 클럽 오너의 승인을 기다려주세요.',
       });
       router.push('/my-profile/family');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -64,8 +58,7 @@ export default function AddFamilyMemberPage() {
       setIsSubmitting(false);
     }
   };
-
-  if (!user) {
+  if (!_user) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card>
@@ -78,7 +71,6 @@ export default function AddFamilyMemberPage() {
       </main>
     );
   }
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -118,7 +110,6 @@ export default function AddFamilyMemberPage() {
                 </div>
               </RadioGroup>
             </div>
-
             {/* 이름 */}
             <div className="space-y-2">
               <Label htmlFor="name">이름 *</Label>
@@ -130,7 +121,6 @@ export default function AddFamilyMemberPage() {
                 required
               />
             </div>
-
             {/* 이메일 */}
             <div className="space-y-2">
               <Label htmlFor="email">이메일 *</Label>
@@ -146,7 +136,6 @@ export default function AddFamilyMemberPage() {
                 가족 구성원이 로그인할 때 사용할 이메일입니다
               </p>
             </div>
-
             {/* 전화번호 */}
             <div className="space-y-2">
               <Label htmlFor="phone">전화번호</Label>
@@ -158,7 +147,6 @@ export default function AddFamilyMemberPage() {
                 placeholder="010-1234-5678"
               />
             </div>
-
             {/* 생년월일 */}
             <div className="space-y-2">
               <Label htmlFor="birthDate">생년월일 *</Label>
@@ -170,7 +158,6 @@ export default function AddFamilyMemberPage() {
                 required
               />
             </div>
-
             {/* 현재 클럽 정보 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -180,11 +167,10 @@ export default function AddFamilyMemberPage() {
                 </p>
               </div>
               <p className="text-sm text-blue-800">
-                가족 구성원은 자동으로 <strong>{user.clubName || '현재 클럽'}</strong>에 
+                가족 구성원은 자동으로 <strong>{_user.clubName || '현재 클럽'}</strong>에 
                 가입 신청됩니다.
               </p>
             </div>
-
             {/* 안내 메시지 */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800">
@@ -192,7 +178,6 @@ export default function AddFamilyMemberPage() {
                 승인이 완료되면 이메일로 초대 링크가 전송됩니다.
               </p>
             </div>
-
             {/* 제출 버튼 */}
             <div className="flex gap-3">
               <Button

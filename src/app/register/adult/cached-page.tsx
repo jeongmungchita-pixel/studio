@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore } from '@/firebase';
@@ -15,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw, Clock, CheckCircle } from 'lucide-react';
 import { MemberRegistrationRequest } from '@/types';
-
 interface FormData {
   name: string;
   email: string;
@@ -29,12 +27,10 @@ interface FormData {
   experience: string;
   goals: string;
 }
-
 export default function CachedAdultRegistrationPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   // 캐싱된 클럽 데이터 사용
   const { 
     data: clubs, 
@@ -46,7 +42,6 @@ export default function CachedAdultRegistrationPage() {
     status: 'active', // 활성 클럽만 조회
     cacheDuration: 10 * 60 * 1000 // 10분 캐시
   });
-
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -60,16 +55,12 @@ export default function CachedAdultRegistrationPage() {
     experience: '',
     goals: '',
   });
-
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const updateFormData = (field: keyof FormData, value: string | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!firestore) {
       toast({
         variant: 'destructive',
@@ -78,7 +69,6 @@ export default function CachedAdultRegistrationPage() {
       });
       return;
     }
-
     // 필수 필드 검증
     if (!formData.name || !formData.email || !formData.phoneNumber || !formData.clubId) {
       toast({
@@ -88,15 +78,12 @@ export default function CachedAdultRegistrationPage() {
       });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       const selectedClub = clubs?.find(c => c.id === formData.clubId);
       if (!selectedClub) {
         throw new Error('클럽을 찾을 수 없습니다.');
       }
-
       const requestData: Omit<MemberRegistrationRequest, 'id'> = {
         type: 'adult',
         name: formData.name,
@@ -114,26 +101,22 @@ export default function CachedAdultRegistrationPage() {
         status: 'pending',
         requestedAt: new Date().toISOString(),
       };
-
       await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
-
       toast({
         title: '가입 신청 완료',
         description: '가입 신청이 성공적으로 제출되었습니다. 승인을 기다려주세요.',
       });
-
       router.push('/pending-approval');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '가입 신청 실패',
-        description: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        description: error instanceof Error ? error instanceof Error ? error.message : String(error) : '알 수 없는 오류가 발생했습니다.',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   if (clubsError) {
     return (
       <div className="container mx-auto max-w-2xl py-8">
@@ -151,7 +134,6 @@ export default function CachedAdultRegistrationPage() {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto max-w-2xl py-8">
       <Card>
@@ -160,7 +142,6 @@ export default function CachedAdultRegistrationPage() {
           <CardDescription>
             체조 클럽 회원으로 가입하기 위한 정보를 입력해주세요.
           </CardDescription>
-          
           {/* 캐시 상태 표시 (개발 모드) */}
           {process.env.NODE_ENV === 'development' && (
             <div className="flex items-center gap-2 mt-2">
@@ -186,13 +167,11 @@ export default function CachedAdultRegistrationPage() {
             </div>
           )}
         </CardHeader>
-        
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 기본 정보 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">기본 정보</h3>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="name">이름 *</Label>
@@ -204,7 +183,6 @@ export default function CachedAdultRegistrationPage() {
                     required
                   />
                 </div>
-                
                 <div>
                   <Label htmlFor="email">이메일 *</Label>
                   <Input
@@ -216,7 +194,6 @@ export default function CachedAdultRegistrationPage() {
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phoneNumber">전화번호 *</Label>
@@ -228,7 +205,6 @@ export default function CachedAdultRegistrationPage() {
                     required
                   />
                 </div>
-                
                 <div>
                   <Label htmlFor="dateOfBirth">생년월일</Label>
                   <Input
@@ -239,7 +215,6 @@ export default function CachedAdultRegistrationPage() {
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="gender">성별</Label>
@@ -253,7 +228,6 @@ export default function CachedAdultRegistrationPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label htmlFor="clubId">가입할 체육관 *</Label>
                   <Select onValueChange={(value) => updateFormData('clubId', value)}>
@@ -286,11 +260,9 @@ export default function CachedAdultRegistrationPage() {
                 </div>
               </div>
             </div>
-
             {/* 비상 연락처 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">비상 연락처</h3>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="emergencyContact">비상 연락처 이름</Label>
@@ -301,7 +273,6 @@ export default function CachedAdultRegistrationPage() {
                     onChange={(e) => updateFormData('emergencyContact', e.target.value)}
                   />
                 </div>
-                
                 <div>
                   <Label htmlFor="emergencyPhone">비상 연락처 전화번호</Label>
                   <Input
@@ -313,11 +284,9 @@ export default function CachedAdultRegistrationPage() {
                 </div>
               </div>
             </div>
-
             {/* 추가 정보 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">추가 정보</h3>
-              
               <div>
                 <Label htmlFor="medicalConditions">건강상 주의사항</Label>
                 <Textarea
@@ -327,7 +296,6 @@ export default function CachedAdultRegistrationPage() {
                   placeholder="알레르기, 지병, 복용 중인 약물 등"
                 />
               </div>
-
               <div>
                 <Label htmlFor="experience">체조 경험</Label>
                 <Textarea
@@ -337,7 +305,6 @@ export default function CachedAdultRegistrationPage() {
                   placeholder="이전 체조 경험이나 운동 경력을 알려주세요"
                 />
               </div>
-
               <div>
                 <Label htmlFor="goals">운동 목표</Label>
                 <Textarea
@@ -348,7 +315,6 @@ export default function CachedAdultRegistrationPage() {
                 />
               </div>
             </div>
-
             <Button 
               type="submit" 
               className="w-full" 
@@ -366,7 +332,6 @@ export default function CachedAdultRegistrationPage() {
           </form>
         </CardContent>
       </Card>
-
       {/* 캐시 성능 정보 (개발 모드) */}
       {process.env.NODE_ENV === 'development' && (
         <Card className="mt-6 border-dashed">

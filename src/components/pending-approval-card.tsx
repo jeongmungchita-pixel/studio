@@ -1,12 +1,10 @@
 'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RoleBadge } from '@/components/role-badge';
 import { ApprovalStatusBadge } from '@/components/approval-status-badge';
 import { ApprovalActions } from '@/components/approval-actions';
 import { UserRole } from '@/types';
 import { User, Mail, Calendar, Building2, Phone, MapPin } from 'lucide-react';
-
 interface PendingApprovalCardProps {
   userId: string;
   userName: string;
@@ -21,13 +19,11 @@ interface PendingApprovalCardProps {
   onApprove: () => Promise<void>;
   onReject: (reason: string) => Promise<void>;
 }
-
 const familyTypeNames = {
   individual: '개인 회원',
   parent: '부모 회원',
   child: '자녀 회원',
 };
-
 export function PendingApprovalCard({
   userName,
   userEmail,
@@ -70,21 +66,18 @@ export function PendingApprovalCard({
             <Mail className="h-4 w-4" />
             <span>{userEmail}</span>
           </div>
-          
           {clubName && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Building2 className="h-4 w-4" />
               <span>{clubName}</span>
             </div>
           )}
-          
           {phoneNumber && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4" />
               <span>{phoneNumber}</span>
             </div>
           )}
-          
           {clubAddress && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" />
@@ -96,18 +89,15 @@ export function PendingApprovalCard({
               </span>
             </div>
           )}
-          
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
             <span>신청일: {new Date(requestedAt).toLocaleDateString()}</span>
           </div>
-
           {status === 'pending' && (
             <div className="pt-3 border-t">
               <ApprovalActions onApprove={onApprove} onReject={onReject} />
             </div>
           )}
-
           {status === 'approved' && (
             <div className="pt-3 border-t">
               <p className="text-sm text-green-600">
@@ -115,7 +105,6 @@ export function PendingApprovalCard({
               </p>
             </div>
           )}
-
           {status === 'rejected' && (
             <div className="pt-3 border-t">
               <p className="text-sm text-red-600">

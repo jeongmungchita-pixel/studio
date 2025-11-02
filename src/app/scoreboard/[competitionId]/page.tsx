@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { use, useEffect, useState } from 'react';
 import { useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
@@ -9,7 +7,6 @@ import { GymnasticsCompetition, GymnasticsScore } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Trophy } from 'lucide-react';
-
 const EVENT_NAMES: Record<string, string> = {
   FX: '마루운동',
   PH: '안마',
@@ -20,7 +17,6 @@ const EVENT_NAMES: Record<string, string> = {
   UB: '이단평행봉',
   BB: '평균대',
 };
-
 export default function ScoreboardPage({ params }: { params: Promise<{ competitionId: string }> }) {
   // 로컬 타입: 현재 스케줄 (이 파일에서 사용하는 필드만 선언)
   interface CompetitionSchedule {
@@ -34,20 +30,17 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
   const { competitionId } = use(params);
   const firestore = useFirestore();
   const [currentTime, setCurrentTime] = useState(new Date());
-
   // Update time every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
   // Fetch competition
   const competitionRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'competitions', competitionId) : null),
     [firestore, competitionId]
   );
   const { data: competition } = useDoc<GymnasticsCompetition>(competitionRef);
-
   // Fetch current schedule (in_progress)
   const currentScheduleQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -58,7 +51,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
     );
   }, [firestore, competitionId]);
   const { data: currentSchedules } = useCollection<CompetitionSchedule>(currentScheduleQuery);
-
   // Fetch recent scores
   const scoresQuery = useMemoFirebase(() => {
     if (!firestore || !currentSchedules || currentSchedules.length === 0) return null;
@@ -70,7 +62,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
     );
   }, [firestore, currentSchedules]);
   const { data: scores } = useCollection<GymnasticsScore>(scoresQuery);
-
   if (!competition) {
     return (
       <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-900 to-purple-900">
@@ -78,10 +69,8 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
       </div>
     );
   }
-
   const currentSchedule = currentSchedules?.[0];
   const latestScores = scores?.slice(0, 5) || [];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 text-white p-8">
       {/* Header */}
@@ -90,7 +79,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
         <p className="text-3xl font-semibold">{competition.venue}</p>
         <p className="text-2xl mt-2">{currentTime.toLocaleTimeString('ko-KR')}</p>
       </div>
-
       {/* Current Event */}
       {currentSchedule && (
         <Card className="bg-white/10 backdrop-blur-lg border-white/20 p-8 mb-8">
@@ -105,7 +93,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
           </div>
         </Card>
       )}
-
       {/* Latest Scores */}
       {latestScores.length > 0 && (
         <div className="space-y-4">
@@ -128,13 +115,11 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
                     <div className="text-5xl font-bold">{index + 1}</div>
                   )}
                 </div>
-
                 {/* Athlete Info */}
                 <div className="col-span-2">
                   <p className="text-3xl font-bold">{score.memberName}</p>
                   <p className="text-xl text-white/70">{score.clubName}</p>
                 </div>
-
                 {/* Scores */}
                 <div className="text-center">
                   <p className="text-sm text-white/70">D점 / E점</p>
@@ -142,7 +127,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
                     {score.difficulty.toFixed(2)} / {score.execution.toFixed(2)}
                   </p>
                 </div>
-
                 {/* Final Score */}
                 <div className="text-center">
                   <p className="text-sm text-white/70">최종 점수</p>
@@ -153,7 +137,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
           ))}
         </div>
       )}
-
       {/* No Activity */}
       {!currentSchedule && latestScores.length === 0 && (
         <Card className="bg-white/10 backdrop-blur-lg border-white/20 p-12">
@@ -164,7 +147,6 @@ export default function ScoreboardPage({ params }: { params: Promise<{ competiti
           </div>
         </Card>
       )}
-
       {/* Auto Refresh Indicator */}
       <div className="fixed bottom-4 right-4 bg-green-500/20 backdrop-blur-lg border border-green-400/50 rounded-full px-6 py-3">
         <div className="flex items-center gap-2">

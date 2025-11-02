@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PendingApprovalCard } from '@/components/pending-approval-card';
@@ -11,12 +9,10 @@ import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, where, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
-
 export default function AdminApprovalsPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { _user } = useUser();
   const { toast } = useToast();
-
   // 클럽 오너 가입 신청 조회
   const clubOwnerRequestsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -25,17 +21,12 @@ export default function AdminApprovalsPage() {
       where('status', '==', 'pending')
     );
   }, [firestore]);
-
   const { data: clubOwnerRequests, isLoading } = useCollection<ClubOwnerRequest>(clubOwnerRequestsQuery);
-
-
   // 클럽 오너 신청만 있음
   const clubOwnerApprovals = clubOwnerRequests || [];
   const federationAdminApprovals: unknown[] = []; // 추후 구현
-
   const handleApprove = async (requestId: string) => {
-    if (!firestore || !user) return;
-    
+    if (!firestore || !_user) return;
     try {
       const request = clubOwnerRequests?.find(r => r.id === requestId);
       if (!request) {
@@ -46,18 +37,14 @@ export default function AdminApprovalsPage() {
         });
         return;
       }
-
-
       const batch = writeBatch(firestore);
-
       // 1. clubOwnerRequest 상태 업데이트
       const requestRef = doc(firestore, 'clubOwnerRequests', requestId);
       batch.update(requestRef, {
         status: 'approved',
-        approvedBy: user.uid,
+        approvedBy: _user.uid,
         approvedAt: new Date().toISOString(),
       });
-
       // 2. 클럽 생성
       const clubRef = doc(collection(firestore, 'clubs'));
       const newClub: Club = {
@@ -80,28 +67,23 @@ export default function AdminApprovalsPage() {
         createdAt: new Date().toISOString(),
       };
       batch.set(clubRef, newClub);
-
-
       // 3. 사용자 프로필 승인 (status: approved + clubId 추가)
       if (request.userId && request.userId.trim() !== '') {
         const userRef = doc(firestore, 'users', request.userId);
         batch.update(userRef, {
           status: 'approved',
           clubId: clubRef.id,
-          approvedBy: user.uid,
+          approvedBy: _user.uid,
           approvedAt: new Date().toISOString(),
         });
       } else {
       }
-
       await batch.commit();
-
-
       toast({
         title: '승인 완료',
         description: `${request.name}님의 클럽 오너 신청이 승인되었습니다.`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -109,28 +91,23 @@ export default function AdminApprovalsPage() {
       });
     }
   };
-
   const handleReject = async (requestId: string, reason: string) => {
-    if (!firestore || !user) return;
-
+    if (!firestore || !_user) return;
     try {
       const request = clubOwnerRequests?.find(r => r.id === requestId);
       if (!request) return;
-
       const requestRef = doc(firestore, 'clubOwnerRequests', requestId);
       await updateDoc(requestRef, {
         status: 'rejected',
-        rejectedBy: user.uid,
+        rejectedBy: _user.uid,
         rejectedAt: new Date().toISOString(),
         rejectionReason: reason,
       });
-
-
       toast({
         title: '거부 완료',
         description: `${request.name}님의 요청이 거부되었습니다.`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -138,9 +115,7 @@ export default function AdminApprovalsPage() {
       });
     }
   };
-
   const totalPending = clubOwnerApprovals.length;
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -148,7 +123,6 @@ export default function AdminApprovalsPage() {
       </div>
     );
   }
-
   return (
     <RequireRole role={UserRole.SUPER_ADMIN}>
       <main className="flex-1 p-6 space-y-6">
@@ -168,7 +142,6 @@ export default function AdminApprovalsPage() {
             </div>
           )}
         </div>
-
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -182,7 +155,6 @@ export default function AdminApprovalsPage() {
               <p className="text-xs text-muted-foreground">승인 대기</p>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">클럽 오너</CardTitle>
@@ -196,7 +168,6 @@ export default function AdminApprovalsPage() {
             </CardContent>
           </Card>
         </div>
-
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList>
             <TabsTrigger value="all">
@@ -209,7 +180,6 @@ export default function AdminApprovalsPage() {
               클럽 오너 ({clubOwnerApprovals.length})
             </TabsTrigger>
           </TabsList>
-
           <TabsContent value="all" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               {clubOwnerApprovals.map((request) => (
@@ -238,7 +208,6 @@ export default function AdminApprovalsPage() {
               </Card>
             )}
           </TabsContent>
-
           <TabsContent value="federation" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               {federationAdminApprovals.map((approval) => (
@@ -251,7 +220,6 @@ export default function AdminApprovalsPage() {
               ))}
             </div>
           </TabsContent>
-
           <TabsContent value="club" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               {clubOwnerApprovals.map((request) => (

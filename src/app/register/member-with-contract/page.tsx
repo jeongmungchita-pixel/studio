@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,49 +13,40 @@ import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { PenTool, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
-
 type GuardianRelation = 'parent' | 'grandparent' | 'legal_guardian' | 'other';
-
 const relationLabels: Record<GuardianRelation, string> = {
   parent: '부모',
   grandparent: '조부모',
   legal_guardian: '법정대리인',
   other: '기타',
 };
-
 interface MemberFormData {
   // 회원 정보
   name: string;
   birthDate: string;
   gender: 'male' | 'female';
   phoneNumber: string;
-  
   // 보호자 정보 (미성년자)
   isMinor: boolean;
   guardianName: string;
   guardianPhone: string;
   guardianRelation: GuardianRelation;
-  
   // 동의 항목
   agreePersonalInfo: boolean;
   agreeTerms: boolean;
   agreeSafety: boolean;
   agreePortrait: boolean;
-  
   // 서명
   signature: string | null;
 }
-
 export default function MemberWithContractPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clubId = searchParams.get('clubId');
   const clubName = searchParams.get('clubName');
-  
   const firestore = useFirestore();
   const { toast } = useToast();
   const signatureRef = useRef<SignatureCanvas>(null);
-  
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<MemberFormData>({
@@ -75,34 +64,28 @@ export default function MemberWithContractPage() {
     agreePortrait: false,
     signature: null,
   });
-
   // 생년월일로 미성년자 자동 판단
   const checkIfMinor = (birthDate: string) => {
     if (!birthDate) return false;
-    const today = new Date();
+    const _today = new Date();
     const birth = new Date(birthDate);
-    const age = today.getFullYear() - birth.getFullYear();
+    const age = _today.getFullYear() - birth.getFullYear();
     return age < 19;
   };
-
   const updateFormData = (field: keyof MemberFormData, value: string | boolean | null) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value } as MemberFormData;
-      
       // 생년월일 변경 시 미성년자 자동 판단
       if (field === 'birthDate') {
         updated.isMinor = typeof value === 'string' ? checkIfMinor(value) : false;
       }
-      
       return updated;
     });
   };
-
   const clearSignature = () => {
     signatureRef.current?.clear();
     updateFormData('signature', null);
   };
-
   const saveSignature = () => {
     if (signatureRef.current?.isEmpty()) {
       toast({
@@ -112,12 +95,10 @@ export default function MemberWithContractPage() {
       });
       return false;
     }
-    
     const signatureData = signatureRef.current?.toDataURL();
     updateFormData('signature', signatureData || '');
     return true;
   };
-
   const validateStep = (currentStep: number): boolean => {
     switch (currentStep) {
       case 1: // 회원 기본 정보
@@ -130,7 +111,6 @@ export default function MemberWithContractPage() {
           return false;
         }
         return true;
-        
       case 2: // 보호자 정보
         if (formData.isMinor) {
           if (!formData.guardianName || !formData.guardianPhone) {
@@ -143,7 +123,6 @@ export default function MemberWithContractPage() {
           }
         }
         return true;
-        
       case 3: // 계약서 동의
         if (!formData.agreePersonalInfo || !formData.agreeTerms || 
             !formData.agreeSafety || !formData.agreePortrait) {
@@ -155,25 +134,20 @@ export default function MemberWithContractPage() {
           return false;
         }
         return true;
-        
       case 4: // 서명
         return saveSignature();
-        
       default:
         return true;
     }
   };
-
   const nextStep = () => {
     if (validateStep(step)) {
       setStep(step + 1);
     }
   };
-
   const prevStep = () => {
     setStep(step - 1);
   };
-
   const handleSubmit = async () => {
     if (!firestore || !clubId) {
       toast({
@@ -183,11 +157,8 @@ export default function MemberWithContractPage() {
       });
       return;
     }
-
     if (!validateStep(4)) return;
-
     setIsSubmitting(true);
-
     try {
       // 회원 가입 신청 데이터 생성
       await addDoc(collection(firestore, 'memberRegistrationRequests'), {
@@ -196,17 +167,14 @@ export default function MemberWithContractPage() {
         birthDate: formData.birthDate,
         gender: formData.gender,
         phoneNumber: formData.phoneNumber,
-        
         // 클럽 정보
         clubId,
         clubName,
-        
         // 보호자 정보
         isMinor: formData.isMinor,
         guardianName: formData.isMinor ? formData.guardianName : null,
         guardianPhone: formData.isMinor ? formData.guardianPhone : null,
         guardianRelation: formData.isMinor ? formData.guardianRelation : null,
-        
         // 동의 정보
         agreements: {
           personalInfo: formData.agreePersonalInfo,
@@ -215,24 +183,20 @@ export default function MemberWithContractPage() {
           portrait: formData.agreePortrait,
           agreedAt: new Date().toISOString(),
         },
-        
         // 서명
         signature: formData.signature,
         signedAt: new Date().toISOString(),
-        
         // 상태
         status: 'pending',
         requestedAt: new Date().toISOString(),
       });
-
       toast({
         title: '가입 신청 완료!',
         description: '클럽 관리자의 승인을 기다려주세요.',
       });
-
       // 완료 페이지로 이동
       router.push('/register/success');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -242,7 +206,6 @@ export default function MemberWithContractPage() {
       setIsSubmitting(false);
     }
   };
-
   if (!clubId || !clubName) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
@@ -257,7 +220,6 @@ export default function MemberWithContractPage() {
       </main>
     );
   }
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -287,7 +249,6 @@ export default function MemberWithContractPage() {
             {clubName} 회원 가입 신청
           </CardDescription>
         </CardHeader>
-
         <CardContent className="space-y-6">
           {/* Step 1: 회원 기본 정보 */}
           {step === 1 && (
@@ -300,7 +261,6 @@ export default function MemberWithContractPage() {
                   placeholder="홍길동"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label>생년월일 *</Label>
                 <Input
@@ -315,7 +275,6 @@ export default function MemberWithContractPage() {
                   </p>
                 )}
               </div>
-
               <div className="space-y-2">
                 <Label>성별 *</Label>
                 <RadioGroup
@@ -334,7 +293,6 @@ export default function MemberWithContractPage() {
                   </div>
                 </RadioGroup>
               </div>
-
               <div className="space-y-2">
                 <Label>전화번호 *</Label>
                 <Input
@@ -346,7 +304,6 @@ export default function MemberWithContractPage() {
               </div>
             </div>
           )}
-
           {/* Step 2: 보호자 정보 */}
           {step === 2 && (
             <div className="space-y-4">
@@ -361,7 +318,6 @@ export default function MemberWithContractPage() {
                       </div>
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label>보호자 관계 *</Label>
                     <RadioGroup
@@ -378,7 +334,6 @@ export default function MemberWithContractPage() {
                       </div>
                     </RadioGroup>
                   </div>
-
                   <div className="space-y-2">
                     <Label>보호자 이름 *</Label>
                     <Input
@@ -387,7 +342,6 @@ export default function MemberWithContractPage() {
                       placeholder="홍길동"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <Label>보호자 전화번호 *</Label>
                     <Input
@@ -408,7 +362,6 @@ export default function MemberWithContractPage() {
               )}
             </div>
           )}
-
           {/* Step 3: 계약서 동의 */}
           {step === 3 && (
             <div className="space-y-6">
@@ -419,31 +372,24 @@ export default function MemberWithContractPage() {
                   <p>2. 수집 및 이용 목적: 회원 관리, 출석 관리, 수업 운영</p>
                   <p>3. 보유 및 이용 기간: 회원 탈퇴 시까지</p>
                 </div>
-                
                 <Separator className="my-4" />
-                
                 <h3 className="font-semibold mb-4">체육시설 이용 약관</h3>
                 <div className="text-sm space-y-2 text-muted-foreground">
                   <p>1. 시설 이용 시 안전 수칙을 준수해야 합니다.</p>
                   <p>2. 시설 내 안전사고에 대한 책임은 회원 본인에게 있습니다.</p>
                   <p>3. 타인에게 피해를 주는 행위를 금지합니다.</p>
                 </div>
-                
                 <Separator className="my-4" />
-                
                 <h3 className="font-semibold mb-4">안전사고 면책 동의</h3>
                 <div className="text-sm space-y-2 text-muted-foreground">
                   <p>체육활동 중 발생할 수 있는 안전사고에 대해 클럽은 고의 또는 중과실이 없는 한 책임을 지지 않습니다.</p>
                 </div>
-                
                 <Separator className="my-4" />
-                
                 <h3 className="font-semibold mb-4">초상권 활용 동의</h3>
                 <div className="text-sm space-y-2 text-muted-foreground">
                   <p>수업 및 행사 중 촬영된 사진/영상을 클럽 홍보 목적으로 사용하는 것에 동의합니다.</p>
                 </div>
               </div>
-
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -455,7 +401,6 @@ export default function MemberWithContractPage() {
                     개인정보 수집 및 이용에 동의합니다 *
                   </Label>
                 </div>
-
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="agree-terms"
@@ -466,7 +411,6 @@ export default function MemberWithContractPage() {
                     체육시설 이용 약관에 동의합니다 *
                   </Label>
                 </div>
-
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="agree-safety"
@@ -477,7 +421,6 @@ export default function MemberWithContractPage() {
                     안전사고 면책에 동의합니다 *
                   </Label>
                 </div>
-
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="agree-portrait"
@@ -491,7 +434,6 @@ export default function MemberWithContractPage() {
               </div>
             </div>
           )}
-
           {/* Step 4: 전자 서명 */}
           {step === 4 && (
             <div className="space-y-4">
@@ -504,7 +446,6 @@ export default function MemberWithContractPage() {
                   </div>
                 </div>
               </div>
-
               <div className="border-2 border-dashed rounded-lg p-4">
                 <Label className="mb-2 block">
                   {formData.isMinor ? '보호자 서명' : '본인 서명'} *
@@ -527,7 +468,6 @@ export default function MemberWithContractPage() {
                   다시 작성
                 </Button>
               </div>
-
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-sm text-amber-800">
                   서명 완료 후 &quot;가입 신청&quot; 버튼을 클릭하면 클럽 관리자에게 승인 요청이 전송됩니다.
@@ -535,7 +475,6 @@ export default function MemberWithContractPage() {
               </div>
             </div>
           )}
-
           {/* 네비게이션 버튼 */}
           <div className="flex gap-2 pt-4">
             {step > 1 && (
@@ -549,7 +488,6 @@ export default function MemberWithContractPage() {
                 이전
               </Button>
             )}
-            
             {step < 4 ? (
               <Button
                 type="button"

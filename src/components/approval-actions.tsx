@@ -1,25 +1,21 @@
 'use client';
-
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-
 interface ApprovalActionsProps {
   onApprove: () => Promise<void>;
   onReject: (reason: string) => Promise<void>;
   disabled?: boolean;
 }
-
 export function ApprovalActions({ onApprove, onReject, disabled = false }: ApprovalActionsProps) {
   const { toast } = useToast();
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
-
   const handleApprove = async () => {
     setIsApproving(true);
     try {
@@ -28,7 +24,6 @@ export function ApprovalActions({ onApprove, onReject, disabled = false }: Appro
       setIsApproving(false);
     }
   };
-
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
       toast({
@@ -38,7 +33,6 @@ export function ApprovalActions({ onApprove, onReject, disabled = false }: Appro
       });
       return;
     }
-
     setIsRejecting(true);
     try {
       await onReject(rejectionReason);
@@ -48,7 +42,6 @@ export function ApprovalActions({ onApprove, onReject, disabled = false }: Appro
       setIsRejecting(false);
     }
   };
-
   return (
     <div className="flex gap-2">
       <Button
@@ -63,7 +56,6 @@ export function ApprovalActions({ onApprove, onReject, disabled = false }: Appro
         )}
         승인
       </Button>
-
       <Button
         onClick={() => setShowRejectDialog(true)}
         disabled={disabled || isApproving || isRejecting}
@@ -76,7 +68,6 @@ export function ApprovalActions({ onApprove, onReject, disabled = false }: Appro
         )}
         거부
       </Button>
-
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

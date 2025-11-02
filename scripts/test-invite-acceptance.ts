@@ -39,7 +39,7 @@ async function testInviteAcceptance() {
     }
 
     const inviteDoc = invitesSnapshot.docs[0];
-    const invite = inviteDoc.data();
+    const invite = inviteDoc?.data();
     const inviteToken = inviteDoc.id;
 
     console.log('✅ 초대 정보:');
@@ -74,8 +74,8 @@ async function testInviteAcceptance() {
       // 이미 존재하는 사용자인지 확인
       userRecord = await auth.getUserByEmail(invite.email);
       console.log(`✅ 기존 사용자 발견: ${userRecord.uid}`);
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+    } catch (error: unknown) {
+      if ((error as any).code === 'auth/user-not-found') {
         // 새 사용자 생성
         userRecord = await auth.createUser({
           email: invite.email,
@@ -152,7 +152,7 @@ async function testInviteAcceptance() {
     console.log('\n🎉 연맹 관리자 가입 시뮬레이션 완료!\n');
     
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ 시뮬레이션 실패:', error);
     process.exit(1);
   }

@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,42 +17,35 @@ import { Club, Member, UserProfile } from '@/types';
 import { useMemoFirebase } from '@/firebase/provider';
 import { ChangeEvent, useRef, useState } from 'react';
 import Image from 'next/image';
-
 const personSchema = z.object({
   name: z.string().min(1, '이름을 입력하세요.'),
   dateOfBirth: z.string().min(1, '생년월일을 입력하세요.'),
-  gender: z.enum(['male', 'female'], { required_error: '성별을 선택하세요.' }),
+  gender: z.enum(['male', 'female'], { message: '성별을 선택하세요.' }),
   photo: z.instanceof(File).optional(),
   photoPreview: z.string().optional(),
 });
-
 const formSchema = z.object({
   adultsInfo: z.array(personSchema).optional(),
   childrenInfo: z.array(personSchema).optional(),
   phoneNumber: z.string().min(1, '전화번호를 입력하세요.'),
   clubId: z.string().min(1, '클럽을 선택하세요.'),
 });
-
 type FormValues = z.infer<typeof formSchema>;
 type SubmissionStatus = 'idle' | 'uploading' | 'submitting';
-
 export default function ProfileSetupPage() {
   const { firestore, storage } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const { toast } = useToast();
   const router = useRouter();
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>('idle');
-
   const adultFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const childFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
   const clubsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'clubs') : null),
     [firestore]
   );
   const { data: clubs, isLoading: areClubsLoading } =
     useCollection<Club>(clubsCollection);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,7 +55,6 @@ export default function ProfileSetupPage() {
       clubId: '',
     },
   });
-
   const {
     fields: adultFields,
     append: appendAdult,
@@ -73,7 +63,6 @@ export default function ProfileSetupPage() {
     control: form.control,
     name: 'adultsInfo',
   });
-
   const {
     fields: childFields,
     append: appendChild,
@@ -82,7 +71,6 @@ export default function ProfileSetupPage() {
     control: form.control,
     name: 'childrenInfo',
   });
-
   const handleFileChange = (
     e: ChangeEvent<HTMLInputElement>,
     fieldName: `adultsInfo.${number}.photo` | `childrenInfo.${number}.photo`,
@@ -97,10 +85,8 @@ export default function ProfileSetupPage() {
       form.setValue(previewFieldName, previewUrl);
     }
   };
-
   const onSubmit = async (values: FormValues) => {
-    if (!firestore || !user || !storage) return;
-
+    if (!firestore || !_user || !storage) return;
     if (
       (!values.adultsInfo || values.adultsInfo.length === 0) &&
       (!values.childrenInfo || values.childrenInfo.length === 0)
@@ -112,32 +98,25 @@ export default function ProfileSetupPage() {
       });
       return;
     }
-
     setSubmissionStatus('uploading');
-
     try {
       const batch = writeBatch(firestore);
-      const userRef = doc(firestore, 'users', user.uid);
-
+      const userRef = doc(firestore, 'users', _user.uid);
       // 1. Update the guardian's user profile, regardless of what's being added
       const userProfileUpdate: Partial<UserProfile> = {
         phoneNumber: values.phoneNumber,
       };
       batch.update(userRef, userProfileUpdate);
-
       // 2. Combine all members to create
       const allMembersToProcess = [
         ...(values.adultsInfo || []),
         ...(values.childrenInfo || []),
       ];
-
       for (const person of allMembersToProcess) {
         // Create a new ref for each member to get a unique ID
         const memberRef = doc(collection(firestore, 'members'));
         const memberId = memberRef.id;
-        
         let photoURL = person.photoPreview || `https://picsum.photos/seed/${memberId}/40/40`;
-
         // Upload photo if it exists
         if (person.photo) {
           photoURL = await uploadImage(
@@ -146,35 +125,30 @@ export default function ProfileSetupPage() {
             person.photo
           );
         }
-
         const memberPayload: Member = {
           id: memberId,
           name: person.name,
           dateOfBirth: new Date(person.dateOfBirth).toISOString(),
           gender: person.gender,
-          email: user.email, // Guardian's email for all
+          email: _user.email, // Guardian's email for all
           phoneNumber: values.phoneNumber, // Guardian's phone for all
           clubId: values.clubId,
           status: 'pending', // New members require approval
-          guardianIds: [user.uid],
+          guardianIds: [_user.uid],
           photoURL: photoURL,
           createdAt: new Date().toISOString(),
         };
-
         batch.set(memberRef, memberPayload);
       }
-      
       setSubmissionStatus('submitting');
       // 3. Commit all changes at once
       await batch.commit();
-
       toast({
         title: '프로필 저장 및 가입 신청 완료',
         description: '정보가 저장되었으며, 클럽 관리자의 승인을 기다립니다.',
       });
       router.push('/dashboard');
-
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -184,16 +158,13 @@ export default function ProfileSetupPage() {
       setSubmissionStatus('idle');
     }
   };
-
-
-  if (isUserLoading || !user) {
+  if (isUserLoading || !_user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-  
   const getButtonText = () => {
     if (submissionStatus === 'uploading') {
       return '사진 업로드 중...';
@@ -203,7 +174,6 @@ export default function ProfileSetupPage() {
     }
     return '저장 및 클럽 가입';
   };
-
   return (
     <main className="flex-1 p-4 md:p-6">
       <div className="mx-auto max-w-4xl space-y-8">
@@ -213,7 +183,6 @@ export default function ProfileSetupPage() {
             선수 또는 학부모 정보를 입력하여 KGF 넥서스 활동을 시작하세요.
           </p>
         </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <Card>
@@ -382,7 +351,6 @@ export default function ProfileSetupPage() {
                 </Button>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>자녀 선수 정보</CardTitle>
@@ -547,7 +515,6 @@ export default function ProfileSetupPage() {
                 </Button>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>연락처 및 소속</CardTitle>
@@ -614,7 +581,6 @@ export default function ProfileSetupPage() {
                 </div>
               </CardContent>
             </Card>
-
             <div className="flex justify-center pt-4">
               <Button type="submit" size="lg" disabled={submissionStatus !== 'idle'}>
                 {submissionStatus !== 'idle' && (

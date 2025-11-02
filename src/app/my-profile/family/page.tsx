@@ -1,6 +1,5 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -11,24 +10,29 @@ import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Member } from '@/types';
 import { ROUTES } from '@/constants/routes';
-
 export default function FamilyManagementPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
-
-  // 자녀 목록 조회
-  const childrenQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, 'members'),
-      where('guardianIds', 'array-contains', user.uid)
-    );
-  }, [firestore, user]);
-
-  const { data: children, isLoading: isChildrenLoading } = useCollection<Member>(childrenQuery);
-
-  if (!user) {
+  // 자녀 목록 조회: uid 기반(guardianUserIds) + 레거시(guardianIds) 병합
+  const childrenByUidQuery = useMemoFirebase(() => {
+    if (!firestore || !_user) return null;
+    return query(collection(firestore, 'members'), where('guardianUserIds', 'array-contains', _user.uid));
+  }, [firestore, _user]);
+  const { data: childrenByUid, isLoading: isChildrenByUidLoading } = useCollection<Member>(childrenByUidQuery);
+  const legacyChildrenQuery = useMemoFirebase(() => {
+    if (!firestore || !_user) return null;
+    return query(collection(firestore, 'members'), where('guardianIds', 'array-contains', _user.uid));
+  }, [firestore, _user]);
+  const { data: legacyChildren, isLoading: isLegacyChildrenLoading } = useCollection<Member>(legacyChildrenQuery);
+  const children: Member[] | undefined = React.useMemo(() => {
+    const map = new Map<string, Member>();
+    (childrenByUid || []).forEach((m) => map.set(m.id, m));
+    (legacyChildren || []).forEach((m) => map.set(m.id, m));
+    return Array.from(map.values());
+  }, [childrenByUid, legacyChildren]);
+  const isChildrenLoading = isChildrenByUidLoading || isLegacyChildrenLoading;
+  if (!_user) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card>
@@ -41,7 +45,6 @@ export default function FamilyManagementPage() {
       </main>
     );
   }
-
   if (isChildrenLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -49,7 +52,6 @@ export default function FamilyManagementPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 space-y-6">
       {/* 헤더 */}
@@ -68,7 +70,6 @@ export default function FamilyManagementPage() {
           자녀 추가
         </Button>
       </div>
-
       {/* 대표자 정보 */}
       <Card>
         <CardHeader>
@@ -81,31 +82,29 @@ export default function FamilyManagementPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold">{user.displayName}</span>
+              <span className="font-semibold">{_user.displayName}</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <span className="text-sm text-muted-foreground">{_user.email}</span>
             </div>
-            {user.phoneNumber && (
+            {_user.phoneNumber && (
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{user.phoneNumber}</span>
+                <span className="text-sm text-muted-foreground">{_user.phoneNumber}</span>
               </div>
             )}
             <div className="pt-2 border-t">
               <p className="text-sm text-muted-foreground">
-                클럽: <strong>{user.clubName || '미지정'}</strong>
+                클럽: <strong>{_user.clubName || '미지정'}</strong>
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
-
       {/* 자녀 목록 */}
       <div>
         <h2 className="text-2xl font-bold mb-4">자녀 ({children?.length || 0}명)</h2>
-        
         {children && children.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
             {children.map((child: Member) => (
@@ -135,7 +134,6 @@ export default function FamilyManagementPage() {
                         </span>
                       </div>
                     )}
-
                     {child.activePassId && (
                       <div className="pt-3 border-t">
                         <div className="flex justify-between items-center mb-2">
@@ -146,7 +144,6 @@ export default function FamilyManagementPage() {
                         </div>
                       </div>
                     )}
-
                     <div className="pt-3 border-t flex gap-2">
                       <Button
                         variant="outline"
@@ -178,7 +175,6 @@ export default function FamilyManagementPage() {
           </Card>
         )}
       </div>
-
       {/* 안내 메시지 */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>

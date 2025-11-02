@@ -60,7 +60,7 @@ async function migrateClubsStatus() {
     console.log(`   Updated: ${updatedCount} clubs`);
     console.log(`   Skipped: ${skippedCount} clubs`);
     
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
   }

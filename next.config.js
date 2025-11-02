@@ -90,7 +90,7 @@ const nextConfig = {
 
   // 이미지 최적화 설정
   images: {
-    domains: ['firebasestorage.googleapis.com'],
+    domains: ['firebasestorage.googleapis.com', 'picsum.photos'],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
   },

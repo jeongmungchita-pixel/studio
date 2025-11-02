@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +13,9 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { UserProfile } from '@/types';
 import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-
 export default function ClubOwnerRegisterPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
@@ -30,7 +27,6 @@ export default function ClubOwnerRegisterPage() {
     password: '',
     passwordConfirm: '',
     phoneNumber: '',
-    
     // 클럽 정보
     clubName: '',
     clubAddress: '',
@@ -38,10 +34,8 @@ export default function ClubOwnerRegisterPage() {
     clubEmail: '',
     clubDescription: '',
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!firestore || !auth) {
       toast({
         variant: 'destructive',
@@ -50,7 +44,6 @@ export default function ClubOwnerRegisterPage() {
       });
       return;
     }
-
     // 비밀번호 확인
     if (formData.password !== formData.passwordConfirm) {
       toast({
@@ -60,7 +53,6 @@ export default function ClubOwnerRegisterPage() {
       });
       return;
     }
-
     if (formData.password.length < 6) {
       toast({
         variant: 'destructive',
@@ -69,11 +61,8 @@ export default function ClubOwnerRegisterPage() {
       });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-
       // 1. Firebase Auth 계정 생성
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -81,7 +70,6 @@ export default function ClubOwnerRegisterPage() {
         formData.password
       );
       const newUser = userCredential.user;
-
       // 2. users 프로필 생성 (status: pending)
       const userProfile: UserProfile = {
         uid: newUser.uid,
@@ -96,7 +84,6 @@ export default function ClubOwnerRegisterPage() {
         createdAt: new Date().toISOString(),
       };
       await setDoc(doc(firestore, 'users', newUser.uid), userProfile);
-
       // 3. clubOwnerRequests 생성 (참고용)
       const requestData = {
         userId: newUser.uid,
@@ -112,14 +99,14 @@ export default function ClubOwnerRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
       await addDoc(collection(firestore, 'clubOwnerRequests'), requestData);
-      
       toast({
         title: '가입 완료!',
         description: '계정이 생성되었습니다. 슈퍼 관리자의 승인을 기다려주세요.',
       });
-      
-      // 승인 대기 페이지로 이동 (완전한 페이지 리로드)
-      window.location.href = '/pending-approval';
+      // 승인 대기 페이지로 이동
+      if (router) {
+        router.replace('/pending-approval');
+      }
     } catch (error: unknown) {
       let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
       const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
@@ -128,7 +115,6 @@ export default function ClubOwnerRegisterPage() {
       } else if (code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
-      
       toast({
         variant: 'destructive',
         title: '가입 실패',
@@ -138,7 +124,6 @@ export default function ClubOwnerRegisterPage() {
       setIsSubmitting(false);
     }
   };
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -163,7 +148,6 @@ export default function ClubOwnerRegisterPage() {
                 <Shield className="h-5 w-5" />
                 담당자 정보
               </h3>
-
               <div className="space-y-2">
                 <Label htmlFor="name">이름 *</Label>
                 <Input
@@ -174,7 +158,6 @@ export default function ClubOwnerRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">이메일 *</Label>
                 <Input
@@ -186,7 +169,6 @@ export default function ClubOwnerRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="phone">전화번호 *</Label>
                 <Input
@@ -198,7 +180,6 @@ export default function ClubOwnerRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="password">
                   <Lock className="h-4 w-4 inline mr-2" />
@@ -214,7 +195,6 @@ export default function ClubOwnerRegisterPage() {
                   minLength={6}
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="passwordConfirm">비밀번호 확인 *</Label>
                 <Input
@@ -228,16 +208,13 @@ export default function ClubOwnerRegisterPage() {
                 />
               </div>
             </div>
-
             <div className="border-t pt-6" />
-
             {/* 클럽 정보 섹션 */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
                 클럽 정보
               </h3>
-
               <div className="space-y-2">
                 <Label htmlFor="clubName">클럽 이름 *</Label>
                 <Input
@@ -248,7 +225,6 @@ export default function ClubOwnerRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="clubAddress">클럽 주소 *</Label>
                 <Input
@@ -259,7 +235,6 @@ export default function ClubOwnerRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="clubPhone">클럽 전화번호 *</Label>
                 <Input
@@ -271,7 +246,6 @@ export default function ClubOwnerRegisterPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="clubEmail">클럽 이메일</Label>
                 <Input
@@ -282,7 +256,6 @@ export default function ClubOwnerRegisterPage() {
                   placeholder="info@club.com"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="clubDescription">클럽 소개</Label>
                 <Textarea
@@ -294,7 +267,6 @@ export default function ClubOwnerRegisterPage() {
                 />
               </div>
             </div>
-
             {/* 안내 메시지 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
@@ -302,7 +274,6 @@ export default function ClubOwnerRegisterPage() {
                 승인 전에는 &quot;승인 대기중&quot; 페이지가 표시됩니다.
               </p>
             </div>
-
             {/* 제출 버튼 */}
             <div className="flex gap-3">
               <Button

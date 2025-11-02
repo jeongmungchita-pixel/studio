@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-export const dynamic = 'force-dynamic';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,16 +19,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle, Edit, Trash2, User, Baby, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getTargetCategoryLabel } from '@/lib/member-utils';
-
-
 const templateFormSchema = z.object({
   name: z.string().min(1, '이용권 이름을 입력해주세요.'),
   description: z.string().optional(),
   passType: z.enum(['period', 'session', 'unlimited'], {
-    required_error: '이용권 타입을 선택해주세요.',
+    message: '이용권 타입을 선택해주세요.',
   }),
   targetCategory: z.enum(['adult', 'child', 'all'], {
-    required_error: '대상 회원을 선택해주세요.',
+    message: '대상 회원을 선택해주세요.',
   }),
   price: z.preprocess(
     (a) => (a === '' ? undefined : parseInt(z.string().parse(a), 10)),
@@ -48,24 +45,20 @@ const templateFormSchema = z.object({
     z.number().positive('출석 횟수는 0보다 커야 합니다.').optional()
   ),
 });
-
 type TemplateFormValues = z.infer<typeof templateFormSchema>;
-
 type UIPassTemplate = PassTemplate & {
   passType?: 'period' | 'session' | 'unlimited'
   durationDays?: number
   totalSessions?: number
   attendableSessions?: number
 }
-
 export default function PassTemplatesPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<UIPassTemplate | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateFormSchema),
     defaultValues: {
@@ -79,15 +72,12 @@ export default function PassTemplatesPage() {
       attendableSessions: '' as any,
     },
   });
-
   const passType = form.watch('passType');
-
   const templatesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'pass_templates'), where('clubId', '==', user.clubId));
-  }, [firestore, user?.clubId]);
+    if (!firestore || !_user?.clubId) return null;
+    return query(collection(firestore, 'pass_templates'), where('clubId', '==', _user.clubId));
+  }, [firestore, _user?.clubId]);
   const { data: templates, isLoading } = useCollection<UIPassTemplate>(templatesQuery);
-
   useEffect(() => {
     if (editingTemplate) {
       form.reset({
@@ -113,39 +103,31 @@ export default function PassTemplatesPage() {
       });
     }
   }, [editingTemplate, form]);
-
   const handleOpenDialog = (template: UIPassTemplate | null = null) => {
     setEditingTemplate(template);
     setIsDialogOpen(true);
   };
-
   const onSubmit = async (values: TemplateFormValues) => {
-    
     if (!firestore) {
       toast({ variant: 'destructive', title: '오류', description: 'Firestore가 초기화되지 않았습니다.' });
       return;
     }
-    
-    if (!user?.clubId) {
+    if (!_user?.clubId) {
       toast({ variant: 'destructive', title: '오류', description: '클럽 정보를 찾을 수 없습니다.' });
       return;
     }
-    
     setIsSubmitting(true);
-
     const templateData: Omit<PassTemplate, 'id'> = {
-      clubId: user.clubId,
+      clubId: _user.clubId,
       name: values.name,
-      description: values.description || undefined,
       passType: values.passType,
       targetCategory: values.targetCategory,
+      ...(values.description && { description: values.description }),
       ...(values.price !== undefined && { price: values.price }),
       ...(values.durationDays !== undefined && { durationDays: values.durationDays }),
       ...(values.totalSessions !== undefined && { totalSessions: values.totalSessions }),
       ...(values.attendableSessions !== undefined && { attendableSessions: values.attendableSessions }),
     } as any;
-
-
     try {
       if (editingTemplate) {
         // Update existing template
@@ -180,18 +162,15 @@ export default function PassTemplatesPage() {
       setIsSubmitting(false);
     }
   };
-  
   const handleDelete = async (templateId: string) => {
     if (!firestore) return;
     try {
       await deleteDoc(doc(firestore, 'pass_templates', templateId));
       toast({ title: '삭제 완료', description: '이용권 템플릿이 삭제되었습니다.' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '오류 발생', description: '삭제 중 오류가 발생했습니다.' });
     }
   };
-
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -267,7 +246,6 @@ export default function PassTemplatesPage() {
             )}
           </CardContent>
         </Card>
-
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-xl">
             <DialogHeader>
@@ -353,7 +331,12 @@ export default function PassTemplatesPage() {
                         <FormItem>
                           <FormLabel>기간 (일)</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="예: 30" {...field} />
+                            <Input
+                              type="number"
+                              placeholder="예: 30"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -367,7 +350,12 @@ export default function PassTemplatesPage() {
                       <FormItem>
                         <FormLabel>가격 (원)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="예: 150000" {...field} />
+                          <Input
+                            type="number"
+                            placeholder="예: 150000"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -383,7 +371,12 @@ export default function PassTemplatesPage() {
                         <FormItem>
                           <FormLabel>총 허용 횟수</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="예: 12" {...field} />
+                            <Input
+                              type="number"
+                              placeholder="예: 12"
+                              {...field}
+                              value={field.value ?? ''}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -396,7 +389,12 @@ export default function PassTemplatesPage() {
                       <FormItem>
                         <FormLabel>필수 출석 횟수</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="예: 4" {...field} />
+                          <Input
+                            type="number"
+                            placeholder="예: 4"
+                            {...field}
+                            value={field.value ?? ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

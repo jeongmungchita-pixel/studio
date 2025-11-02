@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, use } from 'react';
-export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 import { collection, query, where, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
@@ -16,34 +15,29 @@ import { canJoinClass, calculateAge, getMemberCategoryLabel, getMemberCategoryCo
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Fetch class data
   const classRef = useMemoFirebase(() => (firestore ? doc(firestore, 'classes', id) : null), [firestore, id]);
   const { data: classData, isLoading: isClassLoading } = useDoc<GymClass>(classRef);
-
   // Fetch all members for this club
   const membersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
-    return query(collection(firestore, 'members'), where('clubId', '==', user.clubId), where('status', '==', 'active'));
-  }, [firestore, user?.clubId]);
+    if (!firestore || !_user?.clubId) return null;
+    return query(collection(firestore, 'members'), where('clubId', '==', _user.clubId), where('status', '==', 'active'));
+  }, [firestore, _user?.clubId]);
   const { data: allMembers, isLoading: areMembersLoading } = useCollection<Member>(membersQuery);
-
   // Get members in this class
-  const classMembers: Member[] = useMemo(() => {
+  const _classMembers: Member[] = useMemo(() => {
     // 등록 회원 목록 기능은 후속 구현 대상. 현재는 요약 정보만 표기합니다.
     return [];
   }, []);
-
   // Get available members (not in this class) with eligibility check
   const availableMembers = useMemo(() => {
     if (!allMembers || !classData) return [];
@@ -58,39 +52,32 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
         return 0;
       });
   }, [allMembers, classData]);
-
   const getMemberAge = (dateOfBirth?: string) => {
     if (!dateOfBirth) return null;
     return differenceInYears(new Date(), new Date(dateOfBirth));
   };
-
   const numberToDayLabel = (num: number): string => {
     const map = ['일', '월', '화', '수', '목', '금', '토'] as const;
     return map[num] ?? '';
   };
-
   const handleAddMembers = async () => {
     if (!firestore || !classData || selectedMemberIds.length === 0) return;
     setIsSubmitting(true);
-
     try {
       const classRef = doc(firestore, 'classes', id);
-      
       // Add members to class
       for (const memberId of selectedMemberIds) {
         await updateDoc(classRef, {
           memberIds: arrayUnion(memberId)
         });
       }
-
       toast({ 
         title: '회원 추가 완료', 
         description: `${selectedMemberIds.length}명의 회원이 추가되었습니다.` 
       });
-
       setIsAddMemberDialogOpen(false);
       setSelectedMemberIds([]);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 
@@ -100,21 +87,18 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       setIsSubmitting(false);
     }
   };
-
   const handleRemoveMember = async (memberId: string) => {
     if (!firestore || !classData) return;
-
     try {
       const classRef = doc(firestore, 'classes', id);
       await updateDoc(classRef, {
         memberIds: arrayRemove(memberId)
       });
-
       toast({ 
         title: '회원 제거 완료', 
         description: '회원이 클래스에서 제거되었습니다.' 
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ 
         variant: 'destructive', 
         title: '오류 발생', 
@@ -122,7 +106,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       });
     }
   };
-
   const toggleMemberSelection = (memberId: string) => {
     setSelectedMemberIds(prev => 
       prev.includes(memberId) 
@@ -130,9 +113,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
         : [...prev, memberId]
     );
   };
-
   const isLoading = isClassLoading || areMembersLoading;
-
   if (isLoading) {
     return (
       <main className="flex-1 p-6">
@@ -142,7 +123,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       </main>
     );
   }
-
   if (!classData) {
     return (
       <main className="flex-1 p-6">
@@ -154,7 +134,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
       </main>
     );
   }
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <div className="flex items-center gap-4 mb-6">
@@ -196,23 +175,22 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
         </div>
         {/* 회원 추가 기능은 후속 구현 예정 */}
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            등록 회원 ({classMembers.length}명)
+            등록 회원 ({_classMembers.length}명)
           </CardTitle>
           <CardDescription>이 클래스에 등록된 회원 목록입니다.</CardDescription>
         </CardHeader>
         <CardContent>
-          {classMembers.length === 0 ? (
+          {_classMembers.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               등록된 회원이 없습니다.
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {classMembers.map((member) => {
+              {_classMembers.map((member: Member) => {
                 const age = getMemberAge(member.dateOfBirth);
                 const memberCategory = member.memberCategory || 
                   (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
@@ -255,7 +233,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </CardContent>
       </Card>
-
       {/* Add Members Dialog */}
       <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
@@ -265,7 +242,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
               클래스에 추가할 회원을 선택하세요. 자격 요건을 충족하지 않는 회원은 회색으로 표시됩니다.
             </DialogDescription>
           </DialogHeader>
-          
           {classData.targetCategory && classData.targetCategory !== 'all' && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
@@ -283,7 +259,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
               </AlertDescription>
             </Alert>
           )}
-          
           <div className="max-h-96 overflow-y-auto space-y-2 py-4">
             {availableMembers.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
@@ -297,7 +272,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
                 const memberCategory = member.memberCategory || 
                   (calculateAge(member.dateOfBirth) >= 19 ? 'adult' : 'child');
                 const categoryColors = getMemberCategoryColor(memberCategory);
-                
                 return (
                   <div
                     key={member.id}
@@ -335,7 +309,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ id: stri
               })
             )}
           </div>
-
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"

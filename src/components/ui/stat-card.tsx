@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -14,7 +13,6 @@ interface StatCardProps {
   colorScheme: 'blue' | 'purple' | 'green' | 'red' | 'yellow' | 'cyan';
   onClick?: () => void;
 }
-
 const colorSchemes = {
   blue: {
     bg: 'from-blue-50 to-white',
@@ -53,7 +51,6 @@ const colorSchemes = {
     shadow: 'shadow-cyan-500/25',
   },
 };
-
 export function StatCard({
   title,
   value,
@@ -64,7 +61,6 @@ export function StatCard({
   onClick,
 }: StatCardProps) {
   const colors = colorSchemes[colorScheme];
-
   return (
     <Card
       className={cn(

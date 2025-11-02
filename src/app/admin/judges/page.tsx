@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
@@ -16,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Edit, Trash2, Gavel } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
 // 심판 타입 정의
 interface Judge {
   id: string;
@@ -30,13 +27,11 @@ interface Judge {
   status: 'active' | 'inactive';
   createdAt: string;
 }
-
 const judgeTypeLabels = {
   D: 'D심판 (난이도)',
   E: 'E심판 (실시)',
   both: 'D/E 겸임',
 };
-
 const apparatusLabels: Record<string, string> = {
   FX: '마루',
   PH: '안마',
@@ -47,7 +42,6 @@ const apparatusLabels: Record<string, string> = {
   UB: '이단평행봉',
   BB: '평균대',
 };
-
 export default function JudgesPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -62,21 +56,17 @@ export default function JudgesPage() {
     experience: '',
     specialization: [] as string[],
   });
-
   const judgesCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'judges') : null),
     [firestore]
   );
   const { data: judges, isLoading, error: judgesError } = useCollection<Judge>(judgesCollection);
-
   // 에러 처리
   if (judgesError) {
     return <ErrorFallback error={judgesError} title="심판 데이터 조회 오류" />;
   }
-
   const handleSubmit = async () => {
     if (!firestore) return;
-
     try {
       if (editingJudge) {
         // 수정
@@ -95,22 +85,19 @@ export default function JudgesPage() {
         toast({ title: '심판 등록 완료' });
       }
       handleCloseDialog();
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '오류 발생', description: '심판 정보 저장에 실패했습니다.' });
     }
   };
-
   const handleDelete = async (judgeId: string) => {
     if (!firestore || !confirm('정말 삭제하시겠습니까?')) return;
-
     try {
       await deleteDoc(doc(firestore, 'judges', judgeId));
       toast({ title: '심판 삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '오류 발생', description: '심판 삭제에 실패했습니다.' });
     }
   };
-
   const handleEdit = (judge: Judge) => {
     setEditingJudge(judge);
     setFormData({
@@ -124,7 +111,6 @@ export default function JudgesPage() {
     });
     setDialogOpen(true);
   };
-
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingJudge(null);
@@ -138,7 +124,6 @@ export default function JudgesPage() {
       specialization: [],
     });
   };
-
   const toggleSpecialization = (apparatus: string) => {
     setFormData(prev => ({
       ...prev,
@@ -147,7 +132,6 @@ export default function JudgesPage() {
         : [...prev.specialization, apparatus],
     }));
   };
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -155,7 +139,6 @@ export default function JudgesPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -168,7 +151,6 @@ export default function JudgesPage() {
           심판 등록
         </Button>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>등록된 심판 목록</CardTitle>
@@ -225,7 +207,6 @@ export default function JudgesPage() {
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button size="default"
-                          
                           onClick={() => handleDelete(judge.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -245,7 +226,6 @@ export default function JudgesPage() {
           </Table>
         </CardContent>
       </Card>
-
       {/* 심판 등록/수정 다이얼로그 */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -260,7 +240,6 @@ export default function JudgesPage() {
               기계체조 심판의 정보를 입력하세요.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -272,7 +251,6 @@ export default function JudgesPage() {
                   placeholder="홍길동"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="level">심판 구분 *</Label>
                 <Select
@@ -292,7 +270,6 @@ export default function JudgesPage() {
                 </Select>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">이메일 *</Label>
@@ -304,7 +281,6 @@ export default function JudgesPage() {
                   placeholder="judge@example.com"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="phone">전화번호 *</Label>
                 <Input
@@ -315,7 +291,6 @@ export default function JudgesPage() {
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="certification">자격증 번호</Label>
@@ -326,7 +301,6 @@ export default function JudgesPage() {
                   placeholder="KGF-2024-001"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="experience">경력 (년)</Label>
                 <Input
@@ -338,7 +312,6 @@ export default function JudgesPage() {
                 />
               </div>
             </div>
-
             <div className="space-y-2">
               <Label>전문 종목</Label>
               <div className="grid grid-cols-4 gap-2">
@@ -355,7 +328,6 @@ export default function JudgesPage() {
               </div>
             </div>
           </div>
-
           <DialogFooter>
             <Button  onClick={handleCloseDialog}>
               취소

@@ -1,7 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useUser } from '@/firebase';
@@ -16,31 +13,25 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { UserRole, CommitteeType } from '@/types';
 import { Committee } from '@/types';
-
 const committeeTypeLabels: Record<CommitteeType, string> = {
   COMPETITION: '대회',
   EDUCATION: '교육',
   MARKETING: '마케팅',
 };
-
 export default function NewCommitteePage() {
   const router = useRouter();
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { _user, isUserLoading } = useUser();
   const { toast } = useToast();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     type: 'COMPETITION' as CommitteeType,
   });
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!firestore || !user) return;
-
+    if (!firestore || !_user) return;
     setIsSubmitting(true);
     try {
       const committeeRef = doc(collection(firestore, 'committees'));
@@ -49,25 +40,22 @@ export default function NewCommitteePage() {
         name: formData.name,
         description: formData.description,
         type: formData.type,
-        chairId: user.uid,
-        chairName: user.displayName || user.email || '관리자',
-        memberIds: [user.uid],
+        chairId: _user.uid,
+        chairName: _user.displayName || _user.email || '관리자',
+        memberIds: [_user.uid],
         memberCount: 1,
         status: 'active',
         establishedDate: new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
       await setDoc(committeeRef, committeeData);
-
       toast({
         title: '위원회 생성 완료',
         description: `${formData.name} 위원회가 생성되었습니다.`,
       });
-
       router.push('/committees');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '생성 실패',
@@ -77,7 +65,6 @@ export default function NewCommitteePage() {
       setIsSubmitting(false);
     }
   };
-
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -85,12 +72,10 @@ export default function NewCommitteePage() {
       </div>
     );
   }
-
-  if (!user || user.role !== UserRole.FEDERATION_ADMIN) {
+  if (!_user || _user.role !== UserRole.FEDERATION_ADMIN) {
     router.push('/dashboard');
     return null;
   }
-
   return (
     <main className="flex-1 p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -108,7 +93,6 @@ export default function NewCommitteePage() {
           </p>
         </div>
       </div>
-
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>위원회 정보</CardTitle>
@@ -125,7 +109,6 @@ export default function NewCommitteePage() {
                 required
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="type">위원회 유형 *</Label>
               <Select
@@ -151,7 +134,6 @@ export default function NewCommitteePage() {
                 {formData.type === 'MARKETING' && '홍보, 스폰서십, 미디어 관리'}
               </p>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="description">설명 *</Label>
               <Textarea
@@ -165,7 +147,6 @@ export default function NewCommitteePage() {
                 required
               />
             </div>
-
             <div className="flex gap-3">
               <Button
                 type="button"

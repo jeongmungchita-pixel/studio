@@ -91,7 +91,7 @@ async function addMissingRequiredFields(collectionName: string, requiredFields: 
 
   for (const doc of snapshot.docs) {
     const data = doc.data();
-    const updates: Record<string, any> = {};
+    const updates: Record<string, unknown> = {};
 
     for (const field of requiredFields) {
       if (!(field in data) || data[field] === null || data[field] === undefined) {
@@ -255,7 +255,7 @@ async function main() {
     console.log('✅ 스키마 수정 완료!\n');
 
     process.exit(0);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ 오류 발생:', error);
     process.exit(1);
   }

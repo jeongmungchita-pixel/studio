@@ -1,30 +1,47 @@
 /**
- * UI 상태 관리 스토어
+ * UI 상태 관리 스토어 (통합 버전)
  */
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { UIStoreState, ModalState, ToastState } from './types';
+import { UIStoreState as BaseUIState, ModalState, ToastState } from './types';
+
+// Notification type from app-store
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: number;
+  read: boolean;
+}
+
+// Extended UI state with notifications
+interface UIStoreState extends BaseUIState {
+  notifications: Notification[];
+}
 
 interface UIStoreActions {
   // 테마 액션
   setTheme: (theme: UIStoreState['theme']) => void;
   toggleTheme: () => void;
-  
   // 사이드바 액션
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
-  
   // 모달 액션
   openModal: (modal: Omit<ModalState, 'id'>) => string;
   closeModal: (id: string) => void;
   closeAllModals: () => void;
-  
   // 토스트 액션
   showToast: (toast: Omit<ToastState, 'id'>) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
+  // Notification actions from app-store
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  removeNotification: (id: string) => void;
+  clearNotifications: () => void;
 }
 
 type UIStore = UIStoreState & UIStoreActions;
@@ -33,23 +50,21 @@ const initialState: UIStoreState = {
   theme: 'system',
   sidebarOpen: true,
   modalStack: [],
-  toasts: []
+  toasts: [],
+  notifications: []
 };
 
 export const useUIStore = create<UIStore>()(
   devtools(
     immer((set) => ({
       ...initialState,
-
       // 테마 액션
       setTheme: (theme) => set((state) => {
         state.theme = theme;
-        
         // 실제 테마 적용
         if (typeof window !== 'undefined') {
           const root = window.document.documentElement;
           root.classList.remove('light', 'dark');
-          
           if (theme === 'system') {
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
               ? 'dark'
@@ -60,20 +75,16 @@ export const useUIStore = create<UIStore>()(
           }
         }
       }),
-
       toggleTheme: () => set((state) => {
         const themes: UIStoreState['theme'][] = ['light', 'dark', 'system'];
         const currentIndex = themes.indexOf(state.theme);
         const nextIndex = (currentIndex + 1) % themes.length;
         const nextTheme = themes[nextIndex];
-        
         state.theme = nextTheme;
-        
         // 실제 테마 적용
         if (typeof window !== 'undefined') {
           const root = window.document.documentElement;
           root.classList.remove('light', 'dark');
-          
           if (nextTheme === 'system') {
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
               ? 'dark'
@@ -84,28 +95,22 @@ export const useUIStore = create<UIStore>()(
           }
         }
       }),
-
       // 사이드바 액션
       setSidebarOpen: (open) => set((state) => {
         state.sidebarOpen = open;
       }),
-
       toggleSidebar: () => set((state) => {
         state.sidebarOpen = !state.sidebarOpen;
       }),
-
       // 모달 액션
       openModal: (modal) => {
         const id = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newModal: ModalState = { ...modal, id };
-        
         set((state) => {
           state.modalStack.push(newModal);
         });
-        
         return id;
       },
-
       closeModal: (id) => set((state) => {
         const index = state.modalStack.findIndex(m => m.id === id);
         if (index !== -1) {
@@ -114,12 +119,10 @@ export const useUIStore = create<UIStore>()(
           state.modalStack.splice(index, 1);
         }
       }),
-
       closeAllModals: () => set((state) => {
         state.modalStack.forEach(modal => modal.onClose?.());
         state.modalStack = [];
       }),
-
       // 토스트 액션
       showToast: (toast) => {
         const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -128,44 +131,69 @@ export const useUIStore = create<UIStore>()(
           id,
           duration: toast.duration ?? 5000
         };
-        
         set((state) => {
           state.toasts.push(newToast);
         });
-        
         // 자동 제거
         if (newToast.duration && newToast.duration > 0) {
           setTimeout(() => {
             useUIStore.getState().removeToast(id);
           }, newToast.duration);
         }
-        
         return id;
       },
-
       removeToast: (id) => set((state) => {
         const index = state.toasts.findIndex(t => t.id === id);
         if (index !== -1) {
           state.toasts.splice(index, 1);
         }
       }),
-
       clearToasts: () => set((state) => {
         state.toasts = [];
-      })
+      }),
+      // Notification actions from app-store
+      addNotification: (notification) =>
+        set((state) => ({
+          notifications: [
+            {
+              id: `notification-${Date.now()}-${Math.random()}`,
+              ...notification,
+              timestamp: Date.now(),
+              read: false,
+            },
+            ...state.notifications,
+          ].slice(0, 50), // Keep max 50 notifications
+        })),
+
+      markNotificationAsRead: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, read: true } : n
+          ),
+        })),
+
+      markAllNotificationsAsRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        })),
+
+      removeNotification: (id) =>
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+        })),
+
+      clearNotifications: () => set({ notifications: [] }),
     })),
     {
       name: 'UIStore'
     }
   )
 );
-
 // 선택자 (Selectors)
 export const useTheme = () => useUIStore((state) => state.theme);
 export const useSidebarOpen = () => useUIStore((state) => state.sidebarOpen);
 export const useModals = () => useUIStore((state) => state.modalStack);
 export const useToasts = () => useUIStore((state) => state.toasts);
-
 // 헬퍼 함수
 export const toast = {
   success: (title: string, description?: string) => {
@@ -175,7 +203,6 @@ export const toast = {
       description
     });
   },
-  
   error: (title: string, description?: string) => {
     return useUIStore.getState().showToast({
       type: 'error',
@@ -183,7 +210,6 @@ export const toast = {
       description
     });
   },
-  
   warning: (title: string, description?: string) => {
     return useUIStore.getState().showToast({
       type: 'warning',
@@ -191,7 +217,6 @@ export const toast = {
       description
     });
   },
-  
   info: (title: string, description?: string) => {
     return useUIStore.getState().showToast({
       type: 'default',
@@ -200,17 +225,14 @@ export const toast = {
     });
   }
 };
-
 // 모달 헬퍼
 export const modal = {
-  open: (component: React.ComponentType<any>, props?: any, onClose?: () => void) => {
-    return useUIStore.getState().openModal({ component, props, onClose });
+  open: <P extends Record<string, unknown> = {}>(component: React.ComponentType<P>, props?: P, onClose?: () => void) => {
+    return useUIStore.getState().openModal({ component: component as React.ComponentType<any>, props, onClose });
   },
-  
   close: (id: string) => {
     useUIStore.getState().closeModal(id);
   },
-  
   closeAll: () => {
     useUIStore.getState().closeAllModals();
   }

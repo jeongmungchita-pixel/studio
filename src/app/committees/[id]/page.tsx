@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection } from '@/firebase';
@@ -13,31 +11,25 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Edit, Trash2, Users, Calendar } from 'lucide-react';
 import { UserRole, CommitteeType } from '@/types';
 import { Committee, UserProfile } from '@/types';
-
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
 const committeeTypeLabels: Record<CommitteeType, string> = {
   COMPETITION: '대회',
   EDUCATION: '교육',
   MARKETING: '마케팅',
 };
-
 const committeeTypeColors: Record<CommitteeType, string> = {
   COMPETITION: 'bg-blue-500/10 text-blue-700 border-blue-200',
   EDUCATION: 'bg-green-500/10 text-green-700 border-green-200',
   MARKETING: 'bg-purple-500/10 text-purple-700 border-purple-200',
 };
-
 export default function CommitteeDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const committeeId = resolvedParams.id;
-  
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
-
   // Fetch committee
   const committeeQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -48,7 +40,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
   }, [firestore, committeeId]);
   const { data: committees, isLoading } = useCollection<Committee>(committeeQuery);
   const committee = committees?.[0];
-
   // Fetch committee members (users with committeeId)
   const membersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -58,11 +49,9 @@ export default function CommitteeDetailPage({ params }: PageProps) {
     );
   }, [firestore, committeeId]);
   const { data: members } = useCollection<UserProfile>(membersQuery);
-
   const handleDelete = async () => {
     if (!firestore || !committee) return;
     if (!confirm('정말 이 위원회를 삭제하시겠습니까?')) return;
-
     try {
       await deleteDoc(doc(firestore, 'committees', committeeId));
       toast({
@@ -70,7 +59,7 @@ export default function CommitteeDetailPage({ params }: PageProps) {
         description: '위원회가 삭제되었습니다.',
       });
       router.push('/committees');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '삭제 실패',
@@ -78,7 +67,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
       });
     }
   };
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -86,7 +74,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
       </div>
     );
   }
-
   if (!committee) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -99,9 +86,7 @@ export default function CommitteeDetailPage({ params }: PageProps) {
       </div>
     );
   }
-
   const chairperson = members?.find(m => m.role === UserRole.COMMITTEE_CHAIR);
-
   return (
     <main className="flex-1 p-6 space-y-6">
       {/* Header */}
@@ -124,7 +109,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
             <p className="text-muted-foreground mt-1">{committee.description}</p>
           </div>
         </div>
-
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
             <Edit className="h-4 w-4 mr-2" />
@@ -136,7 +120,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
           </Button>
         </div>
       </div>
-
       <div className="grid gap-6 md:grid-cols-2">
         {/* 위원회 정보 */}
         <Card>
@@ -157,7 +140,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-
             {chairperson && (
               <div>
                 <p className="text-sm text-muted-foreground">위원장</p>
@@ -167,7 +149,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
                 </div>
               </div>
             )}
-
             <div>
               <p className="text-sm text-muted-foreground">위원 수</p>
               <div className="flex items-center gap-2 mt-1">
@@ -177,7 +158,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
             </div>
           </CardContent>
         </Card>
-
         {/* 위원 목록 */}
         <Card>
           <CardHeader>
@@ -213,7 +193,6 @@ export default function CommitteeDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       </div>
-
       {/* 활동 내역 */}
       <Card>
         <CardHeader>

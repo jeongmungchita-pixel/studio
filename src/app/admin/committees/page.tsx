@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, Calendar, Loader2 } from 'lucide-react';
@@ -13,23 +11,19 @@ import { ErrorFallback } from '@/components/error-fallback';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { ROUTES } from '@/constants/routes';
-
 const committeeTypeNames: Record<CommitteeType, string> = {
   COMPETITION: '대회',
   EDUCATION: '교육',
   MARKETING: '마케팅',
 };
-
 const committeeTypeColors: Record<CommitteeType, string> = {
   COMPETITION: 'bg-blue-500/10 text-blue-700 border-blue-200',
   EDUCATION: 'bg-green-500/10 text-green-700 border-green-200',
   MARKETING: 'bg-purple-500/10 text-purple-700 border-purple-200',
 };
-
 export default function CommitteesPage() {
   const router = useRouter();
   const firestore = useFirestore();
-
   // 위원회 목록 조회
   const committeesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -38,14 +32,11 @@ export default function CommitteesPage() {
       orderBy('createdAt', 'desc')
     );
   }, [firestore]);
-
   const { data: committees, isLoading, error: committeesError } = useCollection<Committee>(committeesQuery);
-
   // 에러 처리
   if (committeesError) {
     return <ErrorFallback error={committeesError} title="위원회 데이터 조회 오류" />;
   }
-
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -53,7 +44,6 @@ export default function CommitteesPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 space-y-6">
       {/* 헤더 */}
@@ -64,7 +54,6 @@ export default function CommitteesPage() {
             대회, 교육, 마케팅 위원회를 관리합니다
           </p>
         </div>
-        
         {/* 연맹 관리자만 위원회 생성 가능 */}
         <RequireRole role={UserRole.FEDERATION_ADMIN}>
           <Button onClick={() => router.push(ROUTES.COMMITTEES_NEW)}>
@@ -73,7 +62,6 @@ export default function CommitteesPage() {
           </Button>
         </RequireRole>
       </div>
-
       {/* 위원회 목록 */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {committees && committees.length > 0 && committees.map((committee) => (
@@ -116,7 +104,6 @@ export default function CommitteesPage() {
           </Card>
         ))}
       </div>
-
       {/* 위원회가 없을 때 */}
       {(!committees || committees.length === 0) && (
         <Card>
@@ -135,7 +122,6 @@ export default function CommitteesPage() {
           </CardContent>
         </Card>
       )}
-
       {/* 안내 메시지 */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>

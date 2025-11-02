@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, doc, setDoc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
@@ -21,7 +19,6 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
-
 type TestLevel = {
   id: string
   name: string
@@ -32,14 +29,12 @@ type TestLevel = {
   order: number
   icon?: string
 }
-
 type EvaluationItem = {
   id: string
   name: string
   maxScore: number
   weight: number
 }
-
 type UILevelTest = {
   id: string
   title: string
@@ -54,7 +49,6 @@ type UILevelTest = {
   createdAt: string
   updatedAt?: string
 }
-
 type LevelTestRegistration = {
   id: string
   testId: string
@@ -63,7 +57,6 @@ type LevelTestRegistration = {
   targetLevel: string
   status: 'pending' | 'approved' | 'rejected'
 }
-
 const DEFAULT_LEVELS: TestLevel[] = [
   { id: 'beginner', name: '입문', code: 'BEGINNER', color: '#8B4513', minScore: 0, maxScore: 59, order: 1, icon: '🟤' },
   { id: 'elementary', name: '초급', code: 'ELEMENTARY', color: '#22C55E', minScore: 60, maxScore: 69, order: 2, icon: '🟢' },
@@ -71,14 +64,12 @@ const DEFAULT_LEVELS: TestLevel[] = [
   { id: 'advanced', name: '상급', code: 'ADVANCED', color: '#A855F7', minScore: 80, maxScore: 89, order: 4, icon: '🟣' },
   { id: 'elite', name: '엘리트', code: 'ELITE', color: '#EAB308', minScore: 90, maxScore: 100, order: 5, icon: '🟡' },
 ];
-
 const DEFAULT_ITEMS: EvaluationItem[] = [
   { id: 'posture', name: '기본자세', maxScore: 30, weight: 30 },
   { id: 'rotation', name: '회전', maxScore: 25, weight: 25 },
   { id: 'landing', name: '착지', maxScore: 25, weight: 25 },
   { id: 'difficulty', name: '난이도', maxScore: 20, weight: 20 },
 ];
-
 const testFormSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요'),
   description: z.string().min(1, '설명을 입력하세요'),
@@ -86,9 +77,7 @@ const testFormSchema = z.object({
   registrationEnd: z.string(),
   testDate: z.string(),
 });
-
 type TestFormValues = z.infer<typeof testFormSchema>;
-
 const statusLabels = {
   draft: '준비중',
   registration_open: '신청중',
@@ -96,16 +85,13 @@ const statusLabels = {
   in_progress: '진행중',
   completed: '완료',
 };
-
 export default function ClubLevelTestsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTest, setEditingTest] = useState<UILevelTest | null>(null);
   const [selectedTest, setSelectedTest] = useState<UILevelTest | null>(null);
-
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testFormSchema),
     defaultValues: {
@@ -116,18 +102,16 @@ export default function ClubLevelTestsPage() {
       testDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     },
   });
-
   // Fetch level tests
   const testsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.clubId) return null;
+    if (!firestore || !_user?.clubId) return null;
     return query(
       collection(firestore, 'level_tests'),
-      where('clubId', '==', user.clubId),
+      where('clubId', '==', _user.clubId),
       orderBy('testDate', 'desc')
     );
-  }, [firestore, user?.clubId]);
+  }, [firestore, _user?.clubId]);
   const { data: levelTests, isLoading } = useCollection<UILevelTest>(testsQuery);
-
   // Fetch registrations for selected test
   const registrationsQuery = useMemoFirebase(() => {
     if (!firestore || !selectedTest) return null;
@@ -137,10 +121,8 @@ export default function ClubLevelTestsPage() {
     );
   }, [firestore, selectedTest?.id]);
   const { data: registrations } = useCollection<LevelTestRegistration>(registrationsQuery);
-
   const onSubmit = async (values: TestFormValues) => {
-    if (!firestore || !user?.clubId) return;
-
+    if (!firestore || !_user?.clubId) return;
     try {
       if (editingTest) {
         await updateDoc(doc(firestore, 'level_tests', editingTest.id), {
@@ -153,7 +135,7 @@ export default function ClubLevelTestsPage() {
         const testData: UILevelTest = {
           ...values,
           id: testRef.id,
-          clubId: user.clubId,
+          clubId: _user.clubId,
           levels: DEFAULT_LEVELS,
           evaluationItems: DEFAULT_ITEMS,
           status: 'draft',
@@ -163,15 +145,13 @@ export default function ClubLevelTestsPage() {
         await setDoc(testRef, testData as any);
         toast({ title: '레벨테스트 생성 완료' });
       }
-
       setIsDialogOpen(false);
       form.reset();
       setEditingTest(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };
-
   const handleEdit = (test: UILevelTest) => {
     setEditingTest(test);
     form.reset({
@@ -183,17 +163,15 @@ export default function ClubLevelTestsPage() {
     });
     setIsDialogOpen(true);
   };
-
   const handleDelete = async (testId: string) => {
     if (!firestore || !confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(firestore, 'level_tests', testId));
       toast({ title: '레벨테스트 삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
   const handleStatusChange = async (testId: string, newStatus: UILevelTest['status']) => {
     if (!firestore) return;
     try {
@@ -202,19 +180,17 @@ export default function ClubLevelTestsPage() {
         updatedAt: new Date().toISOString(),
       });
       toast({ title: '상태 변경 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '상태 변경 실패' });
     }
   };
-
-  if (user?.role !== UserRole.CLUB_OWNER && user?.role !== UserRole.CLUB_MANAGER) {
+  if (_user?.role !== UserRole.CLUB_OWNER && _user?.role !== UserRole.CLUB_MANAGER) {
     return (
       <div className="flex justify-center items-center h-screen">
         <p className="text-muted-foreground">접근 권한이 없습니다</p>
       </div>
     );
   }
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -222,7 +198,6 @@ export default function ClubLevelTestsPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -239,7 +214,6 @@ export default function ClubLevelTestsPage() {
           새 레벨테스트 생성
         </Button>
       </div>
-
       {/* Tests Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {levelTests?.map((test) => (
@@ -277,7 +251,6 @@ export default function ClubLevelTestsPage() {
                   ))}
                 </div>
               </div>
-
               <div className="flex flex-wrap gap-2 pt-2">
                 {test.status === 'draft' && (
                   <Button
@@ -350,7 +323,6 @@ export default function ClubLevelTestsPage() {
           </Card>
         ))}
       </div>
-
       {(!levelTests || levelTests.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -362,7 +334,6 @@ export default function ClubLevelTestsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -387,7 +358,6 @@ export default function ClubLevelTestsPage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="description"
@@ -401,7 +371,6 @@ export default function ClubLevelTestsPage() {
                   </FormItem>
                 )}
               />
-
               <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -416,7 +385,6 @@ export default function ClubLevelTestsPage() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="registrationEnd"
@@ -430,7 +398,6 @@ export default function ClubLevelTestsPage() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="testDate"
@@ -445,7 +412,6 @@ export default function ClubLevelTestsPage() {
                   )}
                 />
               </div>
-
               <div className="space-y-2">
                 <FormLabel>레벨 (자동 설정)</FormLabel>
                 <div className="flex flex-wrap gap-2">
@@ -456,7 +422,6 @@ export default function ClubLevelTestsPage() {
                   ))}
                 </div>
               </div>
-
               <div className="space-y-2">
                 <FormLabel>평가 항목 (자동 설정)</FormLabel>
                 <div className="grid grid-cols-2 gap-2">
@@ -470,7 +435,6 @@ export default function ClubLevelTestsPage() {
                   ))}
                 </div>
               </div>
-
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   취소
@@ -483,7 +447,6 @@ export default function ClubLevelTestsPage() {
           </Form>
         </DialogContent>
       </Dialog>
-
       {/* Registrations Dialog */}
       <Dialog open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

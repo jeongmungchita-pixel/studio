@@ -1,7 +1,5 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,14 +10,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser, useFirebase } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
+import { useDraft } from '@/hooks/use-draft';
 import { useToast } from '@/hooks/use-toast';
 import { User, PenTool, CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Club } from '@/types';
-
 interface FormData {
   clubId: string;
   name: string;
@@ -33,14 +31,20 @@ interface FormData {
   agreePortrait: boolean;
   signature: string | null;
 }
-
 export default function AdultRegisterPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { _user, isUserLoading } = useUser();
+  const { auth, firestore: fstore } = useFirebase();
   const signatureRef = useRef<SignatureCanvas>(null);
-  
+  const { load: loadDraft, saveDebounced: saveDraft, clear: clearDraft } = useDraft<FormData>('adult');
   const [step, setStep] = useState(1);
+  const [acctEmail, setAcctEmail] = useState('');
+  const [acctPassword, setAcctPassword] = useState('');
+  const [acctPasswordConfirm, setAcctPasswordConfirm] = useState('');
+  const [acctName, setAcctName] = useState('');
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     clubId: '',
@@ -55,18 +59,97 @@ export default function AdultRegisterPage() {
     agreePortrait: false,
     signature: null,
   });
-
+  // Initialize step based on auth state and load draft
+  React.useEffect(() => {
+    if (!isUserLoading && !_user) {
+      setStep(0);
+    }
+    (async () => {
+      const draft = await loadDraft();
+      if (draft) {
+        setFormData(prev => ({ ...prev, ...draft }));
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_user, isUserLoading]);
+  // If the user logs in after creating account, move to step 1 automatically
+  React.useEffect(() => {
+    if (!isUserLoading && _user && step === 0) {
+      setStep(1);
+      if (!formData.name && acctName) {
+        setFormData(prev => ({ ...prev, name: acctName }));
+      }
+    }
+  }, [_user, isUserLoading, step, acctName, formData.name]);
   // 클럽 목록 조회
   const clubsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'clubs') : null),
     [firestore]
   );
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
-
   const updateFormData = (field: keyof FormData, value: string | boolean | null) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      // save draft (avoid undefined fields)
+      saveDraft({ [field]: value ?? undefined } as Partial<FormData>);
+      return next;
+    });
   };
-
+  // Persist requestedClub to user profile for approval rules
+  React.useEffect(() => {
+    const persistRequestedClub = async () => {
+      if (!firestore || !_user) return;
+      if (!formData.clubId) return;
+      try {
+        const selectedClub = clubs?.find(c => c.id === formData.clubId);
+        if (!selectedClub) return;
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(
+          doc(firestore, 'users', _user.uid),
+          {
+            requestedClubId: formData.clubId,
+            requestedClubName: selectedClub.name || null,
+          },
+          { merge: true }
+        );
+      } catch {}
+    };
+    persistRequestedClub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.clubId, _user?.uid, firestore, clubs]);
+  const handleCreateAccount = async () => {
+    if (!auth || !fstore) return;
+    if (!acctEmail || !acctPassword || !acctName) {
+      toast({ variant: 'destructive', title: '계정 정보 필요', description: '이메일, 비밀번호, 이름을 입력해주세요.' });
+      return;
+    }
+    if (acctPassword !== acctPasswordConfirm) {
+      toast({ variant: 'destructive', title: '비밀번호 불일치', description: '비밀번호가 일치하지 않습니다.' });
+      return;
+    }
+    setIsCreatingAccount(true);
+    try {
+      const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const cred = await createUserWithEmailAndPassword(auth, acctEmail, acctPassword);
+      await updateProfile(cred.user, { displayName: acctName });
+      await setDoc(doc(fstore, 'users', cred.user.uid), {
+        uid: cred.user.uid,
+        email: acctEmail,
+        displayName: acctName,
+        role: 'MEMBER',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        provider: 'email',
+      }, { merge: true });
+      toast({ title: '계정 생성 완료', description: '다음 단계로 이동합니다.' });
+      setStep(1);
+    } catch (e: unknown) {
+      toast({ variant: 'destructive', title: '계정 생성 실패', description: (e as any)?.message || '다시 시도해주세요.' });
+    } finally {
+      setIsCreatingAccount(false);
+    }
+  };
   const handleAgreeAll = (checked: boolean) => {
     setFormData(prev => ({
       ...prev,
@@ -76,12 +159,10 @@ export default function AdultRegisterPage() {
       agreePortrait: checked,
     }));
   };
-
   const clearSignature = () => {
     signatureRef.current?.clear();
     updateFormData('signature', '');
   };
-
   const saveSignature = () => {
     if (signatureRef.current?.isEmpty()) {
       toast({
@@ -91,12 +172,10 @@ export default function AdultRegisterPage() {
       });
       return false;
     }
-    
     const signatureData = signatureRef.current?.toDataURL();
     updateFormData('signature', signatureData || '');
     return true;
   };
-
   const validateStep = (currentStep: number): boolean => {
     switch (currentStep) {
       case 1: // 클럽 선택
@@ -109,7 +188,6 @@ export default function AdultRegisterPage() {
           return false;
         }
         return true;
-        
       case 2: // 기본 정보
         if (!formData.name || !formData.birthDate || !formData.phoneNumber) {
           toast({
@@ -119,11 +197,10 @@ export default function AdultRegisterPage() {
           });
           return false;
         }
-        
         // 19세 이상 확인
         const birthDate = new Date(formData.birthDate);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
+        const _today = new Date();
+        const age = _today.getFullYear() - birthDate.getFullYear();
         if (age < 19) {
           toast({
             variant: 'destructive',
@@ -133,7 +210,6 @@ export default function AdultRegisterPage() {
           return false;
         }
         return true;
-        
       case 3: // 약관 동의
         if (!formData.agreePersonalInfo || !formData.agreeTerms || !formData.agreeSafety) {
           toast({
@@ -144,12 +220,10 @@ export default function AdultRegisterPage() {
           return false;
         }
         return true;
-        
       default:
         return true;
     }
   };
-
   const handleNext = () => {
     if (validateStep(step)) {
       if (step === 4) {
@@ -161,52 +235,58 @@ export default function AdultRegisterPage() {
       }
     }
   };
-
   const handlePrev = () => {
     setStep(step - 1);
   };
-
   const handleSubmit = async () => {
-    if (!firestore) return;
+    if (!_user) return;
     setIsSubmitting(true);
-
     try {
       const selectedClub = clubs?.find(c => c.id === formData.clubId);
       if (!selectedClub) {
         throw new Error('클럽을 찾을 수 없습니다.');
       }
-
-      const requestData = {
-        clubId: formData.clubId,
-        clubName: selectedClub.name,
-        requestType: 'adult',
-        name: formData.name,
-        birthDate: formData.birthDate,
-        gender: formData.gender,
-        phoneNumber: formData.phoneNumber,
-        email: formData.email || undefined,
-        agreements: {
-          personal: formData.agreePersonalInfo,
-          terms: formData.agreeTerms,
-          safety: formData.agreeSafety,
-          portrait: formData.agreePortrait,
-          agreedAt: new Date().toISOString(),
+      // Use Admin API for registration
+      const response = await fetch('/api/admin/registrations/adult', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        signature: formData.signature!,
-        signedAt: new Date().toISOString(),
-        status: 'pending',
-        requestedAt: new Date().toISOString(),
-      };
-
-      await addDoc(collection(firestore, 'adultRegistrationRequests'), requestData);
-      
+        body: JSON.stringify({
+          uid: _user.uid,
+          name: formData.name,
+          birthDate: formData.birthDate,
+          gender: formData.gender,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email || undefined,
+          clubId: formData.clubId,
+          clubName: selectedClub.name,
+          emergencyContact: undefined,
+          emergencyContactPhone: undefined,
+          medicalConditions: undefined,
+          medications: undefined,
+          agreements: {
+            personal: formData.agreePersonalInfo,
+            terms: formData.agreeTerms,
+            safety: formData.agreeSafety,
+            portrait: formData.agreePortrait,
+            agreedAt: new Date().toISOString(),
+          },
+          signature: formData.signature!,
+          signedAt: new Date().toISOString(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      await clearDraft();
       toast({
         title: '가입 신청 완료',
         description: '클럽의 승인을 기다려주세요. 승인 완료 시 연락드리겠습니다.',
       });
-      
       router.push('/register/success');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -216,7 +296,6 @@ export default function AdultRegisterPage() {
       setIsSubmitting(false);
     }
   };
-
   if (isClubsLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -224,7 +303,6 @@ export default function AdultRegisterPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -242,6 +320,39 @@ export default function AdultRegisterPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Step 0: 계정 생성 (비로그인 시) */}
+          {step === 0 && (
+            <div className="space-y-4">
+              <Alert>
+                <AlertDescription>
+                  먼저 로그인 계정을 만듭니다. 생성 후 바로 가입 절차를 계속합니다.
+                </AlertDescription>
+              </Alert>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctName">이름 *</Label>
+                  <Input id="acctName" value={acctName} onChange={(e) => setAcctName(e.target.value)} placeholder="홍길동" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctEmail">이메일 *</Label>
+                  <Input id="acctEmail" type="email" value={acctEmail} onChange={(e) => setAcctEmail(e.target.value)} placeholder="name@example.com" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctPassword">비밀번호 *</Label>
+                  <Input id="acctPassword" type="password" value={acctPassword} onChange={(e) => setAcctPassword(e.target.value)} placeholder="6자 이상" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="acctPasswordConfirm">비밀번호 확인 *</Label>
+                  <Input id="acctPasswordConfirm" type="password" value={acctPasswordConfirm} onChange={(e) => setAcctPasswordConfirm(e.target.value)} placeholder="비밀번호 다시 입력" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleCreateAccount} disabled={isCreatingAccount} className="flex-1">
+                  {isCreatingAccount ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />처리 중...</>) : '회원가입하기'}
+                </Button>
+              </div>
+            </div>
+          )}
           {/* Step 1: 클럽 선택 */}
           {step === 1 && (
             <div className="space-y-4">
@@ -268,7 +379,6 @@ export default function AdultRegisterPage() {
               </div>
             </div>
           )}
-
           {/* Step 2: 기본 정보 */}
           {step === 2 && (
             <div className="space-y-4">
@@ -281,7 +391,6 @@ export default function AdultRegisterPage() {
                   placeholder="홍길동"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="birthDate">생년월일 *</Label>
                 <Input
@@ -291,7 +400,6 @@ export default function AdultRegisterPage() {
                   onChange={(e) => updateFormData('birthDate', e.target.value)}
                 />
               </div>
-              
               <div>
                 <Label>성별 *</Label>
                 <RadioGroup value={formData.gender} onValueChange={(value) => updateFormData('gender', value)}>
@@ -305,7 +413,6 @@ export default function AdultRegisterPage() {
                   </div>
                 </RadioGroup>
               </div>
-              
               <div>
                 <Label htmlFor="phoneNumber">연락처 *</Label>
                 <Input
@@ -316,7 +423,6 @@ export default function AdultRegisterPage() {
                   placeholder="010-1234-5678"
                 />
               </div>
-              
               <div>
                 <Label htmlFor="email">이메일 (선택)</Label>
                 <Input
@@ -329,7 +435,6 @@ export default function AdultRegisterPage() {
               </div>
             </div>
           )}
-
           {/* Step 3: 약관 동의 */}
           {step === 3 && (
             <div className="space-y-4">
@@ -343,9 +448,7 @@ export default function AdultRegisterPage() {
                   전체 동의
                 </Label>
               </div>
-              
               <Separator />
-              
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox 
@@ -357,7 +460,6 @@ export default function AdultRegisterPage() {
                     개인정보 수집 및 이용 동의 (필수)
                   </Label>
                 </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="terms" 
@@ -368,7 +470,6 @@ export default function AdultRegisterPage() {
                     체육시설 이용 약관 동의 (필수)
                   </Label>
                 </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="safety" 
@@ -379,7 +480,6 @@ export default function AdultRegisterPage() {
                     안전사고 면책 동의 (필수)
                   </Label>
                 </div>
-                
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="portrait" 
@@ -393,7 +493,6 @@ export default function AdultRegisterPage() {
               </div>
             </div>
           )}
-
           {/* Step 4: 서명 */}
           {step === 4 && (
             <div className="space-y-4">
@@ -416,7 +515,6 @@ export default function AdultRegisterPage() {
                   </Button>
                 </div>
               </div>
-              
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>가입 신청 준비 완료</AlertTitle>
@@ -426,8 +524,8 @@ export default function AdultRegisterPage() {
               </Alert>
             </div>
           )}
-
-          {/* 네비게이션 버튼 */}
+          {/* 네비게이션 버튼 (Step 0에서는 숨김) */}
+          {step !== 0 && (
           <div className="flex gap-3 pt-4">
             {step > 1 && (
               <Button
@@ -460,6 +558,7 @@ export default function AdultRegisterPage() {
               )}
             </Button>
           </div>
+          )}
         </CardContent>
       </Card>
     </main>

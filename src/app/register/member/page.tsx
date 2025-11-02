@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +15,9 @@ import { useMemoFirebase } from '@/firebase/provider';
 import { Club, UserProfile } from '@/types';
 import { UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-
 export default function MemberRegisterPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
@@ -37,17 +34,14 @@ export default function MemberRegisterPage() {
     address: '',
     gender: '' as 'male' | 'female' | '',
   });
-
   // Firestore에서 클럽 목록 가져오기
   const clubsCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'clubs') : null),
     [firestore]
   );
   const { data: clubs, isLoading: isClubsLoading } = useCollection<Club>(clubsCollection);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!firestore || !auth) {
       toast({
         variant: 'destructive',
@@ -56,7 +50,6 @@ export default function MemberRegisterPage() {
       });
       return;
     }
-
     // 비밀번호 확인
     if (formData.password !== formData.passwordConfirm) {
       toast({
@@ -66,7 +59,6 @@ export default function MemberRegisterPage() {
       });
       return;
     }
-
     if (formData.password.length < 6) {
       toast({
         variant: 'destructive',
@@ -75,9 +67,7 @@ export default function MemberRegisterPage() {
       });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       const selectedClub = clubs?.find(c => c.id === formData.clubId);
       if (!selectedClub) {
@@ -89,8 +79,6 @@ export default function MemberRegisterPage() {
         setIsSubmitting(false);
         return;
       }
-
-
       // 1. Firebase Auth 계정 생성
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -98,7 +86,6 @@ export default function MemberRegisterPage() {
         formData.password
       );
       const newUser = userCredential.user;
-
       // 2. users 프로필 생성 (status: pending)
       const userProfile: UserProfile = {
         uid: newUser.uid,
@@ -114,10 +101,10 @@ export default function MemberRegisterPage() {
         createdAt: new Date().toISOString(),
       };
       await setDoc(doc(firestore, 'users', newUser.uid), userProfile);
-
       // 3. memberRegistrationRequests 생성 (참고용)
       const requestData = {
         userId: newUser.uid,
+        requestedBy: newUser.uid, // for Firestore rules: request.resource.data.requestedBy == request.auth.uid
         name: formData.name,
         email: formData.email || undefined,
         phoneNumber: formData.phoneNumber || undefined,
@@ -131,14 +118,14 @@ export default function MemberRegisterPage() {
         requestedAt: new Date().toISOString(),
       };
       await addDoc(collection(firestore, 'memberRegistrationRequests'), requestData);
-      
       toast({
         title: '가입 완료!',
         description: '계정이 생성되었습니다. 클럽 오너의 승인을 기다려주세요.',
       });
-      
-      // 승인 대기 페이지로 이동 (완전한 페이지 리로드)
-      window.location.href = '/pending-approval';
+      // 승인 대기 페이지로 이동
+      if (router) {
+        router.replace('/pending-approval');
+      }
     } catch (error: unknown) {
       let errorMessage = '가입에 실패했습니다. 다시 시도해주세요.';
       const code = typeof error === 'object' && error && 'code' in error ? (error as any).code : undefined;
@@ -147,7 +134,6 @@ export default function MemberRegisterPage() {
       } else if (code === 'auth/weak-password') {
         errorMessage = '비밀번호가 너무 약합니다.';
       }
-
       toast({
         variant: 'destructive',
         title: '가입 실패',
@@ -157,7 +143,6 @@ export default function MemberRegisterPage() {
       setIsSubmitting(false);
     }
   };
-
   if (isClubsLoading) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
@@ -165,7 +150,6 @@ export default function MemberRegisterPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -211,7 +195,6 @@ export default function MemberRegisterPage() {
                 </div>
               </RadioGroup>
             </div>
-
             {/* 클럽 선택 */}
             <div className="space-y-2">
               <Label htmlFor="club">
@@ -240,7 +223,6 @@ export default function MemberRegisterPage() {
                 </SelectContent>
               </Select>
             </div>
-
             {/* 이름 */}
             <div className="space-y-2">
               <Label htmlFor="name">이름 *</Label>
@@ -252,7 +234,6 @@ export default function MemberRegisterPage() {
                 required
               />
             </div>
-
             {/* 이메일 */}
             <div className="space-y-2">
               <Label htmlFor="email">이메일 *</Label>
@@ -265,7 +246,6 @@ export default function MemberRegisterPage() {
                 required
               />
             </div>
-
             {/* 전화번호 */}
             <div className="space-y-2">
               <Label htmlFor="phone">전화번호 *</Label>
@@ -278,7 +258,6 @@ export default function MemberRegisterPage() {
                 required
               />
             </div>
-
             {/* 비밀번호 */}
             <div className="space-y-2">
               <Label htmlFor="password">
@@ -295,7 +274,6 @@ export default function MemberRegisterPage() {
                 minLength={6}
               />
             </div>
-
             {/* 비밀번호 확인 */}
             <div className="space-y-2">
               <Label htmlFor="passwordConfirm">비밀번호 확인 *</Label>
@@ -309,7 +287,6 @@ export default function MemberRegisterPage() {
                 minLength={6}
               />
             </div>
-
             {/* 생년월일 */}
             <div className="space-y-2">
               <Label htmlFor="birthDate">생년월일</Label>
@@ -320,7 +297,6 @@ export default function MemberRegisterPage() {
                 onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
               />
             </div>
-
             {/* 주소 */}
             <div className="space-y-2">
               <Label htmlFor="address">주소</Label>
@@ -331,7 +307,6 @@ export default function MemberRegisterPage() {
                 placeholder="서울시 강남구..."
               />
             </div>
-
             {/* 안내 메시지 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
@@ -339,7 +314,6 @@ export default function MemberRegisterPage() {
                 승인 전에는 &quot;승인 대기중&quot; 페이지가 표시됩니다.
               </p>
             </div>
-
             {/* 제출 버튼 */}
             <div className="flex gap-3">
               <Button

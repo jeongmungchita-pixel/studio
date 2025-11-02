@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +14,7 @@ import { useFirestore, useStorage } from '@/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
-
 type FamilyRelation = 'child' | 'parent' | 'spouse' | 'sibling' | 'other';
-
 const relationLabels: Record<FamilyRelation, string> = {
   child: '자녀',
   parent: '부모',
@@ -26,7 +22,6 @@ const relationLabels: Record<FamilyRelation, string> = {
   sibling: '형제/자매',
   other: '기타',
 };
-
 interface FamilyMember {
   name: string;
   birthDate: string;
@@ -36,10 +31,9 @@ interface FamilyMember {
   photoFile: File | null;
   photoPreview: string | null;
 }
-
 export default function AddFamilyMemberPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
@@ -55,7 +49,6 @@ export default function AddFamilyMemberPage() {
       photoPreview: null,
     }
   ]);
-
   const addMember = () => {
     setMembers([...members, {
       name: '',
@@ -67,21 +60,17 @@ export default function AddFamilyMemberPage() {
       photoPreview: null,
     }]);
   };
-
   const removeMember = (index: number) => {
     setMembers(members.filter((_, i) => i !== index));
   };
-
   const updateMember = (index: number, field: keyof FamilyMember, value: string | boolean | null | File) => {
     const updated = [...members];
     updated[index] = { ...updated[index], [field]: value };
     setMembers(updated);
   };
-
   const handlePhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     // 이미지 파일 검증
     if (!file.type.startsWith('image/')) {
       toast({
@@ -91,7 +80,6 @@ export default function AddFamilyMemberPage() {
       });
       return;
     }
-
     // 파일 크기 검증 (5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -101,7 +89,6 @@ export default function AddFamilyMemberPage() {
       });
       return;
     }
-
     // 미리보기 생성
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -110,26 +97,21 @@ export default function AddFamilyMemberPage() {
     };
     reader.readAsDataURL(file);
   };
-
   const removePhoto = (index: number) => {
     updateMember(index, 'photoFile', null);
     updateMember(index, 'photoPreview', null);
   };
-
   const uploadPhoto = async (file: File, memberId: string): Promise<string> => {
     if (!storage) throw new Error('Storage not initialized');
-    
     const storageRef = ref(storage, `members/${memberId}/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
     return await getDownloadURL(storageRef);
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user) return;
-    
+    if (!firestore || !_user) return;
     // clubId 확인
-    if (!user.clubId) {
+    if (!_user.clubId) {
       toast({
         variant: 'destructive',
         title: '클럽 정보 없음',
@@ -137,9 +119,7 @@ export default function AddFamilyMemberPage() {
       });
       return;
     }
-    
     setIsSubmitting(true);
-
     try {
       // Firestore에 각 가족 구성원을 Member로 생성
       for (const member of members) {
@@ -149,15 +129,14 @@ export default function AddFamilyMemberPage() {
           birthDate: member.birthDate,
           gender: member.gender,
           phoneNumber: member.phoneNumber || '',
-          guardianIds: [user.uid],
-          clubId: user.clubId,
+          guardianIds: [_user.uid],
+          clubId: _user.clubId,
           memberType: 'family',
           familyRole: member.relation,
           status: 'active',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-
         // 2. 사진이 있으면 업로드 후 URL 업데이트
         if (member.photoFile) {
           const photoURL = await uploadPhoto(member.photoFile, memberRef.id);
@@ -166,13 +145,12 @@ export default function AddFamilyMemberPage() {
           });
         }
       }
-      
       toast({
         title: '가족 구성원 추가 완료',
         description: `${members.length}명의 가족 구성원이 추가되었습니다!`,
       });
       router.push('/my-profile/family');
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         variant: 'destructive',
         title: '오류 발생',
@@ -182,8 +160,7 @@ export default function AddFamilyMemberPage() {
       setIsSubmitting(false);
     }
   };
-
-  if (!user) {
+  if (!_user) {
     return (
       <main className="flex-1 p-6 flex items-center justify-center">
         <Card>
@@ -196,9 +173,7 @@ export default function AddFamilyMemberPage() {
       </main>
     );
   }
-
   const isFormValid = members.every(m => m.name && m.birthDate);
-
   return (
     <main className="flex-1 p-6 flex items-center justify-center">
       <Card className="w-full max-w-3xl">
@@ -229,7 +204,6 @@ export default function AddFamilyMemberPage() {
                 </div>
               </div>
             </div>
-
             {/* 가족 구성원 목록 */}
             {members.map((member, index) => (
               <Card key={index} className="border-2">
@@ -290,7 +264,6 @@ export default function AddFamilyMemberPage() {
                       </div>
                     )}
                   </div>
-
                   {/* 관계 */}
                   <div className="space-y-2">
                     <Label>관계 *</Label>
@@ -310,7 +283,6 @@ export default function AddFamilyMemberPage() {
                       </SelectContent>
                     </Select>
                   </div>
-
                   {/* 이름 */}
                   <div className="space-y-2">
                     <Label>이름 *</Label>
@@ -321,7 +293,6 @@ export default function AddFamilyMemberPage() {
                       required
                     />
                   </div>
-
                   {/* 생년월일 */}
                   <div className="space-y-2">
                     <Label>생년월일 *</Label>
@@ -332,7 +303,6 @@ export default function AddFamilyMemberPage() {
                       required
                     />
                   </div>
-
                   {/* 성별 */}
                   <div className="space-y-2">
                     <Label>성별 *</Label>
@@ -352,7 +322,6 @@ export default function AddFamilyMemberPage() {
                       </div>
                     </RadioGroup>
                   </div>
-
                   {/* 전화번호 (부모/배우자인 경우) */}
                   {(member.relation === 'parent' || member.relation === 'spouse') && (
                     <div className="space-y-2">
@@ -368,7 +337,6 @@ export default function AddFamilyMemberPage() {
                 </CardContent>
               </Card>
             ))}
-
             {/* 구성원 추가 버튼 */}
             <Button
               type="button"
@@ -379,7 +347,6 @@ export default function AddFamilyMemberPage() {
               <UserPlus className="mr-2 h-4 w-4" />
               구성원 추가
             </Button>
-
             {/* 제출 버튼 */}
             <div className="flex gap-2">
               <Button

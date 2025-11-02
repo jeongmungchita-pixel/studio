@@ -1,23 +1,19 @@
 'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Member } from '@/types/member';
 import { calculateMemberStats } from '../utils';
 import { Users, UserCheck, Clock, UserX, TrendingUp, PieChart } from 'lucide-react';
-
 // ============================================
 // 📊 회원 통계 컴포넌트
 // ============================================
-
 interface MemberStatsProps {
   members: Member[];
   variant?: 'cards' | 'compact' | 'detailed';
   showAgeDistribution?: boolean;
   className?: string;
 }
-
 export function MemberStats({
   members,
   variant = 'cards',
@@ -25,7 +21,6 @@ export function MemberStats({
   className
 }: MemberStatsProps) {
   const stats = calculateMemberStats(members);
-
   if (variant === 'compact') {
     return (
       <div className={`flex items-center gap-4 p-4 bg-muted/50 rounded-lg ${className}`}>
@@ -33,29 +28,24 @@ export function MemberStats({
           <Users className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">총 {stats.total}명</span>
         </div>
-        
         <div className="flex items-center gap-2">
           <UserCheck className="h-4 w-4 text-green-600" />
           <span className="text-sm">활동 {stats.active}명</span>
         </div>
-        
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-yellow-600" />
           <span className="text-sm">대기 {stats.pending}명</span>
         </div>
-        
         <div className="flex items-center gap-2">
           <UserX className="h-4 w-4 text-gray-600" />
           <span className="text-sm">비활동 {stats.inactive}명</span>
         </div>
-        
         <Badge variant="outline" className="ml-auto">
           활성률 {stats.activeRate}%
         </Badge>
       </div>
     );
   }
-
   if (variant === 'detailed') {
     return (
       <div className={`space-y-6 ${className}`}>
@@ -72,7 +62,6 @@ export function MemberStats({
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -85,7 +74,6 @@ export function MemberStats({
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -97,7 +85,6 @@ export function MemberStats({
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -110,7 +97,6 @@ export function MemberStats({
             </CardContent>
           </Card>
         </div>
-
         {/* 카테고리별 분포 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
@@ -134,7 +120,6 @@ export function MemberStats({
                     </span>
                   </div>
                 </div>
-                
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">아동</span>
                   <div className="flex items-center gap-2">
@@ -150,7 +135,6 @@ export function MemberStats({
               </div>
             </CardContent>
           </Card>
-
           {/* 연령대별 분포 */}
           {showAgeDistribution && (
             <Card>
@@ -184,7 +168,6 @@ export function MemberStats({
             </Card>
           )}
         </div>
-
         {/* 상태별 상세 분석 */}
         <Card>
           <CardHeader>
@@ -199,7 +182,6 @@ export function MemberStats({
                 <div className="text-sm text-muted-foreground">활성률</div>
                 <Progress value={stats.activeRate} className="mt-2" />
               </div>
-              
               <div className="text-center">
                 <div className="text-3xl font-bold text-yellow-600 mb-2">
                   {stats.total > 0 ? Math.round((stats.pending / stats.total) * 100) : 0}%
@@ -210,7 +192,6 @@ export function MemberStats({
                   className="mt-2" 
                 />
               </div>
-              
               <div className="text-center">
                 <div className="text-3xl font-bold text-gray-600 mb-2">
                   {stats.total > 0 ? Math.round((stats.inactive / stats.total) * 100) : 0}%
@@ -227,7 +208,6 @@ export function MemberStats({
       </div>
     );
   }
-
   // Default cards variant
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
@@ -244,7 +224,6 @@ export function MemberStats({
           </div>
         </CardContent>
       </Card>
-
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -259,7 +238,6 @@ export function MemberStats({
           </div>
         </CardContent>
       </Card>
-
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -273,7 +251,6 @@ export function MemberStats({
           </div>
         </CardContent>
       </Card>
-
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">

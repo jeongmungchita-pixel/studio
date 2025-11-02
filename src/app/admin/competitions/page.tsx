@@ -1,6 +1,4 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, doc, setDoc, updateDoc, deleteDoc, where } from 'firebase/firestore';
@@ -23,7 +21,6 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Link from 'next/link';
-
 const MALE_EVENTS = [
   { id: 'FX', name: '마루운동', code: 'FX', gender: 'male' as const },
   { id: 'PH', name: '안마', code: 'PH', gender: 'male' as const },
@@ -32,14 +29,12 @@ const MALE_EVENTS = [
   { id: 'PB', name: '평행봉', code: 'PB', gender: 'male' as const },
   { id: 'HB', name: '철봉', code: 'HB', gender: 'male' as const },
 ];
-
 const FEMALE_EVENTS = [
   { id: 'VT', name: '도마', code: 'VT', gender: 'both' as const },
   { id: 'UB', name: '이단평행봉', code: 'UB', gender: 'female' as const },
   { id: 'BB', name: '평균대', code: 'BB', gender: 'female' as const },
   { id: 'FX', name: '마루운동', code: 'FX', gender: 'both' as const },
 ];
-
 const competitionFormSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요'),
   description: z.string().min(1, '설명을 입력하세요'),
@@ -48,9 +43,7 @@ const competitionFormSchema = z.object({
   competitionDate: z.string(),
   venue: z.string().optional(),
 });
-
 type CompetitionFormValues = z.infer<typeof competitionFormSchema>;
-
 const statusLabels = {
   draft: '준비중',
   registration_open: '신청중',
@@ -59,12 +52,10 @@ const statusLabels = {
   completed: '완료',
   cancelled: '취소',
 };
-
 export default function AdminCompetitionsPage() {
-  const { user } = useUser();
+  const { _user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState<GymnasticsCompetition | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
@@ -75,7 +66,6 @@ export default function AdminCompetitionsPage() {
     dJudges: string[];
     eJudges: string[];
   }>>({});
-
   const form = useForm<CompetitionFormValues>({
     resolver: zodResolver(competitionFormSchema),
     defaultValues: {
@@ -87,7 +77,6 @@ export default function AdminCompetitionsPage() {
       venue: '',
     },
   });
-
   // Fetch competitions
   const competitionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -97,7 +86,6 @@ export default function AdminCompetitionsPage() {
     );
   }, [firestore]);
   const { data: competitions, isLoading, error: competitionsError } = useCollection<GymnasticsCompetition>(competitionsQuery);
-
   // Fetch registrations for selected competition
   const registrationsQuery = useMemoFirebase(() => {
     if (!firestore || !selectedCompetition) return null;
@@ -107,22 +95,18 @@ export default function AdminCompetitionsPage() {
     );
   }, [firestore, selectedCompetition?.id]);
   const { data: registrations, error: registrationsError } = useCollection<CompetitionRegistration>(registrationsQuery);
-
   // 에러 처리
   if (competitionsError) {
     return <ErrorFallback error={competitionsError} title="대회 데이터 조회 오류" />;
   }
-
   // 참가 등록 에러 처리 (경고만 표시)
   if (registrationsError) {
   }
-
   const onSubmit = async (values: CompetitionFormValues) => {
-    if (!firestore || !user || selectedEvents.length === 0) {
+    if (!firestore || !_user || selectedEvents.length === 0) {
       toast({ variant: 'destructive', title: '종목을 선택하세요' });
       return;
     }
-
     try {
       const events: GymnasticsEvent[] = [...MALE_EVENTS, ...FEMALE_EVENTS]
         .filter(e => selectedEvents.includes(e.id))
@@ -134,7 +118,6 @@ export default function AdminCompetitionsPage() {
           maxScore: 10,
           judgeCount: 4,
         }));
-
       const categories: CompetitionCategory[] = [
         { id: 'elem_1_2', type: 'grade', name: '초등 1-2학년', minAge: 7, maxAge: 8 },
         { id: 'elem_3_4', type: 'grade', name: '초등 3-4학년', minAge: 9, maxAge: 10 },
@@ -142,7 +125,6 @@ export default function AdminCompetitionsPage() {
         { id: 'middle', type: 'grade', name: '중등부', minAge: 13, maxAge: 15 },
         { id: 'high', type: 'grade', name: '고등부', minAge: 16, maxAge: 18 },
       ];
-
       if (editingCompetition) {
         await updateDoc(doc(firestore, 'competitions', editingCompetition.id), {
           ...values,
@@ -164,21 +146,19 @@ export default function AdminCompetitionsPage() {
           status: 'draft',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          createdBy: user.uid,
+          createdBy: _user.uid,
         };
         await setDoc(compRef, competitionData);
         toast({ title: '시합 생성 완료' });
       }
-
       setIsDialogOpen(false);
       form.reset();
       setSelectedEvents([]);
       setEditingCompetition(null);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '저장 실패' });
     }
   };
-
   const handleEdit = (competition: GymnasticsCompetition) => {
     setEditingCompetition(competition);
     form.reset({
@@ -192,17 +172,15 @@ export default function AdminCompetitionsPage() {
     setSelectedEvents((competition.events ?? []).map(e => e.id));
     setIsDialogOpen(true);
   };
-
   const handleDelete = async (competitionId: string) => {
     if (!firestore || !confirm('정말 삭제하시겠습니까?')) return;
     try {
       await deleteDoc(doc(firestore, 'competitions', competitionId));
       toast({ title: '시합 삭제 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '삭제 실패' });
     }
   };
-
   const handleStatusChange = async (competitionId: string, newStatus: GymnasticsCompetition['status']) => {
     if (!firestore) return;
     try {
@@ -211,11 +189,10 @@ export default function AdminCompetitionsPage() {
         updatedAt: new Date().toISOString(),
       });
       toast({ title: '상태 변경 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '상태 변경 실패' });
     }
   };
-
   const handleApproveRegistration = async (registrationId: string) => {
     if (!firestore) return;
     try {
@@ -224,11 +201,10 @@ export default function AdminCompetitionsPage() {
         updatedAt: new Date().toISOString(),
       });
       toast({ title: '참가 승인 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '승인 실패' });
     }
   };
-
   const handleRejectRegistration = async (registrationId: string) => {
     if (!firestore) return;
     try {
@@ -237,26 +213,23 @@ export default function AdminCompetitionsPage() {
         updatedAt: new Date().toISOString(),
       });
       toast({ title: '참가 거부 완료' });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '거부 실패' });
     }
   };
-
   const handleSaveJudgeAssignments = async () => {
     if (!firestore || !judgeCompetition) return;
-    
     try {
       // competition_schedules 컬렉션에 심판 배정 저장
-      for (const event of (judgeCompetition?.events ?? [])) {
-        const assignment = judgeAssignments[event.id];
+      for (const _event of (judgeCompetition?.events ?? [])) {
+        const assignment = judgeAssignments[_event.id];
         if (!assignment) continue;
-
         const scheduleRef = doc(collection(firestore, 'competition_schedules'));
         await setDoc(scheduleRef, {
           id: scheduleRef.id,
           competitionId: judgeCompetition.id,
-          eventId: event.id,
-          eventName: event.name,
+          eventId: _event.id,
+          eventName: _event.name,
           assignedJudges: [
             ...assignment.dJudges.filter(j => j.trim()),
             ...assignment.eJudges.filter(j => j.trim()),
@@ -267,23 +240,20 @@ export default function AdminCompetitionsPage() {
           createdAt: new Date().toISOString(),
         });
       }
-
       toast({ title: '심판 배정 완료', description: '모든 종목에 심판이 배정되었습니다.' });
       setJudgeDialogOpen(false);
       setJudgeAssignments({});
-    } catch (error) {
+    } catch (error: unknown) {
       toast({ variant: 'destructive', title: '배정 실패', description: '심판 배정 중 오류가 발생했습니다.' });
     }
   };
-
-  if (user?.role !== UserRole.FEDERATION_ADMIN && user?.role !== UserRole.SUPER_ADMIN) {
+  if (_user?.role !== UserRole.FEDERATION_ADMIN && _user?.role !== UserRole.SUPER_ADMIN) {
     return (
       <div className="flex justify-center items-center h-screen">
         <p className="text-muted-foreground">접근 권한이 없습니다</p>
       </div>
     );
   }
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -291,7 +261,6 @@ export default function AdminCompetitionsPage() {
       </div>
     );
   }
-
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -309,7 +278,6 @@ export default function AdminCompetitionsPage() {
           새 시합 생성
         </Button>
       </div>
-
       {/* Competitions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {competitions?.map((competition) => (
@@ -344,7 +312,6 @@ export default function AdminCompetitionsPage() {
                 <p className="text-muted-foreground">종목</p>
                 <p className="font-semibold">{(competition.events?.length || 0)}개</p>
               </div>
-
               <div className="flex flex-wrap gap-2 pt-2">
                 {competition.status === 'draft' && (
                   <Button
@@ -425,7 +392,6 @@ export default function AdminCompetitionsPage() {
           </Card>
         ))}
       </div>
-
       {(!competitions || competitions.length === 0) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-64">
@@ -437,7 +403,6 @@ export default function AdminCompetitionsPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -462,7 +427,6 @@ export default function AdminCompetitionsPage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="description"
@@ -476,7 +440,6 @@ export default function AdminCompetitionsPage() {
                   </FormItem>
                 )}
               />
-
               <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -491,7 +454,6 @@ export default function AdminCompetitionsPage() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="registrationEnd"
@@ -505,7 +467,6 @@ export default function AdminCompetitionsPage() {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="competitionDate"
@@ -520,7 +481,6 @@ export default function AdminCompetitionsPage() {
                   )}
                 />
               </div>
-
               <FormField
                 control={form.control}
                 name="venue"
@@ -534,7 +494,6 @@ export default function AdminCompetitionsPage() {
                   </FormItem>
                 )}
               />
-
               {/* Event Selection */}
               <div className="space-y-3">
                 <FormLabel>종목 선택</FormLabel>
@@ -589,7 +548,6 @@ export default function AdminCompetitionsPage() {
                   </div>
                 </div>
               </div>
-
               <DialogFooter>
                 <Button type="button" className="outline " onClick={() => setIsDialogOpen(false)}>
                   취소
@@ -602,7 +560,6 @@ export default function AdminCompetitionsPage() {
           </Form>
         </DialogContent>
       </Dialog>
-
       {/* Registrations Dialog */}
       <Dialog open={!!selectedCompetition} onOpenChange={() => setSelectedCompetition(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -623,8 +580,8 @@ export default function AdminCompetitionsPage() {
                     </p>
                     <p className="text-sm text-muted-foreground">
                       종목: {(reg.registeredEvents ?? (reg as any).events ?? []).map((e: string) => {
-                        const event = selectedCompetition?.events?.find(ev => ev.id === e);
-                        return event?.name || e;
+                        const _event = selectedCompetition?.events?.find(ev => ev.id === e);
+                        return _event?.name || e;
                       }).join(', ')}
                     </p>
                   </div>
@@ -663,7 +620,6 @@ export default function AdminCompetitionsPage() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Judge Management Dialog */}
       <Dialog open={judgeDialogOpen} onOpenChange={setJudgeDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -674,18 +630,16 @@ export default function AdminCompetitionsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {(judgeCompetition?.events ?? []).map((event, eventIndex) => {
-              const assignment = judgeAssignments[event.id] || { dJudges: ['', ''], eJudges: ['', '', '', ''] };
-              
+            {(judgeCompetition?.events ?? []).map((_event: any, _eventIndex) => {
+              const assignment = judgeAssignments[_event.id] || { dJudges: ['', ''], eJudges: ['', '', '', ''] };
               return (
-                <Card key={event.id} className="p-4">
+                <Card key={_event.id} className="p-4">
                   <h3 className="font-semibold text-lg mb-4">
-                    {event.name} ({event.code})
-                    <Badge className="ml-2" variant={event.gender === 'male' ? 'default' : 'secondary'}>
-                      {event.gender === 'male' ? '남자' : event.gender === 'female' ? '여자' : '공통'}
+                    {_event.name} ({_event.code})
+                    <Badge className="ml-2" variant={_event.gender === 'male' ? 'default' : 'secondary'}>
+                      {_event.gender === 'male' ? '남자' : _event.gender === 'female' ? '여자' : '공통'}
                     </Badge>
                   </h3>
-                  
                   <div className="grid grid-cols-2 gap-4">
                     {/* D심판 (난이도) */}
                     <div>
@@ -698,17 +652,16 @@ export default function AdminCompetitionsPage() {
                             value={assignment.dJudges[idx] || ''}
                             onChange={(e) => {
                               const newAssignments = { ...judgeAssignments };
-                              if (!newAssignments[event.id]) {
-                                newAssignments[event.id] = { dJudges: ['', ''], eJudges: ['', '', '', ''] };
+                              if (!newAssignments[_event.id]) {
+                                newAssignments[_event.id] = { dJudges: ['', ''], eJudges: ['', '', '', ''] };
                               }
-                              newAssignments[event.id].dJudges[idx] = e.target.value;
+                              newAssignments[_event.id].dJudges[idx] = e.target.value;
                               setJudgeAssignments(newAssignments);
                             }}
                           />
                         ))}
                       </div>
                     </div>
-
                     {/* E심판 (실시) */}
                     <div>
                       <p className="text-sm font-semibold mb-2 text-green-600">E심판 (실시)</p>
@@ -720,10 +673,10 @@ export default function AdminCompetitionsPage() {
                             value={assignment.eJudges[idx] || ''}
                             onChange={(e) => {
                               const newAssignments = { ...judgeAssignments };
-                              if (!newAssignments[event.id]) {
-                                newAssignments[event.id] = { dJudges: ['', ''], eJudges: ['', '', '', ''] };
+                              if (!newAssignments[_event.id]) {
+                                newAssignments[_event.id] = { dJudges: ['', ''], eJudges: ['', '', '', ''] };
                               }
-                              newAssignments[event.id].eJudges[idx] = e.target.value;
+                              newAssignments[_event.id].eJudges[idx] = e.target.value;
                               setJudgeAssignments(newAssignments);
                             }}
                           />
