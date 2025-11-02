@@ -1,0 +1,154 @@
+
+> nextn@0.1.0 build
+> next build
+
+ ⚠ The config property `experimental.turbo` is deprecated. Move this setting to `config.turbopack` or run `npx @next/codemod@latest next-experimental-turbo-to-turbopack .`
+   ▲ Next.js 15.5.6
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+
+
+Retrying 1/3...
+ ✓ Compiled successfully in 9.2s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/24) ...
+   Generating static pages (6/24) 
+   Generating static pages (12/24) 
+   Generating static pages (18/24) 
+ ✓ Generating static pages (24/24)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                           Size  First Load JS
+┌ ƒ /                                                166 B         101 kB
+├ ƒ /_not-found                                      166 B         101 kB
+├ ƒ /403                                            4.5 kB         252 kB
+├ ƒ /admin                                         3.74 kB         255 kB
+├ ƒ /admin/approvals                               10.4 kB         272 kB
+├ ƒ /admin/clubs                                   2.09 kB         257 kB
+├ ƒ /admin/coaches/requests                        4.71 kB         252 kB
+├ ƒ /admin/committees                              6.32 kB         253 kB
+├ ƒ /admin/competitions                             5.4 kB         305 kB
+├ ƒ /admin/competitions/[competitionId]/scoring    4.37 kB         260 kB
+├ ƒ /admin/judges                                  6.83 kB         286 kB
+├ ƒ /admin/members                                 8.03 kB         293 kB
+├ ƒ /admin/users                                   5.52 kB         253 kB
+├ ƒ /announcements                                 4.54 kB         258 kB
+├ ƒ /api                                             166 B         101 kB
+├ ƒ /api/admin/approvals/adult                       656 B         102 kB
+├ ƒ /api/admin/approvals/family                      656 B         102 kB
+├ ƒ /api/admin/approvals/member                      656 B         102 kB
+├ ƒ /api/admin/approvals/reject                      166 B         101 kB
+├ ƒ /api/admin/cache                                 656 B         102 kB
+├ ƒ /api/admin/debug                                 166 B         101 kB
+├ ƒ /api/admin/monitoring                            656 B         102 kB
+├ ƒ /api/admin/passes/approve                        656 B         102 kB
+├ ƒ /api/admin/passes/cancel                         656 B         102 kB
+├ ƒ /api/admin/passes/reject                         656 B         102 kB
+├ ƒ /api/admin/passes/request                        656 B         102 kB
+├ ƒ /api/admin/registrations/adult                   166 B         101 kB
+├ ƒ /api/admin/registrations/family                  166 B         101 kB
+├ ƒ /api/admin/reset-firestore                       166 B         101 kB
+├ ƒ /api/admin/users/link-member                     166 B         101 kB
+├ ƒ /api/admin/users/update-status                   166 B         101 kB
+├ ƒ /api/admin/utils/fix-family-links                166 B         101 kB
+├ ƒ /api/admin/utils/fix-family-links-client         166 B         101 kB
+├ ƒ /api/health                                      166 B         101 kB
+├ ƒ /api/users                                       632 B         102 kB
+├ ƒ /api/users/[id]                                  632 B         102 kB
+├ ƒ /club-dashboard                                12.1 kB         273 kB
+├ ƒ /club-dashboard/analytics                      3.49 kB         251 kB
+├ ƒ /club-dashboard/announcements                  7.83 kB         293 kB
+├ ƒ /club-dashboard/approvals                      6.95 kB         277 kB
+├ ƒ /club-dashboard/attendance                     4.04 kB         113 kB
+├ ƒ /club-dashboard/class-status                   9.29 kB         271 kB
+├ ƒ /club-dashboard/classes                        11.6 kB         316 kB
+├ ƒ /club-dashboard/classes/[id]                   8.58 kB         269 kB
+├ ƒ /club-dashboard/coaches                        6.18 kB         285 kB
+├ ƒ /club-dashboard/events                         8.63 kB         300 kB
+├ ƒ /club-dashboard/finance                         4.2 kB         297 kB
+├ ƒ /club-dashboard/level-tests                    3.64 kB         304 kB
+├ ƒ /club-dashboard/level-tests/[testId]/evaluate  5.14 kB         265 kB
+├ ƒ /club-dashboard/media                          6.34 kB         265 kB
+├ ƒ /club-dashboard/member-approvals               8.67 kB         260 kB
+├ ƒ /club-dashboard/messages                       11.1 kB         269 kB
+├ ƒ /club-dashboard/pass-templates                 8.39 kB         312 kB
+├ ƒ /club-dashboard/passes                         8.24 kB         272 kB
+├ ƒ /club-dashboard/payments                       5.48 kB         299 kB
+├ ƒ /club-dashboard/settings                       4.35 kB         260 kB
+├ ƒ /clubs                                         5.28 kB         256 kB
+├ ƒ /clubs/[id]                                      25 kB         316 kB
+├ ƒ /committees                                    5.78 kB         253 kB
+├ ƒ /committees/[id]                               5.16 kB         252 kB
+├ ƒ /committees/new                                4.59 kB         281 kB
+├ ƒ /competitions                                  9.51 kB         279 kB
+├ ƒ /competitions/[competitionId]/live             5.13 kB         259 kB
+├ ƒ /dashboard                                       827 B         240 kB
+├ ƒ /events                                        5.17 kB         265 kB
+├ ƒ /fix-family                                    5.72 kB         253 kB
+├ ƒ /invite                                          173 B         105 kB
+├ ƒ /invite/[token]                                5.87 kB         253 kB
+├ ƒ /invite/accept                                   173 B         105 kB
+├ ƒ /invite/accept/[token]                         6.04 kB         253 kB
+├ ƒ /level-tests                                   6.79 kB         273 kB
+├ ƒ /login                                         7.69 kB         290 kB
+├ ƒ /members                                       4.19 kB         286 kB
+├ ƒ /members/[id]                                  17.3 kB         308 kB
+├ ƒ /my-profile                                    9.64 kB         287 kB
+├ ƒ /my-profile/add-child                          5.24 kB         260 kB
+├ ƒ /my-profile/add-family                         5.12 kB         260 kB
+├ ƒ /my-profile/add-family-member                  6.88 kB         292 kB
+├ ƒ /my-profile/family                             5.68 kB         253 kB
+├ ƒ /onboarding                                    3.35 kB         112 kB
+├ ƒ /onboarding/adult                              3.29 kB         112 kB
+├ ƒ /onboarding/family                             3.33 kB         112 kB
+├ ƒ /pending-approval                              4.67 kB         252 kB
+├ ƒ /profile-setup                                 7.79 kB         317 kB
+├ ƒ /register                                      4.17 kB         113 kB
+├ ƒ /register/adult                                4.11 kB         295 kB
+├ ƒ /register/club-owner                           6.01 kB         253 kB
+├ ƒ /register/family                               6.21 kB         297 kB
+├ ƒ /register/member                               6.57 kB         286 kB
+├ ƒ /register/member-with-contract                 6.08 kB         269 kB
+├ ƒ /register/success                               1.5 kB         249 kB
+├ ƒ /register/super-admin                          5.12 kB         252 kB
+├ ƒ /scoreboard/[competitionId]                    2.94 kB         250 kB
+├ ƒ /setup/initial-admin                           5.58 kB         253 kB
+├ ƒ /super-admin                                   13.4 kB         275 kB
+├ ƒ /super-admin/invites                           8.28 kB         262 kB
+├ ƒ /system                                          173 B         105 kB
+├ ƒ /system/super-admin-approvals                  6.79 kB         267 kB
+└ ƒ /test-api                                      6.26 kB         166 kB
++ First Load JS shared by all                       101 kB
+  ├ chunks/1255-96fabdb409dc77a9.js                45.1 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js            54.2 kB
+  └ other shared chunks (total)                    2.01 kB
+
+
+ƒ Middleware                                       34.5 kB
+
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { RoleBadge } from '@/components/role-badge';
-import { ModernNav } from '@/components/layout/modern-nav';
-import { GlobalSearch } from '@/components/layout/global-search';
+// import { ModernNav } from '@/components/layout/modern-nav';
+// import { GlobalSearch } from '@/components/layout/global-search';
 import { LogoutButton } from '@/components/logout-button';
 interface ModernLayoutProps {
   children: React.ReactNode;
@@ -89,14 +89,14 @@ export function ModernLayout({ children }: ModernLayoutProps) {
             </div>
             {/* 네비게이션 */}
             <nav className="flex-1">
-              <ModernNav />
+              {/* <ModernNav /> */}
             </nav>
           </div>
           {/* 우측: 검색 + 사용자 */}
           <div className="flex items-center gap-3">
             {/* 검색 */}
             <div className="hidden md:block">
-              <GlobalSearch />
+              {/* <GlobalSearch /> */}
             </div>
             {/* 사용자 메뉴 */}
             <DropdownMenu>

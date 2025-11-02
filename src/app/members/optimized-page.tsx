@@ -3,7 +3,7 @@ import { useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import { usePaginatedCollection } from '@/hooks/use-paginated-collection';
-import { AvatarImage } from '@/components/optimized-image';
+import { AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -143,10 +143,7 @@ export default function OptimizedMembersPage() {
                         <AvatarImage
                           src={member.photoURL}
                           alt={member.name}
-                          size={40}
-                          priority={false} // 테이블 이미지는 지연 로딩
-                          loading="lazy"
-                          quality={75}
+                          className="h-10 w-10"
                         />
                       </TableCell>
                       <TableCell className="font-medium">{member.name}</TableCell>
@@ -236,11 +233,7 @@ export default function OptimizedMembersPage() {
                 <AvatarImage
                   src={member.photoURL}
                   alt={member.name}
-                  size={80}
-                  className="mx-auto mb-2"
-                  priority={false}
-                  loading="lazy"
-                  quality={80}
+                  className="h-20 w-20 mx-auto mb-2"
                 />
                 <p className="text-sm font-medium truncate">{member.name}</p>
                 <Badge 
