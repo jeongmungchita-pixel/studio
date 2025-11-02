@@ -4,7 +4,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+// FirebaseErrorListener removed - error handling integrated into ErrorManager
 interface FirebaseProviderProps {
   children: ReactNode;
   firebaseApp: FirebaseApp;
@@ -47,7 +47,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [firebaseApp, firestore, auth, storage]);
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );

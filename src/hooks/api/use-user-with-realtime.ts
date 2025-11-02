@@ -2,12 +2,12 @@
 import { useEffect } from 'react';
 import { where } from 'firebase/firestore';
 import { useAuth } from '@/firebase';
-import { useUserStore } from '@/store/user-store';
+import { useUserStore } from '@/stores/user-store';
 import { useRealtimeDocument, useRealtimeCollection } from '@/hooks/realtime';
 import { useOptimisticUpdate } from './use-optimistic-update';
 import { getAPI } from '@/api';
 import { UserProfile } from '@/types/auth';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 /**
  * 실시간 사용자 데이터 Hook
  * 기존 useUser를 대체하여 실시간 동기화와 낙관적 업데이트를 제공합니다.
@@ -75,7 +75,7 @@ export function useUserWithRealtime() {
   // 프로필 업데이트 (낙관적)
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     if (!_user || !userId) {
-      throw new APIError('User not authenticated', 'UNAUTHENTICATED', 401);
+      throw new APIError('User not authenticated', 401, 'UNAUTHENTICATED');
     }
     const optimisticData = { ..._user, ...updates };
     await optimisticUpdate(

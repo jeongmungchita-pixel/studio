@@ -124,7 +124,16 @@ export async function withAuthEnhanced(
             duration: Date.now() - startTime
           }
         });
-        return handleApiError(error, _req);
+        const errorResp = handleApiError(error);
+        // Convert Response to NextResponse if needed
+        if (errorResp instanceof Response && !(errorResp instanceof NextResponse)) {
+          const body = await errorResp.json();
+          return NextResponse.json(body, { 
+            status: errorResp.status,
+            headers: errorResp.headers 
+          });
+        }
+        return errorResp as NextResponse;
       }
   });
 }

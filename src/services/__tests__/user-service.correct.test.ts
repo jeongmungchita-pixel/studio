@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { UserService } from '../user-service';
-import { apiClient } from '../api-client';
+import { apiClient } from '@/lib/api/unified-api-client';
 import { UserRole } from '@/types/auth';
 
 // Mock apiClient

@@ -22,7 +22,7 @@ const eventFormSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요'),
   description: z.string().min(1, '설명을 입력하세요'),
   type: z.enum(['competition', 'workshop', 'performance', 'social', 'training']),
-  status: z.enum(['draft', 'published', 'registration-open', 'registration-closed', 'in-progress', 'completed', 'cancelled']).default('published'),
+  status: z.enum(['draft', 'published', 'registration-open', 'registration-closed', 'in-progress', 'completed', 'cancelled']).optional().default('published'),
   registrationStart: z.string(),
   registrationEnd: z.string(),
   registrationFee: z.number().optional(),

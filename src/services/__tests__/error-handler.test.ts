@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ErrorHandler, ErrorType, ErrorSeverity } from '../error-handler';
+import { ErrorHandler, ErrorType, ErrorSeverity } from '@/lib/error/error-manager';
 import { navigationManager } from '../navigation-manager';
 import { FirebaseError } from 'firebase/app';
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEnhancedAPI } from '../use-enhanced-api';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 
 vi.mock('@/firebase', () => ({
   useFirestore: () => null,

@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 /**
  * 데이터 암호화 및 보안 처리 클래스
  */
@@ -15,9 +15,7 @@ export class DataEncryption {
       return encrypted;
     } catch (error: unknown) {
       throw new APIError(
-        '데이터 암호화에 실패했습니다',
-        'ENCRYPTION_FAILED',
-        500
+        '데이터 암호화에 실패했습니다', 500, 'ENCRYPTION_FAILED'
       );
     }
   }
@@ -30,9 +28,7 @@ export class DataEncryption {
       return decrypted.toString(CryptoJS.enc.Utf8);
     } catch (error: unknown) {
       throw new APIError(
-        '데이터 복호화에 실패했습니다',
-        'DECRYPTION_FAILED',
-        500
+        '데이터 복호화에 실패했습니다', 500, 'DECRYPTION_FAILED'
       );
     }
   }

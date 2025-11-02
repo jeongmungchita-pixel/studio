@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { adminAPI } from '@/utils/api-client';
+import { adminAPI } from '@/lib/api/unified-api-client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, AlertCircle, Loader2, User } from 'lucide-react';
 import { useUser } from '@/firebase';

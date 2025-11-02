@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { adminAPI } from '@/utils/api-client';
+import { adminAPI } from '@/lib/api/unified-api-client';
 export default function TestAPIPage() {
   const [requestId, setRequestId] = useState('');
   const [requestType, setRequestType] = useState<'adult' | 'family' | 'member'>('adult');

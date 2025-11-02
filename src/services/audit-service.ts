@@ -308,6 +308,7 @@ export class AuditService {
    */
   private getUserAgent(): string {
     if (typeof window === 'undefined') return 'server';
+    if (!window.navigator || !window.navigator.userAgent) return 'unknown';
     return window.navigator.userAgent;
   }
   /**

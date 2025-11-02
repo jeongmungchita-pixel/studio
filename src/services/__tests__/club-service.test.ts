@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClubService } from '../club-service';
-import { apiClient } from '../api-client';
+import { apiClient } from '@/lib/api/unified-api-client';
 
 vi.mock('../api-client', () => {
   const real = vi.importActual<any>('../api-client');

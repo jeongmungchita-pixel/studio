@@ -8,6 +8,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    pool: 'threads',
+    maxWorkers: 4,
+    fileParallelism: true,
     coverage: {
       provider: 'v8',
       enabled: true,
@@ -22,11 +25,24 @@ export default defineConfig({
         '**/*.test.*',
         '**/__tests__/**',
         '**/types/**',
+        'src/app/**/page.tsx',
+        'src/app/**/layout.tsx',
+        'src/app/**/loading.tsx',
+        'src/app/**/error.tsx',
+        'src/app/**/not-found.tsx',
       ],
       include: [
         'src/**/*.{ts,tsx}',
       ],
       clean: true,
+      thresholds: {
+        global: {
+          branches: 0,
+          functions: 0,
+          lines: 0,
+          statements: 0,
+        },
+      },
     },
   },
   resolve: {

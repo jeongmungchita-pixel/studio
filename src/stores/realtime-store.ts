@@ -14,7 +14,7 @@ import {
   QuerySnapshot,
   DocumentSnapshot
 } from 'firebase/firestore';
-import { errorHandler } from '@/services/error-handler';
+import { errorManager } from '@/lib/error/error-manager';
 interface RealtimeStoreActions {
   // 연결 관리
   connect: (id: string) => void;
@@ -133,7 +133,7 @@ export const useRealtimeStore = create<RealtimeStore>()(
               if (options.errorHandler) {
                 options.errorHandler(error);
               } else {
-                errorHandler.handle(error, {
+                errorManager.handleError(error, {
                   action: 'document-subscription',
                   component: 'RealtimeStore',
                   metadata: { _collection, subscriptionId: id }
@@ -174,7 +174,7 @@ export const useRealtimeStore = create<RealtimeStore>()(
               if (options.errorHandler) {
                 options.errorHandler(error);
               } else {
-                errorHandler.handle(error, {
+                errorManager.handleError(error, {
                   action: 'collection-subscription',
                   component: 'RealtimeStore',
                   metadata: { _collection, subscriptionId: id }

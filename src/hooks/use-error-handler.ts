@@ -2,7 +2,7 @@
  * ErrorHandler를 사용하기 위한 React Hook
  */
 import { useCallback, useEffect, useState } from 'react';
-import { errorHandler, ErrorInfo, ErrorContext, ErrorType, ErrorSeverity } from '@/services/error-handler';
+import { errorManager, ErrorInfo, ErrorContext, ErrorType, ErrorSeverity } from '@/lib/error/error-manager';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 interface UseErrorHandlerOptions {
@@ -38,7 +38,7 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
       action,
       metadata
     };
-    const errorInfo = errorHandler.handle(error, context);
+    const errorInfo = errorManager.handleError(error, context);
     setRecentError(errorInfo);
     // Toast 표시
     if (showToast) {
@@ -107,7 +107,7 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
    * 에러 리스너 등록
    */
   useEffect(() => {
-    const unsubscribe = errorHandler.subscribe((errorInfo) => {
+    const unsubscribe = errorManager.subscribe((errorInfo) => {
       setErrorHistory(prev => [errorInfo, ...prev].slice(0, 10));
     });
     return unsubscribe;
@@ -116,13 +116,13 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
    * 에러 히스토리 가져오기
    */
   const getErrorHistory = useCallback(() => {
-    return errorHandler.getHistory();
+    return errorManager.getErrorHistory();
   }, []);
   /**
    * 에러 히스토리 초기화
    */
   const clearErrorHistory = useCallback(() => {
-    errorHandler.clearHistory();
+    errorManager.clearHistory();
     setErrorHistory([]);
     setRecentError(null);
   }, []);
@@ -130,13 +130,17 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
    * 특정 타입의 에러 개수
    */
   const getErrorCount = useCallback((type?: ErrorType) => {
-    return errorHandler.getErrorCount(type);
+    if (type) {
+      return errorManager.getErrorsByType(type).length;
+    }
+    return errorManager.getErrorHistory().length;
   }, []);
   /**
    * 디버그 정보
    */
   const debug = useCallback(() => {
-    errorHandler.debug();
+    // Retry operations not directly available in errorManager
+    console.warn('Retry operations not available in unified error manager');
   }, []);
   return {
     handleError,

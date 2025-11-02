@@ -10,7 +10,7 @@ import {
   createPermissionMiddleware 
 } from '../server-validator';
 import { UserRole } from '@/types/auth';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 
 describe('ServerValidator Extended Edge Cases', () => {
   describe('BaseSchemas validation', () => {

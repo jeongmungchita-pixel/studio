@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ErrorHandler, ErrorType, ErrorSeverity } from '../error-handler';
+import { ErrorHandler, ErrorType, ErrorSeverity } from '@/lib/error/error-manager';
 import { navigationManager } from '../navigation-manager';
 
 // Mock navigation manager

@@ -223,7 +223,7 @@ export function useUserStatsQuery(
 ) {
   return useQuery({
     queryKey: userKeys.stats(),
-    queryFn: () => userService.getUserStats(),
+    queryFn: () => userService.getStatistics(),
     staleTime: 1000 * 60 * 30, // 30분
     ...options,
   });

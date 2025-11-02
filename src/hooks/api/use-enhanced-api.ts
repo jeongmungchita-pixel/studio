@@ -4,9 +4,9 @@ import { useCallback } from 'react';
 import { useFirestore } from '@/firebase';
 import { getAPI } from '@/api';
 import { queryKeys, invalidateQueries } from '@/lib/react-query';
-import { useAppStore } from '@/store/app-store';
+import { useUIStore } from '@/stores/ui-store';
 import { useOptimisticUpdate } from './use-optimistic-update';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 /**
  * 향상된 API Hook
  * React Query + Zustand + 낙관적 업데이트를 통합한 Hook
@@ -14,7 +14,7 @@ import { APIError } from '@/utils/error/api-error';
 export function useEnhancedAPI() {
   const firestore = useFirestore();
   const queryClient = useQueryClient();
-  const { addNotification } = useAppStore();
+  const { addNotification } = useUIStore();
   // API 인스턴스 초기화
   const api = firestore ? getAPI() : null;
   /**
@@ -24,7 +24,7 @@ export function useEnhancedAPI() {
     return useQuery({
       queryKey: queryKeys.users.profile(userId || ''),
       queryFn: async () => {
-        if (!api || !userId) throw new APIError('API not initialized', 'API_NOT_INITIALIZED');
+        if (!api || !userId) throw new APIError('API not initialized', 500, 'API_NOT_INITIALIZED');
         const result = await api.user.getUserProfile(userId);
         return result.data;
       },
@@ -40,7 +40,7 @@ export function useEnhancedAPI() {
     const { optimisticUpdate } = useOptimisticUpdate();
     return useMutation({
       mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
-        if (!api) throw new APIError('API not initialized', 'API_NOT_INITIALIZED');
+        if (!api) throw new APIError('API not initialized', 500, 'API_NOT_INITIALIZED');
         return optimisticUpdate(
           updates,
           async () => {
@@ -78,7 +78,7 @@ export function useEnhancedAPI() {
     return useQuery({
       queryKey: queryKeys.clubs.list(filters || {}),
       queryFn: async () => {
-        if (!api) throw new APIError('API not initialized', 'API_NOT_INITIALIZED');
+        if (!api) throw new APIError('API not initialized', 500, 'API_NOT_INITIALIZED');
         const result = await api.club.findMany({
           where: filters ? Object.entries(filters).map(([field, value]) => ({
             field,
@@ -99,7 +99,7 @@ export function useEnhancedAPI() {
     return useQuery({
       queryKey: queryKeys.clubs.detail(clubId || ''),
       queryFn: async () => {
-        if (!api || !clubId) throw new APIError('API not initialized', 'API_NOT_INITIALIZED');
+        if (!api || !clubId) throw new APIError('API not initialized', 500, 'API_NOT_INITIALIZED');
         const result = await api.club.getClub(clubId);
         return result.data;
       },
@@ -114,7 +114,7 @@ export function useEnhancedAPI() {
     return useQuery({
       queryKey: queryKeys.clubs.members(clubId || ''),
       queryFn: async () => {
-        if (!api || !clubId) throw new APIError('API not initialized', 'API_NOT_INITIALIZED');
+        if (!api || !clubId) throw new APIError('API not initialized', 500, 'API_NOT_INITIALIZED');
         const result = await api.user.getUsersByClub(clubId);
         return result.data;
       },
@@ -129,7 +129,7 @@ export function useEnhancedAPI() {
     return useQuery({
       queryKey: queryKeys.users.list(filters || {}),
       queryFn: async () => {
-        if (!api) throw new APIError('API not initialized', 'API_NOT_INITIALIZED');
+        if (!api) throw new APIError('API not initialized', 500, 'API_NOT_INITIALIZED');
         const result = await api.user.findManyPaginated({
           where: filters ? Object.entries(filters).map(([field, value]) => ({
             field,

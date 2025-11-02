@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { createQueryClient, queryKeys, cacheUtils, invalidateQueries } from '../react-query';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 
 describe('react-query utils', () => {
   it('createQueryClient returns QueryClient with configured options', async () => {
@@ -9,8 +9,8 @@ describe('react-query utils', () => {
     expect(qc).toBeInstanceOf(QueryClient);
     // retry behavior with APIError 4xx should be false
     const retry = (qc as any).getDefaultOptions().queries.retry as (n: number, e: unknown) => boolean;
-    const err4xx = new APIError('bad', 'BAD', 404);
-    const err5xx = new APIError('server', 'SVR', 500);
+    const err4xx = new APIError('bad', 404, 'BAD');
+    const err5xx = new APIError('server', 500, 'SVR');
     expect(retry(0, err4xx)).toBe(false);
     expect(retry(0, err5xx)).toBe(true);
     expect(retry(3, err5xx)).toBe(false); // cap at <3

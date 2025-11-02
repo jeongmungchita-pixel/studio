@@ -1,4 +1,4 @@
-import { APIError } from './error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 export type ConflictResolutionStrategy = 
   | 'local'      // 로컬 변경사항 우선
   | 'remote'     // 서버 변경사항 우선
@@ -59,9 +59,7 @@ export class ConflictResolver {
         };
       default:
         throw new APIError(
-          `Unknown conflict resolution strategy: ${strategy}`,
-          'INVALID_STRATEGY',
-          400
+          `Unknown conflict resolution strategy: ${strategy}`, 400, 'INVALID_STRATEGY'
         );
     }
   }

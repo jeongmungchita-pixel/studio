@@ -1,86 +1,125 @@
 import { describe, it, expect } from 'vitest';
-import { APIError } from '../api-error';
+import { APIError } from '@/lib/error/error-manager';
 
 describe('APIError', () => {
   it('toJSON includes core fields', () => {
-    const err = new APIError('msg', 'CODE_X', 418);
+    const err = new APIError('msg', 418, 'CODE_X', { test: 'context' });
     const json = err.toJSON();
     expect(json.name).toBe('APIError');
     expect(json.message).toBe('msg');
     expect(json.code).toBe('CODE_X');
     expect(json.statusCode).toBe(418);
-    expect(typeof json.timestamp).toBe('string');
+    expect(json.context).toEqual({ test: 'context' });
   });
 
-  it('fromFirebaseError maps known codes', () => {
-    const src: any = { code: 'permission-denied', message: 'ignored' };
-    const err = APIError.fromFirebaseError(src);
-    expect(err.message).toContain('권한');
+  it('fromError returns APIError if already APIError', () => {
+    const original = new APIError('test', 400, 'TEST_CODE');
+    const result = APIError.fromError(original);
+    expect(result).toBe(original);
+  });
+
+  it('fromError converts Error to APIError', () => {
+    const error = new Error('test error');
+    const result = APIError.fromError(error);
+    expect(result).toBeInstanceOf(APIError);
+    expect(result.message).toBe('test error');
+    expect(result.statusCode).toBe(500);
+    expect(result.code).toBe('UNKNOWN_ERROR');
+  });
+
+  it('fromError handles unknown error', () => {
+    const result = APIError.fromError('string error');
+    expect(result).toBeInstanceOf(APIError);
+    expect(result.message).toBe('Unknown error occurred');
+    expect(result.statusCode).toBe(500);
+    expect(result.code).toBe('UNKNOWN_ERROR');
+  });
+
+  it('static factory method - notFound', () => {
+    const err = APIError.notFound('Resource not found');
+    expect(err.statusCode).toBe(404);
+    expect(err.code).toBe('NOT_FOUND');
+    expect(err.message).toBe('Resource not found');
+  });
+
+  it('static factory method - unauthorized', () => {
+    const err = APIError.unauthorized();
+    expect(err.statusCode).toBe(401);
+    expect(err.code).toBe('UNAUTHORIZED');
+  });
+
+  it('static factory method - badRequest', () => {
+    const err = APIError.badRequest('Invalid input');
+    expect(err.statusCode).toBe(400);
+    expect(err.code).toBe('BAD_REQUEST');
+    expect(err.message).toBe('Invalid input');
+  });
+
+  it('static factory method - forbidden', () => {
+    const err = APIError.forbidden();
     expect(err.statusCode).toBe(403);
-    expect(err.code).toBe('PERMISSION_DENIED');
+    expect(err.code).toBe('FORBIDDEN');
   });
 
-  it('fromNetworkError maps fetch TypeError to NETWORK_ERROR code 0', () => {
-    const src: any = { name: 'TypeError', message: 'Failed to fetch' };
-    const err = APIError.fromNetworkError(src);
-    expect(err.code).toBe('NETWORK_ERROR');
-    expect(err.statusCode).toBe(0);
+  it('static factory method - conflict', () => {
+    const err = APIError.conflict('Duplicate entry');
+    expect(err.statusCode).toBe(409);
+    expect(err.code).toBe('CONFLICT');
   });
 
-  it('fromNetworkError maps AbortError', () => {
-    const src: any = { name: 'AbortError', message: 'The user aborted a request' };
-    const err = APIError.fromNetworkError(src);
-    expect(err.code).toBe('REQUEST_ABORTED');
-    expect(err.statusCode).toBe(0);
+  it('static factory method - internal', () => {
+    const err = APIError.internal();
+    expect(err.statusCode).toBe(500);
+    expect(err.code).toBe('INTERNAL_ERROR');
   });
 
-  it('fromNetworkError handles non-fetch TypeError as generic NETWORK_ERROR', () => {
-    const src: any = { name: 'TypeError', message: 'Some other type error' };
-    const err = APIError.fromNetworkError(src);
-    expect(err.code).toBe('NETWORK_ERROR');
-    expect(err.statusCode).toBe(0);
-    expect(err.message).toContain('Some other type error');
+  it('constructor builds correct instance', () => {
+    const err = new APIError('Custom message', 404, 'NOT_FOUND');
+    expect(err).toBeInstanceOf(APIError);
+    expect(err.message).toBe('Custom message');
+    expect(err.statusCode).toBe(404);
+    expect(err.code).toBe('NOT_FOUND');
+  });
+
+  it('captures context when provided', () => {
+    const context = { userId: 'user123', action: 'updateProfile' };
+    const err = new APIError('Profile update failed', 400, 'UPDATE_FAILED', context);
+    
+    expect(err.context).toEqual(context);
+    expect(err.toJSON().context).toEqual(context);
+  });
+
+  it('static factory method - invalidToken', () => {
+    const err = APIError.invalidToken('Token expired');
+    expect(err.statusCode).toBe(401);
+    expect(err.code).toBe('INVALID_TOKEN');
+    expect(err.message).toBe('Token expired');
+  });
+
+  it('static factory method - insufficientPermissions', () => {
+    const err = APIError.insufficientPermissions('Admin access required');
+    expect(err.statusCode).toBe(403);
+    expect(err.code).toBe('INSUFFICIENT_PERMISSIONS');
+    expect(err.message).toBe('Admin access required');
   });
 
   it('fromError returns same instance for APIError', () => {
-    const orig = new APIError('x', 'Y', 500);
+    const orig = new APIError('x', 500, 'Y');
     expect(APIError.fromError(orig)).toBe(orig);
   });
 
-  it('fromError maps Firebase-like error by code field', () => {
-    const src: any = { code: 'not-found', message: 'x' };
+  it('fromError handles plain object', () => {
+    const src: any = { message: 'custom error message' };
     const err = APIError.fromError(src);
-    expect(err.statusCode).toBe(404);
-  });
-
-  it('fromFirebaseError falls back to provided message for unknown code', () => {
-    const src: any = { code: 'weird-code', message: 'custom msg' };
-    const err = APIError.fromFirebaseError(src);
-    expect(err.message).toBe('custom msg');
+    expect(err.message).toBe('Unknown error occurred');
     expect(err.statusCode).toBe(500);
-    expect(err.code).toBe('WEIRD_CODE');
-  });
-
-  it('fromError for plain object without code/name returns UNKNOWN_ERROR', () => {
-    const src: any = { something: true };
-    const err = APIError.fromError(src);
     expect(err.code).toBe('UNKNOWN_ERROR');
-    expect(err.statusCode).toBe(500);
   });
 
-  it('toJSON includes stack string when available', () => {
-    const err = new APIError('m');
+  it('context is optional', () => {
+    const err = new APIError('message', 400, 'CODE');
+    expect(err.context).toBeUndefined();
     const json = err.toJSON();
-    // stack may be undefined in some environments, but when present it is a string
-    if (json.stack) {
-      expect(typeof json.stack).toBe('string');
-    }
-  });
-
-  it('fromError maps generic Error to UNKNOWN_ERROR 500', () => {
-    const src = new Error('boom');
-    const err = APIError.fromError(src);
-    expect(err.code).toBe('UNKNOWN_ERROR');
-    expect(err.statusCode).toBe(500);
+    expect(json.context).toBeUndefined();
   });
 });

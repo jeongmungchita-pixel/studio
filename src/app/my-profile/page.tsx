@@ -7,7 +7,7 @@ import { useUser, useCollection, useFirestore } from '@/firebase';
 import { Member, MemberPass, PassTemplate } from '@/types';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import { adminAPI } from '@/utils/api-client';
+import { adminAPI } from '@/lib/api/unified-api-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +77,7 @@ export default function MyProfilePage() {
         templateId: selectedTemplate.id,
         memberId: selectedMember.id,
         paymentMethod,
+        amount: selectedTemplate.price || 0,
         notes: passNotes
       });
       toast({

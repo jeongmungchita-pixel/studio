@@ -1,7 +1,6 @@
 'use client';
 import { useState, useCallback, useRef } from 'react';
-import { APIError } from '@/utils/error/api-error';
-import { logError } from '@/utils/error/error-handler';
+import { APIError, logError } from '@/lib/error/error-manager';
 export interface OptimisticUpdateOptions<T> {
   onSuccess?: (data: T) => void;
   onError?: (error: APIError, rollbackData?: T) => void;

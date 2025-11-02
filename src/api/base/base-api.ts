@@ -18,8 +18,8 @@ import {
   WhereFilterOp
 } from 'firebase/firestore';
 import { CacheManager } from '@/utils/cache/cache-manager';
-import { APIError } from '@/utils/error/api-error';
-import { withRetry } from '@/utils/error/error-handler';
+import { APIError } from '@/lib/error/error-manager';
+import { withRetry } from '@/lib/error/error-manager';
 export interface QueryOptions {
   where?: Array<{ field: string; operator: WhereFilterOp; value: unknown }>;
   orderBy?: Array<{ field: string; direction: 'asc' | 'desc' }>;
@@ -80,8 +80,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
     } catch (error: unknown) {
       throw new APIError(
         `Failed to create ${this.collectionName}`,
-        'CREATE_FAILED',
-        500
+        500,
+        'CREATE_FAILED'
       );
     }
   }
@@ -117,8 +117,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
     } catch (error: unknown) {
       throw new APIError(
         `Failed to find ${this.collectionName} by id: ${id}`,
-        'FIND_BY_ID_FAILED',
-        500
+        500,
+        'FIND_BY_ID_FAILED'
       );
     }
   }
@@ -138,8 +138,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
       if (!updatedDoc.data) {
         throw new APIError(
           `Document not found after update: ${id}`,
-          'UPDATE_VERIFICATION_FAILED',
-          404
+          404,
+          'UPDATE_VERIFICATION_FAILED'
         );
       }
       // 캐시 무효화
@@ -150,8 +150,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
       if (error instanceof APIError) throw error;
       throw new APIError(
         `Failed to update ${this.collectionName}: ${id}`,
-        'UPDATE_FAILED',
-        500
+        500,
+        'UPDATE_FAILED'
       );
     }
   }
@@ -172,8 +172,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
     } catch (error: unknown) {
       throw new APIError(
         `Failed to delete ${this.collectionName}: ${id}`,
-        'DELETE_FAILED',
-        500
+        500,
+        'DELETE_FAILED'
       );
     }
   }
@@ -221,8 +221,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
     } catch (error: unknown) {
       throw new APIError(
         `Failed to find ${this.collectionName} documents`,
-        'FIND_MANY_FAILED',
-        500
+        500,
+        'FIND_MANY_FAILED'
       );
     }
   }
@@ -262,8 +262,8 @@ export abstract class BaseAPI<T extends DocumentData = DocumentData> {
     } catch (error: unknown) {
       throw new APIError(
         `Failed to find paginated ${this.collectionName} documents`,
-        'FIND_PAGINATED_FAILED',
-        500
+        500,
+        'FIND_PAGINATED_FAILED'
       );
     }
   }

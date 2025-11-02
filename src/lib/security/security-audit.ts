@@ -1,5 +1,5 @@
 import { UserRole } from '@/types/auth';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 /**
  * 보안 이벤트 타입
  */

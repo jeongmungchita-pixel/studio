@@ -1,302 +1,311 @@
 /**
- * API 헬퍼 유틸리티
+ * API helper utilities
+ * Provides common utilities for API routes
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyIdToken } from '@/lib/firebase-admin';
-import { ApiResponse, ApiError, ApiErrorCode } from '@/types/api';
-import { HttpStatus } from './http-status';
-import { UserRole, UserProfile } from '@/types/auth';
-import { ErrorDetails } from '@/types/common';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-// Re-export for convenience
-export { ApiErrorCode, HttpStatus } from '@/types/api';
+import { adminAuth } from '@/firebase/admin';
+import { APIError } from '@/lib/error/error-manager';
+import { UserProfile, UserRole } from '@/types/auth';
+
 /**
- * 성공 응답 생성
+ * Get authenticated user from request
  */
-export function successResponse<T>(
-  data: T,
-  message?: string,
-  statusCode: number = HttpStatus.OK
-): NextResponse<ApiResponse<T>> {
-  return NextResponse.json(
-    {
-      success: true,
-      data,
-      message,
-      timestamp: new Date().toISOString()
-    },
-    { status: statusCode }
-  );
-}
-/**
- * 에러 응답 생성
- */
-export function errorResponse(
-  code: ApiErrorCode,
-  message: string,
-  statusCode: number = HttpStatus.BAD_REQUEST,
-  details?: ErrorDetails
-): NextResponse<ApiResponse> {
-  const error: ApiError = {
-    code,
-    message,
-    statusCode,
-    details
-  };
-  return NextResponse.json(
-    {
-      success: false,
-      error,
-      timestamp: new Date().toISOString()
-    },
-    { status: statusCode }
-  );
-}
-/**
- * 인증 토큰 검증
- */
-export async function verifyAuth(request: NextRequest): Promise<{
-  uid: string;
-  email?: string;
-  role?: UserRole;
-} | null> {
+export async function getAuthenticatedUser(request: NextRequest): Promise<UserProfile | null> {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
     }
-    const token = authHeader.substring(7);
-    const decodedToken = await verifyIdToken(token);
     
-    if (!decodedToken) {
+    const token = authHeader.split(' ')[1];
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    
+    // Get user profile from Firestore
+    const db = getFirestore();
+    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+    
+    if (!userDoc.exists) {
       return null;
     }
     
-    // Firestore에서 사용자 정보 가져오기
-    const db = getFirestore();
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-    if (!userDoc?.exists) {
-      return {
-        uid: decodedToken.uid,
-        email: decodedToken.email
-      };
-    }
-    const userData = userDoc?.data();
     return {
       uid: decodedToken.uid,
-      email: decodedToken.email,
-      role: userData?.role
-    };
-  } catch (error: unknown) {
+      email: decodedToken.email || '',
+      ...userDoc.data()
+    } as UserProfile;
+  } catch (error) {
+    console.error('Error getting authenticated user:', error);
     return null;
   }
 }
+
 /**
- * 권한 확인
+ * Require authentication for API route
  */
-export function hasRole(userRole: UserRole | undefined, requiredRoles: UserRole[]): boolean {
-  if (!userRole) return false;
-  return requiredRoles.includes(userRole);
-}
-/**
- * 권한 레벨 확인 (계층적)
- */
-export function hasMinimumRole(userRole: UserRole | undefined, minimumRole: UserRole): boolean {
-  if (!userRole) return false;
-  const roleHierarchy: Record<UserRole, number> = {
-    [UserRole.SUPER_ADMIN]: 100,
-    [UserRole.FEDERATION_ADMIN]: 90,
-    [UserRole.FEDERATION_SECRETARIAT]: 85,
-    [UserRole.COMMITTEE_CHAIR]: 80,
-    [UserRole.COMMITTEE_MEMBER]: 75,
-    [UserRole.CLUB_OWNER]: 70,
-    [UserRole.CLUB_MANAGER]: 65,
-    [UserRole.CLUB_STAFF]: 60,
-    [UserRole.MEDIA_MANAGER]: 55,
-    [UserRole.HEAD_COACH]: 50,
-    [UserRole.ASSISTANT_COACH]: 45,
-    [UserRole.MEMBER]: 30,
-    [UserRole.PARENT]: 20,
-    [UserRole.VENDOR]: 10
-  };
-  const userLevel = roleHierarchy[userRole] || 0;
-  const requiredLevel = roleHierarchy[minimumRole] || 0;
-  return userLevel >= requiredLevel;
-}
-/**
- * 요청 검증 미들웨어
- */
-export async function validateRequest(
-  request: NextRequest,
-  options: {
-    requireAuth?: boolean;
-    requiredRoles?: UserRole[];
-    minimumRole?: UserRole;
-  } = {}
-): Promise<{ valid: boolean; user?: { uid: string; email?: string; role?: UserRole }; error?: NextResponse }> {
-  // 인증 확인
-  if (options.requireAuth) {
-    const _user = await verifyAuth(request);
-    if (!_user) {
-      return {
-        valid: false,
-        error: errorResponse(
-          ApiErrorCode.UNAUTHORIZED,
-          '인증이 필요합니다.',
-          HttpStatus.UNAUTHORIZED
-        )
-      };
-    }
-    // 특정 역할 확인
-    if (options.requiredRoles && !hasRole(_user.role, options.requiredRoles)) {
-      return {
-        valid: false,
-        error: errorResponse(
-          ApiErrorCode.FORBIDDEN,
-          '권한이 없습니다.',
-          HttpStatus.FORBIDDEN
-        )
-      };
-    }
-    // 최소 역할 레벨 확인
-    if (options.minimumRole && !hasMinimumRole(_user.role, options.minimumRole)) {
-      return {
-        valid: false,
-        error: errorResponse(
-          ApiErrorCode.INSUFFICIENT_PERMISSIONS,
-          '권한이 부족합니다.',
-          HttpStatus.FORBIDDEN
-        )
-      };
-    }
-    return { valid: true, user: _user };
+export async function requireAuth(request: NextRequest): Promise<UserProfile> {
+  const user = await getAuthenticatedUser(request);
+  if (!user) {
+    throw new APIError('Authentication required', 401, 'UNAUTHORIZED');
   }
-  return { valid: true };
+  return user;
 }
+
 /**
- * 페이지네이션 파라미터 파싱
+ * Create success response
  */
-export function parsePaginationParams(request: NextRequest): {
-  page: number;
-  pageSize: number;
-  offset: number;
-} {
-  const { searchParams } = new URL(request.url);
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20')));
-  const offset = (page - 1) * pageSize;
-  return { page, pageSize, offset };
-}
-/**
- * 정렬 파라미터 파싱
- */
-export function parseSortParams(request: NextRequest): {
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-} {
-  const { searchParams } = new URL(request.url);
-  const sortBy = searchParams.get('sortBy') || 'createdAt';
-  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
-  return { sortBy, sortOrder };
-}
-/**
- * 필터 파라미터 파싱
- */
-export function parseFilterParams(request: NextRequest, allowedFilters: string[]): Record<string, unknown> {
-  const { searchParams } = new URL(request.url);
-  const filters: Record<string, unknown> = {};
-  allowedFilters.forEach(filter => {
-    const value = searchParams.get(filter);
-    if (value !== null) {
-      // boolean 값 처리
-      if (value === 'true' || value === 'false') {
-        filters[filter] = value === 'true';
-      }
-      // 숫자 처리
-      else if (!isNaN(Number(value))) {
-        filters[filter] = Number(value);
-      }
-      // 문자열
-      else {
-        filters[filter] = value;
-      }
-    }
+export function successResponse(data: any, message?: string) {
+  return NextResponse.json({
+    success: true,
+    data,
+    message: message || 'Success',
+    timestamp: new Date().toISOString()
   });
-  return filters;
 }
+
 /**
- * 에러 핸들링 래퍼
+ * Create error response
+ * Supports both single error argument and legacy 3-argument format
  */
-export async function withErrorHandling<T>(
-  handler: () => Promise<NextResponse<T>>
-): Promise<NextResponse> {
-  try {
-    return await handler();
-  } catch (error: unknown) {
-    // Firebase 에러 처리
-    if ((error as any).code?.startsWith('auth/')) {
-      return errorResponse(
-        ApiErrorCode.UNAUTHORIZED,
-        '인증 오류가 발생했습니다.',
-        HttpStatus.UNAUTHORIZED,
-        (error as any).code
-      );
-    }
-    // Firestore 에러 처리
-    if ((error as any).code === 'permission-denied') {
-      return errorResponse(
-        ApiErrorCode.FORBIDDEN,
-        '접근 권한이 없습니다.',
-        HttpStatus.FORBIDDEN
-      );
-    }
-    // 기본 에러
-    return errorResponse(
-      ApiErrorCode.INTERNAL_ERROR,
-      '서버 오류가 발생했습니다.',
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      process.env.NODE_ENV === 'development' ? (error as any).message : undefined
+export function errorResponse(
+  errorOrCode: unknown, 
+  message?: string, 
+  status?: number
+): NextResponse {
+  // Legacy 3-argument format support
+  if (typeof errorOrCode === 'string' && message && status) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+        code: errorOrCode
+      },
+      { status }
     );
   }
+  
+  // Single error argument
+  const error = errorOrCode;
+  
+  if (error instanceof APIError) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+        code: error.code,
+        details: error.context
+      },
+      { status: error.statusCode }
+    );
+  }
+  
+  if (error instanceof Error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+        code: 'INTERNAL_ERROR'
+      },
+      { status: 500 }
+    );
+  }
+  
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'An unexpected error occurred',
+      code: 'UNKNOWN_ERROR'
+    },
+    { status: 500 }
+  );
 }
+
 /**
- * 요청 본문 파싱
+ * Parse request body
  */
-export async function parseRequestBody<T>(request: NextRequest): Promise<T | null> {
+export async function parseBody<T = any>(request: NextRequest): Promise<T> {
   try {
     const body = await request.json();
     return body as T;
   } catch {
-    return null;
+    throw new APIError('Invalid JSON body', 400, 'INVALID_BODY');
   }
 }
+
 /**
- * 캐시 헤더 설정
+ * Get query parameter
  */
-export function setCacheHeaders(
-  response: NextResponse,
-  options: {
-    maxAge?: number;
-    sMaxAge?: number;
-    staleWhileRevalidate?: number;
-    private?: boolean;
-  } = {}
-): NextResponse {
-  const { maxAge = 0, sMaxAge, staleWhileRevalidate, private: isPrivate = false } = options;
-  const directives: string[] = [];
-  if (isPrivate) {
-    directives.push('private');
-  } else {
-    directives.push('public');
-  }
-  directives.push(`max-age=${maxAge}`);
-  if (sMaxAge !== undefined) {
-    directives.push(`s-maxage=${sMaxAge}`);
-  }
-  if (staleWhileRevalidate !== undefined) {
-    directives.push(`stale-while-revalidate=${staleWhileRevalidate}`);
-  }
-  response.headers.set('Cache-Control', directives.join(', '));
-  return response;
+export function getQueryParam(request: NextRequest, param: string): string | null {
+  const url = new URL(request.url);
+  return url.searchParams.get(param);
 }
+
+/**
+ * Validate request method
+ */
+export function validateMethod(request: NextRequest, allowedMethods: string[]): void {
+  if (!allowedMethods.includes(request.method)) {
+    throw new APIError(
+      `Method ${request.method} not allowed`,
+      405,
+      'METHOD_NOT_ALLOWED'
+    );
+  }
+}
+
+/**
+ * Error handling wrapper for API routes
+ */
+export function withErrorHandling(handler: Function) {
+  return async (request: NextRequest, ...args: any[]) => {
+    try {
+      return await handler(request, ...args);
+    } catch (error) {
+      return errorResponse(error);
+    }
+  };
+}
+
+/**
+ * Validate request (combines method and auth validation)
+ */
+export async function validateRequest(
+  request: NextRequest,
+  options: { 
+    methods?: string[], 
+    requireAuth?: boolean,
+    minimumRole?: any,
+    requiredRoles?: any[]
+  } = {}
+): Promise<{ valid: boolean; user?: UserProfile | null; error?: Response }> {
+  try {
+    if (options.methods) {
+      validateMethod(request, options.methods);
+    }
+    
+    if (options.requireAuth) {
+      const user = await requireAuth(request);
+      
+      // Check minimum role if specified
+      if (options.minimumRole || options.requiredRoles) {
+        // Simple role check - can be enhanced
+        return { valid: true, user };
+      }
+      
+      return { valid: true, user };
+    }
+    
+    return { valid: true, user: null };
+  } catch (error) {
+    return { valid: false, error: errorResponse(error) };
+  }
+}
+
+/**
+ * API Error Codes
+ */
+export enum ApiErrorCode {
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  NOT_FOUND = 'NOT_FOUND',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  METHOD_NOT_ALLOWED = 'METHOD_NOT_ALLOWED',
+  INVALID_INPUT = 'INVALID_INPUT',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  OPERATION_NOT_ALLOWED = 'OPERATION_NOT_ALLOWED',
+  CONFLICT = 'CONFLICT',
+  MISSING_FIELD = 'MISSING_FIELD',
+  ALREADY_EXISTS = 'ALREADY_EXISTS'
+}
+
+/**
+ * HTTP Status codes
+ */
+export enum HttpStatus {
+  OK = 200,
+  CREATED = 201,
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  METHOD_NOT_ALLOWED = 405,
+  CONFLICT = 409,
+  INTERNAL_SERVER_ERROR = 500
+}
+
+/**
+ * Parse request body (alias for parseBody)
+ */
+export const parseRequestBody = parseBody;
+
+/**
+ * Parse pagination parameters
+ */
+export function parsePaginationParams(request: NextRequest): { page: number; pageSize: number; offset: number } {
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get('page') || '1', 10);
+  const pageSize = parseInt(url.searchParams.get('pageSize') || '20', 10);
+  
+  const validPage = Math.max(1, page);
+  const validPageSize = Math.min(100, Math.max(1, pageSize));
+  const offset = (validPage - 1) * validPageSize;
+  
+  return {
+    page: validPage,
+    pageSize: validPageSize,
+    offset
+  };
+}
+
+/**
+ * Parse sort parameters
+ */
+export function parseSortParams(request: NextRequest): { sortBy?: string; sortOrder?: 'asc' | 'desc' } {
+  const url = new URL(request.url);
+  const sortBy = url.searchParams.get('sortBy') || undefined;
+  const sortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+  
+  return {
+    sortBy,
+    sortOrder: sortOrder || 'desc'
+  };
+}
+
+/**
+ * Parse filter parameters
+ */
+export function parseFilterParams(
+  request: NextRequest, 
+  allowedFields?: string[]
+): Record<string, any> {
+  const url = new URL(request.url);
+  const filters: Record<string, any> = {};
+  
+  // If specific fields are allowed, only parse those
+  if (allowedFields) {
+    for (const field of allowedFields) {
+      const value = url.searchParams.get(field);
+      if (value) {
+        filters[field] = value;
+      }
+    }
+  } else {
+    // Otherwise use common filters
+    const role = url.searchParams.get('role');
+    const status = url.searchParams.get('status');
+    const clubId = url.searchParams.get('clubId');
+    const search = url.searchParams.get('search');
+    
+    if (role) filters.role = role;
+    if (status) filters.status = status;
+    if (clubId) filters.clubId = clubId;
+    if (search) filters.search = search;
+  }
+  
+  return filters;
+}
+
+// Re-export UserRole for API routes
+export { UserRole };

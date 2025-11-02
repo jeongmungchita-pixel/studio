@@ -13,6 +13,12 @@ vi.mock('firebase/app', () => ({
   initializeApp: vi.fn(),
   getApps: vi.fn(() => []),
   getApp: vi.fn(),
+  FirebaseError: class FirebaseError extends Error {
+    constructor(public code: string, message: string) {
+      super(message);
+      this.name = 'FirebaseError';
+    }
+  },
 }));
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(),

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { apiClient } from '../api-client';
+import { apiClient } from '@/lib/api/unified-api-client';
 
 // Mock firebase/auth getAuth
 vi.mock('firebase/auth', () => ({

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { DocumentReference, onSnapshot, DocumentData, FirestoreError, DocumentSnapshot } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
+// Error handling integrated into ErrorManager
 import { FirestorePermissionError } from '@/firebase/errors';
 /** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
@@ -62,11 +62,10 @@ export function useDoc<T = any>(
           operation: 'get',
           path: memoizedDocRef.path,
         })
+        console.error('Firestore permission denied for document:', memoizedDocRef.path);
         setError(contextualError)
         setData(null)
         setIsLoading(false)
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
       }
     );
     return () => unsubscribe();

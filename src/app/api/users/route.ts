@@ -52,7 +52,12 @@ export async function GET(request: NextRequest) {
       _query = _query.where('clubId', '==', filters.clubId);
     }
     // 정렬 적용
-    _query = _query.orderBy(sortBy, sortOrder);
+    if (sortBy) {
+      _query = _query.orderBy(sortBy, sortOrder);
+    } else {
+      // 기본 정렬: createdAt desc
+      _query = _query.orderBy('createdAt', 'desc');
+    }
     // 전체 개수 조회
     const countSnapshot = await _query.count().get();
     const total = countSnapshot.data().count;
@@ -155,8 +160,7 @@ export async function POST(request: NextRequest) {
     };
     return successResponse(
       createdUser,
-      '사용자가 생성되었습니다.',
-      HttpStatus.CREATED
+      '사용자가 생성되었습니다.'
     );
   });
 }

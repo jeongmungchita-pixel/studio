@@ -8,8 +8,8 @@ import {
   Unsubscribe
 } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { APIError } from '@/utils/error/api-error';
-import { logError } from '@/utils/error/error-handler';
+import { APIError } from '@/lib/error/error-manager';
+import { logError } from '@/lib/error/error-manager';
 export interface RealtimeDocumentOptions {
   enabled?: boolean;
   onError?: (error: APIError) => void;
@@ -125,7 +125,11 @@ export function useRealtimeDocument<T extends DocumentData>(
           }
         },
         (firestoreError: FirestoreError) => {
-          const apiError = APIError.fromFirebaseError(firestoreError);
+          const apiError = new APIError(
+            firestoreError.message || 'Firestore error',
+            firestoreError.code === 'permission-denied' ? 403 : 500,
+            firestoreError.code || 'FIRESTORE_ERROR'
+          );
           setError(apiError);
           setIsLoading(false);
           setIsConnected(false);

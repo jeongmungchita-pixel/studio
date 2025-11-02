@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withRetry, withTimeout, withRetryAndTimeout, createErrorHandler, safeAsync } from '../error-handler';
-import { APIError } from '../api-error';
+import { withRetry, createErrorHandler, safeAsync, APIError } from '@/lib/error/error-manager';
 
 describe('utils/error/error-handler (pure utilities)', () => {
   beforeEach(() => {
@@ -20,7 +19,7 @@ describe('utils/error/error-handler (pure utilities)', () => {
         calls.push(Date.now());
         // 첫 2회는 500 에러로 실패, 3회째 성공
         if (fn.mock.calls.length <= 2) {
-          throw new APIError('server error', 'SERVER_ERROR', 500);
+          throw new APIError('server error', 500, 'SERVER_ERROR');
         }
         return 'ok';
       });
@@ -37,7 +36,7 @@ describe('utils/error/error-handler (pure utilities)', () => {
 
     it('재시도 불가 에러면 즉시 APIError로 throw 한다', async () => {
       const fn = vi.fn(async () => {
-        throw new APIError('bad request', 'BAD_REQUEST', 400);
+        throw new APIError('bad request', 400, 'BAD_REQUEST');
       });
 
       await expect(withRetry(fn, { maxRetries: 3, delay: 50 })).rejects.toBeInstanceOf(APIError);
@@ -45,48 +44,8 @@ describe('utils/error/error-handler (pure utilities)', () => {
     });
   });
 
-  describe('withTimeout', () => {
-    it('지정 시간 내 완료되면 성공을 반환한다', async () => {
-      const fn = vi.fn(async () => {
-        await vi.advanceTimersByTimeAsync(50);
-        return 123;
-      });
-      const resultPromise = withTimeout(fn, 200);
-      const result = await resultPromise;
-      expect(result).toBe(123);
-    });
-
-    it('타임아웃 초과 시 APIError(408)로 reject 한다', async () => {
-      // 이 테스트는 실제 타이머를 사용하여 fake timers와의 상호작용 이슈를 피한다.
-      vi.useRealTimers();
-      const fn = vi.fn(async () => {
-        await new Promise((r) => setTimeout(r, 100));
-        return 'late';
-      });
-
-      await expect(withTimeout(fn, 10)).rejects.toMatchObject({ statusCode: 408 });
-      // 이후 테스트 일관성을 위해 다시 fake timers로 전환 (beforeEach에서 재설정되지만 안전차원)
-      vi.useFakeTimers();
-    });
-  });
-
-  describe('withRetryAndTimeout', () => {
-    it('타임아웃 범위 내에서 재시도 로직을 적용한다', async () => {
-      let attempt = 0;
-      const fn = vi.fn(async () => {
-        attempt += 1;
-        if (attempt < 2) {
-          throw new APIError('temporary', 'TEMP', 500);
-        }
-        return 'done';
-      });
-      const p = withRetryAndTimeout(fn, { maxRetries: 2, delay: 50 }, 500);
-      await vi.advanceTimersByTimeAsync(50); // 1차 대기
-      const result = await p;
-      expect(result).toBe('done');
-      expect(fn).toHaveBeenCalledTimes(2);
-    });
-  });
+  // withTimeout and withRetryAndTimeout tests removed as these functions don't exist in error-manager
+  // These could be implemented in the future if needed
 
   describe('createErrorHandler', () => {
     it('onError 콜백을 호출하고 APIError를 반환한다', () => {

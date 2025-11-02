@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useRef, useMemo } from 'react';
-import { useUserStore } from '@/store/user-store';
-import { useClubStore } from '@/store/club-store';
-import { useAppStore } from '@/store/app-store';
+import { useUserStore } from '@/stores/user-store';
+import { useClubStore } from '@/stores/club-store';
+import { useUIStore } from '@/stores/ui-store'; // Replaced app-store with ui-store
 /**
  * 선택적 구독 패턴 Hook
  * 필요한 상태만 구독하여 불필요한 리렌더링을 방지합니다.
@@ -38,11 +38,11 @@ export function useSelectiveClubSubscription<T>(
   }), [selectedState]);
 }
 // 앱 상태 선택적 구독
-export function useSelectiveAppSubscription<T>(
-  selector: (state: ReturnType<typeof useAppStore.getState>) => T,
+export function useSelectiveUISubscription<T>(
+  selector: (state: ReturnType<typeof useUIStore.getState>) => T,
   equalityFn?: (a: T, b: T) => boolean
 ) {
-  const selectedState = useAppStore(selector);
+  const selectedState = useUIStore(selector);
   const renderCountRef = useRef(0);
   useEffect(() => {
     renderCountRef.current += 1;
@@ -134,14 +134,13 @@ export const optimizedSelectors = {
       status: club.status,
     })),
   // 앱 UI 상태만
-  appUIState: (state: ReturnType<typeof useAppStore.getState>) => ({
+  appUIState: (state: ReturnType<typeof useUIStore.getState>) => ({
     theme: state.theme,
-    language: state.language,
-    sidebarCollapsed: state.sidebarCollapsed,
+    sidebarOpen: state.sidebarOpen,
   }),
   // 알림 상태만
-  notificationState: (state: ReturnType<typeof useAppStore.getState>) => ({
-    unreadCount: state.unreadCount,
+  notificationState: (state: ReturnType<typeof useUIStore.getState>) => ({
+    unreadCount: state.notifications.filter(n => !n.read).length,
     hasNotifications: state.notifications.length > 0,
   }),
 };
@@ -177,15 +176,15 @@ export function useOptimizedClubList() {
   );
 }
 // 앱 UI 상태
-export function useAppUIState() {
-  return useSelectiveAppSubscription(
+export function useTheme() {
+  return useSelectiveUISubscription(
     optimizedSelectors.appUIState,
     equalityFunctions.shallow
   );
 }
 // 알림 상태
-export function useNotificationStatus() {
-  return useSelectiveAppSubscription(
+export function useNotifications() {
+  return useSelectiveUISubscription(
     optimizedSelectors.notificationState,
     equalityFunctions.shallow
   );

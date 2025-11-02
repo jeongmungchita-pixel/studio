@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
-import { toast } from '@/stores/ui-store';
+import { useUIStore } from '@/stores/ui-store';
 interface QueryProviderProps {
   children: React.ReactNode;
 }
@@ -30,7 +30,14 @@ export function QueryProvider({ children }: QueryProviderProps) {
             onError: (error: unknown) => {
               const parsedError = error as any;
               const message = parsedError?.response?.data?.message || parsedError?.message || '오류가 발생했습니다.';
-              toast.error('오류', message);
+              // Store를 직접 접근하여 토스트 표시
+              if (typeof window !== 'undefined') {
+                useUIStore.getState().showToast({
+                  type: 'error',
+                  title: '오류',
+                  description: message,
+                });
+              }
             },
           },
         },

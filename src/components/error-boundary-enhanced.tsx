@@ -3,7 +3,7 @@ import React, { Component, ErrorInfo as ReactErrorInfo, ReactNode } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Home, Bug } from 'lucide-react';
-import { errorHandler, ErrorType, ErrorSeverity, ErrorInfo } from '@/services/error-handler';
+import { errorManager, ErrorType, ErrorSeverity, ErrorInfo } from '@/lib/error/error-manager';
 import { navigationManager } from '@/services/navigation-manager';
 interface Props {
   children: ReactNode;
@@ -34,7 +34,7 @@ export class ErrorBoundaryEnhanced extends Component<Props, State> {
   }
   componentDidCatch(error: Error, errorInfo: ReactErrorInfo) {
     // ErrorHandler로 에러 처리
-    const processedError = errorHandler.handle(error, {
+    const processedError = errorManager.handleError(error, {
       component: 'ErrorBoundary',
       action: 'component-error',
       metadata: {

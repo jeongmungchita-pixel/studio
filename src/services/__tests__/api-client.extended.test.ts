@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ApiClient } from '../api-client';
+import { ApiClient } from '@/lib/api/unified-api-client';
 import { getAuth } from 'firebase/auth';
 
 // Mock dependencies

@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTargetCategoryLabel } from '@/lib/member-utils';
-import { FirebaseDebug } from '@/components/debug/firebase-debug';
+// FirebaseDebug removed - debugging integrated into ErrorManager
 import { ROUTES } from '@/constants/routes';
 const classFormSchema = z.object({
   name: z.string().min(1, '클래스 이름을 입력해주세요.'),
@@ -570,7 +570,6 @@ export default function ClassesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        <FirebaseDebug />
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { UserRole } from '@/types/auth';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 /**
  * 서버사이드 검증 스키마 정의
  */
@@ -134,9 +134,7 @@ export class ServerValidator {
           `${err.path.join('.')}: ${err.message}`
         ).join(', ');
         throw new APIError(
-          `검증 실패: ${errorMessages}`,
-          'VALIDATION_ERROR',
-          400
+          `검증 실패: ${errorMessages}`, 400, 'VALIDATION_ERROR'
         );
       }
       throw error;
@@ -179,9 +177,7 @@ export class ServerValidator {
     // 권한 확인
     if (!requiredRoles.includes(userRole)) {
       throw new APIError(
-        '이 작업을 수행할 권한이 없습니다',
-        'INSUFFICIENT_PERMISSIONS',
-        403
+        '이 작업을 수행할 권한이 없습니다', 403, 'INSUFFICIENT_PERMISSIONS'
       );
     }
     // 데이터 검증
@@ -207,23 +203,17 @@ export class ServerValidator {
     const maxNameLength = 255;
     if (!allowedTypes.includes(file.type)) {
       throw new APIError(
-        '허용되지 않는 파일 형식입니다',
-        'INVALID_FILE_TYPE',
-        400
+        '허용되지 않는 파일 형식입니다', 400, 'INVALID_FILE_TYPE'
       );
     }
     if (file.size > maxSize) {
       throw new APIError(
-        '파일 크기가 너무 큽니다 (최대 10MB)',
-        'FILE_TOO_LARGE',
-        400
+        '파일 크기가 너무 큽니다 (최대 10MB)', 400, 'FILE_TOO_LARGE'
       );
     }
     if (file.name.length > maxNameLength) {
       throw new APIError(
-        '파일명이 너무 깁니다',
-        'FILENAME_TOO_LONG',
-        400
+        '파일명이 너무 깁니다', 400, 'FILENAME_TOO_LONG'
       );
     }
     // 악성 파일명 패턴 검사
@@ -234,9 +224,7 @@ export class ServerValidator {
     ];
     if (dangerousPatterns.some(pattern => pattern.test(file.name))) {
       throw new APIError(
-        '안전하지 않은 파일명입니다',
-        'UNSAFE_FILENAME',
-        400
+        '안전하지 않은 파일명입니다', 400, 'UNSAFE_FILENAME'
       );
     }
   }
@@ -295,9 +283,7 @@ export class ServerValidator {
     }
     if (record.count >= maxRequests) {
       throw new APIError(
-        '요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.',
-        'RATE_LIMIT_EXCEEDED',
-        429
+        '요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.', 429, 'RATE_LIMIT_EXCEEDED'
       );
     }
     record.count++;
@@ -318,9 +304,7 @@ export function createPermissionMiddleware(requiredRoles: UserRole[]) {
   return (userRole: UserRole) => {
     if (!requiredRoles.includes(userRole)) {
       throw new APIError(
-        '이 작업을 수행할 권한이 없습니다',
-        'INSUFFICIENT_PERMISSIONS',
-        403
+        '이 작업을 수행할 권한이 없습니다', 403, 'INSUFFICIENT_PERMISSIONS'
       );
     }
   };

@@ -6,33 +6,33 @@ import { withAuth, isAdmin, AuthenticatedRequest } from '@/middleware/auth';
  * Update user status (pending/active/inactive)
  */
 export async function POST(request: NextRequest) {
-  return withAuth(request, async (_req: AuthenticatedRequest) => {
-    const { user } = _req;
-    // Only admins can change user status directly
-    if (!isAdmin(user!.role)) {
-      return NextResponse.json(
-        { error: 'Only administrators can update user status' },
-        { status: 403 }
-      );
-    }
-    const body = await _req.json();
-    const { userId, status, reason } = body;
-    // Validate required fields
-    if (!userId || !status) {
-      return NextResponse.json(
-        { error: 'User ID and status are required' },
-        { status: 400 }
-      );
-    }
-    // Validate status value
-    if (!['pending', 'active', 'inactive'].includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status. Must be pending, active, or inactive' },
-        { status: 400 }
-      );
-    }
-    const db = getAdminFirestore();
-    try {
+  try {
+    return withAuth(request, async (_req: AuthenticatedRequest) => {
+      const { user } = _req;
+      // Only admins can change user status directly
+      if (!isAdmin(user!.role)) {
+        return NextResponse.json(
+          { error: 'Only administrators can update user status' },
+          { status: 403 }
+        );
+      }
+      const body = await _req.json();
+      const { userId, status, reason } = body;
+      // Validate required fields
+      if (!userId || !status) {
+        return NextResponse.json(
+          { error: 'User ID and status are required' },
+          { status: 400 }
+        );
+      }
+      // Validate status value
+      if (!['pending', 'active', 'inactive'].includes(status)) {
+        return NextResponse.json(
+          { error: 'Invalid status. Must be pending, active, or inactive' },
+          { status: 400 }
+        );
+      }
+      const db = getAdminFirestore();
       // Get the user document
       const userRef = db.collection('users').doc(userId);
       const userSnap = await userRef.get();
@@ -72,14 +72,14 @@ export async function POST(request: NextRequest) {
         userId,
         status,
       });
-    } catch (error: unknown) {
-      return NextResponse.json(
-        { 
-          error: 'Failed to update user status',
-          details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) 
-        },
-        { status: 500 }
-      );
-    }
-  });
+    });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { 
+        error: 'Failed to update user status',
+        details: error instanceof Error ? error.message : String(error) 
+      },
+      { status: 500 }
+    );
+  }
 }

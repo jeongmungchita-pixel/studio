@@ -1,7 +1,7 @@
 // 1. Imports
-import { ApiClient, apiClient } from './api-client';
+import { apiClient } from '@/lib/api/unified-api-client';
 import { AuthService, authService } from './auth-service';
-import { errorHandler } from './error-handler';
+import { errorManager } from '@/lib/error/error-manager';
 import { loadingManager } from './loading-manager';
 import { UserService, userService } from './user-service';
 
@@ -62,9 +62,9 @@ export class ServiceContainer {
 
 // 4. Default registration helper
 export function registerDefaultServices(container = ServiceContainer.getInstance()): void {
-  if (!container.has('apiClient')) container.registerInstance<ApiClient>('apiClient', apiClient);
+  if (!container.has('apiClient')) container.registerInstance('apiClient', apiClient);
   if (!container.has('authService')) container.registerInstance<AuthService>('authService', authService);
   if (!container.has('userService')) container.registerInstance<UserService>('userService', userService);
-  if (!container.has('errorHandler')) container.registerInstance('errorHandler', errorHandler);
+  if (!container.has('errorHandler')) container.registerInstance('errorHandler', errorManager);
   if (!container.has('loadingManager')) container.registerInstance('loadingManager', loadingManager);
 }

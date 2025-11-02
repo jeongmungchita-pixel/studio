@@ -1,10 +1,26 @@
 /**
- * UI 상태 관리 스토어
+ * UI 상태 관리 스토어 (통합 버전)
  */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { UIStoreState, ModalState, ToastState } from './types';
+import { UIStoreState as BaseUIState, ModalState, ToastState } from './types';
+
+// Notification type from app-store
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: number;
+  read: boolean;
+}
+
+// Extended UI state with notifications
+interface UIStoreState extends BaseUIState {
+  notifications: Notification[];
+}
+
 interface UIStoreActions {
   // 테마 액션
   setTheme: (theme: UIStoreState['theme']) => void;
@@ -20,14 +36,24 @@ interface UIStoreActions {
   showToast: (toast: Omit<ToastState, 'id'>) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
+  // Notification actions from app-store
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  removeNotification: (id: string) => void;
+  clearNotifications: () => void;
 }
+
 type UIStore = UIStoreState & UIStoreActions;
+
 const initialState: UIStoreState = {
   theme: 'system',
   sidebarOpen: true,
   modalStack: [],
-  toasts: []
+  toasts: [],
+  notifications: []
 };
+
 export const useUIStore = create<UIStore>()(
   devtools(
     immer((set) => ({
@@ -124,7 +150,39 @@ export const useUIStore = create<UIStore>()(
       }),
       clearToasts: () => set((state) => {
         state.toasts = [];
-      })
+      }),
+      // Notification actions from app-store
+      addNotification: (notification) =>
+        set((state) => ({
+          notifications: [
+            {
+              id: `notification-${Date.now()}-${Math.random()}`,
+              ...notification,
+              timestamp: Date.now(),
+              read: false,
+            },
+            ...state.notifications,
+          ].slice(0, 50), // Keep max 50 notifications
+        })),
+
+      markNotificationAsRead: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, read: true } : n
+          ),
+        })),
+
+      markAllNotificationsAsRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        })),
+
+      removeNotification: (id) =>
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+        })),
+
+      clearNotifications: () => set({ notifications: [] }),
     })),
     {
       name: 'UIStore'

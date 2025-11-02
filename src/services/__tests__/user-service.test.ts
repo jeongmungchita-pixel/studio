@@ -1,173 +1,369 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UserService } from '../user-service';
-import { apiClient } from '../api-client';
-import { UserRole } from '@/types/auth';
+import { UserService, UserFilters, CreateUserData, UpdateUserData } from '../user-service';
+import { UserProfile, UserRole } from '@/types/auth';
+import { PaginatedResponse } from '@/types/api';
 
-vi.mock('../api-client', () => {
-  const real = vi.importActual<any>('../api-client');
-  return {
-    ...real,
-    apiClient: {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-      upload: vi.fn(),
-      download: vi.fn(),
-      getPaginated: vi.fn(),
-    },
-  };
-});
+// Mock API Client
+const mockGetPaginated = vi.fn();
+const mockGet = vi.fn();
+const mockPost = vi.fn();
+const mockPut = vi.fn();
+const mockDelete = vi.fn();
+const mockUpload = vi.fn();
+
+vi.mock('../api-client', () => ({
+  apiClient: {
+    getPaginated: mockGetPaginated,
+    get: mockGet,
+    post: mockPost,
+    put: mockPut,
+    delete: mockDelete,
+    upload: mockUpload,
+  },
+  ApiClient: vi.fn()
+}));
 
 describe('UserService', () => {
-  let service: UserService;
+  let userService: UserService;
+  let mockUser: UserProfile;
 
   beforeEach(() => {
-    (apiClient.get as any).mockReset();
-    (apiClient.post as any).mockReset();
-    (apiClient.put as any).mockReset();
-    (apiClient.delete as any).mockReset();
-    (apiClient.upload as any).mockReset();
-    (apiClient.download as any).mockReset();
-    (apiClient.getPaginated as any).mockReset();
-    (UserService as any).instance = undefined;
-    service = UserService.getInstance();
+    userService = UserService.getInstance();
+    
+    mockUser = {
+      uid: 'test-uid-123',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      role: UserRole.MEMBER,
+      status: 'active',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      provider: 'email',
+      photoURL: 'https://example.com/photo.jpg'
+    };
+
+    vi.clearAllMocks();
   });
 
-  it('getUsers: should return paginated users', async () => {
-    (apiClient.getPaginated as any).mockResolvedValueOnce({
-      items: [{ uid: 'u1' }, { uid: 'u2' }],
-      total: 2,
-      page: 1,
-      pageSize: 20,
+  describe('getUsers', () => {
+    it('should fetch paginated users with default parameters', async () => {
+      const mockResponse: PaginatedResponse<UserProfile> = {
+        items: [mockUser],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+        totalPages: 1
+      };
+
+      mockGetPaginated.mockResolvedValue(mockResponse);
+
+      const result = await userService.getUsers();
+
+      expect(mockGetPaginated).toHaveBeenCalledWith('/users', {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      }, {
+        loadingKey: 'fetch-users'
+      });
+      expect(result).toEqual(mockResponse);
     });
-    const res = await service.getUsers(1, 20, { role: UserRole.MEMBER });
-    expect(apiClient.getPaginated).toHaveBeenCalledWith('/users', expect.any(Object), { loadingKey: 'fetch-users' });
-    expect(res.items.length).toBe(2);
+
+    it('should fetch paginated users with custom parameters and filters', async () => {
+      const filters: UserFilters = {
+        role: UserRole.CLUB_OWNER,
+        status: 'active',
+        clubId: 'club-123'
+      };
+
+      const mockResponse: PaginatedResponse<UserProfile> = {
+        items: [mockUser],
+        total: 1,
+        page: 2,
+        pageSize: 10,
+        totalPages: 1
+      };
+
+      mockGetPaginated.mockResolvedValue(mockResponse);
+
+      const result = await userService.getUsers(2, 10, filters, 'displayName', 'asc');
+
+      expect(mockGetPaginated).toHaveBeenCalledWith('/users', {
+        page: 2,
+        pageSize: 10,
+        sortBy: 'displayName',
+        sortOrder: 'asc',
+        ...filters
+      }, {
+        loadingKey: 'fetch-users'
+      });
+      expect(result).toEqual(mockResponse);
+    });
   });
 
-  it('getUser: should fetch user detail', async () => {
-    (apiClient.get as any).mockResolvedValueOnce({ uid: 'u1' });
-    const res = await service.getUser('u1');
-    expect(apiClient.get).toHaveBeenCalledWith('/users/u1', { loadingKey: 'fetch-user' });
-    expect(res).toEqual({ uid: 'u1' });
+  describe('getUser', () => {
+    it('should fetch a single user by ID', async () => {
+      mockGet.mockResolvedValue(mockUser);
+
+      const result = await userService.getUser('test-uid-123');
+
+      expect(mockGet).toHaveBeenCalledWith('/users/test-uid-123', {
+        loadingKey: 'fetch-user'
+      });
+      expect(result).toEqual(mockUser);
+    });
   });
 
-  it('createUser: should post user', async () => {
-    (apiClient.post as any).mockResolvedValueOnce({ uid: 'u1' });
-    const res = await service.createUser({ email: 'a@b.com', name: 'A', role: UserRole.MEMBER });
-    expect(apiClient.post).toHaveBeenCalledWith('/users', { email: 'a@b.com', name: 'A', role: UserRole.MEMBER }, { loadingKey: 'create-user' });
-    expect(res).toEqual({ uid: 'u1' });
+  describe('createUser', () => {
+    it('should create a new user', async () => {
+      const createData: CreateUserData = {
+        email: 'new@example.com',
+        name: 'New User',
+        role: UserRole.MEMBER,
+        clubId: 'club-123',
+        phoneNumber: '+1234567890'
+      };
+
+      const newUser = { ...mockUser, ...createData, uid: 'new-uid-456' };
+      mockPost.mockResolvedValue(newUser);
+
+      const result = await userService.createUser(createData);
+
+      expect(mockPost).toHaveBeenCalledWith('/users', createData, {
+        loadingKey: 'create-user'
+      });
+      expect(result).toEqual(newUser);
+    });
   });
 
-  it('updateUser: should put user', async () => {
-    (apiClient.put as any).mockResolvedValueOnce({ uid: 'u1', displayName: 'B' });
-    const res = await service.updateUser('u1', { name: 'B' });
-    expect(apiClient.put).toHaveBeenCalledWith('/users/u1', { name: 'B' }, { loadingKey: 'update-user' });
-    expect(res).toEqual({ uid: 'u1', displayName: 'B' });
+  describe('updateUser', () => {
+    it('should update an existing user', async () => {
+      const updateData: UpdateUserData = {
+        name: 'Updated Name',
+        phoneNumber: '+9876543210',
+        status: 'inactive'
+      };
+
+      const updatedUser = { ...mockUser, ...updateData };
+      mockPut.mockResolvedValue(updatedUser);
+
+      const result = await userService.updateUser('test-uid-123', updateData);
+
+      expect(mockPut).toHaveBeenCalledWith('/users/test-uid-123', updateData, {
+        loadingKey: 'update-user'
+      });
+      expect(result).toEqual(updatedUser);
+    });
   });
 
-  it('deleteUser: should delete user', async () => {
-    (apiClient.delete as any).mockResolvedValueOnce({ id: 'u1' });
-    const res = await service.deleteUser('u1');
-    expect(apiClient.delete).toHaveBeenCalledWith('/users/u1', { loadingKey: 'delete-user' });
-    expect(res).toEqual({ id: 'u1' });
+  describe('deleteUser', () => {
+    it('should delete a user', async () => {
+      const deleteResponse = { id: 'test-uid-123' };
+      mockDelete.mockResolvedValue(deleteResponse);
+
+      const result = await userService.deleteUser('test-uid-123');
+
+      expect(mockDelete).toHaveBeenCalledWith('/users/test-uid-123', {
+        loadingKey: 'delete-user'
+      });
+      expect(result).toEqual(deleteResponse);
+    });
   });
 
-  it('getMyProfile/updateMyProfile', async () => {
-    (apiClient.get as any).mockResolvedValueOnce({ uid: 'me' });
-    const me = await service.getMyProfile();
-    expect(apiClient.get).toHaveBeenCalledWith('/users/me', { loadingKey: 'fetch-my-profile', cache: 'no-cache' });
-    expect(me.uid).toBe('me');
+  describe('getMyProfile', () => {
+    it('should fetch current user profile with no cache', async () => {
+      mockGet.mockResolvedValue(mockUser);
 
-    (apiClient.put as any).mockResolvedValueOnce({ uid: 'me', displayName: 'N' });
-    const updated = await service.updateMyProfile({ name: 'N' });
-    expect(apiClient.put).toHaveBeenCalledWith('/users/me', { name: 'N' }, { loadingKey: 'update-my-profile' });
-    expect(updated.displayName).toBe('N');
+      const result = await userService.getMyProfile();
+
+      expect(mockGet).toHaveBeenCalledWith('/users/me', {
+        loadingKey: 'fetch-my-profile',
+        cache: 'no-cache'
+      });
+      expect(result).toEqual(mockUser);
+    });
   });
 
-  it('uploadProfileImage', async () => {
-    (apiClient.upload as any).mockResolvedValueOnce({ url: 'http://x' });
-    const fakeFile = new File(['abc'], 'a.png');
-    const res = await service.uploadProfileImage('u1', fakeFile);
-    expect(apiClient.upload).toHaveBeenCalled();
-    expect(res.url).toBe('http://x');
+  describe('updateMyProfile', () => {
+    it('should update current user profile', async () => {
+      const updateData = {
+        name: 'Updated Name',
+        phoneNumber: '+9876543210'
+      };
+
+      const updatedUser = { ...mockUser, ...updateData };
+      mockPut.mockResolvedValue(updatedUser);
+
+      const result = await userService.updateMyProfile(updateData);
+
+      expect(mockPut).toHaveBeenCalledWith('/users/me', updateData, {
+        loadingKey: 'update-my-profile'
+      });
+      expect(result).toEqual(updatedUser);
+    });
   });
 
-  it('role/club helpers', async () => {
-    (apiClient.getPaginated as any).mockResolvedValue({ items: [{ uid: '1' }], total: 1 });
-    const byRole = await service.getUsersByRole(UserRole.MEMBER);
-    expect(byRole.length).toBe(1);
-    const byClub = await service.getUsersByClub('clubA');
-    expect(byClub.length).toBe(1);
+  describe('uploadProfileImage', () => {
+    it('should upload profile image', async () => {
+      const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+      const uploadResponse = { url: 'https://example.com/uploaded.jpg' };
+
+      mockUpload.mockResolvedValue(uploadResponse);
+
+      const result = await userService.uploadProfileImage('test-uid-123', file);
+
+      expect(mockUpload).toHaveBeenCalledWith('/users/profile-image', file, { userId: 'test-uid-123' }, {
+        loadingKey: 'upload-profile-image'
+      });
+      expect(result).toEqual(uploadResponse);
+    });
   });
 
-  it('searchUsers', async () => {
-    (apiClient.get as any).mockResolvedValueOnce([{ uid: 'u' }]);
-    const res = await service.searchUsers('kim');
-    expect(apiClient.get).toHaveBeenCalledWith('/users/search', { params: { q: 'kim' }, loadingKey: 'search-users' });
-    expect(res.length).toBe(1);
+  describe('getUsersByRole', () => {
+    it('should fetch users by role', async () => {
+      const mockResponse: PaginatedResponse<UserProfile> = {
+        items: [mockUser],
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        totalPages: 1
+      };
+
+      mockGetPaginated.mockResolvedValue(mockResponse);
+
+      const result = await userService.getUsersByRole(UserRole.MEMBER);
+
+      expect(mockGetPaginated).toHaveBeenCalledWith('/users', {
+        page: 1,
+        pageSize: 100,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        role: UserRole.MEMBER
+      }, {
+        loadingKey: 'fetch-users'
+      });
+      expect(result).toEqual([mockUser]);
+    });
   });
 
-  it('status/role/club change helpers delegate to updateUser', async () => {
-    const updateSpy = vi.spyOn(service, 'updateUser');
-    updateSpy.mockResolvedValue({ uid: 'u1' } as any);
-    await service.changeUserStatus('u1', 'active');
-    expect(updateSpy).toHaveBeenCalledWith('u1', { status: 'active' });
-    await service.changeUserRole('u1', UserRole.CLUB_MANAGER);
-    expect(updateSpy).toHaveBeenCalledWith('u1', { role: UserRole.CLUB_MANAGER });
-    await service.changeUserClub('u1', 'clubA');
-    expect(updateSpy).toHaveBeenCalledWith('u1', { clubId: 'clubA' });
-    await service.changeUserClub('u1', null);
-    expect(updateSpy).toHaveBeenCalledWith('u1', { clubId: undefined });
+  describe('getUsersByClub', () => {
+    it('should fetch users by club', async () => {
+      const mockResponse: PaginatedResponse<UserProfile> = {
+        items: [mockUser],
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        totalPages: 1
+      };
+
+      mockGetPaginated.mockResolvedValue(mockResponse);
+
+      const result = await userService.getUsersByClub('club-123');
+
+      expect(mockGetPaginated).toHaveBeenCalledWith('/users', {
+        page: 1,
+        pageSize: 100,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        clubId: 'club-123'
+      }, {
+        loadingKey: 'fetch-users'
+      });
+      expect(result).toEqual([mockUser]);
+    });
   });
 
-  it('createBulkUsers/exportUsers/getUserStats', async () => {
-    (apiClient.post as any).mockResolvedValueOnce([{ uid: 'u1' }]);
-    const res = await service.createBulkUsers([{ email: 'a@b.com', name: 'A', role: UserRole.MEMBER }]);
-    expect(apiClient.post).toHaveBeenCalledWith('/users/bulk', { users: [{ email: 'a@b.com', name: 'A', role: UserRole.MEMBER }] }, { loadingKey: 'create-bulk-users' });
-    expect(res.length).toBe(1);
+  describe('searchUsers', () => {
+    it('should search users by query', async () => {
+      const searchResults = [mockUser];
+      mockGet.mockResolvedValue(searchResults);
 
-    (apiClient.download as any).mockResolvedValueOnce(undefined);
-    await service.exportUsers();
-    expect(apiClient.download).toHaveBeenCalledWith('/users/export', 'users.csv');
+      const result = await userService.searchUsers('test query');
 
-    (apiClient.get as any).mockResolvedValueOnce({ total: 1, byRole: { [UserRole.MEMBER]: 1 }, byStatus: {}, recentlyActive: 0 });
-    const stats = await service.getUserStats();
-    expect(apiClient.get).toHaveBeenCalledWith('/users/stats', { loadingKey: 'fetch-user-stats' });
-    expect(stats.total).toBe(1);
+      expect(mockGet).toHaveBeenCalledWith('/users/search', {
+        params: { q: 'test query' },
+        loadingKey: 'search-users'
+      });
+      expect(result).toEqual(searchResults);
+    });
   });
 
-  it('hasPermission: should return true when user has higher or equal role', () => {
-    const user: any = { role: UserRole.SUPER_ADMIN };
-    expect(service.hasPermission(user, UserRole.CLUB_MANAGER)).toBe(true);
-    expect(service.hasPermission(user, UserRole.SUPER_ADMIN)).toBe(true);
+  describe('changeUserStatus', () => {
+    it('should change user status', async () => {
+      const updatedUser = { ...mockUser, status: 'inactive' };
+      mockPut.mockResolvedValue(updatedUser);
+
+      const result = await userService.changeUserStatus('test-uid-123', 'inactive');
+
+      expect(mockPut).toHaveBeenCalledWith('/users/test-uid-123', { status: 'inactive' }, {
+        loadingKey: 'update-user'
+      });
+      expect(result).toEqual(updatedUser);
+    });
   });
 
-  it('hasPermission: should return false when user has lower role or missing role', () => {
-    const lower: any = { role: UserRole.MEMBER };
-    expect(service.hasPermission(lower, UserRole.CLUB_OWNER)).toBe(false);
-    const missing: any = { role: undefined };
-    expect(service.hasPermission(missing, UserRole.PARENT)).toBe(false);
+  describe('getUserStats', () => {
+    it('should fetch user statistics', async () => {
+      const mockStats = {
+        total: 100,
+        active: 80,
+        pending: 15,
+        inactive: 5
+      };
+
+      mockGet.mockResolvedValue(mockStats);
+
+      const result = await userService.getUserStats();
+
+      expect(mockGet).toHaveBeenCalledWith('/users/stats', {
+        loadingKey: 'fetch-user-stats'
+      });
+      expect(result).toEqual(mockStats);
+    });
   });
 
-  it('getInstance: should return singleton instance', () => {
-    const a = UserService.getInstance();
-    const b = UserService.getInstance();
-    expect(a).toBe(b);
+  describe('hasPermission', () => {
+    it('should correctly check role hierarchy permissions', () => {
+      const testCases = [
+        { userRole: UserRole.SUPER_ADMIN, requiredRole: UserRole.MEMBER, expected: true },
+        { userRole: UserRole.SUPER_ADMIN, requiredRole: UserRole.SUPER_ADMIN, expected: true },
+        { userRole: UserRole.FEDERATION_ADMIN, requiredRole: UserRole.SUPER_ADMIN, expected: false },
+        { userRole: UserRole.FEDERATION_ADMIN, requiredRole: UserRole.CLUB_OWNER, expected: true },
+        { userRole: UserRole.CLUB_OWNER, requiredRole: UserRole.FEDERATION_ADMIN, expected: false },
+        { userRole: UserRole.CLUB_OWNER, requiredRole: UserRole.MEMBER, expected: true },
+        { userRole: UserRole.MEMBER, requiredRole: UserRole.PARENT, expected: true },
+        { userRole: UserRole.PARENT, requiredRole: UserRole.MEMBER, expected: false },
+        { userRole: UserRole.VENDOR, requiredRole: UserRole.MEMBER, expected: false },
+      ];
+
+      testCases.forEach(({ userRole, requiredRole, expected }) => {
+        const user = { ...mockUser, role: userRole };
+        expect(userService.hasPermission(user, requiredRole)).toBe(expected);
+      });
+    });
+
+    it('should handle undefined role', () => {
+      const userWithoutRole = { ...mockUser, role: undefined as any };
+      expect(userService.hasPermission(userWithoutRole, UserRole.MEMBER)).toBe(false);
+    });
+
+    it('should handle invalid required role', () => {
+      expect(userService.hasPermission(mockUser, 'INVALID_ROLE' as UserRole)).toBe(false);
+    });
   });
 
-  it('getUsers: should use default pagination and sorting when args omitted', async () => {
-    (apiClient.getPaginated as any).mockResolvedValueOnce({ items: [], total: 0, page: 1, pageSize: 20 });
-    await service.getUsers();
-    expect(apiClient.getPaginated).toHaveBeenCalledWith(
-      '/users',
-      expect.objectContaining({ page: 1, pageSize: 20, sortBy: 'createdAt', sortOrder: 'desc' }),
-      { loadingKey: 'fetch-users' }
-    );
+  describe('clearCache', () => {
+    it('should clear cache without errors', () => {
+      expect(() => userService.clearCache()).not.toThrow();
+    });
   });
 
-  it('clearCache: should not throw', () => {
-    expect(() => service.clearCache()).not.toThrow();
+  describe('singleton pattern', () => {
+    it('should return the same instance', () => {
+      const instance1 = UserService.getInstance();
+      const instance2 = UserService.getInstance();
+      
+      expect(instance1).toBe(instance2);
+    });
   });
 });

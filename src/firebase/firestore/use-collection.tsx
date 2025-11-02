@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Query, onSnapshot, DocumentData, FirestoreError, QuerySnapshot, CollectionReference } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
+// Error handling integrated into ErrorManager
 import { FirestorePermissionError } from '@/firebase/errors';
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -79,6 +79,7 @@ export function useCollection<T = any>(
             path = `[path could not be determined for ${memoizedTargetRefOrQuery.type}]`;
         }
         // Log the error but don't throw it globally during development
+        console.error('Firestore permission denied for collection');
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path,
@@ -86,7 +87,6 @@ export function useCollection<T = any>(
         setError(contextualError);
         setData(null);
         setIsLoading(false);
-        // TEMPORARILY DISABLED: Don't trigger global error propagation during development
         // errorEmitter.emit('permission-error', contextualError);
       }
     );

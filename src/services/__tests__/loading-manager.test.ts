@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { LoadingManager, loadingManager } from '../loading-manager';
+import { LoadingManager, loadingManager } from '@/services/loading-manager';
 
 describe('LoadingManager', () => {
   let mgr: LoadingManager;

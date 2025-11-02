@@ -198,7 +198,7 @@ export default function MemberApprovalsPage() {
     if (!_user) return;
     try {
       // Use Admin API for approval
-      const { adminAPI } = await import('@/utils/api-client');
+      const { adminAPI } = await import('@/lib/api/unified-api-client');
       const result = await adminAPI.approvals.approveAdult(request.id);
       toast({
         title: '승인 완료',
@@ -222,7 +222,7 @@ export default function MemberApprovalsPage() {
     setIsProcessing(true);
     try {
       // Use Admin API for approval
-      const { adminAPI } = await import('@/utils/api-client');
+      const { adminAPI } = await import('@/lib/api/unified-api-client');
       const result = await adminAPI.approvals.approveFamily(request.id);
       const message = [];
       if (request.parents.length > 0) message.push(`부모 ${request.parents.length}명`);
@@ -320,7 +320,7 @@ export default function MemberApprovalsPage() {
     setIsProcessing(true);
     try {
       // Use Admin API for rejection
-      const { adminAPI } = await import('@/utils/api-client');
+      const { adminAPI } = await import('@/lib/api/unified-api-client');
       const result = await adminAPI.approvals.reject(requestId, type);
       toast({
         title: '거절 완료',

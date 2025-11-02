@@ -1,5 +1,5 @@
 import { UserRole } from '@/types/auth';
-import { APIError } from '@/utils/error/api-error';
+import { APIError } from '@/lib/error/error-manager';
 /**
  * 강화된 역할 기반 접근 제어 (RBAC) 시스템
  */
@@ -402,9 +402,7 @@ export class EnhancedRBAC {
   ): void {
     if (!this.hasContextualPermission(context, permission, resourceType)) {
       throw new APIError(
-        '이 작업을 수행할 권한이 없습니다',
-        'INSUFFICIENT_PERMISSIONS',
-        403
+        '이 작업을 수행할 권한이 없습니다', 403, 'INSUFFICIENT_PERMISSIONS'
       );
     }
   }
