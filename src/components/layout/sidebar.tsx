@@ -3,7 +3,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, Home, ArrowLeft, PartyPopper, Trophy, Award, Bell, TrendingUp, MessageSquare, CreditCard, DollarSign, ChevronDown, Users, Mail, Building, Gavel } from 'lucide-react';
+import { Ticket, Archive, BookMarked, CheckSquare, Camera, Settings, UserPlus, Home, ArrowLeft, PartyPopper, Trophy, Award, Bell, TrendingUp, MessageSquare, CreditCard, DollarSign, ChevronDown, Users, Mail, Building, Gavel, BarChart3, Target } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { LogoutButton } from '@/components/logout-button';
 import { UserRole } from '@/types';
@@ -214,13 +214,48 @@ const subMenuItems: SubMenuItem[] = [
     section: 'admin',
     roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
   },
+  { 
+    href: '/admin/competitions/results', 
+    label: '시합 결과', 
+    icon: Trophy, 
+    section: 'admin',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/admin/statistics', 
+    label: '통계 분석', 
+    icon: BarChart3, 
+    section: 'admin',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
+  { 
+    href: '/admin/certificates', 
+    label: '인증서 관리', 
+    icon: Award, 
+    section: 'admin',
+    roles: [UserRole.FEDERATION_ADMIN, UserRole.SUPER_ADMIN] 
+  },
   // 내 정보 서브메뉴
   { 
-    href: '/dashboard', 
+    href: '/member', 
     label: '대시보드', 
     icon: Home, 
     section: 'member',
-    roles: [UserRole.MEMBER] 
+    roles: [UserRole.MEMBER, UserRole.PARENT] 
+  },
+  { 
+    href: '/member/attendance', 
+    label: '출결 현황', 
+    icon: CheckSquare, 
+    section: 'member',
+    roles: [UserRole.MEMBER, UserRole.PARENT] 
+  },
+  { 
+    href: '/member/media', 
+    label: '미디어', 
+    icon: Camera, 
+    section: 'member',
+    roles: [UserRole.MEMBER, UserRole.PARENT] 
   },
   { 
     href: '/events', 
@@ -235,6 +270,20 @@ const subMenuItems: SubMenuItem[] = [
     icon: Trophy, 
     section: 'member',
     roles: [UserRole.MEMBER] 
+  },
+  { 
+    href: '/competitions/rankings', 
+    label: '순위표', 
+    icon: BarChart3, 
+    section: 'member',
+    roles: [UserRole.MEMBER, UserRole.PARENT] 
+  },
+  { 
+    href: '/competitions/certificates', 
+    label: '인증서', 
+    icon: Award, 
+    section: 'member',
+    roles: [UserRole.MEMBER, UserRole.PARENT] 
   },
   { 
     href: '/level-tests', 

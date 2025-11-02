@@ -13,13 +13,16 @@ export interface Member {
   id: string;
   name: string;
   dateOfBirth?: string; // ISO 8601 date string
+  birthDate?: string; // 별칭 - dateOfBirth와 동일
   gender?: 'male' | 'female';
   email?: string; // 선택적 (자녀는 없을 수 있음)
   phoneNumber?: string;
+  phone?: string; // 별칭 - phoneNumber와 동일
   clubId: string;
   clubName?: string; // 비정규화 - 클럽 이름 (조인 방지)
   status: 'active' | 'inactive' | 'pending';
   guardianIds?: string[]; // 부모 Member ID 배열
+  guardianUserIds?: string[]; // Firebase Auth UID 배열 (별칭)
   photoURL?: string;
   activePassId?: string; // ID of the current MemberPass
   memberCategory?: MemberCategory; // 회원 분류

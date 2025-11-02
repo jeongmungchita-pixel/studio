@@ -1,14 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2, Mail } from 'lucide-react';
+import { Loader2, CheckCircle2, Mail, UserCheck } from 'lucide-react';
 import { Invitation, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 export default function FederationAdminSignupPage() {
@@ -16,6 +16,7 @@ export default function FederationAdminSignupPage() {
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+  const { _user, isUserLoading } = useUser();
   const { toast } = useToast();
   const token = params.token as string;
   const [invite, setInvite] = useState<Invitation | null>(null);
@@ -28,6 +29,79 @@ export default function FederationAdminSignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+
+  // 이미 로그인된 사용자 처리
+  useEffect(() => {
+    if (isUserLoading || !invite || !_user) return;
+    
+    // 초대된 이메일과 현재 로그인된 이메일이 다른 경우
+    if (_user.email !== invite.email) {
+      toast({
+        variant: 'destructive',
+        title: '이메일 불일치',
+        description: '초대된 이메일과 현재 로그인된 이메일이 다릅니다.',
+      });
+      // 로그아웃 후 다시 시도
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+      return;
+    }
+
+    // 이미 연맹 관리자 권한이 있는 경우
+    if (_user.role === UserRole.FEDERATION_ADMIN) {
+      toast({
+        title: '이미 연맹 관리자입니다',
+        description: '현재 계정은 이미 연맹 관리자 권한을 가지고 있습니다.',
+      });
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 1500);
+      return;
+    }
+
+    // 자동으로 권한 부여 처리
+    handleAutoGrantPermission();
+  }, [_user, isUserLoading, invite, toast]);
+
+  // 자동 권한 부여
+  const handleAutoGrantPermission = async () => {
+    if (!_user || !firestore || !invite) return;
+    
+    setProcessing(true);
+    try {
+      // 사용자 프로필 업데이트 (연맹 관리자 권한 부여)
+      const userDocRef = doc(firestore, 'users', _user.uid);
+      await updateDoc(userDocRef, {
+        role: UserRole.FEDERATION_ADMIN,
+        status: 'active',
+      });
+
+      // 초대 상태 업데이트
+      await updateDoc(doc(firestore, 'federationAdminInvites', token), {
+        status: 'accepted',
+        acceptedAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: '환영합니다!',
+        description: '연맹 관리자 권한이 부여되었습니다.',
+      });
+
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 1500);
+    } catch (error: unknown) {
+      console.error('자동 권한 부여 오류:', error);
+      toast({
+        variant: 'destructive',
+        title: '권한 부여 실패',
+        description: '연맹 관리자 권한 부여 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
   // 초대 정보 로드
   useEffect(() => {
     const loadInvite = async () => {
@@ -40,7 +114,8 @@ export default function FederationAdminSignupPage() {
             title: '초대를 찾을 수 없습니다',
             description: '유효하지 않은 초대 링크입니다.',
           });
-          router.push('/login');
+          // 메인 페이지로 리다이렉트
+          router.push('/');
           return;
         }
         const inviteData = { id: inviteDoc.id, ...inviteDoc?.data() } as Invitation;
@@ -51,7 +126,8 @@ export default function FederationAdminSignupPage() {
             title: '이미 수락된 초대입니다',
             description: '이 초대는 이미 사용되었습니다.',
           });
-          router.push('/login');
+          // 메인 페이지로 리다이렉트
+          router.push('/');
           return;
         }
         if (inviteData.status === 'expired') {
@@ -60,7 +136,8 @@ export default function FederationAdminSignupPage() {
             title: '만료된 초대입니다',
             description: '초대 기간이 만료되었습니다.',
           });
-          router.push('/login');
+          // 메인 페이지로 리다이렉트
+          router.push('/');
           return;
         }
         // 만료 시간 확인
@@ -74,7 +151,8 @@ export default function FederationAdminSignupPage() {
             title: '만료된 초대입니다',
             description: '초대 기간이 만료되었습니다.',
           });
-          router.push('/login');
+          // 메인 페이지로 리다이렉트
+          router.push('/');
           return;
         }
         setInvite(inviteData);
@@ -82,12 +160,14 @@ export default function FederationAdminSignupPage() {
         setDisplayName(inviteData.email.split('@')[0]);
         setPhoneNumber('');
       } catch (error: unknown) {
+        console.error('초대 정보 로드 오류:', error);
         toast({
           variant: 'destructive',
           title: '오류 발생',
           description: '초대 정보를 불러오는 중 오류가 발생했습니다.',
         });
-        router.push('/login');
+        // 로그인 페이지 대신 초대 페이지로 리다이렉트
+        router.push(`/invite/${token}`);
       } finally {
         setLoading(false);
       }
@@ -230,9 +310,33 @@ export default function FederationAdminSignupPage() {
       </div>
     );
   }
+
   if (!invite) {
     return null; // 이미 리다이렉트됨
   }
+
+  // 이미 로그인된 사용자 처리 중인 경우
+  if (processing && _user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
+              <UserCheck className="h-8 w-8 text-blue-600" />
+            </div>
+            <CardTitle className="text-2xl">권한 부여 중</CardTitle>
+            <CardDescription>
+              연맹 관리자 권한을 부여하고 있습니다...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <Card className="w-full max-w-md">
@@ -253,31 +357,50 @@ export default function FederationAdminSignupPage() {
               <span className="text-slate-600">{invite.email}</span>
             </div>
           </div>
-          {/* 탭 */}
-          <div className="flex gap-2 border-b">
-            <button
-              onClick={() => setMode('signup')}
-              className={`flex-1 pb-2 text-sm font-medium transition-colors ${
-                mode === 'signup'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              회원가입
-            </button>
-            <button
-              onClick={() => setMode('login')}
-              className={`flex-1 pb-2 text-sm font-medium transition-colors ${
-                mode === 'login'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              로그인
-            </button>
-          </div>
-          {/* 회원가입 폼 */}
-          {mode === 'signup' && (
+          
+          {/* 이미 로그인된 사용자 안내 */}
+          {_user && _user.email === invite.email && (
+            <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+              <h4 className="text-sm font-semibold text-green-900 mb-2">
+                현재 로그인된 계정
+              </h4>
+              <p className="text-sm text-green-800">
+                {_user.displayName || _user.email}님으로 로그인되어 있습니다.
+                연맹 관리자 권한을 자동으로 부여합니다.
+              </p>
+            </div>
+          )}
+          
+          {/* 탭 - 로그인된 사용자가 있으면 탭 숨김 */}
+          {!_user && (
+            <div className="flex gap-2 border-b">
+              <button
+                onClick={() => setMode('signup')}
+                className={`flex-1 pb-2 text-sm font-medium transition-colors ${
+                  mode === 'signup'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                회원가입
+              </button>
+              <button
+                onClick={() => setMode('login')}
+                className={`flex-1 pb-2 text-sm font-medium transition-colors ${
+                  mode === 'login'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                로그인
+              </button>
+            </div>
+          )}
+          
+          {/* 회원가입/로그인 폼 - 로그인된 사용자가 없을 때만 표시 */}
+          {!_user && (
+            <>
+              {mode === 'signup' && (
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="displayName">이름 *</Label>
@@ -391,6 +514,8 @@ export default function FederationAdminSignupPage() {
                 )}
               </Button>
             </form>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, XCircle, Mail, Calendar } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Mail, Calendar, UserCheck } from 'lucide-react';
 import { Invitation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ROUTES } from '@/constants/routes';
@@ -13,6 +13,7 @@ export default function InvitePage() {
   const params = useParams();
   const router = useRouter();
   const firestore = useFirestore();
+  const { _user, isUserLoading } = useUser();
   const { toast } = useToast();
   const token = params.token as string;
   const [invite, setInvite] = useState<Invitation | null>(null);
@@ -104,8 +105,8 @@ export default function InvitePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push(ROUTES.LOGIN)} className="w-full">
-              로그인 페이지로 이동
+            <Button onClick={() => router.push('/')} className="w-full">
+              메인 페이지로 이동
             </Button>
           </CardContent>
         </Card>
@@ -156,6 +157,19 @@ export default function InvitePage() {
               <li>• 전체 시스템 관리 권한</li>
             </ul>
           </div>
+          {/* 로그인된 사용자 안내 */}
+          {_user && _user.email === invite?.email && (
+            <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+              <h4 className="text-sm font-semibold text-green-900 mb-2">
+                현재 로그인된 계정
+              </h4>
+              <p className="text-sm text-green-800">
+                {_user.displayName || _user.email}님으로 로그인되어 있습니다.
+                아래 버튼을 클릭하여 연맹 관리자 권한을 부여받으세요.
+              </p>
+            </div>
+          )}
+          
           {/* 초대 수락 버튼 */}
           <Button 
             onClick={handleAcceptInvite} 
@@ -163,11 +177,14 @@ export default function InvitePage() {
             size="lg"
           >
             <CheckCircle2 className="mr-2 h-5 w-5" />
-            초대 수락하고 가입하기
+            {_user && _user.email === invite?.email 
+              ? '연맹 관리자 권한 받기' 
+              : '초대 수락하고 가입하기'
+            }
           </Button>
           {/* 취소 버튼 */}
           <Button 
-            onClick={() => router.push('/login')} 
+            onClick={() => router.push('/')} 
             variant="outline" 
             className="w-full"
           >

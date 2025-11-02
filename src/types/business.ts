@@ -80,7 +80,7 @@ export interface MemberPass {
   paymentDate?: string;
   paymentMethod?: string;
   // 상태
-  status: 'active' | 'expired' | 'suspended' | 'cancelled';
+  status: 'active' | 'expired' | 'suspended' | 'cancelled' | 'pending';
   // 사용 기록
   usageCount: number;
   lastUsedAt?: string;
@@ -365,4 +365,59 @@ export interface GymnasticsScore {
   total: number;
   judgeId?: string;
   createdAt: string;
+}
+// 시합 결과
+export interface CompetitionResult {
+  id: string;
+  competitionId: string;
+  memberId: string;
+  memberName: string;
+  clubName: string;
+  clubId: string;
+  gender: 'male' | 'female';
+  age: number;
+  category: string;
+  // 종목별 점수
+  eventScores: {
+    eventId: string;
+    eventName: string;
+    difficulty: number;
+    execution: number;
+    penalty: number;
+    total: number;
+    rank?: number;
+  }[];
+  // 전체 결과
+  totalScore: number;
+  overallRank: number;
+  // 수상 내역
+  medals: {
+    type: 'gold' | 'silver' | 'bronze';
+    eventId?: string;
+    eventName?: string;
+    category?: string;
+  }[];
+  // 메타데이터
+  createdAt: string;
+  calculatedAt: string;
+}
+// 인증서
+export interface Certificate {
+  id: string;
+  competitionId: string;
+  memberId: string;
+  memberName: string;
+  competitionTitle: string;
+  competitionDate: string;
+  // 수상 내역
+  achievement: string;
+  rank?: number;
+  medal?: 'gold' | 'silver' | 'bronze';
+  event?: string;
+  category?: string;
+  // 인증서 정보
+  certificateType: 'participation' | 'achievement' | 'medal';
+  fileUrl: string;
+  issuedAt: string;
+  issuedBy: string;
 }

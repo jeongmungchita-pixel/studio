@@ -10,6 +10,13 @@ export * from './member';
 export * from './club';
 // 비즈니스 로직 시스템
 export * from './business';
+// 알림 시스템
+export * from './notification';
+// 심사위원 시스템
+export * from './judge';
+// 인증서 타입
+export * from './api';
+export * from './common';
 // 레거시 호환성을 위한 재export
 export { UserRole, Gender, CommitteeType } from './auth';
 export { type MemberCategory } from './member';

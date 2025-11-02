@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import NotificationDropdown from '@/components/notification-dropdown';
 // import { GlobalSearch } from '@/components/layout/global-search';
 function toTitleCase(str: string) {
   const koreanMap: { [key: string]: string } = {
@@ -51,6 +52,7 @@ export function AppHeader({
       </div>
       <div className="ml-auto flex items-center gap-4">
         {/* <GlobalSearch /> */}
+        <NotificationDropdown />
         {showAddButton && (
           <Button onClick={onAddClick}>
             <PlusCircle className="mr-2 h-4 w-4" />
