@@ -1,22 +1,22 @@
 /**
- * Firebase Club Repository Adapter
+ * Firebase Club Repository Adapter (Admin SDK 전용)
  */
 import { ClubRepositoryPort } from '@/ports';
 import { Club } from '@/types/club';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
 import { firestoreSingleton } from '@/infra/bootstrap';
 import { 
+  collection, 
   doc, 
   getDoc, 
+  getDocs, 
   setDoc, 
   updateDoc, 
-  deleteDoc,
-  collection,
-  getDocs,
-  query,
-  orderBy,
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
   limit,
-  getCountFromServer,
   Timestamp
 } from 'firebase-admin/firestore';
 

@@ -1,5 +1,5 @@
 /**
- * Firebase Member Repository Adapter
+ * Firebase Member Repository Adapter (Admin SDK 전용)
  */
 import { MemberRepositoryPort } from '@/ports';
 import { Member } from '@/types/member';
@@ -18,7 +18,7 @@ import {
   orderBy, 
   limit,
   Timestamp
-} from 'firebase/firestore';
+} from 'firebase-admin/firestore';
 
 export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
   private db = firestoreSingleton();

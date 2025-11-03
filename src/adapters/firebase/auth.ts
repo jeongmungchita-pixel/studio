@@ -1,21 +1,13 @@
 /**
- * Firebase Auth Adapter
+ * Firebase Auth Adapter (Admin SDK 전용)
  */
 import { AuthPort } from '@/ports';
 import { UserProfile, UserRole } from '@/types/auth';
 import { ApiResponse } from '@/types/api';
 import { authSingleton } from '@/infra/bootstrap';
-import { 
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  updateProfile
-} from 'firebase/auth';
-import { adminAuthSingleton } from '@/infra/bootstrap';
 
 export class FirebaseAuthAdapter implements AuthPort {
-  private adminAuth = adminAuthSingleton();
+  private adminAuth = authSingleton();
 
   async getCurrentUser(): Promise<UserProfile | null> {
     // 클라이언트에서는 useUser 훅 사용

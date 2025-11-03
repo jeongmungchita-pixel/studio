@@ -1,5 +1,5 @@
 /**
- * Firebase Audit Adapter
+ * Firebase Audit Adapter (Admin SDK 전용)
  */
 import { AuditPort } from '@/ports';
 import { ApiResponse } from '@/types/api';

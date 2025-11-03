@@ -1,5 +1,5 @@
 /**
- * Firebase User Repository Adapter
+ * Firebase User Repository Adapter (Admin SDK 전용)
  */
 import { UserRepositoryPort } from '@/ports';
 import { UserProfile, UserRole } from '@/types/auth';
@@ -19,7 +19,7 @@ import {
   limit,
   startAfter,
   Timestamp
-} from 'firebase/firestore';
+} from 'firebase-admin/firestore';
 
 export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
   private db = firestoreSingleton();
