@@ -6,6 +6,7 @@ import { Member } from '@/types/member';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
 import { firestoreSingleton } from '@/infra/bootstrap';
 import { 
+  getFirestore,
   collection, 
   doc, 
   getDoc, 

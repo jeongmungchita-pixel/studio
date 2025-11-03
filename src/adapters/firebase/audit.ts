@@ -4,7 +4,16 @@
 import { AuditPort } from '@/ports';
 import { ApiResponse } from '@/types/api';
 import { firestoreSingleton } from '@/infra/bootstrap';
-import { collection, addDoc, query, where, orderBy, getDocs, Timestamp } from 'firebase-admin/firestore';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  Timestamp 
+} from 'firebase-admin/firestore';
 
 export class FirebaseAuditAdapter implements AuditPort {
   private db = firestoreSingleton();

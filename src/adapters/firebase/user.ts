@@ -6,6 +6,7 @@ import { UserProfile, UserRole } from '@/types/auth';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
 import { firestoreSingleton } from '@/infra/bootstrap';
 import { 
+  getFirestore,
   collection, 
   doc, 
   getDoc, 

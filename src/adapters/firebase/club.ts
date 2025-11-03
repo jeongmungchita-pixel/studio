@@ -6,6 +6,7 @@ import { Club } from '@/types/club';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
 import { firestoreSingleton } from '@/infra/bootstrap';
 import { 
+  getFirestore,
   collection, 
   doc, 
   getDoc, 
