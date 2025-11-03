@@ -14,15 +14,16 @@ export class MockAuthAdapter implements AuthPort {
       uid: 'test-user-1',
       email: 'admin@test.com',
       displayName: 'Test Admin',
-      role: UserRole.ADMIN,
+      role: UserRole.SUPER_ADMIN,
       photoURL: '',
       phoneNumber: '',
       status: 'active',
-      clubId: null,
-      clubName: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastLoginAt: new Date(),
+      provider: 'email',
+      clubId: undefined,
+      clubName: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
     });
 
     this.users.set('test-user-2', {
@@ -33,11 +34,12 @@ export class MockAuthAdapter implements AuthPort {
       photoURL: '',
       phoneNumber: '',
       status: 'active',
+      provider: 'email',
       clubId: 'test-club-1',
       clubName: 'Test Club',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastLoginAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
     });
   }
 
@@ -70,11 +72,12 @@ export class MockAuthAdapter implements AuthPort {
       photoURL: '',
       phoneNumber: '',
       status: 'active',
-      clubId: null,
-      clubName: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastLoginAt: new Date(),
+      provider: 'email',
+      clubId: undefined,
+      clubName: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
     };
 
     this.users.set(newUser.uid, newUser);
@@ -101,7 +104,7 @@ export class MockAuthAdapter implements AuthPort {
     }
 
     user.role = role;
-    user.updatedAt = new Date();
+    user.updatedAt = new Date().toISOString();
 
     return {
       success: true,

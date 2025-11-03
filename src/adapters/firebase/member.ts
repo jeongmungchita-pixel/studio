@@ -1,35 +1,25 @@
 /**
- * Firebase Member Repository Adapter (Admin SDK 전용)
+ * Firebase Member Repository Adapter (Admin SDK only)
  */
 import { MemberRepositoryPort } from '@/ports';
 import { Member } from '@/types/member';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { 
-  getFirestore,
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit,
-  Timestamp
-} from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
+
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
 
   async findById(id: string): Promise<Member | null> {
     try {
-      const docRef = doc(this.db, 'members', id);
-      const docSnap = await getDoc(docRef);
+      const docRef = this.db.doc(`members/${id}`);
+      const docSnap = await docRef.get();
       
-      if (docSnap.exists()) {
+      if (docSnap.exists) {
         return this.mapDocumentToMember(docSnap);
       }
       return null;
@@ -41,14 +31,11 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
 
   async findByUserId(userId: string): Promise<Member[]> {
     try {
-      const q = query(
-        collection(this.db, 'members'), 
-        where('userId', '==', userId)
-      );
-      const querySnapshot = await getDocs(q);
+      const q = this.db.collection('members').where('userId', '==', userId);
+      const querySnapshot = await q.get();
       
       const members: Member[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         members.push(this.mapDocumentToMember(doc));
       });
       
@@ -66,7 +53,7 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
         updatedAt: new Date(),
       };
 
-      await setDoc(doc(this.db, 'members', member.id), memberDoc);
+      await this.db.doc(`members/${member.id}`).set(memberDoc);
       
       return {
         success: true,
@@ -88,13 +75,13 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
 
   async update(id: string, data: Partial<Member>): Promise<ApiResponse<Member>> {
     try {
-      const docRef = doc(this.db, 'members', id);
+      const docRef = this.db.doc(`members/${id}`);
       const updateData = {
         ...data,
         updatedAt: new Date(),
       };
 
-      await updateDoc(docRef, updateData);
+      await docRef.update(updateData);
       
       // 업데이트된 멤버 정보 반환
       const updatedMember = await this.findById(id);
@@ -130,7 +117,7 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
 
   async delete(id: string): Promise<ApiResponse<{ id: string }>> {
     try {
-      await deleteDoc(doc(this.db, 'members', id));
+      await this.db.doc(`members/${id}`).delete();
       
       return {
         success: true,
@@ -152,15 +139,12 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
 
   async findByClub(clubId: string): Promise<ApiResponse<Member[]>> {
     try {
-      const q = query(
-        collection(this.db, 'members'), 
-        where('clubId', '==', clubId),
-        orderBy('createdAt', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
+      const q = 
+        this.db.collection(`members`).where('clubId', '==', clubId).orderBy('createdAt', 'desc');
+      const querySnapshot = await q.get();
       
       const members: Member[] = [];
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         members.push(this.mapDocumentToMember(doc));
       });
       
@@ -192,47 +176,44 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
       const pageSize = options?.pageSize || 20;
       const filters = options?.filters || {};
 
-      let q = query(collection(this.db, 'members'));
+      let q: any = this.db.collection('members');
 
       // 필터 적용
       if (filters.clubId) {
-        q = query(q, where('clubId', '==', filters.clubId));
+        q = q.where('clubId', '==', filters.clubId);
       }
       if (filters.userId) {
-        q = query(q, where('userId', '==', filters.userId));
+        q = q.where('userId', '==', filters.userId);
       }
       if (filters.status) {
-        q = query(q, where('status', '==', filters.status));
+        q = q.where('status', '==', filters.status);
       }
 
       // 정렬
-      q = query(q, orderBy('createdAt', 'desc'));
+      q = q.orderBy('createdAt', 'desc');
 
       // 전체 개수 조회
-      const countQuery = query(q);
-      const countSnapshot = await getDocs(countQuery);
+      const countQuery = q;
+      const countSnapshot = await countQuery.get();
       const total = countSnapshot.size;
 
       // 페이지네이션 적용
-      q = query(q, limit(pageSize));
+      q = q.limit(pageSize);
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await q.get();
       const members: Member[] = [];
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         members.push(this.mapDocumentToMember(doc));
       });
 
       const paginatedResponse: PaginatedResponse<Member> = {
-        data: members,
-        pagination: {
-          page,
-          pageSize,
-          total,
-          totalPages: Math.ceil(total / pageSize),
-          hasNext: page * pageSize < total,
-          hasPrev: page > 1,
-        },
+        items: members,
+        total,
+        page,
+        pageSize,
+        hasNext: page * pageSize < total,
+        hasPrev: page > 1,
       };
 
       return {
@@ -257,21 +238,21 @@ export class FirebaseMemberRepositoryAdapter implements MemberRepositoryPort {
     const data = doc.data();
     return {
       id: doc.id,
-      userId: data.userId || '',
-      clubId: data.clubId || '',
       name: data.name || '',
+      dateOfBirth: data.dateOfBirth || '',
+      gender: data.gender || undefined,
       email: data.email || '',
       phoneNumber: data.phoneNumber || '',
-      birthDate: data.birthDate?.toDate() || null,
-      address: data.address || '',
-      emergencyContact: data.emergencyContact || {
-        name: '',
-        phone: '',
-        relationship: '',
-      },
+      clubId: data.clubId || '',
+      clubName: data.clubName || '',
       status: data.status || 'active',
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
+      guardianIds: data.guardianIds || [],
+      guardianUserIds: data.guardianUserIds || [],
+      photoURL: data.photoURL || '',
+      activePassId: data.activePassId || '',
+      memberCategory: data.memberCategory || 'adult',
+      createdAt: data.createdAt?.toDate()?.toISOString() || new Date().toISOString(),
+      updatedAt: data.updatedAt?.toDate()?.toISOString() || undefined,
     };
   }
 }

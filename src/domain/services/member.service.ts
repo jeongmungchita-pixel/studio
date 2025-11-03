@@ -15,8 +15,8 @@ export class MemberService {
     const member: Member = {
       ...memberData,
       id: this.generateId(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const result = await this.memberRepo.save(member);

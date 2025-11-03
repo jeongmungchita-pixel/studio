@@ -1,41 +1,49 @@
 /**
- * Firebase Auth Adapter (Admin SDK 전용)
+ * Firebase Auth Adapter (Admin SDK)
  */
 import { AuthPort } from '@/ports';
 import { UserProfile, UserRole } from '@/types/auth';
 import { ApiResponse } from '@/types/api';
-import { authSingleton } from '@/infra/bootstrap';
+import { getAuth } from 'firebase-admin/auth';
+import { AdminAuth } from '@/infra/bootstrap';
 
 export class FirebaseAuthAdapter implements AuthPort {
-  private adminAuth = authSingleton();
+  private auth: AdminAuth;
+
+  constructor(auth: AdminAuth) {
+    this.auth = auth;
+  }
 
   async getCurrentUser(): Promise<UserProfile | null> {
-    // 클라이언트에서는 useUser 훅 사용
-    // 서버에서는 토큰 검증 필요
-    return null;
+    // Admin SDK에서는 현재 사용자 개념이 없음
+    throw new Error('getCurrentUser not available in Admin SDK');
   }
 
   async verifyIdToken(token: string): Promise<UserProfile | null> {
     try {
-      const decodedToken = await this.adminAuth.verifyIdToken(token);
-      const userRecord = await this.adminAuth.getUser(decodedToken.uid);
+      const decodedToken = await getAuth().verifyIdToken(token);
+      const user = await this.auth.getUser(decodedToken.uid);
+      
+      if (!user) {
+        return null;
+      }
 
       return {
-        uid: userRecord.uid,
-        email: userRecord.email || '',
-        displayName: userRecord.displayName || '',
-        role: (userRecord.customClaims?.role as UserRole) || UserRole.MEMBER,
-        photoURL: userRecord.photoURL || '',
-        phoneNumber: userRecord.phoneNumber || '',
-        status: (userRecord.customClaims?.status as string) || 'active',
-        clubId: userRecord.customClaims?.clubId as string || null,
-        clubName: userRecord.customClaims?.clubName as string || null,
-        createdAt: userRecord.metadata.creationTime ? new Date(userRecord.metadata.creationTime) : new Date(),
-        updatedAt: new Date(),
-        lastLoginAt: userRecord.metadata.lastSignInTime ? new Date(userRecord.metadata.lastSignInTime) : new Date(),
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || '',
+        photoURL: user.photoURL,
+        role: (user.customClaims?.role as UserRole) || UserRole.MEMBER,
+        status: user.customClaims?.status || 'active',
+        provider: (user.providerData[0]?.providerId as 'email' | 'google') || 'email',
+        phoneNumber: user.phoneNumber,
+        createdAt: user.metadata.creationTime || new Date().toISOString(),
+        updatedAt: user.metadata.lastSignInTime || new Date().toISOString(),
+        clubId: user.customClaims?.clubId,
+        clubName: user.customClaims?.clubName
       };
     } catch (error: any) {
-      console.error('Token verification failed:', error);
+      console.error('Failed to verify ID token:', error);
       return null;
     }
   }
@@ -47,31 +55,29 @@ export class FirebaseAuthAdapter implements AuthPort {
     role: UserRole;
   }): Promise<ApiResponse<UserProfile>> {
     try {
-      const userRecord = await this.adminAuth.createUser({
+      const userRecord = await this.auth.createUser({
         email: userData.email,
         password: userData.password,
-        displayName: userData.displayName,
+        displayName: userData.displayName
       });
 
-      // Custom claims 설정
-      await this.adminAuth.setCustomUserClaims(userRecord.uid, {
+      // Set custom claims for role and status
+      await this.auth.setCustomUserClaims(userRecord.uid, {
         role: userData.role,
-        status: 'active',
+        status: 'pending'
       });
 
       const userProfile: UserProfile = {
         uid: userRecord.uid,
         email: userRecord.email || '',
         displayName: userRecord.displayName || '',
+        photoURL: userRecord.photoURL,
         role: userData.role,
-        photoURL: userRecord.photoURL || '',
-        phoneNumber: userRecord.phoneNumber || '',
-        status: 'active',
-        clubId: null,
-        clubName: null,
-        createdAt: userRecord.metadata.creationTime ? new Date(userRecord.metadata.creationTime) : new Date(),
-        updatedAt: new Date(),
-        lastLoginAt: new Date(),
+        status: 'pending',
+        provider: 'email',
+        phoneNumber: userRecord.phoneNumber,
+        createdAt: userRecord.metadata.creationTime || new Date().toISOString(),
+        updatedAt: userRecord.metadata.lastSignInTime || new Date().toISOString()
       };
 
       return {
@@ -94,26 +100,28 @@ export class FirebaseAuthAdapter implements AuthPort {
 
   async updateUserRole(userId: string, role: UserRole): Promise<ApiResponse<UserProfile>> {
     try {
-      // Custom claims 업데이트
-      await this.adminAuth.setCustomUserClaims(userId, {
-        role: role,
+      await this.auth.setCustomUserClaims(userId, {
+        role,
+        status: 'active'
       });
 
-      const userRecord = await this.adminAuth.getUser(userId);
+      const userRecord = await this.auth.getUser(userId);
+      
+      if (!userRecord) {
+        throw new Error('User not found after update');
+      }
 
       const userProfile: UserProfile = {
         uid: userRecord.uid,
         email: userRecord.email || '',
         displayName: userRecord.displayName || '',
+        photoURL: userRecord.photoURL,
         role: role,
-        photoURL: userRecord.photoURL || '',
-        phoneNumber: userRecord.phoneNumber || '',
-        status: (userRecord.customClaims?.status as string) || 'active',
-        clubId: userRecord.customClaims?.clubId as string || null,
-        clubName: userRecord.customClaims?.clubName as string || null,
-        createdAt: userRecord.metadata.creationTime ? new Date(userRecord.metadata.creationTime) : new Date(),
-        updatedAt: new Date(),
-        lastLoginAt: userRecord.metadata.lastSignInTime ? new Date(userRecord.metadata.lastSignInTime) : new Date(),
+        status: 'active',
+        provider: (userRecord.providerData[0]?.providerId as 'email' | 'google') || 'email',
+        phoneNumber: userRecord.phoneNumber,
+        createdAt: userRecord.metadata.creationTime || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       return {
@@ -125,7 +133,7 @@ export class FirebaseAuthAdapter implements AuthPort {
       return {
         success: false,
         error: {
-          code: 'UPDATE_ROLE_FAILED',
+          code: 'UPDATE_USER_ROLE_FAILED',
           message: error.message || 'Failed to update user role',
           statusCode: 500
         },
@@ -135,7 +143,7 @@ export class FirebaseAuthAdapter implements AuthPort {
   }
 
   async signOut(): Promise<void> {
-    // 클라이언트에서만 처리
-    // 서버에서는 토큰 무효화 등 필요
+    // Admin SDK에서는 signOut 개념이 없음
+    throw new Error('signOut not available in Admin SDK');
   }
 }

@@ -1,52 +1,54 @@
 /**
- * Firebase Search Adapter
+ * Firebase Search Adapter (Admin SDK only)
  */
 import { SearchPort } from '@/ports';
 import { UserProfile, UserRole } from '@/types/auth';
 import { Member } from '@/types/member';
 import { Club } from '@/types/club';
 import { ApiResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseSearchAdapter implements SearchPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
 
-  async searchUsers(query: string, filters?: {
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
+
+  async searchUsers(searchQuery: string, filters?: {
     role?: UserRole;
     clubId?: string;
   }): Promise<ApiResponse<UserProfile[]>> {
     try {
-      const usersCollection = collection(this.db, 'users');
+      const usersCollection = this.db.collection('users');
       
       // Simple text search - in production, consider using Algolia or Elasticsearch
-      let q = query(usersCollection);
+      let q: any = usersCollection;
 
       // Search by displayName or email
-      if (query.trim()) {
+      if (searchQuery.trim()) {
         // Note: Firebase doesn't support full-text search natively
         // This is a simplified implementation
-        q = query(
-          usersCollection,
-          where('displayName', '>=', query),
-          where('displayName', '<=', query + '\uf8ff'),
-          limit(50)
-        );
+        q = usersCollection
+          .where('displayName', '>=', searchQuery)
+          .where('displayName', '<=', searchQuery + '\uf8ff')
+          .limit(50);
       }
 
       if (filters?.role) {
-        q = query(q, where('role', '==', filters.role));
+        q = q.where('role', '==', filters.role);
       }
       if (filters?.clubId) {
-        q = query(q, where('clubId', '==', filters.clubId));
+        q = q.where('clubId', '==', filters.clubId);
       }
 
-      q = query(q, orderBy('displayName'), limit(50));
+      q = q.orderBy('displayName').limit(50);
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await q.get();
       const users: UserProfile[] = [];
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         const data = doc.data();
         users.push({
           ...data,
@@ -75,31 +77,31 @@ export class FirebaseSearchAdapter implements SearchPort {
     }
   }
 
-  async searchMembers(query: string, clubId?: string): Promise<ApiResponse<Member[]>> {
+  async searchMembers(searchQuery: string, clubId?: string): Promise<ApiResponse<Member[]>> {
     try {
-      const membersCollection = collection(this.db, 'members');
+      const membersCollection = this.db.collection('members');
       
-      let q = query(membersCollection);
+      // Simple text search - in production, consider using Algolia or Elasticsearch
+      let q: any = membersCollection;
 
-      if (query.trim()) {
-        q = query(
-          membersCollection,
-          where('name', '>=', query),
-          where('name', '<=', query + '\uf8ff'),
-          limit(50)
-        );
+      // Search by name
+      if (searchQuery.trim()) {
+        q = membersCollection
+          .where('name', '>=', searchQuery)
+          .where('name', '<=', searchQuery + '\uf8ff')
+          .limit(50);
       }
 
       if (clubId) {
-        q = query(q, where('clubId', '==', clubId));
+        q = q.where('clubId', '==', clubId);
       }
 
-      q = query(q, orderBy('name'), limit(50));
+      q = q.orderBy('name').limit(50);
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await q.get();
       const members: Member[] = [];
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         const data = doc.data();
         members.push({
           ...data,
@@ -127,27 +129,25 @@ export class FirebaseSearchAdapter implements SearchPort {
     }
   }
 
-  async searchClubs(query: string): Promise<ApiResponse<Club[]>> {
+  async searchClubs(searchQuery: string): Promise<ApiResponse<Club[]>> {
     try {
-      const clubsCollection = collection(this.db, 'clubs');
+      const clubsCollection = this.db.collection('clubs');
       
-      let q = query(clubsCollection);
+      let q: any = clubsCollection;
 
-      if (query.trim()) {
-        q = query(
-          clubsCollection,
-          where('name', '>=', query),
-          where('name', '<=', query + '\uf8ff'),
-          limit(50)
-        );
+      if (searchQuery.trim()) {
+        q = clubsCollection
+          .where('name', '>=', searchQuery)
+          .where('name', '<=', searchQuery + '\uf8ff')
+          .limit(50);
       }
 
-      q = query(q, orderBy('name'), limit(50));
+      q = q.orderBy('name').limit(50);
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await q.get();
       const clubs: Club[] = [];
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         const data = doc.data();
         clubs.push({
           ...data,

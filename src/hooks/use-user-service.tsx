@@ -64,7 +64,7 @@ export function useUserRoles() {
 
   return useMemo(() => ({
     updateRole: async (userId: string, role: UserRole) => 
-      userService.updateUserRole(userId, role),
+      userService.changeUserRole(userId, role),
     getUsersByRole: async (role: UserRole) => 
       userService.getUsers({ filters: { role } }),
   }), [userService]);

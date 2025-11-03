@@ -2,16 +2,18 @@
  * Firebase 인프라 싱글톤 부트스트랩
  * - SDK 인스턴스는 싱글톤 수명 유지
  * - 접근은 주입을 통해 제어
+ * - Admin SDK만 사용 (클라이언트 SDK와 분리)
  */
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import type { Firestore } from 'firebase/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 // Firebase Admin App 싱글톤
 let _adminApp: App | null = null;
 let _adminAuth: ReturnType<typeof getAuth> | null = null;
 let _adminFirestore: ReturnType<typeof getFirestore> | null = null;
+let _adminStorage: ReturnType<typeof getStorage> | null = null;
 
 /**
  * Firebase Admin App 싱글톤
@@ -25,11 +27,15 @@ export function adminAppSingleton(): App {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
       _adminApp = initializeApp({
         credential: cert(serviceAccount),
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
       });
     } else {
       // 개발 환경에서는 기본 초기화
-      _adminApp = initializeApp();
+      _adminApp = initializeApp({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      });
     }
   } else {
     _adminApp = getApps()[0];
@@ -57,18 +63,12 @@ export function firestoreSingleton(): ReturnType<typeof getFirestore> {
 }
 
 /**
- * 클라이언트 Firebase SDK 싱글톤 (필요시)
+ * Firebase Admin Storage 싱글톤
  */
-let _clientApp: any = null;
-let _clientAuth: any = null;
-let _clientFirestore: any = null;
-
-export function clientAppSingleton() {
-  if (_clientApp) return _clientApp;
-  
-  // 클라이언트 SDK 초기화 로직 (필요시 구현)
-  // 현재는 firebase/index.ts에서 관리하므로 패스
-  return _clientApp;
+export function storageSingleton() {
+  if (_adminStorage) return _adminStorage;
+  _adminStorage = getStorage(adminAppSingleton());
+  return _adminStorage;
 }
 
 /**
@@ -78,11 +78,10 @@ export function resetFirebaseSingletons() {
   _adminApp = null;
   _adminAuth = null;
   _adminFirestore = null;
-  _clientApp = null;
-  _clientAuth = null;
-  _clientFirestore = null;
+  _adminStorage = null;
 }
 
-// 타입 내보내기
+// 타입 내보내기 (Admin SDK 타입만)
 export type AdminAuth = ReturnType<typeof authSingleton>;
 export type AdminFirestore = ReturnType<typeof firestoreSingleton>;
+export type AdminStorage = ReturnType<typeof storageSingleton>;

@@ -1,13 +1,17 @@
 /**
- * Firebase Notification Adapter
+ * Firebase Notification Adapter (Admin SDK only)
  */
 import { NotificationPort } from '@/ports';
 import { ApiResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { collection, addDoc, doc, setDoc, Timestamp } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseNotificationAdapter implements NotificationPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
+
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
 
   async sendEmail(to: string, subject: string, content: string): Promise<ApiResponse<{ sent: boolean }>> {
     try {
@@ -22,7 +26,7 @@ export class FirebaseNotificationAdapter implements NotificationPort {
         createdAt: Timestamp.now(),
       };
 
-      await addDoc(collection(this.db, 'notifications'), emailLog);
+      await this.db.collection('notifications').add(emailLog);
 
       return {
         success: true,
@@ -54,7 +58,7 @@ export class FirebaseNotificationAdapter implements NotificationPort {
         createdAt: Timestamp.now(),
       };
 
-      await addDoc(collection(this.db, 'notifications'), pushNotification);
+      await this.db.collection('notifications').add(pushNotification);
 
       return {
         success: true,
@@ -88,7 +92,7 @@ export class FirebaseNotificationAdapter implements NotificationPort {
         createdAt: Timestamp.now(),
       };
 
-      const docRef = await addDoc(collection(this.db, 'userNotifications'), notification);
+      const docRef = await this.db.collection('userNotifications').add(notification);
       
       return {
         success: true,

@@ -19,15 +19,16 @@ export class MockUserRepositoryAdapter implements UserRepositoryPort {
         uid: 'user-1',
         email: 'admin@test.com',
         displayName: 'Admin User',
-        role: UserRole.ADMIN,
+        role: UserRole.SUPER_ADMIN,
         photoURL: '',
         phoneNumber: '+1234567890',
         status: 'active',
-        clubId: null,
-        clubName: null,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-        lastLoginAt: new Date(),
+        provider: 'email',
+        clubId: undefined,
+        clubName: undefined,
+        createdAt: new Date('2024-01-01').toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
       },
       {
         uid: 'user-2',
@@ -37,11 +38,12 @@ export class MockUserRepositoryAdapter implements UserRepositoryPort {
         photoURL: '',
         phoneNumber: '+1234567891',
         status: 'active',
+        provider: 'email',
         clubId: 'club-1',
         clubName: 'Test Club',
-        createdAt: new Date('2024-01-02'),
-        updatedAt: new Date(),
-        lastLoginAt: new Date(),
+        createdAt: new Date('2024-01-02').toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
       },
       {
         uid: 'user-3',
@@ -51,11 +53,12 @@ export class MockUserRepositoryAdapter implements UserRepositoryPort {
         photoURL: '',
         phoneNumber: '+1234567892',
         status: 'active',
+        provider: 'email',
         clubId: 'club-1',
         clubName: 'Test Club',
-        createdAt: new Date('2024-01-03'),
-        updatedAt: new Date(),
-        lastLoginAt: new Date(),
+        createdAt: new Date('2024-01-03').toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
       },
     ];
 
@@ -99,7 +102,7 @@ export class MockUserRepositoryAdapter implements UserRepositoryPort {
       };
     }
 
-    const updatedUser = { ...user, ...data, updatedAt: new Date() };
+    const updatedUser = { ...user, ...data, updatedAt: new Date().toISOString() };
     this.users.set(id, updatedUser);
 
     return {
@@ -154,7 +157,7 @@ export class MockUserRepositoryAdapter implements UserRepositoryPort {
     }
 
     // 정렬
-    filteredUsers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    filteredUsers.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // 페이지네이션
     const page = options?.page || 1;
@@ -166,15 +169,12 @@ export class MockUserRepositoryAdapter implements UserRepositoryPort {
     const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
     const paginatedResponse: PaginatedResponse<UserProfile> = {
-      data: paginatedUsers,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-        hasNext: page * pageSize < total,
-        hasPrev: page > 1,
-      },
+      items: paginatedUsers,
+      total,
+      page,
+      pageSize,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
     };
 
     return {

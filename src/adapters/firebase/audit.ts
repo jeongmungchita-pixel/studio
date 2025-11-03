@@ -1,22 +1,17 @@
 /**
- * Firebase Audit Adapter (Admin SDK 전용)
+ * Firebase Audit Adapter (Admin SDK only)
  */
 import { AuditPort } from '@/ports';
 import { ApiResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  getDocs, 
-  Timestamp 
-} from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseAuditAdapter implements AuditPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
+
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
 
   async logEvent(event: {
     action: string;
@@ -28,14 +23,12 @@ export class FirebaseAuditAdapter implements AuditPort {
       const auditLog = {
         ...event,
         timestamp: Timestamp.now(),
-        userAgent: metadata?.userAgent || 'unknown',
-        ipAddress: metadata?.ipAddress || 'unknown',
+        environment: process.env.NODE_ENV || 'development'
       };
 
-      await addDoc(collection(this.db, 'auditLogs'), auditLog);
+      await this.db.collection('audit_logs').add(auditLog);
     } catch (error) {
       console.error('Failed to log audit event:', error);
-      // Audit failures should not break the main flow
     }
   }
 
@@ -46,34 +39,31 @@ export class FirebaseAuditAdapter implements AuditPort {
     endDate?: Date;
   }): Promise<ApiResponse<any[]>> {
     try {
-      let q = query(collection(this.db, 'auditLogs'));
+      let q: any = this.db.collection('audit_logs');
 
       if (filters?.userId) {
-        q = query(q, where('userId', '==', filters.userId));
+        q = q.where('userId', '==', filters.userId);
       }
+
       if (filters?.action) {
-        q = query(q, where('action', '==', filters.action));
+        q = q.where('action', '==', filters.action);
       }
+
       if (filters?.startDate) {
-        q = query(q, where('timestamp', '>=', Timestamp.fromDate(filters.startDate)));
+        q = q.where('timestamp', '>=', Timestamp.fromDate(filters.startDate));
       }
+
       if (filters?.endDate) {
-        q = query(q, where('timestamp', '<=', Timestamp.fromDate(filters.endDate)));
+        q = q.where('timestamp', '<=', Timestamp.fromDate(filters.endDate));
       }
 
-      q = query(q, orderBy('timestamp', 'desc'));
+      q = q.orderBy('timestamp', 'desc');
 
-      const querySnapshot = await getDocs(q);
-      const logs: any[] = [];
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        logs.push({
-          ...data,
-          id: doc.id,
-          timestamp: data.timestamp?.toDate() || new Date(),
-        });
-      });
+      const querySnapshot = await q.get();
+      const logs = querySnapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
       return {
         success: true,

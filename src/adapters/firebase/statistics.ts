@@ -1,14 +1,18 @@
 /**
- * Firebase Statistics Adapter
+ * Firebase Statistics Adapter (Admin SDK only)
  */
 import { StatisticsPort } from '@/ports';
 import { UserProfile, UserRole } from '@/types/auth';
 import { ApiResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { collection, getDocs, query, where, getCountFromServer } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseStatisticsAdapter implements StatisticsPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
+
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
 
   async getUserStatistics(): Promise<ApiResponse<{
     total: number;
@@ -17,27 +21,27 @@ export class FirebaseStatisticsAdapter implements StatisticsPort {
     recentlyActive: number;
   }>> {
     try {
-      const usersCollection = collection(this.db, 'users');
+      const usersCollection = this.db.collection('users');
       
       // Get total count
-      const totalSnapshot = await getCountFromServer(usersCollection);
-      const total = totalSnapshot.data().count;
+      const totalSnapshot = await usersCollection.get();
+      const total = totalSnapshot.size;
 
       // Get role statistics
       const roleStats: Record<UserRole, number> = {} as Record<UserRole, number>;
       const roles = Object.values(UserRole);
       
       for (const role of roles) {
-        const roleQuery = query(usersCollection, where('role', '==', role));
-        const roleSnapshot = await getCountFromServer(roleQuery);
-        roleStats[role] = roleSnapshot.data().count;
+        const roleQuery = usersCollection.where('role', '==', role);
+        const roleSnapshot = await roleQuery.get();
+        roleStats[role] = roleSnapshot.size;
       }
 
       // Get status statistics
-      const statusSnapshot = await getDocs(usersCollection);
+      const statusSnapshot = await usersCollection.get();
       const statusStats: Record<string, number> = {};
       
-      statusSnapshot.forEach((doc) => {
+      statusSnapshot.forEach((doc: any) => {
         const status = doc.data().status || 'unknown';
         statusStats[status] = (statusStats[status] || 0) + 1;
       });
@@ -46,12 +50,9 @@ export class FirebaseStatisticsAdapter implements StatisticsPort {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const activeQuery = query(
-        usersCollection,
-        where('lastLoginAt', '>=', thirtyDaysAgo)
-      );
-      const activeSnapshot = await getCountFromServer(activeQuery);
-      const recentlyActive = activeSnapshot.data().count;
+      const activeQuery = usersCollection.where('lastLoginAt', '>=', thirtyDaysAgo);
+      const activeSnapshot = await activeQuery.get();
+      const recentlyActive = activeSnapshot.size;
 
       return {
         success: true,
@@ -83,29 +84,29 @@ export class FirebaseStatisticsAdapter implements StatisticsPort {
     byAgeGroup: Record<string, number>;
   }>> {
     try {
-      const membersCollection = collection(this.db, 'members');
+      const membersCollection = this.db.collection('members');
       
-      let q = membersCollection;
+      let q: any = membersCollection;
       if (clubId) {
-        q = query(membersCollection, where('clubId', '==', clubId));
+        q = membersCollection.where('clubId', '==', clubId);
       }
 
       // Get total count
-      const totalSnapshot = await getCountFromServer(q);
-      const total = totalSnapshot.data().count;
+      const totalSnapshot = await q.get();
+      const total = totalSnapshot.size;
 
       // Get status statistics
-      const activeQuery = query(q, where('status', '==', 'active'));
-      const activeSnapshot = await getCountFromServer(activeQuery);
-      const active = activeSnapshot.data().count;
+      const activeQuery = q.where('status', '==', 'active');
+      const activeSnapshot = await activeQuery.get();
+      const active = activeSnapshot.size;
 
       const inactive = total - active;
 
       // Get age group statistics
-      const allMembersSnapshot = await getDocs(q);
+      const allMembersSnapshot = await q.get();
       const ageStats: Record<string, number> = {};
       
-      allMembersSnapshot.forEach((doc) => {
+      allMembersSnapshot.forEach((doc: any) => {
         const birthDate = doc.data().birthDate?.toDate();
         if (birthDate) {
           const age = new Date().getFullYear() - birthDate.getFullYear();

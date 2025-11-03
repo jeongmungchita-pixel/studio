@@ -85,7 +85,7 @@ describe('DI 아키텍처 통합 테스트', () => {
       expect(userRepo).toBeInstanceOf(MockUserRepositoryAdapter);
 
       const result = await userService.getUsers({
-        filters: { role: UserRole.ADMIN }
+        filters: { role: UserRole.SUPER_ADMIN }
       });
 
       expect(result.success).toBe(true);
@@ -97,12 +97,12 @@ describe('DI 아키텍처 통합 테스트', () => {
       expect(result.data?.data.length).toBeGreaterThanOrEqual(1);
       
       // 최소한 하나의 ADMIN 사용자가 있는지 확인
-      const adminUsers = result.data?.data.filter(u => u.role === UserRole.ADMIN) || [];
+      const adminUsers = result.data?.data.filter(u => u.role === UserRole.SUPER_ADMIN) || [];
       expect(adminUsers.length).toBeGreaterThanOrEqual(1);
       
       // 첫 번째 ADMIN 사용자 확인
       if (adminUsers.length > 0) {
-        expect(adminUsers[0].role).toBe(UserRole.ADMIN);
+        expect(adminUsers[0].role).toBe(UserRole.SUPER_ADMIN);
       }
     });
   });
@@ -124,10 +124,10 @@ describe('DI 아키텍처 통합 테스트', () => {
       composition.replaceAuthAdapter(newMockAuth);
 
       const userService = composition.getUserService();
-      const result = await userService.changeUserRole('test-user-2', UserRole.ADMIN);
+      const result = await userService.changeUserRole('test-user-2', UserRole.SUPER_ADMIN);
 
       expect(result.success).toBe(true);
-      expect(result.data?.role).toBe(UserRole.ADMIN);
+      expect(result.data?.role).toBe(UserRole.SUPER_ADMIN);
     });
   });
 

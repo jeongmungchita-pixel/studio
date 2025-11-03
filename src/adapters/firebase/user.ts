@@ -1,36 +1,25 @@
 /**
- * Firebase User Repository Adapter (Admin SDK 전용)
+ * Firebase User Repository Adapter (Admin SDK only)
  */
 import { UserRepositoryPort } from '@/ports';
 import { UserProfile, UserRole } from '@/types/auth';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { 
-  getFirestore,
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit,
-  startAfter,
-  Timestamp
-} from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
+
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
 
   async findById(id: string): Promise<UserProfile | null> {
     try {
-      const docRef = doc(this.db, 'users', id);
-      const docSnap = await getDoc(docRef);
+      const docRef = this.db.doc(`users/${id}`);
+      const docSnap = await docRef.get();
       
-      if (docSnap.exists()) {
+      if (docSnap.exists) {
         return this.mapDocumentToUser(docSnap);
       }
       return null;
@@ -42,12 +31,10 @@ export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
 
   async findByEmail(email: string): Promise<UserProfile | null> {
     try {
-      const q = query(
-        collection(this.db, 'users'), 
-        where('email', '==', email),
-        limit(1)
-      );
-      const querySnapshot = await getDocs(q);
+      const q = this.db.collection('users')
+        .where('email', '==', email)
+        .limit(1);
+      const querySnapshot = await q.get();
       
       if (!querySnapshot.empty) {
         return this.mapDocumentToUser(querySnapshot.docs[0]);
@@ -67,7 +54,7 @@ export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
         lastLoginAt: user.lastLoginAt || new Date(),
       };
 
-      await setDoc(doc(this.db, 'users', user.uid), userDoc);
+      await this.db.doc(`users/${user.uid}`).set(userDoc);
       
       return {
         success: true,
@@ -89,13 +76,13 @@ export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
 
   async update(id: string, data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> {
     try {
-      const docRef = doc(this.db, 'users', id);
+      const docRef = this.db.doc(`users/${id}`);
       const updateData = {
         ...data,
         updatedAt: new Date(),
       };
 
-      await updateDoc(docRef, updateData);
+      await docRef.update(updateData);
       
       // 업데이트된 사용자 정보 반환
       const updatedUser = await this.findById(id);
@@ -131,7 +118,7 @@ export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
 
   async delete(id: string): Promise<ApiResponse<{ id: string }>> {
     try {
-      await deleteDoc(doc(this.db, 'users', id));
+      await this.db.doc(`users/${id}`).delete();
       
       return {
         success: true,
@@ -165,52 +152,49 @@ export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
       const pageSize = options?.pageSize || 20;
       const filters = options?.filters || {};
 
-      let q = query(collection(this.db, 'users'));
+      let q: any = this.db.collection('users');
 
       // 필터 적용
       if (filters.role) {
-        q = query(q, where('role', '==', filters.role));
+        q = q.where('role', '==', filters.role);
       }
       if (filters.status) {
-        q = query(q, where('status', '==', filters.status));
+        q = q.where('status', '==', filters.status);
       }
       if (filters.clubId) {
-        q = query(q, where('clubId', '==', filters.clubId));
+        q = q.where('clubId', '==', filters.clubId);
       }
 
       // 정렬 및 페이지네이션
-      q = query(q, orderBy('createdAt', 'desc'));
+      q = q.orderBy('createdAt', 'desc');
 
       // 전체 개수 조회
-      const countQuery = query(q);
-      const countSnapshot = await getDocs(countQuery);
+      const countQuery = q;
+      const countSnapshot = await countQuery.get();
       const total = countSnapshot.size;
 
       // 페이지네이션 적용
       if (page > 1) {
         const offset = (page - 1) * pageSize;
-        q = query(q, limit(pageSize));
+        q = q.limit(pageSize);
       } else {
-        q = query(q, limit(pageSize));
+        q = q.limit(pageSize);
       }
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await q.get();
       const users: UserProfile[] = [];
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         users.push(this.mapDocumentToUser(doc));
       });
 
       const paginatedResponse: PaginatedResponse<UserProfile> = {
-        data: users,
-        pagination: {
-          page,
-          pageSize,
-          total,
-          totalPages: Math.ceil(total / pageSize),
-          hasNext: page * pageSize < total,
-          hasPrev: page > 1,
-        },
+        items: users,
+        total,
+        page,
+        pageSize,
+        hasNext: page * pageSize < total,
+        hasPrev: page > 1,
       };
 
       return {
@@ -243,6 +227,7 @@ export class FirebaseUserRepositoryAdapter implements UserRepositoryPort {
       status: data.status || 'active',
       clubId: data.clubId || null,
       clubName: data.clubName || null,
+      provider: data.provider || 'email',
       createdAt: data.createdAt?.toDate() || new Date(),
       updatedAt: data.updatedAt?.toDate() || new Date(),
       lastLoginAt: data.lastLoginAt?.toDate() || new Date(),

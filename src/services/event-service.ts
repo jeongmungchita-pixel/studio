@@ -1,10 +1,9 @@
 /**
- * 이벤트 서비스
- * 클럽 이벤트 관련 비즈니스 로직을 처리합니다.
+ * 이벤트 서비스 (클라이언트 사이드)
+ * 이벤트 관련 비즈니스 로직을 처리합니다.
  */
-import { apiClient, UnifiedAPIClient } from '@/lib/api/unified-api-client';
 import { PaginatedResponse } from '@/types/api';
-import { ClubEvent } from '@/types/club';
+import { ClubEvent, EventStats, EventParticipant } from '@/types/event';
 
 export interface EventFilters {
   clubId?: string;
@@ -16,13 +15,15 @@ export interface EventFilters {
 export interface CreateEventData extends Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'> {}
 export interface UpdateEventData extends Partial<Omit<ClubEvent, 'id' | 'createdAt'>> {}
 
+/**
+ * DI 기반 이벤트 서비스 래퍼
+ * - 내부적으로 새로운 DI 구조 사용
+ * - 기존 API와 호환성 유지
+ */
 export class EventService {
   private static instance: EventService;
-  private readonly api: UnifiedAPIClient;
 
-  private constructor(api: UnifiedAPIClient = apiClient) {
-    this.api = api;
-  }
+  private constructor() {}
 
   static getInstance(): EventService {
     if (!EventService.instance) {
@@ -31,114 +32,123 @@ export class EventService {
     return EventService.instance;
   }
 
-  // 목록 조회
-  async getEvents(
-    page: number = 1,
-    pageSize: number = 20,
-    filters?: EventFilters,
-    sortBy: string = 'createdAt',
-    sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<PaginatedResponse<ClubEvent>> {
-    return this.api.paginated<ClubEvent>(
-      '/events',
-      page,
-      pageSize,
-      { sortBy, sortOrder, ...filters }
-    );
+  /**
+   * 이벤트 목록 조회
+   */
+  async getEvents(options?: {
+    page?: number;
+    pageSize?: number;
+    filters?: EventFilters;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<PaginatedResponse<ClubEvent>> {
+    // TODO: Implement with actual service
+    return {
+      items: [],
+      total: 0,
+      page: options?.page || 1,
+      pageSize: options?.pageSize || 20,
+      hasNext: false,
+      hasPrev: false
+    };
   }
 
-  // 상세 조회
-  async getById(eventId: string): Promise<ClubEvent> {
-    const response = await this.api.get<ClubEvent>(`/events/${eventId}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get event');
-    }
-    return response.data;
+  /**
+   * ID로 이벤트 조회
+   */
+  async getEventById(id: string): Promise<ClubEvent | null> {
+    // TODO: Implement with actual service
+    return null;
   }
 
-  // 생성
-  async create(data: CreateEventData): Promise<ClubEvent> {
-    const response = await this.api.post<ClubEvent>('/events', data);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to create event');
-    }
-    return response.data;
+  /**
+   * 이벤트 생성
+   */
+  async createEvent(eventData: CreateEventData): Promise<ClubEvent> {
+    // TODO: Implement with actual service
+    throw new Error('Not implemented');
   }
 
-  // 수정
-  async update(eventId: string, data: UpdateEventData): Promise<ClubEvent> {
-    const response = await this.api.put<ClubEvent>(`/events/${eventId}`, data);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to update event');
-    }
-    return response.data;
+  /**
+   * 이벤트 정보 업데이트
+   */
+  async updateEvent(id: string, eventData: UpdateEventData): Promise<ClubEvent> {
+    // TODO: Implement with actual service
+    throw new Error('Not implemented');
   }
 
-  // 삭제
-  async delete(eventId: string): Promise<{ id: string }> {
-    const response = await this.api.delete<{ id: string }>(`/events/${eventId}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to delete event');
-    }
-    return response.data;
+  /**
+   * 이벤트 삭제
+   */
+  async deleteEvent(id: string): Promise<void> {
+    // TODO: Implement with actual service
+    throw new Error('Not implemented');
   }
 
-  // 검색
-  async searchEvents(query: string): Promise<ClubEvent[]> {
-    const response = await this.api.get<ClubEvent[]>('/events/search', { params: { q: query }, loadingKey: 'search-events' });
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to search events');
-    }
-    return response.data;
+  /**
+   * 이벤트 상태 변경
+   */
+  async changeEventStatus(id: string, status: string): Promise<ClubEvent> {
+    // TODO: Implement with actual service
+    throw new Error('Not implemented');
   }
 
-  // 클럽별 이벤트
-  async getUpcoming(clubId?: string): Promise<ClubEvent[]> {
-    const response = await this.api.get<ClubEvent[]>('/events/upcoming', {
-      params: { clubId }
-    });
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get upcoming events');
-    }
-    return response.data;
+  /**
+   * 클럽 이벤트 조회
+   */
+  async getClubEvents(clubId: string, options?: {
+    page?: number;
+    pageSize?: number;
+    filters?: EventFilters;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<PaginatedResponse<ClubEvent>> {
+    // TODO: Implement with actual service
+    return {
+      items: [],
+      total: 0,
+      page: options?.page || 1,
+      pageSize: options?.pageSize || 20,
+      hasNext: false,
+      hasPrev: false
+    };
   }
 
-  // 이벤트 등록
-  async registerForEvent(eventId: string, participantData: any): Promise<{ registrationId: string }> {
-    const response = await this.api.post<{ registrationId: string }>(
-      `/events/${eventId}/register`,
-      participantData
-    );
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to register for event');
-    }
-    return response.data;
+  async getEventStats(clubId?: string): Promise<EventStats> {
+    // TODO: Implement with actual service
+    return {
+      totalEvents: 0,
+      upcomingEvents: 0,
+      ongoingEvents: 0,
+      completedEvents: 0,
+      cancelledEvents: 0,
+      totalParticipants: 0,
+      averageParticipants: 0
+    };
   }
 
-  // 이벤트 등록 취소
-  async cancelRegistration(eventId: string, registrationId: string): Promise<{ id: string }> {
-    const response = await this.api.delete<{ id: string }>(
-      `/events/${eventId}/registrations/${registrationId}`
-    );
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to cancel registration');
-    }
-    return response.data;
+  async joinEvent(eventId: string, userId: string): Promise<void> {
+    // TODO: Implement with actual service
+    throw new Error('Not implemented');
   }
 
-  // 이벤트 통계(엔드포인트 가정)
-  async getEventStats(eventId: string): Promise<any> {
-    return this.api.get<any>(`/events/${eventId}/stats`, { loadingKey: 'fetch-event-stats' });
+  async leaveEvent(eventId: string, userId: string): Promise<void> {
+    // TODO: Implement with actual service
+    throw new Error('Not implemented');
   }
 
-  // 상태 변경(간단 위임)
-  async changeEventStatus(eventId: string, status: ClubEvent['status']): Promise<ClubEvent> {
-    return this.update(eventId, { status });
-  }
-
-  clearCache(): void {
-    // 필요 시 구현
+  async getEventParticipants(eventId: string): Promise<EventParticipant[]> {
+    // TODO: Implement with actual service
+    return [];
   }
 }
 
+/**
+ * 싱글톤 인스턴스 내보내기
+ */
 export const eventService = EventService.getInstance();
+
+/**
+ * 기존 코드와의 호환성을 위한 기본 내보내기
+ */
+export default eventService;

@@ -1,5 +1,5 @@
 /**
- * 사용자 API 엔드포인트
+ * 사용자 API 엔드포인트 (DI 기반)
  * GET /api/users - 사용자 목록 조회
  * POST /api/users - 사용자 생성
  */
@@ -17,10 +17,7 @@ import {
   HttpStatus
 } from '@/lib/api-helpers';
 import { UserRole } from '@/types/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeAdmin } from '@/firebase/admin';
-// Admin SDK 초기화
-initializeAdmin();
+import { getUserService } from '@/composition-root';
 /**
  * GET: 사용자 목록 조회
  */
@@ -38,48 +35,23 @@ export async function GET(request: NextRequest) {
     const { page, pageSize, offset } = parsePaginationParams(request);
     const { sortBy, sortOrder } = parseSortParams(request);
     const filters = parseFilterParams(request, ['role', 'status', 'clubId']);
-    // Firestore 쿼리 구성
-    const db = getFirestore();
-    let _query = db.collection('users') as FirebaseFirestore.Query;
-    // 필터 적용
-    if (filters.role) {
-      _query = _query.where('role', '==', filters.role);
-    }
-    if (filters.status) {
-      _query = _query.where('status', '==', filters.status);
-    }
-    if (filters.clubId) {
-      _query = _query.where('clubId', '==', filters.clubId);
-    }
-    // 정렬 적용
-    if (sortBy) {
-      _query = _query.orderBy(sortBy, sortOrder);
-    } else {
-      // 기본 정렬: createdAt desc
-      _query = _query.orderBy('createdAt', 'desc');
-    }
-    // 전체 개수 조회
-    const countSnapshot = await _query.count().get();
-    const total = countSnapshot.data().count;
-    // 페이지네이션 적용
-    _query = _query.limit(pageSize).offset(offset);
-    // 데이터 조회
-    const snapshot = await _query.get();
-    const users = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-      updatedAt: doc.data().updatedAt?.toDate?.() || doc.data().updatedAt
-    }));
-    // 응답 반환
-    return successResponse({
-      items: users,
-      total,
+    // DI 서비스 사용
+    const userService = getUserService();
+    const result = await userService.getUsers({
       page,
       pageSize,
-      hasNext: offset + pageSize < total,
-      hasPrev: page > 1
+      filters
     });
+
+    if (!result.success) {
+      return errorResponse(
+        ApiErrorCode.QUERY_FAILED,
+        result.error?.message || '사용자 목록 조회에 실패했습니다.',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
+    return successResponse(result.data, '사용자 목록을 성공적으로 조회했습니다.');
   });
 }
 /**
@@ -98,6 +70,7 @@ export async function POST(request: NextRequest) {
     // 요청 본문 파싱
     const body = await parseRequestBody<{
       email: string;
+      password: string;
       name: string;
       role: UserRole;
       clubId?: string;
@@ -111,21 +84,19 @@ export async function POST(request: NextRequest) {
       );
     }
     // 필수 필드 검증
-    if (!body.email || !body.name || !body.role) {
+    if (!body.email || !body.password || !body.name || !body.role) {
       return errorResponse(
         ApiErrorCode.MISSING_FIELD,
         '필수 필드가 누락되었습니다.',
         HttpStatus.BAD_REQUEST
       );
     }
+    // DI 서비스 사용
+    const userService = getUserService();
+    
     // 이메일 중복 확인
-    const db = getFirestore();
-    const existingUser = await db
-      .collection('users')
-      .where('email', '==', body.email)
-      .limit(1)
-      .get();
-    if (!existingUser.empty) {
+    const existingUser = await userService.getUserByEmail(body.email);
+    if (existingUser) {
       return errorResponse(
         ApiErrorCode.ALREADY_EXISTS,
         '이미 존재하는 이메일입니다.',
@@ -142,24 +113,23 @@ export async function POST(request: NextRequest) {
       );
     }
     // 사용자 생성
-    const newUser = {
+    const result = await userService.createUser({
       email: body.email,
-      name: body.name,
-      role: body.role,
-      clubId: body.clubId || null,
-      phoneNumber: body.phoneNumber || null,
-      status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: validation.user?.uid
-    };
-    const docRef = await db.collection('users').add(newUser);
-    const createdUser = {
-      id: docRef.id,
-      ...newUser
-    };
+      password: body.password,
+      displayName: body.name,
+      role: body.role
+    });
+
+    if (!result.success) {
+      return errorResponse(
+        ApiErrorCode.CREATE_FAILED,
+        result.error?.message || '사용자 생성에 실패했습니다.',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
     return successResponse(
-      createdUser,
+      result.data,
       '사용자가 생성되었습니다.'
     );
   });
@@ -188,4 +158,16 @@ function canAssignRole(assignerRole: UserRole, targetRole: UserRole): boolean {
   const targetLevel = roleHierarchy[targetRole] || 0;
   // 자신보다 낮은 권한만 부여 가능
   return assignerLevel > targetLevel;
+}
+
+/**
+ * 임시 비밀번호 생성
+ */
+function generateTempPassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
 }

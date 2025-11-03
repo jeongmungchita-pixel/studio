@@ -20,7 +20,7 @@ export interface CreateMemberData {
     phone: string;
     relationship: string;
   };
-  status?: 'active' | 'inactive';
+  status?: 'pending' | 'active' | 'inactive';
 }
 
 export interface UpdateMemberData {
@@ -129,14 +129,25 @@ export class MemberServiceNew {
    * 멤버 생성
    */
   async createMember(memberData: CreateMemberData): Promise<ApiResponse<Member>> {
-    return this.domainService.createMember(memberData);
+    const dataWithStatus = {
+      ...memberData,
+      status: memberData.status || 'pending',
+      birthDate: memberData.birthDate?.toISOString(),
+      emergencyContact: memberData.emergencyContact ? JSON.stringify(memberData.emergencyContact) : undefined
+    };
+    return this.domainService.createMember(dataWithStatus);
   }
 
   /**
    * 멤버 업데이트
    */
   async updateMember(id: string, data: UpdateMemberData): Promise<ApiResponse<Member>> {
-    return this.domainService.updateMember(id, data);
+    const transformedData = {
+      ...data,
+      birthDate: data.birthDate?.toISOString(),
+      emergencyContact: data.emergencyContact ? JSON.stringify(data.emergencyContact) : undefined
+    };
+    return this.domainService.updateMember(id, transformedData);
   }
 
   /**

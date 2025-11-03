@@ -71,7 +71,7 @@ export interface UserProfile {
   photoURL?: string;
   phoneNumber?: string;
   role: UserRole;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'deleted';
   provider: 'email' | 'google';
   createdAt: string;
   updatedAt?: string;
@@ -82,6 +82,9 @@ export interface UserProfile {
   // 위원회 관련 (위원회 멤버인 경우)
   committeeId?: string;
   committeeName?: string;
+  // 소프트 삭제 관련
+  deletedAt?: string;
+  deletedBy?: string;
   // 추가 메타데이터
   metadata?: {
     onboardingCompleted?: boolean;

@@ -7,13 +7,18 @@
 import { useState, useEffect } from 'react';
 import { useUserService, useUsers } from '@/hooks/use-user-service';
 import { UserProfile, UserRole } from '@/types/auth';
-import { DataTable } from '@/components/common/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface UserManagementProps {
   clubId?: string;
+}
+
+interface Column<T> {
+  key: string;
+  label: string;
+  render: (item: T) => React.ReactNode;
 }
 
 export function UserManagement({ clubId }: UserManagementProps) {
@@ -36,7 +41,7 @@ export function UserManagement({ clubId }: UserManagementProps) {
       const result = await getUsers();
       
       if (result.success) {
-        setUsers(result.data?.data || []);
+        setUsers(result.data?.items || []);
       } else {
         setError(result.error?.message || 'Failed to load users');
       }
@@ -50,7 +55,7 @@ export function UserManagement({ clubId }: UserManagementProps) {
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
       const userService = useUserService();
-      const result = await userService.updateUserRole(userId, newRole);
+      const result = await userService.changeUserRole(userId, newRole);
       
       if (result.success) {
         await loadUsers(); // 목록 새로고침
@@ -62,7 +67,7 @@ export function UserManagement({ clubId }: UserManagementProps) {
     }
   };
 
-  const columns = [
+  const columns: Column<UserProfile>[] = [
     {
       key: 'displayName',
       label: 'Name',
@@ -80,6 +85,7 @@ export function UserManagement({ clubId }: UserManagementProps) {
     {
       key: 'email',
       label: 'Email',
+      render: (user: UserProfile) => user.email,
     },
     {
       key: 'role',
@@ -106,8 +112,8 @@ export function UserManagement({ clubId }: UserManagementProps) {
         <div className="flex space-x-2">
           <Button
             size="sm"
-            onClick={() => handleRoleChange(user.uid, UserRole.ADMIN)}
-            disabled={user.role === UserRole.ADMIN}
+            onClick={() => handleRoleChange(user.uid, UserRole.FEDERATION_ADMIN)}
+            disabled={user.role === UserRole.FEDERATION_ADMIN}
           >
             Make Admin
           </Button>
@@ -147,11 +153,30 @@ export function UserManagement({ clubId }: UserManagementProps) {
         <CardTitle>User Management</CardTitle>
       </CardHeader>
       <CardContent>
-        <DataTable
-          data={users}
-          columns={columns}
-          searchKey="displayName"
-        />
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-gray-200">
+            <thead>
+              <tr className="bg-gray-50">
+                {columns.map((col) => (
+                  <th key={col.key} className="border border-gray-200 px-4 py-2 text-left">
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.uid} className="hover:bg-gray-50">
+                  {columns.map((col) => (
+                    <td key={col.key} className="border border-gray-200 px-4 py-2">
+                      {col.render(user)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );

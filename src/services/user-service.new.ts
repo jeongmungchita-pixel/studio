@@ -211,7 +211,7 @@ export class UserServiceNew {
    * 사용자 클럽 변경
    */
   async changeUserClub(userId: string, clubId: string | null): Promise<ApiResponse<UserProfile>> {
-    return this.domainService.updateUser(userId, { clubId });
+    return this.domainService.updateUser(userId, { clubId: clubId || undefined });
   }
 
   /**

@@ -27,7 +27,11 @@ export async function GET(request: NextRequest) {
       if (status) filters.status = status;
       if (clubId) filters.clubId = clubId;
 
-      const result = await userService.getUsers(page, pageSize, filters);
+      const result = await userService.getUsers({
+        page,
+        pageSize,
+        filters
+      });
 
       if (!result.success) {
         return NextResponse.json(

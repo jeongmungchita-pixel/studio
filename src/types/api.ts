@@ -27,6 +27,18 @@ export interface PaginatedResponse<T> {
   hasPrev: boolean;
 }
 
+export interface QueryOptions {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginationOptions {
+  page?: number;
+  pageSize?: number;
+}
+
 export interface ApiRequest {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
@@ -49,6 +61,9 @@ export enum ApiErrorCode {
   NOT_FOUND = 'NOT_FOUND',
   ALREADY_EXISTS = 'ALREADY_EXISTS',
   CONFLICT = 'CONFLICT',
+  UPDATE_FAILED = 'UPDATE_FAILED',
+  CREATE_FAILED = 'CREATE_FAILED',
+  DELETE_FAILED = 'DELETE_FAILED',
   // 서버 관련
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',

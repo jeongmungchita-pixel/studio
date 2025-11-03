@@ -93,7 +93,31 @@ export class ClubServiceNew {
    * 클럽 생성
    */
   async createClub(clubData: CreateClubData): Promise<ApiResponse<Club>> {
-    return this.domainService.createClub(clubData);
+    const fullClubData: Omit<Club, 'id' | 'createdAt' | 'updatedAt'> = {
+      name: clubData.name,
+      description: clubData.description || '',
+      address: clubData.address || '',
+      phoneNumber: clubData.phone || '',
+      email: clubData.email || '',
+      website: clubData.website,
+      ownerId: '', // TODO: Get from context/auth
+      ownerName: '', // TODO: Get from context/auth
+      contactName: '',
+      contactEmail: '',
+      contactPhoneNumber: '',
+      status: clubData.status || 'active',
+      facilities: [],
+      capacity: 0,
+      operatingHours: {},
+      location: undefined,
+      logoURL: undefined,
+      images: undefined,
+      memberCount: 0,
+      activeClassCount: 0,
+      coachCount: 0
+    };
+    
+    return this.domainService.createClub(fullClubData);
   }
 
   /**

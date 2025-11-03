@@ -17,8 +17,8 @@ export class ClubService {
     const club: Club = {
       ...clubData,
       id: this.generateId(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const result = await this.clubRepo.save(club);

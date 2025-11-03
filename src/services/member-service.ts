@@ -1,8 +1,7 @@
 /**
- * 멤버 서비스
+ * 멤버 서비스 (클라이언트 사이드)
  * 멤버(회원) 관련 비즈니스 로직을 처리합니다.
  */
-import { apiClient, UnifiedAPIClient } from '@/lib/api/unified-api-client';
 import { PaginatedResponse } from '@/types/api';
 import { Member, MemberStats } from '@/types/member';
 
@@ -16,13 +15,15 @@ export interface MemberFilters {
 export interface CreateMemberData extends Omit<Member, 'id' | 'createdAt' | 'updatedAt'> {}
 export interface UpdateMemberData extends Partial<Omit<Member, 'id' | 'createdAt'>> {}
 
+/**
+ * 멤버 서비스 래퍼 (클라이언트 사이드)
+ * - API 클라이언트를 통한 서버 통신
+ * - 기존 API와 호환성 유지
+ */
 export class MemberService {
   private static instance: MemberService;
-  private readonly api: UnifiedAPIClient;
 
-  private constructor(api: UnifiedAPIClient = apiClient) {
-    this.api = api;
-  }
+  private constructor() {}
 
   static getInstance(): MemberService {
     if (!MemberService.instance) {
@@ -31,109 +32,105 @@ export class MemberService {
     return MemberService.instance;
   }
 
-  // 목록 조회
-  async getMembers(
-    page: number = 1,
-    pageSize: number = 20,
-    filters?: MemberFilters,
-    sortBy: string = 'createdAt',
-    sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<PaginatedResponse<Member>> {
-    return this.api.paginated<Member>(
-      '/members',
-      page,
-      pageSize,
-      { sortBy, sortOrder, ...filters }
-    );
+  /**
+   * 멤버 목록 조회
+   */
+  async getMembers(options?: {
+    page?: number;
+    pageSize?: number;
+    filters?: MemberFilters;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<PaginatedResponse<Member>> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.getMembers not implemented yet');
   }
 
-  // 상세 조회
-  async getById(memberId: string): Promise<Member> {
-    const response = await this.api.get<Member>(`/members/${memberId}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get member');
-    }
-    return response.data;
+  /**
+   * ID로 멤버 조회
+   */
+  async getMemberById(id: string): Promise<Member | null> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.getMemberById not implemented yet');
   }
 
-  // 생성
-  async create(data: CreateMemberData): Promise<Member> {
-    const response = await this.api.post<Member>('/members', data);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to create member');
-    }
-    return response.data;
+  /**
+   * 사용자 ID로 멤버 조회
+   */
+  async getMemberByUserId(userId: string): Promise<Member | null> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.getMemberByUserId not implemented yet');
   }
 
-  // 수정
-  async update(memberId: string, data: UpdateMemberData): Promise<Member> {
-    const response = await this.api.put<Member>(`/members/${memberId}`, data);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to update member');
-    }
-    return response.data;
+  /**
+   * 멤버 생성
+   */
+  async createMember(memberData: CreateMemberData): Promise<Member> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.createMember not implemented yet');
   }
 
-  // 삭제
-  async delete(memberId: string): Promise<{ id: string }> {
-    const response = await this.api.delete<{ id: string }>(`/members/${memberId}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to delete member');
-    }
-    return response.data;
+  /**
+   * 멤버 정보 업데이트
+   */
+  async updateMember(id: string, memberData: UpdateMemberData): Promise<Member> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.updateMember not implemented yet');
   }
 
-  // 검색
-  async searchMembers(query: string): Promise<Member[]> {
-    const response = await this.api.get<Member[]>('/members/search', { params: { q: query } });
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to search members');
-    }
-    return response.data;
+  /**
+   * 멤버 삭제
+   */
+  async deleteMember(id: string): Promise<void> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.deleteMember not implemented yet');
   }
 
-  // 클럽별 조회
-  async getMembersByClub(clubId: string): Promise<Member[]> {
-    const res = await this.getMembers(1, 100, { clubId });
-    return res.items;
+  /**
+   * 멤버 역할 변경
+   */
+  async changeMemberRole(id: string, role: string): Promise<Member> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.changeMemberRole not implemented yet');
   }
 
-  // 통계 조회
-  async getMemberStats(memberId?: string): Promise<MemberStats> {
-    const url = memberId ? `/members/${memberId}/stats` : '/members/stats';
-    const response = await this.api.get<MemberStats>(url);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get member stats');
-    }
-    return response.data;
+  /**
+   * 멤버 상태 변경
+   */
+  async changeMemberStatus(id: string, status: string): Promise<Member> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.changeMemberStatus not implemented yet');
   }
 
-  // 보호자 링크/해제 (간단 API 위임 형태)
-  async linkGuardian(memberId: string, guardianMemberId: string): Promise<Member> {
-    const response = await this.api.post<Member>(`/members/${memberId}/guardians`, { guardianMemberId }, { loadingKey: 'link-guardian' });
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to link guardian');
-    }
-    return response.data;
+  /**
+   * 멤버 통계 조회
+   */
+  async getMemberStatistics(options?: {
+    clubId?: string;
+    category?: string;
+  }): Promise<MemberStats> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.getMemberStatistics not implemented yet');
   }
 
-  async unlinkGuardian(memberId: string, guardianMemberId: string): Promise<Member> {
-    const response = await this.api.delete<Member>(`/members/${memberId}/guardians/${guardianMemberId}`, { loadingKey: 'unlink-guardian' });
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to unlink guardian');
-    }
-    return response.data;
-  }
-
-  // 활성/비활성 처리
-  async changeMemberStatus(memberId: string, status: Member['status']): Promise<Member> {
-    return this.update(memberId, { status });
-  }
-
-  // 캐시 초기화 (확장 포인트)
-  clearCache(): void {
-    // 필요 시 구현
+  /**
+   * 멤버 검색
+   */
+  async searchMembers(query: string, options?: {
+    clubId?: string;
+    category?: string;
+  }): Promise<Member[]> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side MemberService.searchMembers not implemented yet');
   }
 }
 
+/**
+ * 싱글톤 인스턴스 내보내기
+ */
 export const memberService = MemberService.getInstance();
+
+/**
+ * 기존 코드와의 호환성을 위한 기본 내보내기
+ */
+export default memberService;

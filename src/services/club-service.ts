@@ -1,8 +1,7 @@
 /**
- * 클럽 서비스
+ * 클럽 서비스 (클라이언트 사이드)
  * 클럽 도메인 비즈니스 로직을 처리합니다.
  */
-import { apiClient, UnifiedAPIClient } from '@/lib/api/unified-api-client';
 import { PaginatedResponse } from '@/types/api';
 import { Club, ClubStats } from '@/types/club';
 
@@ -15,13 +14,15 @@ export interface ClubFilters {
 export interface CreateClubData extends Omit<Club, 'id' | 'createdAt' | 'updatedAt' | 'approvedAt' | 'approvedBy'> {}
 export interface UpdateClubData extends Partial<Omit<Club, 'id' | 'createdAt'>> {}
 
+/**
+ * 클럽 서비스 래퍼 (클라이언트 사이드)
+ * - API 클라이언트를 통한 서버 통신
+ * - 기존 API와 호환성 유지
+ */
 export class ClubService {
   private static instance: ClubService;
-  private readonly api: UnifiedAPIClient;
 
-  private constructor(api: UnifiedAPIClient = apiClient) {
-    this.api = api;
-  }
+  private constructor() {}
 
   static getInstance(): ClubService {
     if (!ClubService.instance) {
@@ -30,99 +31,90 @@ export class ClubService {
     return ClubService.instance;
   }
 
-  // 목록 조회
-  async getClubs(
-    page: number = 1,
-    pageSize: number = 20,
-    filters?: ClubFilters,
-    sortBy: string = 'createdAt',
-    sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<PaginatedResponse<Club>> {
-    return this.api.paginated<Club>(
-      '/clubs',
-      page,
-      pageSize,
-      { sortBy, sortOrder, ...filters }
-    );
+  /**
+   * 클럽 목록 조회
+   */
+  async getClubs(options?: {
+    page?: number;
+    pageSize?: number;
+    filters?: ClubFilters;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<PaginatedResponse<Club>> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.getClubs not implemented yet');
   }
 
-  // 상세 조회
-  async getClub(clubId: string): Promise<Club> {
-    const response = await this.api.get<Club>(`/clubs/${clubId}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get club');
-    }
-    return response.data;
+  /**
+   * ID로 클럽 조회
+   */
+  async getClubById(id: string): Promise<Club | null> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.getClubById not implemented yet');
   }
 
-  // 생성
-  async createClub(data: CreateClubData): Promise<Club> {
-    const response = await this.api.post<Club>('/clubs', data);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to create club');
-    }
-    return response.data;
+  /**
+   * 클럽 생성
+   */
+  async createClub(clubData: CreateClubData): Promise<Club> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.createClub not implemented yet');
   }
 
-  // 수정
-  async updateClub(clubId: string, data: UpdateClubData): Promise<Club> {
-    const response = await this.api.put<Club>(`/clubs/${clubId}`, data);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to update club');
-    }
-    return response.data;
+  /**
+   * 클럽 정보 업데이트
+   */
+  async updateClub(id: string, clubData: UpdateClubData): Promise<Club> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.updateClub not implemented yet');
   }
 
-  // 삭제
-  async deleteClub(clubId: string): Promise<{ id: string }> {
-    const response = await this.api.delete<{ id: string }>(`/clubs/${clubId}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to delete club');
-    }
-    return response.data;
+  /**
+   * 클럽 삭제
+   */
+  async deleteClub(id: string): Promise<void> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.deleteClub not implemented yet');
   }
 
-  // 검색
-  async searchClubs(query: string): Promise<Club[]> {
-    const response = await this.api.get<Club[]>('/clubs/search', { params: { q: query } });
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to search clubs');
-    }
-    return response.data;
+  /**
+   * 클럽 멤버 조회
+   */
+  async getClubMembers(clubId: string, options?: {
+    page?: number;
+    pageSize?: number;
+    filters?: {
+      role?: string;
+      status?: string;
+    };
+  }): Promise<PaginatedResponse<any>> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.getClubMembers not implemented yet');
   }
 
-  // 지역별 목록 (filters.region 활용)
-  async getClubsByRegion(region: string): Promise<Club[]> {
-    const response = await this.getClubs(1, 100, { region });
-    return response.items;
+  /**
+   * 클럽 통계 조회
+   */
+  async getClubStatistics(clubId: string): Promise<ClubStats> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.getClubStatistics not implemented yet');
   }
 
-  // 전체 목록
-  async getAll(): Promise<Club[]> {
-    const response = await this.api.get<Club[]>('/clubs');
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get all clubs');
-    }
-    return response.data;
-  }
-
-  // 통계 조회
-  async getClubStats(clubId: string): Promise<ClubStats> {
-    const response = await this.api.get<ClubStats>(`/clubs/${clubId}/stats`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error?.message || 'Failed to get club stats');
-    }
-    return response.data;
-  }
-
-  // 상태 변경 (간단 위임)
-  async changeClubStatus(clubId: string, status: 'active' | 'inactive' | 'pending' | 'suspended'): Promise<Club> {
-    return this.updateClub(clubId, { status });
-  }
-
-  clearCache(): void {
-    // 필요 시 구현
+  /**
+   * 클럽 소유자 변경
+   */
+  async changeClubOwner(clubId: string, newOwnerId: string): Promise<Club> {
+    // TODO: API 클라이언트를 통한 구현
+    throw new Error('Client-side ClubService.changeClubOwner not implemented yet');
   }
 }
 
+/**
+ * 싱글톤 인스턴스 내보내기
+ */
 export const clubService = ClubService.getInstance();
+
+/**
+ * 기존 코드와의 호환성을 위한 기본 내보내기
+ */
+export default clubService;

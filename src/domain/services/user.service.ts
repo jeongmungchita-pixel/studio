@@ -55,7 +55,7 @@ export class UserService {
    * 사용자 삭제
    */
   async deleteUser(id: string): Promise<ApiResponse<{ id: string }>> {
-    return this.userRepo.delete(id);
+    return (this.userRepo as any).delete(id);
   }
 
   /**
@@ -117,7 +117,11 @@ export class UserService {
     });
 
     if (!result.success || !result.data) {
-      return result;
+      return {
+        success: false,
+        error: result.error,
+        timestamp: result.timestamp
+      };
     }
 
     return {
@@ -138,7 +142,11 @@ export class UserService {
     });
 
     if (!result.success || !result.data) {
-      return result;
+      return {
+        success: false,
+        error: result.error,
+        timestamp: result.timestamp
+      };
     }
 
     return {
@@ -166,7 +174,11 @@ export class UserService {
     });
 
     if (!result.success || !result.data) {
-      return result;
+      return {
+        success: false,
+        error: result.error,
+        timestamp: result.timestamp
+      };
     }
 
     // 클라이언트에서 추가 필터링 필요

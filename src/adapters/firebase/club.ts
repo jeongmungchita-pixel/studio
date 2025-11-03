@@ -1,41 +1,35 @@
 /**
- * Firebase Club Repository Adapter (Admin SDK 전용)
+ * Firebase Club Repository Adapter (Admin SDK only)
  */
 import { ClubRepositoryPort } from '@/ports';
 import { Club } from '@/types/club';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
-import { firestoreSingleton } from '@/infra/bootstrap';
-import { 
-  getFirestore,
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit,
-  Timestamp
-} from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AdminFirestore } from '@/infra/bootstrap';
 
 export class FirebaseClubRepositoryAdapter implements ClubRepositoryPort {
-  private db = firestoreSingleton();
+  private db: AdminFirestore;
+
+  constructor(db: AdminFirestore) {
+    this.db = db;
+  }
 
   async findById(id: string): Promise<Club | null> {
-    const docRef = doc(this.db, 'clubs', id);
-    const docSnap = await getDoc(docRef);
+    const docRef = this.db.doc(`clubs/${id}`);
+    const docSnap = await docRef.get();
     
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return null;
     }
 
     const data = docSnap.data();
+    if (!data) {
+      return null;
+    }
+
     return {
       ...data,
-      id: doc.id,
+      id: docSnap.id,
       createdAt: data.createdAt?.toDate() || new Date(),
       updatedAt: data.updatedAt?.toDate() || new Date(),
     } as Club;
@@ -46,10 +40,10 @@ export class FirebaseClubRepositoryAdapter implements ClubRepositoryPort {
       const clubToSave = {
         ...club,
         updatedAt: Timestamp.now(),
-        createdAt: club.createdAt ? Timestamp.fromDate(club.createdAt) : Timestamp.now(),
+        createdAt: club.createdAt ? Timestamp.fromDate(new Date(club.createdAt)) : Timestamp.now(),
       };
 
-      await setDoc(doc(this.db, 'clubs', club.id), clubToSave);
+      await this.db.doc(`clubs/${club.id}`).set(clubToSave);
 
       return {
         success: true,
@@ -76,9 +70,9 @@ export class FirebaseClubRepositoryAdapter implements ClubRepositoryPort {
         updatedAt: Timestamp.now(),
       };
 
-      await updateDoc(doc(this.db, 'clubs', id), updateData);
+      await this.db.doc(`clubs/${id}`).update(updateData);
 
-      const updatedDoc = await getDoc(doc(this.db, 'clubs', id));
+      const updatedDoc = await this.db.doc(`clubs/${id}`).get();
       const clubData = updatedDoc.data() as Club;
 
       return {
@@ -101,7 +95,7 @@ export class FirebaseClubRepositoryAdapter implements ClubRepositoryPort {
 
   async delete(id: string): Promise<ApiResponse<{ id: string }>> {
     try {
-      await deleteDoc(doc(this.db, 'clubs', id));
+      await this.db.doc(`clubs/${id}`).delete();
 
       return {
         success: true,
@@ -129,23 +123,19 @@ export class FirebaseClubRepositoryAdapter implements ClubRepositoryPort {
       const page = options?.page || 1;
       const pageSize = options?.pageSize || 20;
 
-      const clubsCollection = collection(this.db, 'clubs');
+      const clubsCollection = this.db.collection('clubs');
       
       // Get total count
-      const totalSnapshot = await getCountFromServer(clubsCollection);
-      const total = totalSnapshot.data().count;
+      const totalSnapshot = await clubsCollection.get();
+      const total = totalSnapshot.size;
 
       // Query with pagination
-      const q = query(
-        clubsCollection,
-        orderBy('createdAt', 'desc'),
-        limit(pageSize)
-      );
+      const q = clubsCollection.orderBy('createdAt', 'desc').limit(pageSize);
 
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await q.get();
       const clubs: Club[] = [];
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         const data = doc.data();
         clubs.push({
           ...data,

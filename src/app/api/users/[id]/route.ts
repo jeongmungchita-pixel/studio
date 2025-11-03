@@ -1,5 +1,5 @@
 /**
- * 개별 사용자 API 엔드포인트
+ * 개별 사용자 API 엔드포인트 (DI 기반)
  * GET /api/users/[id] - 사용자 상세 조회
  * PUT /api/users/[id] - 사용자 정보 수정
  * DELETE /api/users/[id] - 사용자 삭제
@@ -15,10 +15,7 @@ import {
   HttpStatus
 } from '@/lib/api-helpers';
 import { UserRole } from '@/types/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeAdmin } from '@/firebase/admin';
-// Admin SDK 초기화
-initializeAdmin();
+import { getUserService } from '@/composition-root';
 interface RouteParams {
   params: {
     id: string;
@@ -51,23 +48,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         );
       }
     }
-    // 사용자 조회
-    const db = getFirestore();
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc?.exists) {
+    // DI 서비스 사용
+    const userService = getUserService();
+    const user = await userService.getUserById(userId);
+
+    if (!user) {
       return errorResponse(
         ApiErrorCode.NOT_FOUND,
         '사용자를 찾을 수 없습니다.',
         HttpStatus.NOT_FOUND
       );
     }
-    const userData = {
-      id: userDoc.id,
-      ...userDoc?.data(),
-      createdAt: userDoc?.data()?.createdAt?.toDate?.() || userDoc?.data()?.createdAt,
-      updatedAt: userDoc?.data()?.updatedAt?.toDate?.() || userDoc?.data()?.updatedAt
-    };
-    return successResponse(userData);
+
+    return successResponse(user, '사용자 정보를 성공적으로 조회했습니다.');
   });
 }
 /**
@@ -113,16 +106,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         HttpStatus.BAD_REQUEST
       );
     }
-    // 사용자 존재 확인
-    const db = getFirestore();
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc?.exists) {
+    // DI 서비스 사용
+    const userService = getUserService();
+    const existingUser = await userService.getUserById(userId);
+
+    if (!existingUser) {
       return errorResponse(
         ApiErrorCode.NOT_FOUND,
         '사용자를 찾을 수 없습니다.',
         HttpStatus.NOT_FOUND
       );
     }
+
     // 업데이트 데이터 준비
     const updateData: any = {
       updatedAt: new Date()
@@ -150,17 +145,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (body.clubId !== undefined) updateData.clubId = body.clubId;
     }
     // 업데이트 실행
-    await db.collection('users').doc(userId).update(updateData);
-    // 업데이트된 사용자 정보 반환
-    const updatedDoc = await db.collection('users').doc(userId).get();
-    const updatedUser = {
-      id: updatedDoc.id,
-      ...updatedDoc?.data(),
-      createdAt: updatedDoc?.data()?.createdAt?.toDate?.() || updatedDoc?.data()?.createdAt,
-      updatedAt: updatedDoc?.data()?.updatedAt?.toDate?.() || updatedDoc?.data()?.updatedAt
-    };
+    const result = await userService.updateUser(userId, updateData);
+
+    if (!result.success) {
+      return errorResponse(
+        ApiErrorCode.UPDATE_FAILED,
+        result.error?.message || '사용자 정보 수정에 실패했습니다.',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
     return successResponse(
-      updatedUser,
+      result.data,
       '사용자 정보가 수정되었습니다.'
     );
   });
@@ -187,18 +183,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         HttpStatus.BAD_REQUEST
       );
     }
-    // 사용자 존재 확인
-    const db = getFirestore();
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (!userDoc?.exists) {
+    // DI 서비스 사용
+    const userService = getUserService();
+    const existingUser = await userService.getUserById(userId);
+
+    if (!existingUser) {
       return errorResponse(
         ApiErrorCode.NOT_FOUND,
         '사용자를 찾을 수 없습니다.',
         HttpStatus.NOT_FOUND
       );
     }
+
     // 삭제할 사용자의 역할 확인
-    const targetUserRole = userDoc?.data()?.role;
+    const targetUserRole = existingUser.role;
     if (targetUserRole && !canDeleteUser(validation.user!.role!, targetUserRole)) {
       return errorResponse(
         ApiErrorCode.INSUFFICIENT_PERMISSIONS,
@@ -207,11 +205,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
     // 소프트 삭제 (실제로는 status를 'deleted'로 변경)
-    await db.collection('users').doc(userId).update({
+    const result = await userService.updateUser(userId, {
       status: 'deleted',
-      deletedAt: new Date(),
+      deletedAt: new Date().toISOString(),
       deletedBy: validation.user?.uid
     });
+
+    if (!result.success) {
+      return errorResponse(
+        ApiErrorCode.DELETE_FAILED,
+        result.error?.message || '사용자 삭제에 실패했습니다.',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
     return successResponse(
       { id: userId },
       '사용자가 삭제되었습니다.'
